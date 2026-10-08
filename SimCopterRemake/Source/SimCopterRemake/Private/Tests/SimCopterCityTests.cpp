@@ -10,27 +10,8 @@
 #include "Formats/SimCity2000Reader.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
-#include "UObject/UObjectIterator.h"
+#include "Misc/ScopeExit.h"
 
-namespace
-{
-ASimCity2000CityActor* FindLoadedCityActor()
-{
-	for (TObjectIterator<ASimCity2000CityActor> It; It; ++It)
-	{
-		ASimCity2000CityActor* Candidate = *It;
-		if (Candidate == nullptr || Candidate->IsTemplate() || !IsValid(Candidate))
-		{
-			continue;
-		}
-		if (Candidate->GetWorld() != nullptr)
-		{
-			return Candidate;
-		}
-	}
-	return nullptr;
-}
-}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FSimCopterCityBuildingFootprintClaimTest,
@@ -294,15 +275,21 @@ bool FSimCopterCityBuildingDemolitionTest::RunTest(const FString& Parameters)
 	// be removed when it burns down (FUN_004a5fd0). Baked into the shared city mesh there is no
 	// per-building identity to remove, so this guards the whole chain: the placement map, the
 	// footprint clear, and the instance removal.
-	ASimCity2000CityActor* CityActor = FindLoadedCityActor();
-	if (CityActor == nullptr)
-	{
-		// No city in the loaded map - nothing to assert against, and failing here would only
-		// report on the test environment rather than on the code.
-		AddInfo(TEXT("No loaded SimCity2000 city actor; skipping building demolition checks."));
-		return true;
-	}
-
+	// A saved editor map can reference another machine's city path, and its runtime building
+	// meshes are not serialized. Own a real Islandtown fixture instead of borrowing editor state.
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
+		.CreateNavigation(false).CreateAISystem(false);
+	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	ON_SCOPE_EXIT { World->DestroyWorld(false); };
+	ASimCity2000CityActor* CityActor = World->SpawnActorDeferred<ASimCity2000CityActor>(
+		ASimCity2000CityActor::StaticClass(), FTransform::Identity);
+	CityActor->bLoadOnConstruction = false;
+	CityActor->bRenderProceduralMapExtension = false;
+	CityActor->bRenderStreetLightSpotLights = false;
+	CityActor->CityFile.FilePath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() /
+		TEXT("../Reference/SimCopterOriginalGame/cities/career/city1.sc2"));
+	CityActor->FinishSpawning(FTransform::Identity);
+	CityActor->RebuildCity();
 	// A freshly built city must report its instances intact. BeginPlay rebuilds when this is
 	// false - the recovery for a duplicated (PIE) world whose runtime meshes lost their render
 	// data - so a false negative here would silently rebuild the whole city every time play starts.
@@ -328,8 +315,8 @@ bool FSimCopterCityBuildingDemolitionTest::RunTest(const FString& Parameters)
 
 	if (FoundX == INDEX_NONE)
 	{
-		AddInfo(TEXT("Loaded city has no instanced buildings; skipping building demolition checks."));
-		return true;
+		AddError(TEXT("Islandtown fixture must contain instanced buildings."));
+		return false;
 	}
 
 	FBox BuildingBounds(ForceInit);

@@ -38,7 +38,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogSimCopterTrafficSystem, Log, All);
 namespace
 {
 constexpr uint32 TrafficRuntimeSaveMagic = 0x54524146; // 'TRAF'
-constexpr int32 TrafficRuntimeSaveVersion = 2;
+constexpr int32 TrafficRuntimeSaveVersion = 3;
 
 void SerializeTrafficBool(FArchive& Archive, bool& Value)
 {
@@ -839,6 +839,8 @@ bool ASimCopterTrafficSystemActor::CaptureRuntimeSaveState(TArray<uint8>& OutDat
 			Writer << OfficerName;
 			SerializeTrafficBool(Writer, Vehicle.bOfficerDeployed);
 			Writer << ParamedicName << Vehicle.MarkerTile;
+			FName BodyName = Vehicle.RecoveryBody.IsValid() ? Vehicle.RecoveryBody->GetRuntimeSaveIdentityName() : NAME_None;
+			Writer << BodyName << Vehicle.BodyRecoveryPhase << Vehicle.BodyRecoverySeconds;
 		}
 	}
 	int32 TransitCount = Algo::CountIf(TunnelTransits, [](const FTunnelTransit& Trip) { return Trip.Agent.IsValid(); });
@@ -873,6 +875,8 @@ bool ASimCopterTrafficSystemActor::RestoreRuntimeSaveState(
 	Reader << HospitalPostCount;
 	if (HospitalPostCount < 0 || HospitalPostCount > 64) return false;
 	HospitalParamedicLastSeenSeconds.Reset();
+	BuildingRoofPostByTile.Reset();
+	ClearServiceEntrancePosts();
 	const double RestoreWorldSeconds = GetWorld()->GetTimeSeconds();
 	for (int32 Index = 0; Index < HospitalPostCount; ++Index)
 	{
@@ -1018,6 +1022,13 @@ bool ASimCopterTrafficSystemActor::RestoreRuntimeSaveState(
 			Reader << OfficerName;
 			SerializeTrafficBool(Reader, Vehicle.bOfficerDeployed);
 			Reader << ParamedicName << Vehicle.MarkerTile;
+			if (Version >= 3)
+			{
+				FName BodyName;
+				Reader << BodyName << Vehicle.BodyRecoveryPhase << Vehicle.BodyRecoverySeconds;
+				if (Vehicle.BodyRecoveryPhase > 3) return false;
+				Vehicle.RecoveryBody = Cast<ASimCopterGroundAgent>(SavedActorMap.FindRef(BodyName));
+			}
 			if (State > static_cast<uint8>(ESimCopterDispatchVehicleState::Idle)) return false;
 			Vehicle.State = static_cast<ESimCopterDispatchVehicleState>(State);
 			Vehicle.Agent = Cast<ASimCopterGroundAgent>(SavedActorMap.FindRef(AgentName));
@@ -1075,6 +1086,7 @@ bool ASimCopterTrafficSystemActor::RestoreRuntimeSaveState(
 void ASimCopterTrafficSystemActor::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	UpdateServiceEntrances(DeltaSeconds);
 	// Exclusive CSV stats (csvprofile / Docs/memory/mac-performance.md) so each pass shows up on
 	// its own instead of inside TickActors.
 	{
@@ -1443,14 +1455,14 @@ bool ASimCopterTrafficSystemActor::TryFindClearRoofSpawnPoint(
 	const FVector& RoofCenter,
 	const float SearchHalfExtentCm,
 	const int32 CandidateOffset,
-	FVector& OutSurfacePoint) const
+	FVector& OutSurfacePoint, const ASimCopterGroundAgent* Ignore) const
 {
 	if (GetWorld() == nullptr)
 	{
 		return false;
 	}
 
-	constexpr int32 CandidateCount = 14;
+	constexpr int32 CandidateCount = 48;
 	const float GoldenAngleRadians = 2.39996323f;
 
 	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterMissionRoofSpawn), false, this);
@@ -1494,6 +1506,7 @@ bool ASimCopterTrafficSystemActor::TryFindClearRoofSpawnPoint(
 		// two comfortably.
 		if (FMath::Abs(float(Hit.ImpactPoint.Z) - float(RoofCenter.Z)) <= 100.0f &&
 			IsRooftopRescueSurfaceFlat(Hit.ImpactNormal) &&
+			IsResponderSpawnClear(SurfacePoint, Ignore) &&
 			IsRoofSpawnPointClearOfDecorations(SurfacePoint, float(RoofCenter.Z), QueryParams))
 		{
 			OutSurfacePoint = SurfacePoint;
@@ -2326,6 +2339,19 @@ int32 ASimCopterTrafficSystemActor::SpawnMissionSwimmersAtWorldLocation(
 		}
 
 		Person->InitialPersonState = SpawnMode;
+		// MeshName does not select a privanim figure. A civilian shuffle bag avoids clones,
+		// including aircraft-deck rescues whose caller spawns one survivor at a time.
+		if (RescueAppearanceBag.IsEmpty() || RescueAppearanceEventId != EventId)
+		{
+			RescueAppearanceEventId = EventId;
+			// Six civilian classes with six distinct portraits. The larger figure-only bag
+			// repeated heads 5/7 for several men, so cabin portraits could still be clones.
+			RescueAppearanceBag = { 0, 1, 2, 3, 4, 11 };
+			for (int32 BagIndex = RescueAppearanceBag.Num() - 1; BagIndex > 0; --BagIndex)
+				RescueAppearanceBag.Swap(BagIndex, RandomStream.RandRange(0, BagIndex));
+		}
+		Person->SetInitialBehaviorClass(RescueAppearanceBag.Pop(EAllowShrinking::No));
+
 		const FString MeshName = PedestrianMeshNames.Num() > 0
 			? PedestrianMeshNames[RandomStream.RandRange(0, PedestrianMeshNames.Num() - 1)]
 			: FString();
@@ -2672,7 +2698,8 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindNearestAvailablePersonI
 			Agent->IsActorBeingDestroyed() ||
 			Agent->IsMissionCarried() ||
 			Agent->GetBehaviorCarrier() != nullptr ||
-			(bRequirePersistentHospitalCrew && !Agent->IsPersistentHospitalRoofCrew()) ||
+			(bRequirePersistentHospitalCrew && (!Agent->IsPersistentHospitalRoofCrew() ||
+			 FMath::Abs(Agent->GetActorLocation().Z - Agent->GetCapsuleHalfHeightCm() - WorldLocation.Z) > 120)) ||
 			int16(Agent->GetBehaviorAttribute(EBhavAttr::State)) != int16(State) ||
 			FindPersonCarriedBy(*Agent) != nullptr)
 		{
@@ -2815,116 +2842,70 @@ void ASimCopterTrafficSystemActor::GetHospitalSites(TArray<FHospitalSite>& OutSi
 }
 
 ASimCopterGroundAgent* ASimCopterTrafficSystemActor::EnsureHospitalParamedicAtTile(
-	const int32 TileX,
-	const int32 TileY)
+	const int32 TileX, const int32 TileY, const int32 DesiredCrew)
 {
-	if (GetWorld() == nullptr ||
-		TileX < 0 || TileX >= FSimCity2000City::MapSize ||
-		TileY < 0 || TileY >= FSimCity2000City::MapSize ||
-		uint8(GetXbldTileId(TileX, TileY)) != 0xD1)
-	{
-		return nullptr;
-	}
+	if (uint8(GetXbldTileId(TileX, TileY)) != 0xD1) return nullptr;
+	EnsureBuildingEntranceCrew(TileX, TileY);
+	return EnsureServiceRoofCrew(TileX, TileY, DesiredCrew);
+}
 
-	FVector HospitalCenter = FVector::ZeroVector;
-	if (!TryGetTileCenterWorldLocation(TileX, TileY, HospitalCenter))
+ASimCopterGroundAgent* ASimCopterTrafficSystemActor::EnsureServiceRoofCrew(
+	const int32 TileX, const int32 TileY, const int32 DesiredCrew)
+{
+	const uint8 Building = uint8(GetXbldTileId(TileX, TileY));
+	if (!GetWorld() || (Building != 0xD1 && Building != 0xD2)) return nullptr;
+	const int32 State = Building == 0xD1 ? 5 : 7;
+	FVector RoofCenter;
+	float HalfExtent;
+	if (!TryGetBuildingRoofPost(TileX, TileY, RoofCenter, HalfExtent)) return nullptr;
+	const int32 Required = FMath::Clamp(DesiredCrew, 1, 8);
+	TArray<ASimCopterGroundAgent*> Crew;
+	auto Gather = [&]()
 	{
-		return nullptr;
-	}
-
-	const float RadiusCm =
-		float(FMath::Max(1, GetBuildingFootprintSize(TileX, TileY))) * ActiveTileSize;
-	auto FindPostedMedic = [this, &HospitalCenter, RadiusCm]() -> ASimCopterGroundAgent*
-	{
-		const float RadiusSq = FMath::Square(FMath::Max(1.0f, RadiusCm));
-		for (const TWeakObjectPtr<ASimCopterGroundAgent>& AgentPtr : PedestrianAgents)
+		Crew.Reset();
+		for (auto Weak : PedestrianAgents)
 		{
-			ASimCopterGroundAgent* Agent = AgentPtr.Get();
-			if (Agent == nullptr ||
-				Agent->IsActorBeingDestroyed() ||
-				Agent->InitialPersonState != 5 ||
-				Agent->MissionEventId != INDEX_NONE ||
-				Agent->GetBehaviorCarrier() != nullptr ||
-				Agent->IsMissionCarried() ||
-				Agent->GetBehaviorAttribute(EBhavAttr::Visible) == 0 ||
-				FVector::DistSquared2D(Agent->GetActorLocation(), HospitalCenter) > RadiusSq)
+			auto* Agent = Weak.Get();
+			if (!Agent || Agent->IsActorBeingDestroyed() || Agent->IsMissionPatientDead() ||
+				Agent->GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0 ||
+				Agent->GetBehaviorAttribute(EBhavAttr::State) != State || Agent->MissionEventId != INDEX_NONE ||
+				FVector::DistSquared2D(Agent->GetActorLocation(), RoofCenter) > FMath::Square(HalfExtent * 1.5f) ||
+				FMath::Abs(Agent->GetActorLocation().Z - RoofCenter.Z) > 180) continue;
+			// Include busy carriers and crew boarding a landed aircraft: do not endlessly backfill them.
+			if (!Agent->GetBehaviorCarrier())
 			{
-				continue;
+				Agent->SetHospitalRoofPost(RoofCenter, HalfExtent);
+				// Repair legacy saves with several workers occupying the same point.
+				const FVector Feet = Agent->GetActorLocation() - FVector(0, 0, Agent->GetCapsuleHalfHeightCm());
+				const bool bStacked = PedestrianAgents.ContainsByPredicate([Agent](const auto& Other)
+				{
+					return Other.IsValid() && Other.Get() != Agent && !Other->IsHidden() &&
+						!Other->GetBehaviorCarrier() && !Other->IsMissionCarried() &&
+						FVector::DistSquared(Other->GetActorLocation(),Agent->GetActorLocation()) < 4;
+				});
+				FVector Clear;
+				if (bStacked && TryFindClearRoofSpawnPoint(
+					RoofCenter, HalfExtent * 0.58f, 0, Clear, Agent))
+					Agent->SetActorLocation(Clear + FVector(0, 0, Agent->GetCapsuleHalfHeightCm() + 1));
 			}
-			return Agent;
-		}
-		return nullptr;
-	};
-
-	const FIntPoint HospitalTile(TileX, TileY);
-	const double NowSeconds = GetWorld()->GetTimeSeconds();
-
-	// Confine whoever is on this roof to it. The original's roof medic retires within seconds of
-	// spawning, so it never wanders; this one has to stand there for the length of a medevac, and a
-	// worker that walks or gets pushed off the edge leaves the helipad unstaffed with the player
-	// already inbound.
-	FVector RoofCenter = FVector::ZeroVector;
-	float RoofHalfExtentCm = 0.0f;
-	const bool bHasRoofPost = TryGetBuildingRoofPost(TileX, TileY, RoofCenter, RoofHalfExtentCm);
-	auto PostMedic = [bHasRoofPost, &RoofCenter, RoofHalfExtentCm](ASimCopterGroundAgent& Medic)
-	{
-		if (bHasRoofPost)
-		{
-			Medic.SetHospitalRoofPost(RoofCenter, RoofHalfExtentCm);
-		}
-		else
-		{
-			Medic.SetPersistentHospitalRoofCrew(true);
+			Crew.Add(Agent);
 		}
 	};
-
-	if (ASimCopterGroundAgent* Existing = FindPostedMedic())
+	Gather();
+	const FIntPoint Tile(TileX, TileY);
+	const double Now = GetWorld()->GetTimeSeconds();
+	const double* LastSeen = HospitalParamedicLastSeenSeconds.Find(Tile);
+	const bool bCanReplaceEmptyTeam = CanPostHospitalParamedic(LastSeen != nullptr, LastSeen ? *LastSeen : 0, Now, HospitalParamedicRespawnDelaySeconds);
+	if (Crew.IsEmpty() && !bCanReplaceEmptyTeam) return nullptr;
+	for (int32 Missing = Required - Crew.Num(); Missing > 0; --Missing)
 	{
-		PostMedic(*Existing);
-		HospitalParamedicLastSeenSeconds.Add(HospitalTile, NowSeconds);
-		return Existing;
+		if (!TrySpawnOriginalPersonAtTile(TileX, TileY, State == 5 ? 0x0c : 0x0e, State, INDEX_NONE, nullptr,
+			INDEX_NONE, true, true)) break;
+		Gather();
 	}
-
-	// The post is empty. Usually that is not because the medic vanished - it is because it just
-	// climbed into the player's helicopter, which gives it a carrier and hides it, so FindPostedMedic
-	// stops matching it on the very next tick. Backfilling immediately is what put a second
-	// paramedic on the roof the instant the first one boarded. Wait out the delay before posting a
-	// replacement; a roof that has never been staffed has no entry and so staffs immediately.
-	const double* LastSeenSeconds = HospitalParamedicLastSeenSeconds.Find(HospitalTile);
-	if (!CanPostHospitalParamedic(
-			LastSeenSeconds != nullptr,
-			LastSeenSeconds != nullptr ? *LastSeenSeconds : 0.0,
-			NowSeconds,
-			HospitalParamedicRespawnDelaySeconds))
-	{
-		return nullptr;
-	}
-
-	// This is mission infrastructure, not a random crowd roll. Retry every mission tick if the
-	// city surface is not ready yet, and do not let a full ambient pool veto the post.
-	if (!TrySpawnOriginalPersonAtTile(
-			TileX,
-			TileY,
-			/*BehaviorClass*/ 0x0c,
-			/*InitialState*/ 5,
-			/*InitialProgramId*/ INDEX_NONE,
-			/*ExplicitOriginalOffset*/ nullptr,
-			/*ClothesOffset*/ INDEX_NONE,
-			/*bPlaceOnBuildingRoof*/ true,
-			/*bBypassPopulationCap*/ true))
-	{
-		return nullptr;
-	}
-
-	ASimCopterGroundAgent* Spawned = FindPostedMedic();
-	if (Spawned != nullptr)
-	{
-		PostMedic(*Spawned);
-		HospitalParamedicLastSeenSeconds.Add(HospitalTile, NowSeconds);
-	}
-	// A failed spawn deliberately records nothing, so the next mission tick retries at once
-	// rather than serving out a delay for a medic that was never posted.
-	return Spawned;
+	if (Crew.IsEmpty()) return nullptr;
+	HospitalParamedicLastSeenSeconds.Add(Tile, Now);
+	return Crew[0];
 }
 
 ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindPersonCarriedBy(const ASimCopterGroundAgent& Carrier) const
@@ -2941,12 +2922,13 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindPersonCarriedBy(const A
 	return nullptr;
 }
 
-ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindMedevacPassengerAboard(const AActor* Carrier) const
+ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindMedevacPassengerAboard(const AActor* Carrier, ASimCopterGroundAgent* RequestingMedic) const
 {
-	if (Carrier == nullptr)
-	{
-		return nullptr;
-	}
+	if (Carrier == nullptr) return nullptr;
+	if (RequestingMedic)
+		if (const auto* Heli = Cast<ASimCopterHelicopterPawn>(Carrier); Heli &&
+			FMath::Abs(RequestingMedic->GetActorLocation().Z - RequestingMedic->GetCapsuleHalfHeightCm() -
+				Heli->GetPassengerDropWorldLocation().Z) > 150) return nullptr;
 	for (const TWeakObjectPtr<ASimCopterGroundAgent>& AgentPtr : PedestrianAgents)
 	{
 		ASimCopterGroundAgent* Agent = AgentPtr.Get();
@@ -2961,6 +2943,7 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindMedevacPassengerAboard(
 			(Agent->GetBehaviorAttribute(EBhavAttr::State) == 6 ||
 				Agent->GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0))
 		{
+			if (RequestingMedic && !Agent->TryClaimHospitalPatient(RequestingMedic)) continue;
 			return Agent;
 		}
 	}
@@ -3112,7 +3095,8 @@ int32 ASimCopterTrafficSystemActor::RemoveMissionPeople(int32 EventId)
 			PedestrianAgents.RemoveAtSwap(Index);
 			continue;
 		}
-		if (Agent->MissionEventId != EventId || Agent->IsMissionCarried() || Agent->GetBehaviorCarrier() != nullptr)
+		if (Agent->MissionEventId != EventId || Agent->IsMissionCarried() || Agent->GetBehaviorCarrier() != nullptr ||
+			Agent->IsMissionPatientDead())
 		{
 			continue;
 		}
@@ -3325,6 +3309,9 @@ bool ASimCopterTrafficSystemActor::RebuildSpawnData()
 	USimCopterLoadingSubsystem::SetStage(this, 9);
 	LastLoadError.Reset();
 	LastCitySource.Reset();
+	BuildingRoofPostByTile.Reset();
+	HospitalParamedicLastSeenSeconds.Reset();
+	ClearServiceEntrancePosts();
 	RoadNodes.Reset();
 	for (const FTunnelTransit& Trip : TunnelTransits)
 	{
@@ -3806,7 +3793,7 @@ bool ASimCopterTrafficSystemActor::TryGetDispatchVehicleTile(const FSimCopterDis
 SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergencyDispatch(
 	SimCopterDispatch::EService Service,
 	const FIntPoint& TargetTile,
-	bool bChaseSpotlight)
+	bool bChaseSpotlight, ASimCopterGroundAgent* RecoveryBody)
 {
 	const int32 ServiceIndex = static_cast<int32>(Service);
 	if (ServiceIndex < 0 || ServiceIndex >= DispatchServiceCount)
@@ -3880,6 +3867,9 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 		Vehicle.StationIndex = Outcome.StationIndex;
 	}
 
+	Vehicle.RecoveryBody = RecoveryBody;
+	Vehicle.BodyRecoveryPhase = RecoveryBody != nullptr ? 1 : 0;
+	Vehicle.BodyRecoverySeconds = 0.0f;
 	Vehicle.State = bChaseSpotlight
 		? ESimCopterDispatchVehicleState::Chasing
 		: ESimCopterDispatchVehicleState::Responding;
@@ -3906,6 +3896,22 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 		bChaseSpotlight ? TEXT(" [chase]") : TEXT(""));
 
 	return SimCopterDispatch::EDispatchResult::Dispatched;
+}
+
+void ASimCopterTrafficSystemActor::RecallPoliceNearest(const FIntPoint& Tile)
+{
+	FSimCopterDispatchVehicle* Nearest = nullptr;
+	int32 Best = MAX_int32;
+	for (auto& Vehicle : DispatchVehicles[static_cast<int32>(SimCopterDispatch::EService::Police)])
+	{
+		if (!Vehicle.Agent.IsValid() || Vehicle.State == ESimCopterDispatchVehicleState::Empty ||
+			Vehicle.State == ESimCopterDispatchVehicleState::Idle || Vehicle.State == ESimCopterDispatchVehicleState::Returning) continue;
+		FIntPoint Position;
+		if (!TryGetDispatchVehicleTile(Vehicle, Position)) continue;
+		const int32 Distance = SimCopterDispatch::TileCost(Tile, Position);
+		if (Distance < Best) { Best = Distance; Nearest = &Vehicle; }
+	}
+	if (Nearest != nullptr) RecallDispatchVehicle(*Nearest);
 }
 
 bool ASimCopterTrafficSystemActor::ClearEmergencyDispatch(SimCopterDispatch::EService Service, const FIntPoint& SpotlightTile)
@@ -4257,6 +4263,20 @@ void ASimCopterTrafficSystemActor::RecallDispatchVehicle(FSimCopterDispatchVehic
 		return;
 	}
 
+	// A recalled unit must not strand a patient on a crew member that no longer has a job.
+	if (Vehicle.BodyRecoveryPhase != 0 && Vehicle.BodyRecoveryPhase != 3)
+	{
+		if (auto* Body = Vehicle.RecoveryBody.Get(); Body && Body->GetBehaviorCarrier() == Vehicle.DeployedParamedic.Get())
+			Body->AlightFromCarrier(false);
+		if (auto* Medic = Vehicle.DeployedParamedic.Get())
+		{
+			Medic->SetBehaviorStartingVehicle(nullptr);
+			if (!Medic->IsMissionPatientDead()) Medic->Destroy();
+		}
+		Vehicle.DeployedParamedic.Reset();
+		Vehicle.RecoveryBody.Reset();
+		Vehicle.BodyRecoveryPhase = 0;
+	}
 	Vehicle.State = ESimCopterDispatchVehicleState::Returning;
 	Vehicle.StayTimerSeconds = 0.0f;
 	Vehicle.ActionTimerSeconds = 0.0f;
@@ -4273,6 +4293,28 @@ void ASimCopterTrafficSystemActor::ReleaseDispatchVehicle(SimCopterDispatch::ESe
 	}
 
 	FSimCopterDispatchVehicle& Vehicle = DispatchVehicles[ServiceIndex][SlotIndex];
+
+	if (auto* Body = Vehicle.RecoveryBody.Get())
+	{
+		FIntPoint Tile;
+		if (Vehicle.BodyRecoveryPhase == 3 && TryGetDispatchVehicleTile(Vehicle, Tile) && Tile == Vehicle.HomeTile)
+		{
+			// The same body rides home and is removed only at the hospital.
+			Body->Destroy();
+		}
+		else if (Body->GetBehaviorCarrier() == Vehicle.Agent.Get() || Body->GetBehaviorCarrier() == Vehicle.DeployedParamedic.Get())
+		{
+			Body->AlightFromCarrier(false); // lost/destroyed unit: leave the body for another crew
+		}
+	}
+	if (Vehicle.BodyRecoveryPhase != 0)
+	{
+		if (auto* Medic = Vehicle.DeployedParamedic.Get())
+		{
+			Medic->SetBehaviorStartingVehicle(nullptr);
+			if (!Medic->IsMissionPatientDead()) Medic->Destroy();
+		}
+	}
 
 	// FUN_004bc660: give the station its slot back.
 	if (DispatchStations[ServiceIndex].IsValidIndex(Vehicle.StationIndex))
@@ -5273,6 +5315,11 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 	// The original updates the marker inside this same tick, off the state it is about to act
 	// on, so it appears the frame the unit is dispatched and clears the frame it arrives.
 	UpdateDispatchMarker(Service, Vehicle);
+	if (Vehicle.BodyRecoveryPhase != 0 && Vehicle.State == ESimCopterDispatchVehicleState::OnScene)
+	{
+		UpdateBodyRecovery(Vehicle, DeltaSeconds);
+		return;
+	}
 
 	switch (Vehicle.State)
 	{
@@ -5505,8 +5552,93 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 	}
 }
 
+
+void ASimCopterTrafficSystemActor::DispatchAmbulancesForBodies(const float DeltaSeconds)
+{
+	BodyDispatchCountdown -= DeltaSeconds;
+	if (BodyDispatchCountdown > 0.0f) return;
+	BodyDispatchCountdown = 2.0f;
+	const auto& Ambulances = DispatchVehicles[static_cast<int32>(SimCopterDispatch::EService::Ambulance)];
+	for (const auto& PersonPtr : PedestrianAgents)
+	{
+		auto* Body = PersonPtr.Get();
+		if (!Body || Body->IsActorBeingDestroyed() || !Body->IsMissionPatientDead() ||
+			Body->IsHidden() || Body->GetBehaviorCarrier() != nullptr || Body->IsMissionCarried()) continue;
+		if (Ambulances.ContainsByPredicate([Body](const FSimCopterDispatchVehicle& Vehicle)
+			{ return Vehicle.BodyRecoveryPhase != 0 && Vehicle.RecoveryBody.Get() == Body; })) continue;
+		FIntPoint Tile;
+		if (TryGetPeopleTileCoordinateAtWorldLocation(Body->GetActorLocation(), Tile.X, Tile.Y))
+		{
+			// Reuse hospital capacity and road routing; unavailable/unreachable calls remain pending.
+			RequestEmergencyDispatch(SimCopterDispatch::EService::Ambulance, Tile, false, Body);
+		}
+	}
+}
+
+void ASimCopterTrafficSystemActor::UpdateBodyRecovery(FSimCopterDispatchVehicle& Vehicle, const float DeltaSeconds)
+{
+	auto* Body = Vehicle.RecoveryBody.Get();
+	auto* Ambulance = Vehicle.Agent.Get();
+	Vehicle.BodyRecoverySeconds += DeltaSeconds;
+	if (!Body || Body->IsActorBeingDestroyed() || !Ambulance || Vehicle.BodyRecoverySeconds > 180.0f)
+	{
+		RecallDispatchVehicle(Vehicle);
+		return;
+	}
+	auto* Medic = Vehicle.DeployedParamedic.Get();
+	if (Medic && (Medic->IsActorBeingDestroyed() || Medic->IsMissionPatientDead()))
+	{
+		// Keep a deceased crew member in the recovery queue as well.
+		if (Body->GetBehaviorCarrier() == Medic) Body->AlightFromCarrier(false);
+		Medic->SetBehaviorStartingVehicle(nullptr);
+		Vehicle.DeployedParamedic.Reset();
+		Vehicle.BodyRecoveryPhase = 1;
+		Medic = nullptr;
+	}
+	if (!Medic)
+	{
+		FIntPoint Tile;
+		if (!TryGetDispatchVehicleTile(Vehicle, Tile) || !TrySpawnMissionPerson(
+			5, SimCopterDispatch::AmbulanceMedicBehaviorClass, Tile.X, Tile.Y,
+			INDEX_NONE, TEXT("Medik"), &Medic)) return;
+		Medic->SetBehaviorStartingVehicle(Ambulance);
+		Medic->SetMissionScriptedMover();
+		Medic->SetBehaviorGroundSnap(true);
+		Vehicle.DeployedParamedic = Medic;
+	}
+	if (Body->GetBehaviorCarrier() != nullptr && Body->GetBehaviorCarrier() != Medic &&
+		Body->GetBehaviorCarrier() != Ambulance)
+	{
+		RecallDispatchVehicle(Vehicle); // another real carrier took over
+		return;
+	}
+	const FVector Target = Vehicle.BodyRecoveryPhase == 1 ? Body->GetActorLocation() : Ambulance->GetActorLocation();
+	Medic->SetMoveTarget(Target);
+	const float Reach = Vehicle.BodyRecoveryPhase == 1
+		? Medic->GetCollisionRadiusCm() + Body->GetCollisionRadiusCm() + 25.0f
+		: 110.0f;
+	if (FVector::Dist2D(Medic->GetActorLocation(), Target) > Reach ||
+		FMath::Abs(Medic->GetActorLocation().Z - Target.Z) > 110.0f) return;
+	if (Vehicle.BodyRecoveryPhase == 1)
+	{
+		if (Body->BoardCarrier(Medic, false, false, true))
+		{
+			Vehicle.BodyRecoveryPhase = 2;
+			Medic->SetMoveTarget(Ambulance->GetActorLocation());
+		}
+	}
+	else if (Body->BoardCarrier(Ambulance, false))
+	{
+		Vehicle.BodyRecoveryPhase = 3;
+		Medic->Destroy();
+		Vehicle.DeployedParamedic.Reset();
+		RecallDispatchVehicle(Vehicle);
+	}
+}
+
 void ASimCopterTrafficSystemActor::UpdateDispatchVehicles(float DeltaSeconds)
 {
+	DispatchAmbulancesForBodies(DeltaSeconds);
 	for (int32 ServiceIndex = 0; ServiceIndex < DispatchServiceCount; ++ServiceIndex)
 	{
 		const SimCopterDispatch::EService Service = static_cast<SimCopterDispatch::EService>(ServiceIndex);
@@ -6423,7 +6555,8 @@ void ASimCopterTrafficSystemActor::PruneAgentArray(TArray<TWeakObjectPtr<ASimCop
 		// killed, or removed with the vehicle they were on). Culling them stranded every victim
 		// of a mission that starts away from the player - a train rescue puts its passengers on
 		// a train that can be anywhere on the map, and they were being destroyed the same frame.
-		if (Agent->MissionEventId != INDEX_NONE ||
+		if (Agent->IsVehicleImmobilized() || Agent->IsInPoliceCustody() || Agent->IsMissionCarried() || Agent->GetBehaviorCarrier() != nullptr || Agent->MissionEventId != INDEX_NONE ||
+			Agent->IsMissionPatientDead() ||
 			Agent->IsPersistentHospitalRoofCrew() ||
 			Agent->GetBehaviorStartingVehicle() != nullptr)
 		{
@@ -8760,6 +8893,14 @@ int32 ASimCopterTrafficSystemActor::TrySpawnSpecialBuildingPeople(int32 TileX, i
 	{
 		return 0;
 	}
+	if (BuildingId == 0xD1 || BuildingId == 0xD2)
+	{
+		--AttemptsRemaining;
+		const int32 Before = PedestrianAgents.Num();
+		EnsureBuildingEntranceCrew(TileX, TileY);
+		EnsureServiceRoofCrew(TileX, TileY);
+		return PedestrianAgents.Num() - Before;
+	}
 	// Both roof buildings are tested for their own crew rather than for any pedestrian at all:
 	// their man stands on the roof, so a passer-by on the pavement below is not a duplicate of
 	// him, and letting one veto the spawn left busy cities with permanently empty helipads. The
@@ -8894,7 +9035,7 @@ bool ASimCopterTrafficSystemActor::TrySpawnOriginalPersonAtTile(
 	const FVector2D* ExplicitOriginalOffset,
 	int32 ClothesOffset,
 	bool bPlaceOnBuildingRoof,
-	bool bBypassPopulationCap)
+	bool bBypassPopulationCap, const FVector* ExplicitWorldSurface)
 {
 	if (GetWorld() == nullptr ||
 		GroundAgentClass == nullptr ||
@@ -8913,7 +9054,12 @@ bool ASimCopterTrafficSystemActor::TrySpawnOriginalPersonAtTile(
 	FVector SpawnBaseLocation = Node.Location;
 	bool bFoundSpawnLocation = false;
 
-	if (bPlaceOnBuildingRoof)
+	if (ExplicitWorldSurface)
+	{
+		SpawnBaseLocation = *ExplicitWorldSurface;
+		bFoundSpawnLocation = IsResponderSpawnClear(SpawnBaseLocation) && IsPedestrianSpawnLocationOpen(SpawnBaseLocation);
+	}
+	else if (bPlaceOnBuildingRoof)
 	{
 		// On top of the building, not beside it. The open-ground test below would reject a roof
 		// out of hand, so this goes through the same roof post the rooftop-rescue survivors use -
@@ -8933,15 +9079,9 @@ bool ASimCopterTrafficSystemActor::TrySpawnOriginalPersonAtTile(
 			if (TryFindClearRoofSpawnPoint(RoofCenter, SearchHalfExtentCm, /*CandidateOffset*/ 0, RoofSurfacePoint))
 			{
 				SpawnBaseLocation = RoofSurfacePoint;
+				bFoundSpawnLocation = true;
 			}
-			else
-			{
-				// Nowhere on the deck passed. Unlike a rooftop rescue, which can simply not happen
-				// at this building, a hospital with no medic on its roof has no medevac service at
-				// all - so post them at the deck centre and accept whatever is up there.
-				SpawnBaseLocation = RoofCenter;
-			}
-			bFoundSpawnLocation = true;
+			// A full or obstructed roof retries later; never stack bodies at its centre.
 		}
 	}
 	else if (ExplicitOriginalOffset != nullptr)
@@ -9034,7 +9174,7 @@ bool ASimCopterTrafficSystemActor::TrySpawnOriginalPersonAtTile(
 		// Keep the aerial cop available like the hospital crew. Its BHAV 1051 begins with a
 		// run and can retire while waiting; the shared persistent roof post prevents walking
 		// off the station or vanishing. BoardCarrier relinquishes confinement when it boards.
-		if (InitialState == 7)
+		if (InitialState == 5 || InitialState == 7)
 		{
 			FVector RoofCenter;
 			float RoofHalfExtentCm = 0.0f;

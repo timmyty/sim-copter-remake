@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 class FArchive;
+class FSimCopterAirOperationsTest;
 
 // Decompiled SimCopter mission/event system, ported from SimCopter.exe.
 //
@@ -72,6 +73,9 @@ enum EType : int32
 	// point when no job is selected. (The remake used to call this bit "UFO"; the flying UFO is
 	// ambient plane slot 1, and its [General Miss] reward is EVT_UfoResolved, not a record.)
 	TYPE_BaseLocation   = 0x100000,
+	// Remake recovery jobs use the existing CarsCrashed/CarsCleared counters.
+	TYPE_VehicleTow = 0x200000,
+	TYPE_BoatTow = 0x400000,
 };
 
 // SCHOOK: RioterSpawn 0x004c4190, spawn-mode-3 arm.
@@ -653,6 +657,9 @@ public:
 	// Creates a medevac record for an already-spawned injured victim. Used when the player causes
 	// the injury, so completion pays no end reward.
 	int32 CreatePlayerCausedMedevacAt(int32 TileX, int32 TileY);
+	int32 CreateIncidentMedevacAt(int32 TileX, int32 TileY);
+	void ReleaseInjuredMissionPerson(int32 EventId, int32 PersonState);
+	int32 CreateExistingVictimMedevacAt(int32 TileX, int32 TileY, bool bPlayerCaused);
 
 	void AdjustVictimsPickedUp(int32 EventId, int32 Delta);
 
@@ -755,6 +762,8 @@ public:
 	bool SerializeRuntimeState(FArchive& Archive);
 
 private:
+	friend class ::FSimCopterAirOperationsTest;
+	friend class FSimCopterNpcMedicalTest;
 	ISimCopterMissionWorld* World = nullptr;
 	FSimCopterMsvcRand Rand;
 	FSimCopterCareerCity CareerCity;

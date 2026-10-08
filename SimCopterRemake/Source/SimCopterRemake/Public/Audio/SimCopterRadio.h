@@ -60,6 +60,8 @@ struct FSimCopterRadioStation
 	UPROPERTY()
 	TArray<FString> Jingle;
 
+	bool bSequential = false;
+
 	bool HasContent() const { return Music.Num() > 0 || Dj.Num() > 0 || Jingle.Num() > 0; }
 };
 
@@ -124,7 +126,7 @@ public:
 	ESimCopterRadioSlot GetCurrentSlot() const { return CurrentSlot; }
 	const FString& GetCurrentTitle() const { return CurrentTitle; }
 
-	/** 0..1, applied on top of the mixer's master volume. */
+	/** Normalized slider 0..1; the audio channel maps this to 0..2 times master gain. */
 	void SetVolume(float InVolume);
 	float GetVolume() const { return Volume; }
 
@@ -174,6 +176,16 @@ public:
 	static constexpr int32 BackToBackMusicPercent = 10;
 
 private:
+	friend class FSimCopterRadioSequentialTest;
+	bool IsSequentialStation() const;
+	void SaveSequentialProgress();
+	void SuspendSequentialPlayback();
+	int32 SequentialTrack = 0;
+	float SequentialOffset = 0.0f;
+	double SequentialStartTime = 0.0;
+	double LastProgressSave = 0.0;
+	bool bSequentialPlaying = false;
+
 	UPROPERTY(Transient)
 	TArray<FSimCopterRadioStation> Stations;
 

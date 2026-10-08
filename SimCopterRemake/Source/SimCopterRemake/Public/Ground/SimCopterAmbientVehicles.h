@@ -114,6 +114,9 @@ struct FSimCopterAmbientBoat
 	float RespawnAccumSeconds = 0.0f;           // +0x4f (delay +0x4b = 10 s, ambient only)
 	int32 EventId = INDEX_NONE;                 // +0x53
 	float MissionTimerSeconds = 0.0f;           // +0x57
+	bool bTowAttached = false;
+	int32 TowEventId = INDEX_NONE;
+	float RepairDisplaySeconds = 0;
 	float WakeTimerSeconds = 0.9f;              // +0x0b (0xe666)
 	FVector World = FVector::ZeroVector;        // +0x97/+0x9b/+0x9f
 	// Remake-only. World is the position on the sea's REST plane, which is what the tile/target
@@ -179,6 +182,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterAmbientVehiclesActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterRescuePilotRuntimeTest;
 
 public:
 	ASimCopterAmbientVehiclesActor();
@@ -217,6 +221,10 @@ public:
 	// boat, 2 = a flying plane, 3 = the nearest burning wreck.
 	bool TryGetDebugViewTarget(int32 Which, FVector& OutWorld) const;
 
+	bool FindTowableBoat(const FVector& Near, float Radius, int32& OutIndex) const;
+	bool SetBoatTow(int32 Index, bool bTowed, const FVector& Location);
+	bool FinishBoatTow(int32 Index);
+	bool GetBoatTowLocation(int32 Index, FVector& Location) const;
 	bool CaptureRuntimeSaveState(TArray<uint8>& OutData);
 	bool RestoreRuntimeSaveState(const TArray<uint8>& Data);
 	// Stable component owned by the fixed UFO pool. Restored abductees relink to it after traffic
@@ -271,6 +279,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UMaterialInterface> VertexColorMaterial;
+	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> UfoHullMaterial;
+	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> UfoCanopyMaterial;
+	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> UfoDriveMaterial;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UProceduralMeshComponent>> OwnedMeshes;
@@ -282,6 +293,9 @@ private:
 	// Crash leftovers, and the people riding the train's first car during a rescue.
 	TArray<FSimCopterVehicleWreck> Wrecks;
 	int32 NextWreckKey = 1;
+	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterPlaneDeckRescueTest;
+	FSimCopterVehicleWreck* PendingPlaneRescueWreck = nullptr;
 	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> TrainRoofRiders;
 
 	// Local-space top of each model, taken from the built geometry so riders sit on the roof
@@ -351,13 +365,10 @@ private:
 		const FVector& Forward,
 		FVector& OutDisplayWorld,
 		FRotator& OutTilt) const;
-	// One survivor in the water beside the capsized boat, holding the offset from the hull they
-	// were spawned at (X ahead, Y to starboard, Z above the sea) so the group drifts and heaves
-	// with the boat instead of being left standing on the rest plane.
+	// Rescue occupants own hull-local footholds; this list tracks handoffs and safe hull towing.
 	struct FSimCopterBoatRider
 	{
 		TWeakObjectPtr<class ASimCopterGroundAgent> Person;
-		FVector LocalOffset = FVector::ZeroVector;
 	};
 	// Keeps those survivors with the boat while it heaves, the way the train's roof survivors are
 	// kept on their carriage.

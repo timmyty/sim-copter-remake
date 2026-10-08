@@ -13,6 +13,8 @@ FDispatchSelection GetDispatchSelection(const int32 Slot)
 		{static_cast<int32>(EService::Police), false, TEXT("Police")},
 		{static_cast<int32>(EService::Ambulance), false, TEXT("Ambulance")},
 		{static_cast<int32>(EService::Police), true, TEXT("Police (Chase)")},
+		{100, false, TEXT("Air: Map Mission")},
+		{101, false, TEXT("Air: Automatic")},
 	};
 	return Slot >= 0 && Slot < DispatchSlotCount ? Entries[Slot] : FDispatchSelection{INDEX_NONE, false, TEXT("")};
 }

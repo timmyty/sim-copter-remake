@@ -140,6 +140,19 @@ void USimCopterCareerSubsystem::EnsurePricesLoaded(const FString& OriginalGameRo
 
 int32 USimCopterCareerSubsystem::GetHelicopterPrice(const int32 TypeIndex) const
 {
+	// Requested special purchase: always derive from current civilian prices, not Apache's twk cost.
+	if (TypeIndex == 2)
+	{
+		int32 Highest = 0;
+		for (const auto& Definition : SimCopterHelicopterRegistry::GetDefinitions())
+		{
+			if (Definition.bApacheArmament) continue;
+			const int32 Index = Definition.InternalTypeIndex;
+			if (!HelicopterPrices.IsValidIndex(Index) || HelicopterPrices[Index] <= 0) return 0;
+			Highest = FMath::Max(Highest, HelicopterPrices[Index]);
+		}
+		return Highest <= MAX_int32 / 3 ? Highest * 3 : 0;
+	}
 	return HelicopterPrices.IsValidIndex(TypeIndex) ? HelicopterPrices[TypeIndex] : 0;
 }
 
@@ -189,6 +202,8 @@ void USimCopterCareerSubsystem::AddLogEntry(
 
 void USimCopterCareerSubsystem::BeginCareer()
 {
+	bApacheEncounterSpawned = false;
+	bAirSupportUnlocked = false;
 	LogEntries.Reset();
 	OwnedHelicopterMask = 0;
 	SetHelicopterOwned(StartingHelicopterTypeIndex, true);
@@ -201,6 +216,7 @@ void USimCopterCareerSubsystem::BeginCareer()
 
 void USimCopterCareerSubsystem::ContinueCareerIntoNextCity()
 {
+	bApacheEncounterSpawned = false;
 	// FUN_00408210 touches none of this: the books and the log carry straight over. Only the
 	// depreciation resets, and not here - FUN_0047a240 re-places every owned airframe and
 	// FUN_00484790 zeroes each one's heli[0xcd], which is the accrual FUN_0048b070 subtracts

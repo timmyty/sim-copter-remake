@@ -22,19 +22,23 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 		case EContext::Camera:
 			Add(TEXT("rs"), TEXT("Zoom camera"));
 			Add(TEXT("x"), TEXT("Toggle spotlight"));
+			if (State.bCanExit) Add(TEXT("b"), TEXT("Exit helicopter"));
+			Add(TEXT("y"), TEXT("Police taser"));
 			Add(TEXT("r3"), TEXT("Release to return to tools"));
 			break;
 		case EContext::ToolWheel:
 			Add(TEXT("rs"), TEXT("Select tool"));
-			Add(TEXT("lb"), TEXT("Release to equip"));
+			Add(TEXT("a"), TEXT("Equip tool"));
+			Add(TEXT("y"), TEXT("Switch to Dispatch"));
 			Add(TEXT("b"), TEXT("Cancel"));
 			if (State.bHasPassengers) Add(TEXT("x"), TEXT("Select passenger"));
 			break;
 		case EContext::DispatchWheel:
 			Add(TEXT("rs"), TEXT("Select service"));
-			Add(TEXT("rb"), TEXT("Release to dispatch"));
+			Add(TEXT("a"), TEXT("Dispatch service"));
+			Add(TEXT("y"), TEXT("Switch to Tools"));
 			Add(TEXT("b"), TEXT("Cancel"));
-			Add(TEXT("y"), TEXT("Recall all"));
+			Add(TEXT("x"), TEXT("Recall all"));
 			break;
 		case EContext::Passengers:
 			Add(TEXT("horizontal"), TEXT("Select passenger"));
@@ -47,7 +51,11 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			Add(TEXT("b"), TEXT("Back"));
 			break;
 		case EContext::OnFoot:
+			Add(TEXT("lt"), TEXT("Hold to aim taser"));
+			Add(TEXT("rt"), TEXT("Fire taser"));
+			Add(TEXT("ls"), TEXT("Walk up to carry downed people"));
 			Add(TEXT("a"), TEXT("Jump"));
+			Add(TEXT("b"), TEXT("Toggle parachute while falling"));
 			if (State.bCanBoard) Add(TEXT("y"), TEXT("Enter helicopter"));
 			if (State.bCarryingPerson) Add(TEXT("x"), TEXT("Put down passenger"));
 			break;
@@ -57,10 +65,11 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 				Add(TEXT("x"), State.bMegaphone ? FString(TEXT("Broadcast: ")) + State.Message : State.ToolAction);
 				if (State.bMegaphone) Add(TEXT("horizontal"), TEXT("Change message"));
 				else if (State.bRope) Add(TEXT("vertical"), TEXT("Raise / lower"));
-				Add(TEXT("lb"), TEXT("Hold to change tool"));
 			}
-			Add(TEXT("rb"), TEXT("Hold to dispatch"));
-			if (State.bCanExit) Add(TEXT("y"), TEXT("Exit helicopter"));
+			Add(TEXT("y"), TEXT("Open Tools / switch Dispatch"));
+			Add(TEXT("lb"), TEXT("LB / RB: turn left / right"));
+			Add(TEXT("y"), TEXT("R3 + Y: police taser"));
+			if (State.bCanExit) Add(TEXT("b"), TEXT("R3 + B: exit helicopter"));
 			break;
 		}
 	}

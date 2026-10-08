@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterAmbientVehicles.h"
+#include "Ground/SimCopterRescueDeck.h"
+#include "Ground/SimCopterUfoMesh.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "City/SimCity2000CityActor.h"
@@ -28,7 +30,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogSimCopterAmbientVehicles, Log, All);
 namespace
 {
 constexpr uint32 AmbientRuntimeSaveMagic = 0x414d4249; // 'AMBI'
-constexpr int32 AmbientRuntimeSaveVersion = 1;
+constexpr int32 AmbientRuntimeSaveVersion = 2;
 
 void SerializeAmbientBool(FArchive& Archive, bool& Value)
 {
@@ -204,6 +206,12 @@ ASimCopterAmbientVehiclesActor::ASimCopterAmbientVehiclesActor()
 	{
 		VertexColorMaterial = ModelMaterialFinder.Object;
 	}
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Hull(TEXT("/Game/Art/UFO/M_UFO_Hull.M_UFO_Hull"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Canopy(TEXT("/Game/Art/UFO/M_UFO_Canopy.M_UFO_Canopy"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Drive(TEXT("/Game/Art/UFO/M_UFO_Drive.M_UFO_Drive"));
+	UfoHullMaterial = Hull.Object;
+	UfoCanopyMaterial = Canopy.Object;
+	UfoDriveMaterial = Drive.Object;
 }
 
 void ASimCopterAmbientVehiclesActor::BeginPlay()
@@ -261,6 +269,7 @@ bool ASimCopterAmbientVehiclesActor::CaptureRuntimeSaveState(TArray<uint8>& OutD
 		Writer << Boat.Direction << Boat.DistanceToTargetCm << Boat.SpeedCmPerSec << Boat.BaseSpeedCmPerSec;
 		Writer << Boat.Tile << Boat.TargetTile << Boat.PreviousTile << Boat.RespawnAccumSeconds;
 		Writer << Boat.EventId << Boat.MissionTimerSeconds << Boat.WakeTimerSeconds << Boat.World;
+		Writer << Boat.bTowAttached << Boat.TowEventId << Boat.RepairDisplaySeconds;
 	}
 	SerializeAmbientBool(Writer, Train.bVisible);
 	SerializeAmbientBool(Writer, Train.bCrashRequested);
@@ -299,7 +308,7 @@ bool ASimCopterAmbientVehiclesActor::RestoreRuntimeSaveState(const TArray<uint8>
 	int32 Version = 0;
 	int32 RandomCurrent = 0;
 	Reader << Magic << Version << RandomCurrent << UfoBeamTickAccumSeconds << NextWreckKey;
-	if (Magic != AmbientRuntimeSaveMagic || Version != AmbientRuntimeSaveVersion) return false;
+	if (Magic != AmbientRuntimeSaveMagic || (Version < 1 || Version > AmbientRuntimeSaveVersion)) return false;
 	RandomStream.Initialize(RandomCurrent);
 
 	for (FSimCopterAmbientPlane& Plane : Planes)
@@ -322,6 +331,8 @@ bool ASimCopterAmbientVehiclesActor::RestoreRuntimeSaveState(const TArray<uint8>
 		Reader << Boat.Direction << Boat.DistanceToTargetCm << Boat.SpeedCmPerSec << Boat.BaseSpeedCmPerSec;
 		Reader << Boat.Tile << Boat.TargetTile << Boat.PreviousTile << Boat.RespawnAccumSeconds;
 		Reader << Boat.EventId << Boat.MissionTimerSeconds << Boat.WakeTimerSeconds << Boat.World;
+		Boat.bTowAttached=false; Boat.TowEventId=INDEX_NONE;
+		if (Version>=2) Reader << Boat.bTowAttached << Boat.TowEventId << Boat.RepairDisplaySeconds;
 		Boat.Mesh = Mesh;
 	}
 	UProceduralMeshComponent* LocoMesh = Train.LocoMesh;
@@ -403,6 +414,22 @@ bool ASimCopterAmbientVehiclesActor::RestoreRuntimeSaveState(const TArray<uint8>
 	for (UProceduralMeshComponent* Mesh : Train.CarMeshes) if (Mesh != nullptr) Mesh->SetVisibility(Train.bVisible);
 	if (Train.bVisible) UpdateTrainCarTransforms();
 
+	ClearBoatRiders();
+	if (Boats[0].bVisible && Boats[0].EventId != INDEX_NONE && Boats[0].Mesh)
+	{
+		TArray<AActor*> People;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASimCopterGroundAgent::StaticClass(), People);
+		for (auto* Actor : People)
+		{
+			auto* Person = Cast<ASimCopterGroundAgent>(Actor);
+			if (!Person || Person->MissionEventId != Boats[0].EventId || Person->IsMissionCarried() || Person->GetBehaviorCarrier()) continue;
+			FVector Feet;
+			if (!SimCopterRescueDeck::FindSurface(Boats[0].Mesh, Person->GetActorLocation(), Feet) &&
+				!SimCopterRescueDeck::FindSurface(Boats[0].Mesh, Boats[0].Mesh->Bounds.Origin, Feet)) continue;
+			Person->BindRescueDeck(Boats[0].Mesh, Feet);
+			BoatRiders.AddDefaulted_GetRef().Person = Person;
+		}
+	}
 	TrainRoofRiders.Reset();
 	if (Train.EventId != INDEX_NONE && GetWorld() != nullptr)
 	{
@@ -848,6 +875,33 @@ int32 ASimCopterAmbientVehiclesActor::GetDifficultyTier() const
 
 UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(const int32 ObjectId, const TCHAR* Name)
 {
+	if (ObjectId == SimCopterAmbientVehicles::UfoObjectId)
+	{
+		// The original UFO is palette polygons (types 19/15), lamps (25), and translucent
+		// beam shells (11). The single opaque builder was drawing those beams as solid hull.
+		// User-requested replacement: a textured lenticular saucer with a separate canopy/drive.
+		TArray<FMaxisMeshSection> Sections;
+		SimCopterUfoMesh::Build(GetTileSizeCm() * 0.75f, Sections);
+		auto* Mesh = NewObject<UProceduralMeshComponent>(this, FName(Name));
+		Mesh->SetupAttachment(GetRootComponent());
+		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Mesh->SetCastShadow(true);
+		Mesh->RegisterComponent();
+		UMaterialInterface* Materials[] = { UfoHullMaterial, UfoCanopyMaterial, UfoDriveMaterial };
+		float Top = 0.0f;
+		for (int32 Index = 0; Index < Sections.Num(); ++Index)
+		{
+			const auto& Part = Sections[Index];
+			Mesh->CreateMeshSection_LinearColor(Index, Part.Vertices, Part.Triangles, Part.Normals,
+				Part.UVs, Part.VertexColors, Part.Tangents, false);
+			Mesh->SetMaterial(Index, Materials[Index] != nullptr ? Materials[Index] : VertexColorMaterial.Get());
+			Top = FMath::Max(Top, static_cast<float>(Part.LocalBounds.Max.Z));
+		}
+		ModelTopHeightCm.Add(ObjectId, Top);
+		Mesh->SetVisibility(false);
+		OwnedMeshes.Add(Mesh);
+		return Mesh;
+	}
 	const FString RootPath = ResolveOriginalGameRoot();
 	if (RootPath.IsEmpty())
 	{
@@ -1043,6 +1097,22 @@ FSimCopterVehicleWreck* ASimCopterAmbientVehiclesActor::AddWreck(
 	Wreck.ExtraYawDegrees = ExtraYawDegrees;
 
 	SetMeshTransform(Mesh, World, Direction, ExtraYawDegrees);
+	// Wrecks are walkable rescue platforms. Live ambient aircraft remain nonblocking.
+	if (const FProcMeshSection* Section = Mesh->GetProcMeshSection(0))
+	{
+		TArray<FVector> Vertices, Normals;
+		TArray<FVector2D> UVs;
+		TArray<FColor> Colors;
+		TArray<FProcMeshTangent> Tangents;
+		TArray<int32> Indices;
+		for (const auto& V : Section->ProcVertexBuffer)
+		{ Vertices.Add(V.Position); Normals.Add(V.Normal); UVs.Add(V.UV0); Colors.Add(V.Color); Tangents.Add(V.Tangent); }
+		for (uint32 I : Section->ProcIndexBuffer) Indices.Add(static_cast<int32>(I));
+		Mesh->CreateMeshSection(0, Vertices, Indices, Normals, UVs, Colors, Tangents, true);
+		Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	}
 	Wrecks.Add(Wreck);
 	return &Wrecks.Last();
 }
@@ -1176,7 +1246,7 @@ void ASimCopterAmbientVehiclesActor::SetBoatMeshTransform(
 		return;
 	}
 
-	const float CapsizeRoll = Boat.ObjectId == SimCopterAmbientVehicles::CapsizedBoatObjectId
+	const float CapsizeRoll = Boat.ObjectId == SimCopterAmbientVehicles::CapsizedBoatObjectId && Boat.RepairDisplaySeconds <= 0
 		? CapsizedBoatRollDegrees
 		: 0.0f;
 
@@ -1599,9 +1669,14 @@ void ASimCopterAmbientVehiclesActor::ResolvePlaneImpact(FSimCopterAmbientPlane& 
 		// Terrain class below 10 - the airliner ditched, so the survivors become a boat rescue and
 		// the plane's own background record retires without scoring. The hull floats at the crash
 		// site until they are all out of the water.
-		const int32 RescueEventId =
-			Mission->CreateMissionAt(ImpactTile.X, ImpactTile.Y, SimCopterMissions::TYPE_BoatRescue);
-		AddWreck(WreckObjectId, ImpactWorld, WreckDirection, 0.0f, RescueEventId, false, 0.0f);
+		FVector FloatingWorld = ImpactWorld;
+		float WaterZ = static_cast<float>(FloatingWorld.Z);
+		if (TryGetWaterSurfaceZ(FloatingWorld, WaterZ)) FloatingWorld.Z = WaterZ;
+		PendingPlaneRescueWreck = AddWreck(WreckObjectId, FloatingWorld, WreckDirection, 0.0f, CrashEventId, false, 0.0f);
+		const int32 RescueEventId = PendingPlaneRescueWreck != nullptr
+			? Mission->CreateMissionAt(ImpactTile.X, ImpactTile.Y, SimCopterMissions::TYPE_BoatRescue) : INDEX_NONE;
+		if (PendingPlaneRescueWreck != nullptr) PendingPlaneRescueWreck->EventId = RescueEventId;
+		PendingPlaneRescueWreck = nullptr;
 		Mission->PostMissionEvent(SimCopterMissions::EVT_SetCategory, CrashEventId, SimCopterMissions::CAT_ExpireSilently, false);
 		return;
 	}
@@ -1704,6 +1779,25 @@ void ASimCopterAmbientVehiclesActor::DrawBoatSpeed(FSimCopterAmbientBoat& Boat)
 
 void ASimCopterAmbientVehiclesActor::UpdateBoat(FSimCopterAmbientBoat& Boat, const float DeltaSeconds)
 {
+	if (Boat.RepairDisplaySeconds > 0)
+	{
+		Boat.RepairDisplaySeconds=FMath::Max(0.0f,Boat.RepairDisplaySeconds-DeltaSeconds);
+		if (Boat.RepairDisplaySeconds==0) HideBoat(Boat);
+		else SetBoatMeshTransform(Boat,Boat.World,FRotator::ZeroRotator);
+		return;
+	}
+	if (Boat.bVisible && Boat.ObjectId == SimCopterAmbientVehicles::CapsizedBoatObjectId && Boat.TowEventId == INDEX_NONE)
+		if (auto* M = Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(this, ASimCopterMissionSystemActor::StaticClass())))
+			Boat.TowEventId = M->CreateMissionAt(Boat.Tile.X, Boat.Tile.Y, SimCopterMissions::TYPE_BoatTow);
+	if (Boat.bTowAttached) { SetBoatMeshTransform(Boat, Boat.World, FRotator::ZeroRotator); return; }
+	if (Boat.bVisible && Boat.TowEventId != INDEX_NONE)
+	{
+		// Leave the capsized hull recoverable after its passengers have been rescued.
+		float Surface=Boat.World.Z; if (TryGetWaterSurfaceZ(Boat.World, Surface)) Boat.World.Z=Surface;
+		SetBoatMeshTransform(Boat, Boat.World, FRotator::ZeroRotator);
+		UpdateBoatRiders(Boat);
+		return;
+	}
 	const bool bCapsized = Boat.ObjectId == SimCopterAmbientVehicles::CapsizedBoatObjectId;
 
 	if (!Boat.bVisible)
@@ -1914,47 +2008,21 @@ void ASimCopterAmbientVehiclesActor::UpdateBoatRiders(const FSimCopterAmbientBoa
 		return;
 	}
 
-	// The same treatment the train's roof survivors get (UpdateTrainRoofRiders): the vehicle owns
-	// their transform while they are still part of the wreck. These are spawn-mode-1 swimmers, so
-	// they belong IN the water alongside the hull rather than on its deck - each one keeps the
-	// offset it was spawned at, and that offset rides the boat. Two things follow: the group drifts
-	// with the boat instead of being left behind when the current carries it off, and they heave on
-	// the same swell the hull does instead of floating on the rest plane it is rising out of.
-	const FVector ForwardDir = Boat.Direction.GetSafeNormal2D();
-	if (ForwardDir.IsNearlyZero())
+	for (int32 Index = BoatRiders.Num()-1; Index >= 0; --Index)
 	{
-		return;
-	}
-	const FVector RightDir = FVector::CrossProduct(FVector::UpVector, ForwardDir);
-
-	for (int32 Index = BoatRiders.Num() - 1; Index >= 0; --Index)
-	{
-		FSimCopterBoatRider& Rider = BoatRiders[Index];
-		ASimCopterGroundAgent* Person = Rider.Person.Get();
-		if (Person == nullptr || Person->IsActorBeingDestroyed() || Person->HasMissionResolutionReported() || Person->MissionEventId == INDEX_NONE)
+		auto* Person = BoatRiders[Index].Person.Get();
+		if (!Person || Person->IsActorBeingDestroyed() || Person->IsMissionCarried() ||
+			Person->GetBehaviorCarrier() || Person->MissionEventId != Boat.EventId)
 		{
+			if (Person) Person->ClearRescueDeck();
 			BoatRiders.RemoveAt(Index);
-			continue;
 		}
-		if (Person->IsMissionCarried() || Person->GetBehaviorCarrier() != nullptr)
-		{
-			// On the harness or in the cabin - whatever picked them up owns them now.
-			continue;
-		}
-
-		// Placed on the sea's REST plane, not on the crest. A survivor treading water is a person
-		// standing on a water tile, and ASimCopterGroundAgent submerges those to the waist and rides
-		// them up the swell sampled at their own XY - so adding the wave here as well would heave
-		// them twice as far as the water they are in.
-		FVector RiderRest =
-			Boat.World + ForwardDir * Rider.LocalOffset.X + RightDir * Rider.LocalOffset.Y;
-		RiderRest.Z += Rider.LocalOffset.Z + Person->GetCapsuleHalfHeightCm();
-		Person->SetActorLocation(RiderRest, false);
 	}
 }
 
 void ASimCopterAmbientVehiclesActor::ClearBoatRiders()
 {
+	for (auto& Rider : BoatRiders) if (auto* Person = Rider.Person.Get()) Person->ClearRescueDeck();
 	BoatRiders.Reset();
 }
 
@@ -2176,6 +2244,55 @@ bool ASimCopterAmbientVehiclesActor::TryActivateBoatRescue(
 {
 	EnsurePools();
 
+	if (PendingPlaneRescueWreck != nullptr)
+	{
+		auto& Wreck = *PendingPlaneRescueWreck;
+		auto* Traffic = ResolveTrafficSystem();
+		if (Traffic == nullptr || Wreck.Mesh == nullptr) return false;
+		int32 Spawned = 0;
+		const FBox Bounds = Wreck.Mesh->Bounds.GetBox();
+		TArray<FVector> DeckPoints;
+		// Probe the centre and wing roots. Actual triangles, not the airframe's AABB, own feet Z.
+		for (int32 Index = 0; Index < 3; ++Index)
+		{
+			const FVector XY = Wreck.World + Wreck.Direction * ((Index - 1) * 80.0f);
+			FHitResult Hit;
+			FCollisionQueryParams Query(SCENE_QUERY_STAT(PlaneRescueDeck), true);
+			if (!Wreck.Mesh->LineTraceComponent(Hit, FVector(XY.X, XY.Y, Bounds.Max.Z + 100),
+				FVector(XY.X, XY.Y, Bounds.Min.Z - 100), Query)) continue;
+			DeckPoints.Add(Hit.ImpactPoint);
+		}
+		if (DeckPoints.IsEmpty()) return false;
+		// PLANE1's origin is not its waterline. Keep the lowest rescue foothold above the
+		// 40 cm swimming band, otherwise a person on the hull is still rendered submerged.
+		float FloatLift = 0.0f;
+		for (const FVector& Point : DeckPoints)
+		{
+			float WaterZ = static_cast<float>(Wreck.World.Z);
+			TryGetWaterSurfaceZ(Point, WaterZ);
+			FloatLift = FMath::Max(FloatLift, WaterZ + 50.0f - static_cast<float>(Point.Z));
+		}
+		Wreck.World.Z += FloatLift;
+		SetMeshTransform(Wreck.Mesh, Wreck.World, Wreck.Direction, Wreck.ExtraYawDegrees);
+		for (FVector Point : DeckPoints)
+		{
+			Point.Z += FloatLift;
+			TArray<ASimCopterGroundAgent*> People;
+			Traffic->SpawnMissionSwimmersAtWorldLocation(1, Point, EventId,
+				WaterRescueSpawnMode, 0.0f, false, &People);
+			for (auto* Person : People)
+			{
+				Person->SetActorLocation(Point + FVector(0, 0, Person->GetCapsuleHalfHeightCm() + 1), false);
+				Person->SetBehaviorGroundSnap(true);
+				++Spawned;
+			}
+		}
+		OutTileX = TileX; OutTileY = TileY;
+		if (auto* Mission = ResolveMissionSystem(); Mission && Spawned > 0)
+			Mission->PostMissionEvent(SimCopterMissions::EVT_RescueVictimAdded, EventId, Spawned, true);
+		return Spawned > 0;
+	}
+
 	// FUN_004b1950 uses boat slot 0 (CAPBOAT1) and fails outright when it is already out.
 	FSimCopterAmbientBoat& Boat = Boats[0];
 	if (Boat.bVisible)
@@ -2196,40 +2313,30 @@ bool ASimCopterAmbientVehiclesActor::TryActivateBoatRescue(
 		EventId, Boat.ObjectId, SimCopterAmbientVehicles::CapsizedBoatObjectId,
 		Boat.Mesh != nullptr ? TEXT("Valid") : TEXT("NULL"), Boat.Tile.X, Boat.Tile.Y);
 
-	// 3 + rand % 3 survivors in the water beside the boat (spawn mode 1).
-	const int32 Count = BoatRescueMinVictims + RandomStream.RandRange(0, BoatRescueVictimSpread - 1);
+	// Requested deviation from FUN_004b1950: survivors stand ON the overturned hull.
+	// Sample its rendered triangles, then retain local feet coordinates through yaw and swell.
+	const int32 Count = BoatRescueMinVictims + RandomStream.RandRange(0, BoatRescueVictimSpread-1);
 	int32 Spawned = 0;
 	ClearBoatRiders();
-	TArray<ASimCopterGroundAgent*> Survivors;
-	if (ASimCopterTrafficSystemActor* TrafficSystem = ResolveTrafficSystem())
+	if (auto* Traffic = ResolveTrafficSystem(); Traffic && Boat.Mesh)
 	{
-		Spawned = TrafficSystem->SpawnMissionSwimmersAtWorldLocation(
-			Count,
-			Boat.World,
-			EventId,
-			WaterRescueSpawnMode,
-			GetTileSizeCm() * 0.30f,
-			/*bFloatOnWaterSurface=*/true,
-			&Survivors);
-	}
-
-	// Bind each survivor to the hull at the offset they came out at, in the boat's own frame, so
-	// UpdateBoatRiders can carry them along with it and put them on its swell.
-	const FVector ForwardDir = Boat.Direction.GetSafeNormal2D();
-	const FVector RightDir = FVector::CrossProduct(FVector::UpVector, ForwardDir);
-	for (ASimCopterGroundAgent* Survivor : Survivors)
-	{
-		if (Survivor == nullptr)
+		const FBox Bounds = Boat.Mesh->Bounds.GetBox();
+		for (int32 Index = 0; Index < Count; ++Index)
 		{
-			continue;
+			const double Along = (double(Index)/(Count-1)-0.5)*0.9;
+			const FVector Candidate = Bounds.GetCenter() + Boat.Direction.GetSafeNormal2D()*Along*Bounds.GetSize().GetMax();
+			FVector Feet;
+			if (!SimCopterRescueDeck::FindSurface(Boat.Mesh, Candidate, Feet) &&
+				!SimCopterRescueDeck::FindSurface(Boat.Mesh, Bounds.GetCenter(), Feet)) continue;
+			TArray<ASimCopterGroundAgent*> People;
+			Traffic->SpawnMissionSwimmersAtWorldLocation(1, Feet, EventId, WaterRescueSpawnMode, 0, false, &People);
+			for (auto* Person : People)
+			{
+				Person->BindRescueDeck(Boat.Mesh, Feet);
+				BoatRiders.AddDefaulted_GetRef().Person = Person;
+				++Spawned;
+			}
 		}
-		const FVector Delta = Survivor->GetActorLocation() - Boat.World;
-		FSimCopterBoatRider& Rider = BoatRiders.AddDefaulted_GetRef();
-		Rider.Person = Survivor;
-		Rider.LocalOffset = FVector(
-			FVector::DotProduct(Delta, ForwardDir),
-			FVector::DotProduct(Delta, RightDir),
-			Delta.Z - Survivor->GetCapsuleHalfHeightCm());
 	}
 
 	if (Spawned <= 0)
@@ -2960,4 +3067,47 @@ FString ASimCopterAmbientVehiclesActor::GetStatusLine() const
 		Train.bDerailing ? TEXT("derailing") : (Train.bVisible ? TEXT("running") : TEXT("off map")),
 		RailTiles.Num(),
 		*Detail);
+}
+
+// User-requested hull recovery; rescue passengers remain independent people/mission actors.
+bool ASimCopterAmbientVehiclesActor::FindTowableBoat(const FVector& Near, float Radius, int32& OutIndex) const
+{
+	float Best=Radius*Radius; OutIndex=INDEX_NONE;
+	for(int32 K=0;K<SimCopterAmbientVehicles::BoatSlots;++K)
+	{
+		const auto& Boat=Boats[K];
+		if(!Boat.bVisible || Boat.bTowAttached || Boat.RepairDisplaySeconds>0 || Boat.ObjectId!=SimCopterAmbientVehicles::CapsizedBoatObjectId) continue;
+		const float D=FVector::DistSquared(Near,Boat.World);
+		if(D<Best) { Best=D; OutIndex=K; }
+	}
+	return OutIndex!=INDEX_NONE;
+}
+bool ASimCopterAmbientVehiclesActor::SetBoatTow(int32 Index,bool bTowed,const FVector& Location)
+{
+	if(Index<0 || Index>=SimCopterAmbientVehicles::BoatSlots || !Boats[Index].bVisible) return false;
+	auto& Boat=Boats[Index];
+	if (bTowed && !Boat.bTowAttached)
+	{
+		UpdateBoatRiders(Boat);
+		if (!BoatRiders.IsEmpty()) return false;
+	}
+	Boat.bTowAttached=bTowed; Boat.World=Location;
+	if(!bTowed) { float Surface=Boat.World.Z; if(TryGetWaterSurfaceZ(Location,Surface)) Boat.World.Z=Surface; }
+	SetBoatMeshTransform(Boat,Boat.World,FRotator::ZeroRotator);
+	return true;
+}
+bool ASimCopterAmbientVehiclesActor::GetBoatTowLocation(int32 Index,FVector& Location) const
+{
+	if(Index<0 || Index>=SimCopterAmbientVehicles::BoatSlots || !Boats[Index].bVisible) return false;
+	Location=Boats[Index].World; return true;
+}
+bool ASimCopterAmbientVehiclesActor::FinishBoatTow(int32 Index)
+{
+	if(Index<0 || Index>=SimCopterAmbientVehicles::BoatSlots || !Boats[Index].bTowAttached) return false;
+	auto& Boat=Boats[Index];
+	if(auto* M=Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(this,ASimCopterMissionSystemActor::StaticClass())))
+		M->PostMissionEvent(SimCopterMissions::EVT_CarCleared,Boat.TowEventId,1,true);
+	Boat.bTowAttached=false; Boat.TowEventId=INDEX_NONE; Boat.EventId=INDEX_NONE; Boat.RepairDisplaySeconds=20;
+	SetBoatMeshTransform(Boat,Boat.World,FRotator::ZeroRotator);
+	return true;
 }

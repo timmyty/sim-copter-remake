@@ -75,8 +75,8 @@ bool FSimCopterHelicopterRegistryShapeTest::RunTest(const FString& Parameters)
 	}
 
 	// FUN_0042d840's helicopter permutation {4,0,1,8,3,5,6,7}: eight civilian rows, Apache
-	// deliberately absent from the shop.
-	TestEqual(TEXT("eight catalog rows"), SeenCatalogIndices.Num(), 8);
+	// now appended as the requested mystery row.
+	TestEqual(TEXT("nine catalog rows including mystery aircraft"), SeenCatalogIndices.Num(), 9);
 	TestNull(TEXT("out-of-range type index has no entry"), SimCopterHelicopterRegistry::FindByTypeIndex(9));
 	TestNull(TEXT("negative type index has no entry"), SimCopterHelicopterRegistry::FindByTypeIndex(-1));
 
@@ -186,9 +186,11 @@ bool FSimCopterEquipmentTableTest::RunTest(const FString& Parameters)
 		{ ESimCopterHelicopterTool::RescueHarness, 0x04,  800,  600, 0x2ab },
 		{ ESimCopterHelicopterTool::TearGas,       0x08, 2500, 1875, 0x2ac },
 		{ ESimCopterHelicopterTool::WaterCannon,   0x10, 1500, 1125, 0x2a9 },
+		{ ESimCopterHelicopterTool::TowClamp, 0x20, 1200, 900, 0 },
+		{ ESimCopterHelicopterTool::CaptureCage, 0x40, 1800, 1350, 0 },
 	};
 
-	TestEqual(TEXT("five purchasable tools"), SimCopterHelicopterRegistry::GetEquipment().Num(), 5);
+	TestEqual(TEXT("seven purchasable tools"), SimCopterHelicopterRegistry::GetEquipment().Num(), 7);
 
 	int32 UnionMask = 0;
 	for (const FExpected& Row : Expected)

@@ -11,6 +11,7 @@
 #include "SimCopterGroundAgent.generated.h"
 
 class ASimCopterHelicopterPawn;
+class ASimCopterMissionSystemActor;
 class UAudioComponent;
 class UCapsuleComponent;
 class UMaterialInterface;
@@ -66,13 +67,55 @@ class SIMCOPTERREMAKE_API ASimCopterGroundAgent
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class FSimCopterRescuePilotRuntimeTest;
 
 public:
 	ASimCopterGroundAgent();
+	// Remake air operations: arrest and vehicle recovery preserve the real actor.
+	bool IsArrestableSuspect() const;
+	bool StunForArrest();
+	bool IsTaserStunned() const { return bTaserStunned; }
+	bool IsHandcuffed() const { return bHandcuffed; }
+	bool IsInPoliceCustody() const { return bTaserStunned || bHandcuffed; }
+	void CompletePoliceDelivery(const FVector& Roof);
+	void SetVehicleStalled(bool bPlayerCaused = false);
+	void ApplyHelicopterVehicleImpact(const FVector& WorldImpact);
+	void RebuildVehicleDents();
+	bool IsTowableVehicle() const { return AgentKind == ESimCopterGroundAgentKind::Vehicle && bVehicleStalled && HelicopterImpactCount < 4 && !bMissionResolutionReported; }
+	bool IsVehicleTowed() const { return bVehicleTowed; }
+	bool IsVehicleImmobilized() const { return bVehicleStalled || bVehicleTowed; }
+	void SetVehicleTowed(bool bTowed);
+	void CompleteVehicleTow(bool bScrap);
+	int32 GetTowMissionId() const { return TowMissionId; }
+	int32 GetHelicopterImpactCount() const { return HelicopterImpactCount; }
+	void EnsureTowMission(bool bPlayerCaused);
+private:
+	friend class FSimCopterAirOperationsTest;
+	bool bTaserStunned = false;
+	bool bHandcuffed = false;
+	bool bVehicleStalled = false;
+	bool bVehicleTowed = false;
+	bool bVehicleExploded = false;
+	int32 HelicopterImpactCount = 0;
+	int32 TowMissionId = INDEX_NONE;
+	float VehicleImpactCooldown = 0.0f;
+	float VehicleExplosionSeconds = 0.0f;
+	TArray<FVector> VehicleDents;
+	TArray<TArray<FVector>> UndamagedVehicleVertices;
+	bool TickAirOperations(float DeltaSeconds);
+public:
 
 	virtual void BeginPlay() override;
+	friend class FSimCopterBuildingCollisionTest;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
+	void BindRescueDeck(UProceduralMeshComponent* Deck, const FVector& Feet);
+	void ClearRescueDeck();
+private:
+	TWeakObjectPtr<UProceduralMeshComponent> RescueDeck;
+	FVector RescueDeckLocalFeet = FVector::ZeroVector;
+	void FollowRescueDeck(bool bAcceptMovement);
+public:
 
 	// --- ISimCopterReplayRecordable ---
 	//
@@ -246,6 +289,21 @@ public:
 	const FString& GetPedestrianFigureName() const { return PedestrianFigureName; }
 	const FString& GetMeshTableName() const { return MeshTableName; }
 	void SetMissionInjuredPose();
+	void SetBandFormationTarget(const FVector& Target, float FacingYaw, bool bEnabled);
+	bool CanWalkBandSegment(const FVector& From, const FVector& To);
+	bool GetBandWaypoint(const FVector& Goal, FVector& OutWaypoint);
+	bool bBandFormationActive = false;
+	FVector BandFormationTarget = FVector::ZeroVector;
+	float BandFormationYaw = 0;
+	TArray<FVector> BandPath;
+	FVector BandPathGoal = FVector::ZeroVector;
+	double NextBandPathTime = 0;
+	bool bBandPathAttempted = false;
+	bool TryClaimHospitalPatient(ASimCopterGroundAgent* Medic);
+	TWeakObjectPtr<ASimCopterGroundAgent> HospitalPatientClaim;
+	float HospitalPatientClaimUntil = 0.0f;
+	ASimCopterMissionSystemActor* GetFireSafetyMissionSystem();
+	TWeakObjectPtr<ASimCopterMissionSystemActor> FireSafetyMissionSystem;
 	// A dead medevac patient remains the same physical person. When they die in the cabin this
 	// pose stops their VM without relinquishing their seat; the state-5 medic may still remove
 	// that same body through BHAV 263's ordinary carrier interactions.
@@ -722,7 +780,7 @@ public:
 		bool bAsHarnessRider,
 		bool bAllowAirborneCabinTransfer = false,
 		bool bAsCarriedBody = false);
-	bool AlightFromCarrier(bool bPlayDoorSound = true);
+	bool AlightFromCarrier(bool bPlayDoorSound = true, bool bRequireClearExit = true);
 	// SCHOOK: HelicopterWriteOffPassengers 0x004c0ba0. A helicopter entering its destroyed state
 	// writes off every occupied seat, including medevac patients that ordinary health death keeps
 	// aboard for hospital delivery.
@@ -1154,7 +1212,11 @@ public:
 	TObjectPtr<UMaterialInstanceDynamic> FigureHeadMaterialInstance;
 
 private:
+	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterSafePassengerLandingTest;
+	friend class FSimCopterGameplayPolishTest;
+	friend class FSimCopterBodyRecoveryTest;
 	friend class FSimCopterParamedicCabinHandoffTest;
 	friend class FSimCopterParamedicAlightsOnHelipadTest;
 	friend class FSimCopterPoliceRoofBoardingTest;
@@ -1594,6 +1656,7 @@ protected:
 	// each of them having to remember. Runs after all of them and before the ground snap, beside
 	// ContainToHospitalRoofPost.
 	void ContainOutsideBuildingGeometry();
+	void MoveAgainstCityGeometry(const FVector& Delta, const FQuat& Rotation);
 
 	// ISimCopterBehaviorWorld
 	virtual int32 GetCurrentTileClass() const override;

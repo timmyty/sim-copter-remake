@@ -48,7 +48,7 @@ constexpr int32 LabelFontSize = 11;
 // police pool, not a fourth service, so it lives one slot past EService::Count and resolves back
 // to Police when the player dispatches or clears it.
 constexpr int32 PoliceChaseDispatchEntry = static_cast<int32>(SimCopterDispatch::EService::Count);
-constexpr int32 DispatchEntryCount = PoliceChaseDispatchEntry + 1;
+constexpr int32 DispatchEntryCount = PoliceChaseDispatchEntry + 3;
 
 // Screen pixels between stacked panels. Matches the inset the pawn gives the whole column, so
 // the gap above the first panel and the gaps between them read the same.
@@ -284,6 +284,8 @@ FSlateFontInfo FlapFont(const int32 Size, const bool bBold)
 
 const TCHAR* GetDispatchServiceLabel(const int32 ServiceIndex)
 {
+	if(ServiceIndex==PoliceChaseDispatchEntry+1) return TEXT("AIR: MISSION");
+	if(ServiceIndex==PoliceChaseDispatchEntry+2) return TEXT("AIR: AUTO");
 	if (ServiceIndex == PoliceChaseDispatchEntry)
 	{
 		return TEXT("POLICE (CHASE)");
@@ -1782,6 +1784,11 @@ FReply SSimCopterToolFlaps::HandleDispatchServiceStep(const int32 Delta)
 
 FReply SSimCopterToolFlaps::HandleDispatch()
 {
+	if (SelectedDispatchEntry > PoliceChaseDispatchEntry)
+	{
+		if(auto* Heli=Pawn.Get()) Heli->RequestAirSupport(SelectedDispatchEntry==PoliceChaseDispatchEntry+2);
+		return FReply::Handled();
+	}
 	if (ASimCopterHelicopterPawn* Helicopter = GetPawn())
 	{
 		int32 ServiceIndex = INDEX_NONE;

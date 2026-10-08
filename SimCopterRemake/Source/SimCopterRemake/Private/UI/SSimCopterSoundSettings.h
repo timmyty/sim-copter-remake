@@ -101,7 +101,6 @@ public:
 		/** Fires on every change so the mixer can be heard moving, as the original's does. */
 		SLATE_EVENT(FOnSimCopterSoundSettingsAccepted, OnPreviewChanged)
 		SLATE_EVENT(FOnSimCopterSoundSettingsAccepted, OnAccepted)
-		SLATE_EVENT(FSimpleDelegate, OnCancelled)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
@@ -114,18 +113,18 @@ public:
 	static float VolumeToAlpha(int32 Volume);
 
 private:
+	friend class FSimCopterSoundSettingsPersistenceTest;
 	TObjectPtr<USimCopterHangarArt> Art;
 	FSimCopterSoundSettingsValues Values;
-	FSimCopterSoundSettingsValues Entered;
 	int32 StationCount = 0;
 	TArray<FString> StationCallSigns;
 
 	FOnSimCopterSoundSettingsAccepted OnPreviewChanged;
 	FOnSimCopterSoundSettingsAccepted OnAccepted;
-	FSimpleDelegate OnCancelled;
 
 	TSharedPtr<SSimCopterCheckupSlider> GameVolumeSlider;
 	TSharedPtr<SSimCopterCheckupSlider> RadioVolumeSlider;
+	TSharedPtr<STextBlock> RadioVolumeLabel;
 	TSharedPtr<SSimCopterCheckupSlider> TunerSlider;
 	TSharedPtr<STextBlock> StationLabel;
 	TSharedPtr<STextBlock> GameVolumeLabel;
@@ -135,8 +134,6 @@ private:
 	void RefreshReadouts();
 	void Preview();
 	void Accept();
-	/** FUN_00438320's Cancel path: the page closes without FUN_00440130 ever running. */
-	void Cancel();
 
 	TSharedRef<SWidget> BuildToggle(const FText& Label, bool* Flag);
 };

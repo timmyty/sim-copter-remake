@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
+#include "Misc/ConfigCacheIni.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSimCopterRadio, Log, All);
 
@@ -53,6 +54,30 @@ void USimCopterRadioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 
 	ScanStations(Audio->GetSoundRoot());
+	// Authored radio media is staged as loose files, independent of original-data overrides.
+	FSimCopterRadioStation Artist;
+	Artist.CallSign = TEXT("KINV");
+	Artist.Directory = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Radio/InvokeTheRevoked"));
+	Artist.bSequential = true;
+	TArray<FString> Tracks;
+	IFileManager::Get().FindFiles(Tracks, *FPaths::Combine(Artist.Directory, TEXT("*.wav")), true, false);
+	Tracks.Sort();
+	for (const FString& Track : Tracks) { Artist.Music.Add(FPaths::Combine(Artist.Directory, Track)); }
+	if (Artist.HasContent()) { Stations.Add(MoveTemp(Artist)); }
+	FString SavedTrack;
+	const FString ProgressFile = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("InvokeRadio.ini"));
+	FConfigFile Progress;
+	Progress.Read(ProgressFile);
+	Progress.GetString(TEXT("Playback"), TEXT("Track"), SavedTrack);
+	Progress.GetFloat(TEXT("Playback"), TEXT("Seconds"), SequentialOffset);
+	SequentialOffset = FMath::IsFinite(SequentialOffset) ? FMath::Max(0.0f, SequentialOffset) : 0.0f;
+	if (Stations.Num() > 0 && Stations.Last().bSequential)
+	{
+		for (int32 I = 0; I < Stations.Last().Music.Num(); ++I)
+		{
+			if (FPaths::GetCleanFilename(Stations.Last().Music[I]) == SavedTrack) { SequentialTrack = I; break; }
+		}
+	}
 	if (Stations.Num() == 0)
 	{
 		UE_LOG(LogSimCopterRadio, Warning, TEXT("[Radio] No stations found under %s/radio."), *Audio->GetSoundRoot());
@@ -80,6 +105,7 @@ void USimCopterRadioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void USimCopterRadioSubsystem::Deinitialize()
 {
+	SuspendSequentialPlayback();
 	if (USimCopterAudioSubsystem* Audio = USimCopterAudioSubsystem::Get(this))
 	{
 		Audio->StopRadio();
@@ -388,6 +414,37 @@ void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 		return;
 	}
 
+	if (IsSequentialStation())
+	{
+		if (bSequentialPlaying && Audio->IsRadioPlaying())
+		{
+			if (FPlatformTime::Seconds() - LastProgressSave >= 10.0) { SaveSequentialProgress(); }
+			return;
+		}
+		if (bSequentialPlaying)
+		{
+			SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
+			SequentialOffset = 0.0f;
+			bSequentialPlaying = false;
+		}
+		const FString& Path = Stations[StationIndex].Music[SequentialTrack];
+		if (Audio->PlayRadioFile(Path, Volume, SequentialOffset))
+		{
+			bSequentialPlaying = true;
+			SequentialStartTime = FPlatformTime::Seconds();
+			CurrentTitle = FPaths::GetBaseFilename(Path).Mid(3);
+			CurrentSlot = ESimCopterRadioSlot::Music;
+			SaveSequentialProgress();
+		}
+		else
+		{
+			// Bad/missing media or a saved offset past EOF must not strand the station.
+			SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
+			SequentialOffset = 0.0f;
+		}
+		return;
+	}
+
 	// SCHOOK: RadioTick 0x0042f160
 	// Nothing happens until the current item ends; then a fixed gap runs before the next pick.
 	if (!bWaiting)
@@ -480,6 +537,7 @@ void USimCopterRadioSubsystem::SetPowered(bool bInPowered)
 	{
 		return;
 	}
+	if (!bInPowered) { SuspendSequentialPlayback(); }
 	bPowered = bInPowered;
 	if (bPowered)
 	{
@@ -498,6 +556,7 @@ void USimCopterRadioSubsystem::SetPlayerInHelicopter(const bool bInPlayerHelicop
 		return;
 	}
 
+	if (!bInPlayerHelicopter) { SuspendSequentialPlayback(); }
 	bPlayerInHelicopter = bInPlayerHelicopter;
 	// Stop the abandoned item on exit and back-date the normal four-second gap on both edges.
 	// Re-entering therefore starts the next item immediately while preserving the station and
@@ -521,10 +580,9 @@ void USimCopterRadioSubsystem::SetStationIndex(int32 Index)
 	{
 		return;
 	}
+	SuspendSequentialPlayback();
 	StationIndex = Clamped;
-	// The dashboard radio's channel selector returns its volume rocker to the top. Keep this in
-	// the subsystem too so console and Settings-screen channel changes follow the same rule.
-	SetVolume(1.0f);
+	// Tuning preserves the user's selected volume, including mute.
 	// The playlists are per station, so switching rebuilds them - a fresh shuffle bag, which is
 	// also what the original does when it loads a station's lists.
 	RebuildPlaylists();
@@ -579,4 +637,39 @@ int32 USimCopterRadioSubsystem::GetStationForDialAlpha(float Alpha) const
 	}
 	const float Position = FMath::Clamp(Alpha, 0.0f, 1.0f) * static_cast<float>(Count - 1);
 	return FMath::Clamp(FMath::RoundToInt(Position), 0, Count - 1);
+}
+
+bool USimCopterRadioSubsystem::IsSequentialStation() const
+{
+	return Stations.IsValidIndex(StationIndex) && Stations[StationIndex].bSequential;
+}
+
+void USimCopterRadioSubsystem::SaveSequentialProgress()
+{
+	if (!IsSequentialStation()) { return; }
+	const auto& Music = Stations[StationIndex].Music;
+	if (!Music.IsValidIndex(SequentialTrack)) { return; }
+	const double Now = FPlatformTime::Seconds();
+	const float Offset = SequentialOffset + (bSequentialPlaying ? static_cast<float>(Now - SequentialStartTime) : 0.0f);
+	const FString File = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("InvokeRadio.ini"));
+	FConfigFile Progress;
+	Progress.bCanSaveAllSections = true;
+	Progress.SetString(TEXT("Playback"), TEXT("Track"), *FPaths::GetCleanFilename(Music[SequentialTrack]));
+	Progress.SetFloat(TEXT("Playback"), TEXT("Seconds"), Offset);
+	Progress.Write(File);
+	LastProgressSave = Now;
+}
+
+void USimCopterRadioSubsystem::SuspendSequentialPlayback()
+{
+	if (!IsSequentialStation() || !bSequentialPlaying) { return; }
+	USimCopterAudioSubsystem* Audio = USimCopterAudioSubsystem::Get(this);
+	if (Audio != nullptr && !Audio->IsRadioPlaying())
+	{
+		SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
+		SequentialOffset = 0.0f;
+	}
+	else { SequentialOffset += static_cast<float>(FPlatformTime::Seconds() - SequentialStartTime); }
+	bSequentialPlaying = false;
+	SaveSequentialProgress();
 }

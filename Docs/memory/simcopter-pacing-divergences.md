@@ -1,5 +1,11 @@
 # Pacing divergences: mission clock, arsonist cadence, base slot
 
+**2026-09-30 user-requested override:** divergence 3 below is retired. The scheduler
+again includes Base Location in `ActiveCount`, following FUN_004a6e60, to reduce
+simultaneous missions. With shipped tuning, tiers 1–4 normally present 1/2/3/4 jobs;
+the last slot waits the full 380-second interval, reaching 2/3/4/5 jobs. The mission
+deadline and arsonist changes remain. See `Docs/PlayableBuild.md` for build evidence.
+
 *Decided 2026-08-11. Both are deliberate playability changes, both were made knowing the retail
 values, and both are recorded here so nobody "fixes" them back by citing the decompile.*
 

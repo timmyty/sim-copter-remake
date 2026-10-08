@@ -22,10 +22,10 @@ const TCHAR* const SelectionSound = TEXT("menu");
 
 ESimCopterSettingsItem SSimCopterSettingsMenu::GetItemForRow(const int32 Row, const bool bHasCitySettings)
 {
-	// Descriptor +0x24 is the command base: 0 with City Settings present, 1 without.
-	const int32 Base = bHasCitySettings ? 0 : 1;
+	// Remake menu order: resume is always first; preserve the original command IDs.
+	if (Row <= 0) return ESimCopterSettingsItem::Continue;
 	return static_cast<ESimCopterSettingsItem>(
-		FMath::Clamp(Row + Base, 0, FullItemCount - 1));
+		FMath::Clamp(Row - (bHasCitySettings ? 1 : 0), 0, FullItemCount - 2));
 }
 
 const FText& SSimCopterSettingsMenu::GetItemLabel(const ESimCopterSettingsItem Item)

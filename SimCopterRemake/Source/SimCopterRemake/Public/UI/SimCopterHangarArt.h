@@ -176,9 +176,11 @@ constexpr float CatalogTabStripHeight = 40.0f;
 // Catalog rows in tab order, in page coordinates. Every strip draws the eight models in catalog
 // order at the same eight positions - only the page corner behind them moves - so one table
 // serves all nine strips.
-constexpr int32 CatalogTabCount = 8;
-constexpr float CatalogTabLeft[CatalogTabCount] = { 92.0f, 151.0f, 209.0f, 266.0f, 323.0f, 381.0f, 438.0f, 497.0f };
-constexpr float CatalogTabRight[CatalogTabCount] = { 141.0f, 201.0f, 257.0f, 316.0f, 372.0f, 430.0f, 488.0f, 547.0f };
+constexpr int32 CivilianCatalogTabCount = 8;
+constexpr int32 ApacheCatalogRow = CivilianCatalogTabCount;
+constexpr int32 CatalogTabCount = CivilianCatalogTabCount + 1;
+constexpr float CatalogTabLeft[CivilianCatalogTabCount] = { 92.0f, 151.0f, 209.0f, 266.0f, 323.0f, 381.0f, 438.0f, 497.0f };
+constexpr float CatalogTabRight[CivilianCatalogTabCount] = { 141.0f, 201.0f, 257.0f, 316.0f, 372.0f, 430.0f, 488.0f, 547.0f };
 constexpr float CatalogTabHitHeight = 26.0f;
 
 // Right-hand panel printed at (507,68)-(595,296): funds and value above, three buttons below.
@@ -288,10 +290,9 @@ constexpr float InventoryDoneY = 424.0f;
 constexpr float HangarButtonY = 436.0f;
 constexpr float HangarButtonX[4] = { 60.0f, 205.0f, 350.0f, 495.0f };
 
-// Row of the catalog a helicopter runtime type sits on, or INDEX_NONE for the Apache, which the
-// shop never lists. FUN_0042d840's permutation {4, 0, 1, 8, 3, 5, 6, 7} read the other way.
+// Original eight rows retain FUN_0042d840's permutation. Apache is the requested mystery row 8.
 SIMCOPTERREMAKE_API int32 GetCatalogRowForTypeIndex(int32 TypeIndex);
 
-// Inverse of the above: catalog row 0..7 -> runtime type index.
+// Inverse of the above: catalog row 0..8 -> runtime type index.
 SIMCOPTERREMAKE_API int32 GetTypeIndexForCatalogRow(int32 CatalogRow);
 }

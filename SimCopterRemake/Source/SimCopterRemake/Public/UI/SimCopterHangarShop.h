@@ -31,14 +31,14 @@ class USimCopterCareerSubsystem;
 //   570..587   mission type names
 //
 // The transactions are FUN_0042d840 (buy) and FUN_0042d9f0 (sell). Both work in *catalog rows*
-// and permute to the runtime index: {4, 0, 1, 8, 3, 5, 6, 7} for helicopters (the Apache is not
-// on sale) and {0, 1, 3, 4, 2} for equipment. Buying tear gas also writes ten rounds into
+// and permute to the runtime index: {4, 0, 1, 8, 3, 5, 6, 7} for original helicopters. The
+// requested mystery row appends Apache (2). Equipment uses {0, 1, 3, 4, 2}. Tear gas writes ten rounds into
 // career + 0x54; selling it writes zero.
 namespace SimCopterHangarShop
 {
 // --- upgrades page rows (the page's own column-major order) ---
 
-constexpr int32 UpgradeRowCount = 5;
+constexpr int32 UpgradeRowCount = 7;
 
 // FUN_0042d840's literal {0, 1, 3, 4, 2}: upgrades page row -> equipment bit index.
 SIMCOPTERREMAKE_API int32 GetEquipmentIndexForUpgradeRow(int32 UpgradeRow);
@@ -96,6 +96,7 @@ struct SIMCOPTERREMAKE_API FContext
 struct SIMCOPTERREMAKE_API FRowState
 {
 	bool bOwned = false;
+	bool bMystery = false;
 	// FUN_0048b050 / FUN_0048b0f0 when not owned, FUN_0048b070 / FUN_0048b150 when owned - the
 	// number the page prints as "Item Value".
 	int32 ItemValue = 0;

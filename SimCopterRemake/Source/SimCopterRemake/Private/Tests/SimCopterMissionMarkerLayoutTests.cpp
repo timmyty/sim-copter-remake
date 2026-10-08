@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
 #include "UI/SimCopterMissionMarkerLayout.h"
+#include "Styling/CoreStyle.h"
+#include "Widgets/Text/STextBlock.h"
 
 namespace
 {
@@ -19,6 +21,34 @@ float UiBoundaryMeasure(
 		FMath::Abs(Local.X) / HalfExtents.X,
 		FMath::Abs(Local.Y) / HalfExtents.Y);
 }
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FSimCopterMissionMarkerLabelFitsTest,
+	"SimCopter.Missions.MarkerLabelFits",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterMissionMarkerLabelFitsTest::RunTest(const FString& Parameters)
+{
+	using namespace SimCopterMissionMarkerLayout;
+	for (const TCHAR* Label : { TEXT("STALLED VEHICLE / 999 M"), TEXT("STALLED VEHICLE / 10.0 KM"), TEXT("BOAT RECOVERY / 999 M") })
+	{
+		TSharedRef<STextBlock> Text = SNew(STextBlock)
+			.Text(FText::FromString(Label)).Font(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 8));
+		Text->SlatePrepass();
+		const FVector2D Size = MeasureMarkerSize(Label, FVector2D(110, 63));
+		TestTrue(TEXT("Full label and distance fit inside the padded plate"), Size.X >= Text->GetDesiredSize().X + 12.0);
+		TestTrue(TEXT("Long labels expand beyond the old fixed width"), Size.X > 110.0);
+		for (const FVector2D Desired : { FVector2D(-100, 200), FVector2D(2000, 200) })
+		{
+			bool bAdjusted = false;
+			const FVector2D Center = ResolveMarkerCenter(Desired, Size, FVector2D(1280, 720), 10,
+				TConstArrayView<FUiObstacle>(), TConstArrayView<FPlacedMarker>(), 0.5f, bAdjusted);
+			TestTrue(TEXT("Full plate stays inside both viewport edges"),
+				Center.X - Size.X * 0.5 >= 10.0 && Center.X + Size.X * 0.5 <= 1270.0);
+		}
+	}
+	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(

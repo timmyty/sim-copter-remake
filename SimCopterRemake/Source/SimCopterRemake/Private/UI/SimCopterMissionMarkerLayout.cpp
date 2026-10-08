@@ -1,9 +1,22 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/SimCopterMissionMarkerLayout.h"
+#include "Fonts/FontMeasure.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Rendering/SlateRenderer.h"
+#include "Styling/CoreStyle.h"
 
 namespace SimCopterMissionMarkerLayout
 {
+FVector2D MeasureMarkerSize(const FString& PlateText, const FVector2D& PreferredSize)
+{
+	const FVector2D TextSize = FSlateApplication::Get().GetRenderer()->GetFontMeasureService()->Measure(
+		PlateText, FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 8));
+	return FVector2D(
+		FMath::Max(FMath::Clamp(PreferredSize.X, 104.0, 160.0), FMath::CeilToDouble(TextSize.X) + 12.0),
+		FMath::Clamp(PreferredSize.Y, 63.0, 88.0));
+}
+
 namespace
 {
 constexpr float SeparationTolerance = 0.001f;

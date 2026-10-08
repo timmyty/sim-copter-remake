@@ -3,6 +3,9 @@
 #include "City/SimCopterAirport.h"
 #include "City/SimCopterHangar.h"
 #include "Engine/World.h"
+#include "Game/SimCopterCareerSubsystem.h"
+#include "Formats/SimCity2000Reader.h"
+#include "Missions/SimCopterMissionSystemActor.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Kismet/GameplayStatics.h"
@@ -20,8 +23,67 @@ ASimCopterHelicopterPawn* ResolveCurrentAircraft(const UObject* WorldContext)
 	}
 	TArray<AActor*> Aircraft;
 	UGameplayStatics::GetAllActorsOfClass(WorldContext, ASimCopterHelicopterPawn::StaticClass(), Aircraft);
+	Aircraft.RemoveAll([](AActor* Actor) { return CastChecked<ASimCopterHelicopterPawn>(Actor)->IsSupportAircraft(); });
 	Aircraft.Sort([](const AActor& A, const AActor& B) { return A.GetName() < B.GetName(); });
 	return Aircraft.IsEmpty() ? nullptr : CastChecked<ASimCopterHelicopterPawn>(Aircraft[0]);
+}
+
+bool IsApacheEncounterCity(int32 CityIndex)
+{
+	return CityIndex >= FirstApacheEncounterCityIndex && CityIndex <= LastApacheEncounterCityIndex;
+}
+
+FIntPoint FindApacheSpawnTile(TFunctionRef<int32(int32, int32)> GetTile)
+{
+	for (int32 Y = 0; Y < FSimCity2000City::MapSize; ++Y)
+		for (int32 X = 0; X < FSimCity2000City::MapSize; ++X)
+			if (GetTile(X, Y) == 0xe7) return FIntPoint(X, Y);
+	return FIntPoint(INDEX_NONE, INDEX_NONE);
+}
+
+bool TryGetApacheSpawnSurface(const ASimCopterTrafficSystemActor* Traffic, FVector& OutSurface)
+{
+	if (!Traffic) return false;
+	const auto* Missions = Cast<ASimCopterMissionSystemActor>(
+		UGameplayStatics::GetActorOfClass(Traffic, ASimCopterMissionSystemActor::StaticClass()));
+	if (!Missions || Missions->GetSessionMode() == ESimCopterMissionSessionMode::UserCityJobs ||
+		!IsApacheEncounterCity(Missions->GetSessionCareerCityIndex())) return false;
+	const FIntPoint Tile = FindApacheSpawnTile([Traffic](int32 X, int32 Y) { return Traffic->GetXbldTileId(X, Y); });
+	return Tile.X != INDEX_NONE && Traffic->TryGetTileCenterWorldLocation(Tile.X, Tile.Y, OutSurface);
+}
+
+void EnsureApacheEncounter(ASimCopterTrafficSystemActor* Traffic,
+	ASimCopterHelicopterPawn* Existing, USimCopterCareerSubsystem* Career)
+{
+	FVector Surface;
+	if (!Career || Career->HasSpawnedApacheEncounter() || !TryGetApacheSpawnSurface(Traffic, Surface)) return;
+	UWorld* World = Traffic->GetWorld();
+	if (!World) return;
+	TArray<AActor*> Aircraft;
+	UGameplayStatics::GetAllActorsOfClass(World, ASimCopterHelicopterPawn::StaticClass(), Aircraft);
+	for (AActor* Actor : Aircraft)
+		if (CastChecked<ASimCopterHelicopterPawn>(Actor)->IsApacheHelicopter() &&
+			!CastChecked<ASimCopterHelicopterPawn>(Actor)->IsSupportAircraft())
+		{
+			Career->SetApacheEncounterSpawned(true);
+			return; // Includes old saves that already contain an Apache.
+		}
+	// SCHOOK: FUN_0047a240 places runtime type 2 at DAT_005d91d8/dc.
+	// Discovery keeps that free world aircraft; ownership is claimed when boarding,
+	// so the requested paid hangar delivery remains an alternative to finding it.
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.bDeferConstruction = true;
+	auto* Apache = World->SpawnActor<ASimCopterHelicopterPawn>(
+		Existing ? Existing->GetClass() : ASimCopterHelicopterPawn::StaticClass(), Surface, FRotator::ZeroRotator, Params);
+	if (!Apache) return;
+	Apache->AutoPossessPlayer = EAutoReceiveInput::Disabled;
+	Apache->AutoPossessAI = EAutoPossessAI::Disabled;
+	Apache->FinishSpawning(Apache->GetActorTransform());
+	if (!Apache->SwitchHelicopterModel(2)) { Apache->Destroy(); return; }
+	Apache->ResetAircraft();
+	Apache->PlaceOnHelipad(Surface, 0.0f);
+	Career->SetApacheEncounterSpawned(true);
 }
 
 bool IsHangarPad(const int32 PadIndex)
@@ -86,6 +148,7 @@ ASimCopterHelicopterPawn* SpawnOnFreePad(
 
 	TArray<AActor*> Actors;
 	UGameplayStatics::GetAllActorsOfClass(World, ASimCopterHelicopterPawn::StaticClass(), Actors);
+	Actors.RemoveAll([](AActor* Actor) { return CastChecked<ASimCopterHelicopterPawn>(Actor)->IsSupportAircraft(); });
 	TArray<FBox> Occupants;
 	for (AActor* Actor : Actors)
 	{

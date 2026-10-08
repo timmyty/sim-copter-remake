@@ -195,6 +195,15 @@ public:
 
 	// True once BeginCareer has run, so a city entered directly (PIE) can seed itself.
 	bool IsCareerOpen() const { return bCareerOpen; }
+	// This city's one hidden encounter has been placed (also retained after selling it).
+	bool HasSpawnedApacheEncounter() const { return bApacheEncounterSpawned; }
+	void SetApacheEncounterSpawned(bool bValue) { bApacheEncounterSpawned = bValue; }
+	bool IsAirSupportUnlocked() const { return bAirSupportUnlocked; }
+	void SetAirSupportUnlocked(bool bValue) { bAirSupportUnlocked = bValue; }
+private:
+	UPROPERTY() bool bAirSupportUnlocked = false;
+	UPROPERTY() bool bApacheEncounterSpawned = false;
+public:
 
 private:
 	UPROPERTY()

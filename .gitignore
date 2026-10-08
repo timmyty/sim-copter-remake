@@ -1,5 +1,10 @@
 /Reference
 
+# Local official NVIDIA build dependencies and release staging.
+/SimCopterRemake/Plugins/NVIDIA/
+/Docs/scratchpad/nvidia-dlss-ue58.zip
+/Docs/scratchpad/PlayablePackage/
+
 # The folder the player is told to drop their original SimCopter install into - the same folder
 # one level up from the .uproject that a packaged build has beside its .exe, so a developer can
 # use either it or /Reference. Nothing in it is tracked: the game data never is (same rule as
@@ -17,7 +22,11 @@
 
 # Unreal generated files
 /SimCopterRemake/Binaries
-/SimCopterRemake/Build
+/SimCopterRemake/Build/*
+!/SimCopterRemake/Build/Windows/
+/SimCopterRemake/Build/Windows/*
+!/SimCopterRemake/Build/Windows/Application.ico
+!/SimCopterRemake/Build/Windows/SimCopterIcon.png
 /SimCopterRemake/DerivedDataCache
 /SimCopterRemake/Intermediate
 /SimCopterRemake/Saved
@@ -58,3 +67,7 @@ __pycache__/
 # Tools/MacBench output: CSV captures, logs, and screenshots of the city (original game art), plus
 # the benchmark's backup of the player's own settings.
 /Docs/scratchpad/mac-bench
+
+# New local task evidence, backups and private staging are never publication inputs.
+/Docs/scratchpad/
+/reports/

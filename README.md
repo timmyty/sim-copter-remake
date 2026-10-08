@@ -1,6 +1,29 @@
-# SimCopter Remake
+# SimCopter Remake — Timmyty gameplay fork
 
-[![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-brightgreen?style=for-the-badge&logo=github)](https://github.com/JamesIV4/sim-copter-remake/releases/latest)
+This customized version builds on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
+and [wyozi's fork](https://github.com/wyozi/sim-copter-remake). Their commit history and authorship are retained.
+
+**This fork intentionally changes original gameplay.** It adds nonlethal police tasers on foot
+and from a helicopter passenger seat, an AI helper pilot, towing/capture equipment, expanded
+medical care, parachuting, revised visuals and controls, and the 21-track KINV station.
+Airborne police tasers are a fictional addition, not authentic 1996 SimCopter behavior.
+Taser hits immobilize living criminals for handcuffing and police delivery; they do not fire
+bullets or kill the target. Separate Apache weapons and other game hazards still exist.
+
+- [All changes, departures from the original, and credits](Docs/ForkChanges.md)
+- [Complete file inventory and inherited commits](Docs/ForkFileInventory.md)
+- [Build and dependency instructions](Docs/ForkBuild.md)
+- [Current validation results and known limitations](Docs/ForkValidation.md)
+- [Gameplay controls and air operations](Docs/AirOperations.md)
+
+Use Git LFS when cloning: custom music, textures, Unreal assets and the Windows icon are
+included through LFS. Supply your original game data and the required Unreal/NVIDIA build
+dependencies locally. This source publication is not a new prebuilt Windows release.
+
+## Original upstream project overview
+
+The following describes the upstream remake's foundation. Its fidelity goals describe
+the original project; the deliberate changes in this fork are listed above.
 
 **SimCopter Remake** is a ground-up reimplementation of Maxis's 1996 PC game _SimCopter_, built in Unreal Engine 5.
 

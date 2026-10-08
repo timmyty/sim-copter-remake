@@ -1,6 +1,9 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterGroundAgent.h"
+#include "Ground/SimCopterRescueDeck.h"
+#include "Flight/SimCopterAirOperations.h"
+#include "Ground/SimCopterBandNavigation.h"
 #include "ProfilingDebugging/CsvProfiler.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
@@ -52,7 +55,7 @@ namespace
 constexpr uint32 GroundAgentRuntimeSaveMagic = 0x4147454e; // 'AGEN'
 // 5 adds the vehicle-knockdown phase. Without it a save taken mid-tumble restored a person with no
 // behaviour VM and a forced clip, i.e. a pedestrian frozen in the recoil pose forever.
-constexpr int32 GroundAgentRuntimeSaveVersion = 5;
+constexpr int32 GroundAgentRuntimeSaveVersion = 6;
 
 void SerializeAgentBool(FArchive& Archive, bool& Value)
 {
@@ -682,6 +685,14 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 			}
 			ASimCopterMissionSystemActor* Missions = Cast<ASimCopterMissionSystemActor>(
 				UGameplayStatics::GetActorOfClass(GetWorld(), ASimCopterMissionSystemActor::StaticClass()));
+			if (bMissionPatientDead && !BehaviorCarrier.IsValid())
+			{
+				// Remake recovery: keep the real body available until an ambulance collects it.
+				BehaviorContext.bRequestDespawn = false;
+				bBehaviorActive = false;
+				SetMissionDeadPose();
+				return;
+			}
 			const bool bDeadMedevacPatientAboard =
 				bMissionPatientDead &&
 				bClaimedPassengerSeat &&
@@ -784,6 +795,7 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 		}
 	}
 
+	if (bBandFormationActive) BehaviorContext.PendingAnimMnemonic = TEXT("Play");
 	// Anim binds map straight onto the figure clips (same 4-char mnemonics as ARLU).
 	if (!BehaviorContext.PendingAnimMnemonic.IsEmpty())
 	{
@@ -1161,11 +1173,53 @@ bool ASimCopterGroundAgent::IsPedestrianStepBlockedByGeometry(
 		return false;
 	}
 
-	// Already intersecting something at the start of the sweep. Refusing the move would strand
-	// anyone whose spawn or a separation nudge left them clipped into geometry, and there is no
-	// facing that can free them - the sweep is penetrating on all eight. Let them walk out; the
-	// climb gate above still owns where they may end up.
-	return Hit.bBlockingHit && !Hit.bStartPenetrating;
+	// A spawn or crowd nudge may overlap a wall. Allow escape along its outward normal, never
+	// movement deeper through it. Blanket acceptance of initial overlaps disabled wall collision.
+	return Hit.bBlockingHit && (!Hit.bStartPenetrating || FVector::DotProduct(End - Start, Hit.Normal) < 0.0f);
+}
+
+void ASimCopterGroundAgent::MoveAgainstCityGeometry(const FVector& Delta, const FQuat& Rotation)
+{
+	if (AgentKind != ESimCopterGroundAgentKind::Pedestrian || !bUseGeometryStepSweep || !GetWorld() || !CollisionComponent)
+	{
+		RootComponent->MoveComponent(Delta, Rotation, false);
+		return;
+	}
+	const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+	const float UnitCm = Traffic ? Traffic->GetPeopleWorldCmPerOriginalUnit() : 1.0f;
+	float Radius, HalfHeight, CenterZ;
+	const FVector Location = GetActorLocation();
+	const float FeetZ = Location.Z - GetCapsuleHalfHeightCm();
+	ComputePedestrianStepSweepShape(FeetZ, FeetZ, MaxStepClimbOriginalUnits * UnitCm,
+		CollisionComponent->GetScaledCapsuleRadius(), CollisionComponent->GetScaledCapsuleHalfHeight(),
+		PedestrianStepSweepRadiusScale, Radius, HalfHeight, CenterZ);
+	const FVector Start(Location.X, Location.Y, CenterZ);
+	FHitResult Hit;
+	FVector AllowedDelta = Delta;
+	if (GetWorld()->SweepSingleByChannel(Hit, Start, Start + Delta, FQuat::Identity, ECC_Camera,
+		FCollisionShape::MakeCapsule(Radius, HalfHeight),
+		FCollisionQueryParams(SCENE_QUERY_STAT(SimCopterPedestrianFrameMove), false, this)))
+	{
+		if (!Hit.bStartPenetrating)
+		{
+			// A tiny contact margin keeps the next query outside the wall, including at corners.
+			AllowedDelta *= FMath::Max(0.0f, Hit.Time - 0.1f / FMath::Max(0.1f, float(Delta.Size())));
+		}
+		else if (FVector::DotProduct(Delta, Hit.Normal) < 0.0f)
+		{
+			AllowedDelta = FVector::ZeroVector;
+		}
+		if (!AllowedDelta.Equals(Delta))
+		{
+			CurrentVelocityCmPerSec = FVector::ZeroVector;
+			ExternalVelocityCmPerSec = FVector::ZeroVector;
+			BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
+			BehaviorStepTimeRemainingSeconds = 0.0f;
+		}
+	}
+	// The query excludes other pedestrians and foliage, while testing the actual frame distance.
+	// The behavior VM only checked its short logical step; a hitch or impulse can travel farther.
+	RootComponent->MoveComponent(AllowedDelta, Rotation, false);
 }
 
 ASimCopterGroundAgent::EWallContainmentStep ASimCopterGroundAgent::ClassifyWallContainmentStep(
@@ -1196,13 +1250,11 @@ void ASimCopterGroundAgent::ContainOutsideBuildingGeometry()
 	}
 
 	// Anyone the transform does not belong to keeps no anchor: a rider's position is the carrier's,
-	// and re-entering the world is a teleport by definition. BHAV 308's move-through-walls escape
-	// is honoured here for the same reason MoveStep honours it - a walker it has given up on is
-	// allowed through.
+	// and re-entering the world is a teleport by definition. BHAV 308's legacy cell-rule escape
+	// must not disable rendered building collision (intentional remake behavior).
 	if (bMissionCarried ||
 		bBehaviorMoveSuspended ||
-		BehaviorCarrier.IsValid() ||
-		BehaviorContext.Attributes[EBhavAttr::MoveThroughWalls] != 0)
+		BehaviorCarrier.IsValid())
 	{
 		bHasWallContainmentAnchor = false;
 		return;
@@ -1260,14 +1312,13 @@ void ASimCopterGroundAgent::ContainOutsideBuildingGeometry()
 		FCollisionShape::MakeCapsule(RadiusCm, HalfHeightCm),
 		FCollisionQueryParams(SCENE_QUERY_STAT(SimCopterPedestrianWallContainment), false, this));
 
-	// bStartPenetrating means the anchor itself was already inside something, which is not a state
-	// this can correct by pushing backwards - it would only wedge them deeper. Give up the anchor
-	// and let them walk out; the step sweep applies the same rule.
-	if (bBlocked && Hit.bBlockingHit && !Hit.bStartPenetrating)
+	if (bBlocked && Hit.bBlockingHit &&
+		(!Hit.bStartPenetrating || FVector::DotProduct(To - From, Hit.Normal) < 0.0f))
 	{
 		// Stop them against the surface, keeping whatever height the movers and the snap chose -
 		// this owns the deck, not the vertical.
-		SetActorLocation(FVector(Hit.Location.X, Hit.Location.Y, Current.Z), false);
+		const FVector Safe = Hit.bStartPenetrating ? WallContainmentAnchor : Hit.Location + Hit.Normal * 0.1f;
+		SetActorLocation(FVector(Safe.X, Safe.Y, Current.Z), false);
 		// ...and take away the push that was driving them in, or they grind along the wall for as
 		// long as whatever nudged them keeps at it.
 		CurrentVelocityCmPerSec = FVector(0.0f, 0.0f, CurrentVelocityCmPerSec.Z);
@@ -1285,6 +1336,7 @@ bool ASimCopterGroundAgent::MoveStep(FSimCopterPersonContext& Context)
 	// 0 = NoMo, 1..6 = 1Wal, 7+ = 1Run (dogs/cows remap to DgRn/DgSt in the clip bind).
 	// The magnitude comes from the MoveSpeed attribute (+0x164), which the shipped programs
 	// assign directly; one tick displaces octantDir * MoveSpeed / 12 original units.
+	if (bBandFormationActive) return true;
 	const int32 MoveSpeed = FMath::Max(0, int32(int16(Context.Attributes[EBhavAttr::MoveSpeed])));
 	const TCHAR* SpeedMnemonic = MoveSpeed <= 0 ? TEXT("NoMo") : (MoveSpeed < 7 ? TEXT("1Wal") : TEXT("1Run"));
 
@@ -1347,6 +1399,13 @@ bool ASimCopterGroundAgent::MoveStep(FSimCopterPersonContext& Context)
 			continue;
 		}
 
+		if (auto* Missions = GetFireSafetyMissionSystem(); Missions &&
+			Missions->ShouldAvoidFireStep(GetActorLocation() - FVector(0, 0, HalfHeight),
+				FVector(TargetLocation.X, TargetLocation.Y, CurrentFeetZ)))
+		{
+			LastBlockResult = 3;
+			continue;
+		}
 		// A posted hospital worker turns at the edge of its own roof instead of walking to it and
 		// leaning on the containment clamp. Result 3 is the same code the original uses for a tile
 		// the walker may not enter, so the retry loop turns them exactly as it would there.
@@ -1482,9 +1541,8 @@ bool ASimCopterGroundAgent::MoveStep(FSimCopterPersonContext& Context)
 		// The probe above deliberately looks under overhead geometry, so on its own it would walk
 		// people straight through a building wall: the highest surface below their feet inside a
 		// wall is the floor the building stands on. Ask the mesh whether the step is actually
-		// clear. BHAV 308's escape passes through here too - a walker it has given up on is
-		// allowed through walls by definition.
-		if (!bMoveThroughWalls && IsPedestrianStepBlockedByGeometry(GetActorLocation(), TargetLocation, SurfaceZ))
+		// clear. Unlike FUN_004c9470's cell-height escape, real building walls always block.
+		if (IsPedestrianStepBlockedByGeometry(GetActorLocation(), TargetLocation, SurfaceZ))
 		{
 			LastBlockResult = 1; // FaCl: something solid is in front of them
 			continue;
@@ -1841,7 +1899,7 @@ bool ASimCopterGroundAgent::TryGetWalkSurfaceZAt(const FVector& WorldLocation, f
 	const FVector Start(WorldLocation.X, WorldLocation.Y, StartZ);
 	const FVector End(WorldLocation.X, WorldLocation.Y, FeetZ - GroundProbeDistanceCm);
 	FHitResult Hit;
-	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterWalkSurface), false, this);
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterWalkSurface), true, this);
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Camera, QueryParams) && Hit.bBlockingHit)
 	{
 		OutSurfaceZ = Hit.ImpactPoint.Z;
@@ -2427,6 +2485,13 @@ ESimCopterBehaviorStepResult ASimCopterGroundAgent::StepTowardSelectedObject(FSi
 	}
 
 	FaceSelectedObject(Context);
+	if (Context.GetStateIndex() == 17 || Context.GetStateIndex() == 18)
+	{
+		FVector Waypoint;
+		int32 Facing;
+		if (!GetBandWaypoint(Context.SelectedLocation, Waypoint)) return ESimCopterBehaviorStepResult::Blocked;
+		if (TryGetBehaviorFacingOctantToward(Waypoint, Facing)) Context.Attributes[EBhavAttr::Facing] = uint16(Facing);
+	}
 	bBehaviorStepTouchedSelection = false;
 	bBehaviorStepSeekingSelection = true;
 	const bool bStepped = MoveStep(Context);
@@ -2623,6 +2688,16 @@ bool ASimCopterGroundAgent::ApplyHelicopterRunOver(ASimCopterHelicopterPawn& Hel
 	{
 		return false;
 	}
+	// Show and sound the contact immediately, before the queued BHAV 912/903 death runs.
+	// Suspending its stack retains the original death/mission accounting after the tumble.
+	FVector ImpactVelocity = Helicopter.GetVelocityCmPerSec();
+	if (ImpactVelocity.Size2D() < 180.0f)
+	{
+		ImpactVelocity = (GetActorLocation() - Helicopter.GetActorLocation()).GetSafeNormal2D();
+		if (ImpactVelocity.IsNearlyZero()) ImpactVelocity = Helicopter.GetActorRightVector();
+		ImpactVelocity *= 180.0f;
+	}
+	ApplyKnockdownFrom(Helicopter, ImpactVelocity, GSimCopterHelicopterKnockdownUpwardScale);
 	bRunOverByHelicopter = true;
 	// Do not also synthesize outcome 9 (caught). BHAV 903 posts outcome 10 (casualty), and the
 	// retail lifecycle closes crimes on caught + casualties reaching the one target.
@@ -2910,8 +2985,12 @@ bool ASimCopterGroundAgent::ApplyKnockdownFrom(
 	KnockdownSpinDegreesPerSecond =
 		static_cast<float>(LaunchVelocity.Size()) * FMath::Max(0.0f, KnockdownSpinDegreesPerSecondPerSpeed) *
 		(FMath::RandBool() ? 1.0f : -1.0f);
-	KnockdownSpinDegrees = 0.0f;
+	// Even a slow skid contact gets an immediate visible flinch on the audio's frame.
+	KnockdownSpinDegreesPerSecond = FMath::Sign(KnockdownSpinDegreesPerSecond) *
+		FMath::Max(FMath::Abs(KnockdownSpinDegreesPerSecond), 150.0f);
+	KnockdownSpinDegrees = FMath::Sign(KnockdownSpinDegreesPerSecond) * 16.0f;
 	KnockdownRestSpinDegrees = 90.0f;
+	ApplyKnockdownVisual(FQuat(KnockdownSpinAxis, FMath::DegreesToRadians(KnockdownSpinDegrees)), 0.0f);
 
 	// "Whoa" is the recoil clip the move core itself binds when something shoves a walker
 	// (FUN_004c6970 result 2), so it is already the game's own "that just happened to me" pose.
@@ -3194,6 +3273,12 @@ bool ASimCopterGroundAgent::UpdateKnockdown(const float DeltaSeconds)
 		bKnockdownLandedInWater);
 	if (NextPhase != KnockdownPhase)
 	{
+		if (bRunOverByHelicopter && NextPhase == ESimCopterKnockdownPhase::Prone)
+		{
+			// Resume the queued fatal reaction once the impact lands, without a get-up interval.
+			FinishKnockdown();
+			return false;
+		}
 		if (NextPhase == ESimCopterKnockdownPhase::None)
 		{
 			FinishKnockdown();
@@ -3399,6 +3484,13 @@ bool ASimCopterGroundAgent::IsTouchingSelection(
 bool ASimCopterGroundAgent::PushReactionOnSelectedObject(FSimCopterPersonContext& Context, const int32 ProgramId)
 {
 	ASimCopterGroundAgent* Target = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get());
+	// User-requested divergence from BHAV 1175 rec[4]: a mugging injures, never pushes
+	// death program 903. A failed allocation leaves them alive and lets the attacker retry.
+	if (ProgramId == 903 && Context.GetStateIndex() == 12)
+	{
+		auto* Missions = GetFireSafetyMissionSystem();
+		return Missions && Missions->CreateIncidentMedevacForVictim(Target);
+	}
 	const bool bPushed = Target != nullptr && Target->PushBehaviorReaction(ProgramId);
 	// BHAV 1150 rec[6] is the arrest itself: the cop pushes 1060 'Rx: criminal-caught' onto the
 	// criminal. If that is refused, nothing downstream happens at all.
@@ -3573,6 +3665,8 @@ int32 ASimCopterGroundAgent::GetCurrentTileBuildingId() const
 	{
 		return INDEX_NONE;
 	}
+	const FVector Feet = GetActorLocation() - FVector(0,0,GetCapsuleHalfHeightCm());
+	if (TrafficSystem->IsAtHospitalEntrance(Feet)) return 0xD1;
 	return TrafficSystem->GetXbldTileId(FileX, FileY);
 }
 
@@ -3581,6 +3675,8 @@ bool ASimCopterGroundAgent::IsCurrentTileServiceable() const
 	// FUN_004ccc40 = FUN_004c9cc0 (is anything on this tile) && FUN_004c9dc0(tile class). The
 	// remake answers the second half only: the walkable classes an on-foot crew member can stand
 	// and work on, which is the part the paramedic program branches on.
+	if (const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner()); Traffic &&
+		Traffic->IsAtHospitalEntrance(GetActorLocation() - FVector(0,0,GetCapsuleHalfHeightCm()))) return true;
 	const int32 TileClass = GetCurrentTileClass();
 	return TileClass == 7 || TileClass == 10 || TileClass == 11 || TileClass == 12 || TileClass == 13;
 }
@@ -3611,8 +3707,8 @@ bool ASimCopterGroundAgent::CanAlightHere() const
 	// The tile half is deliberately broad: anywhere that is not open water. Restricting it to the
 	// walkable pedestrian classes meant a helicopter set down on a helipad or road shoulder failed
 	// the test and nobody could ever get out - which is what stranded the train survivors aboard.
-	// Ordinary roof delivery is rejected separately by IsPassengerDeliveryLocationAllowed; the
-	// state-6 medevac exception remains able to use the hospital helipad.
+	// Roof delivery is destination-aware in IsPassengerDeliveryLocationAllowed; transport
+	// destinations and the state-6 hospital handoff can use their roofs.
 	//
 	// Emergency crew skip that rule: it exists so a scored passenger cannot complete on a roof, and
 	// crew are never scored. FUN_004c9bc0 has no such rule for anyone - its ground is FUN_004c82c0,
@@ -3628,7 +3724,7 @@ bool ASimCopterGroundAgent::CanAlightHere() const
 		if (Missions != nullptr &&
 			!Missions->IsPassengerDeliveryLocationAllowed(
 				GetMissionPassengerKind(),
-				CabinHelicopter->GetPassengerDropWorldLocation()))
+				CabinHelicopter->GetPassengerDropWorldLocation(), MissionEventId))
 		{
 			return false;
 		}
@@ -3672,7 +3768,7 @@ bool ASimCopterGroundAgent::TryAlightHere()
 	}
 	if (BehaviorCarrier.IsValid() || bBehaviorMoveSuspended)
 	{
-		AlightFromCarrier();
+		return AlightFromCarrier();
 	}
 	return true;
 }
@@ -3814,6 +3910,7 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	const bool bAlreadyInThisCabin =
 		BehaviorCarrier.Get() == NewCarrier && !bRidingHarness && bClaimedPassengerSeat;
 
+	ClearRescueDeck();
 	// Relinquish the old carrier before taking the new one. This is deliberately attachment-only:
 	// snapping a harness rider to the ground for the instant it transfers into the cabin produces
 	// a visible teleport and can select a roof far below it.
@@ -3852,6 +3949,7 @@ bool ASimCopterGroundAgent::BoardCarrier(
 			? ComputeMedevacPortraitStateFromHealth(ReadMedevacHealth(BehaviorContext))
 			: 1;
 		CabinImpactPortraitSecondsRemaining = 0.0f;
+		if (IsArrestableSuspect() || bTaserStunned) { bHandcuffed = true; bTaserStunned = false; }
 		if (Helicopter->AddMissionPassengersForMission(
 				1, MissionEventId, GetMissionPassengerKind(), this) <= 0)
 		{
@@ -3898,7 +3996,7 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	// A legacy on-foot carry paused the VM. Preserve its live context and let it resume once the
 	// helicopter owns the transform, so medevac health/delivery behavior is not discarded.
 	bMissionCarried = false;
-	if (!bBehaviorActive && BehaviorModel.IsValid() && bUseOriginalBehaviors)
+	if (!bBehaviorActive && !bMissionPatientDead && BehaviorModel.IsValid() && bUseOriginalBehaviors)
 	{
 		bBehaviorActive = true;
 	}
@@ -3976,7 +4074,8 @@ void ASimCopterGroundAgent::UpdateCarriedTransform()
 		}
 		return;
 	}
-	SetActorLocation(RopeEnd - FVector(0.0f, 0.0f, GetCapsuleHalfHeightCm()), false);
+	// The raised hands in the rescue pose meet the triangle; the capsule centre is below them.
+	SetActorLocation(RopeEnd - FVector(0.0f, 0.0f, GetCapsuleHalfHeightCm() * 0.45f), false);
 }
 
 void ASimCopterGroundAgent::AlightAttachmentOnly()
@@ -3987,7 +4086,7 @@ void ASimCopterGroundAgent::AlightAttachmentOnly()
 	}
 }
 
-bool ASimCopterGroundAgent::AlightFromCarrier(const bool bPlayDoorSound)
+bool ASimCopterGroundAgent::AlightFromCarrier(const bool bPlayDoorSound, const bool bRequireClearExit)
 {
 	AActor* Carrier = BehaviorCarrier.Get();
 	ASimCopterHelicopterPawn* CabinHelicopter =
@@ -4008,6 +4107,7 @@ bool ASimCopterGroundAgent::AlightFromCarrier(const bool bPlayDoorSound)
 		}
 		CabinDoorWorldLocation = CabinHelicopter->GetPassengerDropWorldLocation(PassengerSlotIndex) +
 			FVector::UpVector * GetCapsuleHalfHeightCm();
+		if (bRequireClearExit && !CabinHelicopter->FindClearPassengerExit(this, CabinDoorWorldLocation)) return false;
 	}
 	const bool bLeavingHelicopterCabin =
 		bPlayDoorSound && CabinHelicopter != nullptr && Carrier == ResolvePlayerHelicopter();
@@ -4324,7 +4424,7 @@ bool ASimCopterGroundAgent::DropSelectedPerson(FSimCopterPersonContext& Context)
 		return false;
 	}
 
-	if (!Person->AlightFromCarrier())
+	if (!Person->AlightFromCarrier(true, false)) // direct medic handoff owns the patient immediately
 	{
 		return false;
 	}
@@ -4450,6 +4550,21 @@ bool ASimCopterGroundAgent::IsOnHomeTile() const
 		FIntPoint(FileX, FileY) == BehaviorHomeTile;
 }
 
+bool ASimCopterGroundAgent::TryClaimHospitalPatient(ASimCopterGroundAgent* Medic)
+{
+	if (!IsValid(Medic)) return false;
+	const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+	// BHAV 263 selects the helicopter while approaching, then selects the patient again.
+	// Keep the reservation across that temporary selection, but expire abandoned approaches.
+	if (auto* Existing = HospitalPatientClaim.Get(); Existing && Existing != Medic &&
+		!Existing->IsActorBeingDestroyed() && !Existing->IsMissionPatientDead() &&
+		Existing->BehaviorContext.GetStateIndex() == 5 && Now < HospitalPatientClaimUntil)
+		return false;
+	HospitalPatientClaim = Medic;
+	HospitalPatientClaimUntil = Now + 20.0f;
+	return true;
+}
+
 bool ASimCopterGroundAgent::SelectMedevacVictimAboardPlayer(FSimCopterPersonContext& Context)
 {
 	// FUN_004cc830 walks the player's passenger list for a person in state 6. The remake keeps
@@ -4462,7 +4577,7 @@ bool ASimCopterGroundAgent::SelectMedevacVictimAboardPlayer(FSimCopterPersonCont
 		return false;
 	}
 
-	ASimCopterGroundAgent* Victim = TrafficSystem->FindMedevacPassengerAboard(Helicopter);
+	ASimCopterGroundAgent* Victim = TrafficSystem->FindMedevacPassengerAboard(Helicopter, this);
 	if (Victim == nullptr)
 	{
 		Context.ClearSelection();
@@ -5311,6 +5426,13 @@ void ASimCopterGroundAgent::OnUnknownOpcode(int32 Opcode)
 	}
 }
 
+ASimCopterMissionSystemActor* ASimCopterGroundAgent::GetFireSafetyMissionSystem()
+{
+	if (!FireSafetyMissionSystem.IsValid() && GetWorld())
+		FireSafetyMissionSystem = Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(GetWorld(), ASimCopterMissionSystemActor::StaticClass()));
+	return FireSafetyMissionSystem.Get();
+}
+
 void ASimCopterGroundAgent::Tick(float DeltaSeconds)
 {
 	// Summed over every agent in the frame.
@@ -5332,7 +5454,20 @@ void ASimCopterGroundAgent::Tick(float DeltaSeconds)
 
 	// Before any of the early returns below: a carried or suspended agent is still on screen, and a
 	// person who kept the sun's noon brightness after dark is exactly the bug this fixes.
+	FollowRescueDeck(false);
 	RefreshSpriteExposure();
+	if (TickAirOperations(DeltaSeconds)) return;
+	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian && !bMissionCarried && !bBehaviorMoveSuspended &&
+		!bPassengerFallActive && !bMissionPatientDead && !IsMedevacVictim() &&
+		BehaviorContext.Attributes[EBhavAttr::WrittenOff] == 0)
+	{
+		if (auto* Missions = GetFireSafetyMissionSystem(); Missions &&
+			Missions->IsPedestrianFireHazard(GetActorLocation() - FVector(0, 0, GetCapsuleHalfHeightCm())))
+		{
+			if (IsKnockedDown()) FinishKnockdown(true);
+			Missions->CreateIncidentMedevacForVictim(this);
+		}
+	}
 	// A cabin passenger is hidden and movement-suspended, but this display reaction still owns
 	// real time. Run it before both carried early returns so the frightened row cannot latch.
 	UpdateCabinImpactPortrait(DeltaSeconds);
@@ -5427,9 +5562,61 @@ void ASimCopterGroundAgent::Tick(float DeltaSeconds)
 	{
 		UpdateGroundSnap(DeltaSeconds);
 	}
+	FollowRescueDeck(true);
 	// After the snap: the submersion is measured from where the capsule ended up this frame.
 	UpdateWaterSubmersion(DeltaSeconds);
 	UpdateJankyAnimation(DeltaSeconds);
+}
+
+void ASimCopterGroundAgent::BindRescueDeck(UProceduralMeshComponent* Deck, const FVector& Feet)
+{
+	ClearRescueDeck();
+	if (!Deck) return;
+	RescueDeck = Deck;
+	RescueDeckLocalFeet = Deck->GetComponentTransform().InverseTransformPosition(Feet);
+	bSnapToGround = false;
+	AddTickPrerequisiteActor(Deck->GetOwner());
+	WaterSubmergeAlpha = WaterVisualOffsetCm = 0;
+	SetVisualRootRelativeLocation(VisualRootBaseRelativeLocation);
+	FollowRescueDeck(false);
+}
+
+void ASimCopterGroundAgent::ClearRescueDeck()
+{
+	if (RescueDeck.IsValid())
+	{
+		RemoveTickPrerequisiteActor(RescueDeck->GetOwner());
+		bSnapToGround = true;
+	}
+	RescueDeck.Reset();
+}
+
+void ASimCopterGroundAgent::FollowRescueDeck(bool bAcceptMovement)
+{
+	if (!RescueDeck.IsValid()) return;
+	if (bMissionCarried || BehaviorCarrier.IsValid() || bPassengerFallActive)
+	{
+		ClearRescueDeck();
+		return;
+	}
+	const FTransform& Transform = RescueDeck->GetComponentTransform();
+	FVector Feet = Transform.TransformPosition(RescueDeckLocalFeet);
+	if (bAcceptMovement)
+	{
+		// Every intermediate step needs hull underneath it too: no walking across a gap or
+		// escaping via crowd pushes, even when the final point happens to hit another triangle.
+		const FVector Target = GetActorLocation() - FVector(0,0,GetCapsuleHalfHeightCm());
+		const int32 Steps = FMath::Clamp(FMath::CeilToInt(FVector::Dist2D(Feet, Target)/5.0), 1, 128);
+		const FVector Start = Feet;
+		for (int32 Step = 1; Step <= Steps; ++Step)
+		{
+			FVector Surface;
+			if (!SimCopterRescueDeck::FindSurface(RescueDeck.Get(), FMath::Lerp(Start,Target,double(Step)/Steps), Surface)) break;
+			Feet = Surface;
+		}
+		RescueDeckLocalFeet = Transform.InverseTransformPosition(Feet);
+	}
+	SetActorLocation(Feet + FVector(0,0,GetCapsuleHalfHeightCm()), false);
 }
 
 void ASimCopterGroundAgent::ConfigureAgent(
@@ -5576,6 +5763,8 @@ bool ASimCopterGroundAgent::CaptureRuntimeSaveState(TArray<uint8>& OutData)
 	SerializeAgentBool(Writer, bKnockdownResumeBehaviorActive);
 	SerializeAgentBool(Writer, bKnockdownResumeMissionStationary);
 	Writer << KnockdownResumeFigureMnemonic;
+	Writer << bTaserStunned << bHandcuffed << bVehicleStalled << bVehicleTowed << bVehicleExploded;
+	Writer << HelicopterImpactCount << TowMissionId << VehicleImpactCooldown << VehicleExplosionSeconds << VehicleDents;
 	return !Writer.IsError();
 }
 
@@ -5735,6 +5924,13 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		bKnockdownResumeBehaviorActive = false;
 		bKnockdownResumeMissionStationary = false;
 		KnockdownResumeFigureMnemonic.Reset();
+	}
+	if (Version >= 6)
+	{
+		Reader << bTaserStunned << bHandcuffed << bVehicleStalled << bVehicleTowed << bVehicleExploded;
+		Reader << HelicopterImpactCount << TowMissionId << VehicleImpactCooldown << VehicleExplosionSeconds << VehicleDents;
+		if (VehicleDents.Num() > 4 || HelicopterImpactCount < 0 || HelicopterImpactCount > 4) return false;
+		UndamagedVehicleVertices.Reset(); RebuildVehicleDents();
 	}
 	if (Reader.IsError() || Reader.Tell() != Reader.TotalSize()) return false;
 	// Version-1 saves already contain SeatPortraitMood but predate the transient impact deadline.
@@ -6184,7 +6380,9 @@ bool ASimCopterGroundAgent::RebuildFigureClip(const FString& Mnemonic)
 		return false;
 	}
 
-	const float HeightCm = PedestrianBodyHeightCm * PopulationWorldScale;
+	// User-requested animal scale; calibrate every clip identically so animations never grow it.
+	const float HeightCm = PedestrianBodyHeightCm * PopulationWorldScale *
+		(Figure.Name.StartsWith(TEXT("2DOG")) ? (1.0f / 3.0f) : 1.0f);
 	// Calibrate model units from the standing walk clip so poses like "Dead" keep their scale.
 	const FPrivAnimClip* StandingClip = FigureShared->Model.FindClip(Figure, TEXT("1Wal"));
 	const FPrivAnimClip& CalibrationClip = StandingClip != nullptr ? *StandingClip : *Clip;
@@ -6222,6 +6420,7 @@ bool ASimCopterGroundAgent::RebuildFigureClip(const FString& Mnemonic)
 	// buried to the shoulders. Measured against the walk cycle's own lowest point, so binding an
 	// ordinary walk or idle moves the figure by nothing.
 	FigureClipGroundLiftCm =
+		Figure.Name == TEXT("Coww") ? 0.0f :
 		FSimCopterPopulationFigure::ComputeClipGroundLiftCm(*Clip, CalibrationClip, FigureCalibration);
 	ApplyFigureGroundOffset();
 	FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent, FigureFrameCount, 0, bFigureHasHeadSection);
@@ -6887,6 +7086,20 @@ void ASimCopterGroundAgent::ResumeNormalPedestrianBehavior()
 	bMissionStationary = false;
 	bMissionCarried = false;
 	bMissionWavesWhenIdle = false;
+	if (auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner()))
+	{
+		float TerrainZ = 0, SurfaceZ = 0;
+		const FVector Feet = GetActorLocation() - FVector(0, 0, GetCapsuleHalfHeightCm());
+		if (Traffic->TryGetTerrainWorldZAtWorldLocation(Feet, TerrainZ) &&
+			TryGetWalkSurfaceZAt(Feet, SurfaceZ) && SurfaceZ > TerrainZ + 100 &&
+			FMath::Abs(Feet.Z - SurfaceZ) < 100)
+		{
+			int32 X = 0, Y = 0; FVector Center; float Extent = 0;
+			if (Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Feet, X, Y) &&
+				Traffic->TryGetBuildingRoofPost(X, Y, Center, Extent))
+				SetMissionRoofPost(FVector(Feet.X, Feet.Y, SurfaceZ), FMath::Min(Extent * 0.5f, 150.0f));
+		}
+	}
 	ClearMoveTarget();
 	CurrentVelocityCmPerSec = FVector::ZeroVector;
 	ExternalVelocityCmPerSec = FVector::ZeroVector;
@@ -6951,6 +7164,7 @@ void ASimCopterGroundAgent::SetDroppedInjuredOnGround(const FVector& WorldLocati
 
 void ASimCopterGroundAgent::BeginPassengerFall(int32 SourceEventId, float InjuryDistanceCm)
 {
+	ClearRescueDeck();
 	bPassengerFallActive = true;
 	bPassengerFallStarted = false;
 	PassengerFallStartZ = GetActorLocation().Z;
@@ -7053,6 +7267,69 @@ void ASimCopterGroundAgent::ApplyAgentShape()
 	}
 }
 
+void ASimCopterGroundAgent::SetBandFormationTarget(const FVector& Target, float FacingYaw, bool bEnabled)
+{
+	// Injured/caught/carried band members must remain under their medical/carrier behavior.
+	const int32 State = BehaviorContext.GetStateIndex();
+	bEnabled &= (State == 17 || State == 18) && !IsMissionPatientDead() && !BehaviorCarrier.IsValid();
+	if (bBandFormationActive && !bEnabled)
+	{
+		BandPath.Reset();
+		bBandPathAttempted = false;
+		if (State == 17 || State == 18) BehaviorContext.ResetToState(State);
+	}
+	bBandFormationActive = bEnabled;
+	BandFormationTarget = Target;
+	BandFormationYaw = FacingYaw;
+}
+
+bool ASimCopterGroundAgent::CanWalkBandSegment(const FVector& From, const FVector& To)
+{
+	const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+	if (!Traffic) return false;
+	const float Half = GetCapsuleHalfHeightCm();
+	const float MaxClimb = MaxStepClimbOriginalUnits * Traffic->GetPeopleWorldCmPerOriginalUnit();
+	FVector Previous = From;
+	const int32 Steps = FMath::Max(1, FMath::CeilToInt(FVector::Dist2D(From, To) / 35));
+	for (int32 I = 1; I <= Steps; ++I)
+	{
+		FVector Point = FMath::Lerp(From, To, float(I) / Steps);
+		int32 X, Y;
+		float Surface;
+		if (!Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Point, X, Y) || Traffic->IsWaterTile(X, Y) ||
+			!TryGetWalkSurfaceZAt(Point, Surface) || FMath::Abs(Surface - (Previous.Z - Half)) > MaxClimb + 2) return false;
+		Point.Z = Surface + Half + 1;
+		if (IsPedestrianStepBlockedByGeometry(Previous, Point, Surface)) return false;
+		if (auto* Mission = GetFireSafetyMissionSystem(); Mission && Mission->ShouldAvoidFireStep(
+			Previous - FVector(0, 0, Half), Point - FVector(0, 0, Half))) return false;
+		Previous = Point;
+	}
+	return true;
+}
+
+bool ASimCopterGroundAgent::GetBandWaypoint(const FVector& Goal, FVector& OutWaypoint)
+{
+	const FVector Here = GetActorLocation();
+	FVector GroundGoal(Goal.X, Goal.Y, Here.Z);
+	float Surface;
+	if (TryGetWalkSurfaceZAt(GroundGoal, Surface)) GroundGoal.Z = Surface + GetCapsuleHalfHeightCm() + 1;
+	const double Now = GetWorld()->GetTimeSeconds();
+	while (!BandPath.IsEmpty() && FVector::Dist2D(Here, BandPath[0]) < 25) BandPath.RemoveAt(0);
+	if (!bBandPathAttempted || (Now >= NextBandPathTime && (BandPath.IsEmpty() ||
+		FVector::DistSquared2D(GroundGoal, BandPathGoal) > FMath::Square(60.0))))
+	{
+		bBandPathAttempted = true;
+		NextBandPathTime = Now + 2;
+		BandPathGoal = GroundGoal;
+		SimCopterBandNavigation::FindPath(Here, GroundGoal,
+			[this](const FVector& A, const FVector& B) { return CanWalkBandSegment(A, B); }, BandPath);
+	}
+	if (BandPath.IsEmpty()) return false;
+	OutWaypoint = BandPath[0];
+	if (!CanWalkBandSegment(Here, OutWaypoint)) { BandPath.Reset(); return false; }
+	return true;
+}
+
 void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 {
 	if (RootComponent == nullptr)
@@ -7066,6 +7343,24 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 		return;
 	}
 
+	if (bBandFormationActive)
+	{
+		FVector Waypoint;
+		CurrentVelocityCmPerSec = FVector::ZeroVector;
+		if (FVector::Dist2D(GetActorLocation(), BandFormationTarget) > 25 && GetBandWaypoint(BandFormationTarget, Waypoint))
+		{
+			FVector Delta = Waypoint - GetActorLocation();
+			Delta.Z = 0;
+			Delta = Delta.GetClampedToMaxSize(85 * DeltaSeconds);
+			if (CanWalkBandSegment(GetActorLocation(), GetActorLocation() + Delta))
+			{
+				MoveAgainstCityGeometry(Delta, Delta.Rotation().Quaternion());
+				CurrentVelocityCmPerSec = Delta / FMath::Max(DeltaSeconds, UE_SMALL_NUMBER);
+			}
+		}
+		else SetActorRotation(FRotator(0, BandFormationYaw, 0));
+		return;
+	}
 	// Behavior-VM pedestrians move with the original per-tick model: a constant velocity
 	// renewed by each MoveStep, with no target seeking or arrival deceleration (the cause of
 	// the old stop-start pulse). Yaw is set from the stored facing attribute, not steering.
@@ -7082,10 +7377,17 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 		{
 			CurrentVelocityCmPerSec = FVector::ZeroVector;
 		}
-		const FVector Delta = (CurrentVelocityCmPerSec + ExternalVelocityCmPerSec) * DeltaSeconds;
+		FVector Delta = (CurrentVelocityCmPerSec + ExternalVelocityCmPerSec) * DeltaSeconds;
+		if (auto* Missions = GetFireSafetyMissionSystem(); Missions && Missions->ShouldAvoidFireStep(
+			GetActorLocation() - FVector(0, 0, GetCapsuleHalfHeightCm()),
+			GetActorLocation() + Delta - FVector(0, 0, GetCapsuleHalfHeightCm())))
+		{
+			CurrentVelocityCmPerSec = FVector::ZeroVector;
+			Delta = ExternalVelocityCmPerSec * DeltaSeconds;
+		}
 		if (!Delta.IsNearlyZero())
 		{
-			RootComponent->MoveComponent(Delta, GetActorQuat(), false);
+			MoveAgainstCityGeometry(Delta, GetActorQuat());
 		}
 		ExternalVelocityCmPerSec = FMath::VInterpTo(ExternalVelocityCmPerSec, FVector::ZeroVector, DeltaSeconds, 8.0f);
 		return;
@@ -7098,7 +7400,7 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 		ExternalVelocityCmPerSec = FMath::VInterpTo(ExternalVelocityCmPerSec, FVector::ZeroVector, DeltaSeconds, 8.0f);
 		if (!ExternalVelocityCmPerSec.IsNearlyZero())
 		{
-			RootComponent->MoveComponent(ExternalVelocityCmPerSec * DeltaSeconds, GetActorQuat(), false);
+			MoveAgainstCityGeometry(ExternalVelocityCmPerSec * DeltaSeconds, GetActorQuat());
 		}
 		return;
 	}
@@ -7157,7 +7459,17 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 	const FVector DesiredVelocity = DesiredDirection * BaseSpeedCmPerSec * EffectiveSpeedScale;
 	CurrentVelocityCmPerSec = FMath::VInterpTo(CurrentVelocityCmPerSec, DesiredVelocity, DeltaSeconds, AgentKind == ESimCopterGroundAgentKind::Vehicle ? 3.0f : 9.0f);
 
-	const FVector Delta = (CurrentVelocityCmPerSec + ExternalVelocityCmPerSec) * DeltaSeconds;
+	FVector Delta = (CurrentVelocityCmPerSec + ExternalVelocityCmPerSec) * DeltaSeconds;
+	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian)
+	{
+		if (auto* Missions = GetFireSafetyMissionSystem(); Missions && Missions->ShouldAvoidFireStep(
+			CurrentLocation - FVector(0, 0, GetCapsuleHalfHeightCm()),
+			CurrentLocation + Delta - FVector(0, 0, GetCapsuleHalfHeightCm())))
+		{
+			CurrentVelocityCmPerSec = FVector::ZeroVector;
+			Delta = ExternalVelocityCmPerSec * DeltaSeconds;
+		}
+	}
 	const FRotator CurrentRotation = GetActorRotation();
 	
 	float DesiredPitch = 0.0f;
@@ -7186,7 +7498,7 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 	// Move kinematically (no collision sweep). The traffic system handles road-following,
 	// separation, and bump responses between agents; sweeping here would make capsules catch on
 	// building corners and stall instead of continuing along the road graph.
-	RootComponent->MoveComponent(Delta, NewRotation.Quaternion(), false);
+	MoveAgainstCityGeometry(Delta, NewRotation.Quaternion());
 	ExternalVelocityCmPerSec = FMath::VInterpTo(ExternalVelocityCmPerSec, FVector::ZeroVector, DeltaSeconds, 8.0f);
 }
 
@@ -7261,7 +7573,7 @@ bool ASimCopterGroundAgent::TraceGround(FVector& OutGroundLocation) const
 	const float EndZ = FMath::Min(CurrentLocation.Z - HalfHeight, StartZ) - GroundProbeDistanceCm;
 	const FVector End(CurrentLocation.X, CurrentLocation.Y, EndZ);
 	FHitResult Hit;
-	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterGroundAgentSnap), false, this);
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterGroundAgentSnap), true, this);
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Camera, QueryParams) && Hit.bBlockingHit)
 	{
 		OutGroundLocation = FVector(CurrentLocation.X, CurrentLocation.Y, Hit.ImpactPoint.Z + HalfHeight + 1.0f);
@@ -7364,6 +7676,7 @@ void ASimCopterGroundAgent::SetVisualRootRelativeLocation(const FVector& Local)
 
 bool ASimCopterGroundAgent::IsStandingInWater() const
 {
+	if (RescueDeck.IsValid()) return false;
 	if (AgentKind != ESimCopterGroundAgentKind::Pedestrian)
 	{
 		return false;
@@ -7492,7 +7805,8 @@ void ASimCopterGroundAgent::ShowOriginalMesh(bool bUseOriginalMesh)
 void ASimCopterGroundAgent::FinishPassengerFall(float FallDistanceCm)
 {
 	const int32 SourceEventId = PassengerFallSourceEventId;
-	const bool bInjuredByFall = FallDistanceCm >= PassengerFallInjuryDistanceCm;
+	const bool bLandedInWater = IsStandingInWater();
+	const bool bInjuredByFall = !bLandedInWater && FallDistanceCm >= PassengerFallInjuryDistanceCm;
 	const bool bWasPatient = GetMissionPassengerKind() == ESimCopterMissionPassengerKind::Medevac || InitialPersonState == 6;
 	bPassengerFallActive = false;
 	bPassengerFallStarted = false;
@@ -7508,6 +7822,13 @@ void ASimCopterGroundAgent::FinishPassengerFall(float FallDistanceCm)
 	// BeginPassengerFall suspended the VM. Resume its context rather than restarting
 	// spawn initialization, which would overwrite a roof survivor's original home tile.
 	ResumeSuspendedPedestrianBehavior();
+	if (bLandedInWater && !bWasPatient)
+	{
+		if (auto* Missions = GetFireSafetyMissionSystem()) Missions->CreatePlayerCausedMedevacForVictim(this);
+		SetMissionInjuredPose();
+		return;
+	}
+	if (IsInPoliceCustody() && !bInjuredByFall && !bWasPatient) { bBehaviorActive=false; bMissionStationary=true; SetForcedPedestrianFigureClip(TEXT("Inju")); return; }
 	if (bInjuredByFall || bWasPatient)
 	{
 		SetMissionInjuredPose();
@@ -7518,9 +7839,15 @@ void ASimCopterGroundAgent::FinishPassengerFall(float FallDistanceCm)
 				if (ASimCopterMissionSystemActor* MissionActor = Cast<ASimCopterMissionSystemActor>(
 					UGameplayStatics::GetActorOfClass(World, ASimCopterMissionSystemActor::StaticClass())))
 				{
-					MissionActor->ConvertDroppedTransportPassengerToMedevac(this, SourceEventId);
+					if (!MissionActor->ConvertDroppedTransportPassengerToMedevac(this, SourceEventId)) MissionActor->CreatePlayerCausedMedevacForVictim(this);
 				}
 			}
+		}
+		if (bInjuredByFall)
+		{
+			const int32 Damage=FMath::Clamp(FMath::RoundToInt(15+(FallDistanceCm-PassengerFallInjuryDistanceCm)*0.05f),15,100);
+			BehaviorContext.Attributes[EBhavAttr::MedevacHealth]=FMath::Max(0,ReadMedevacHealth(BehaviorContext)-Damage);
+			UpdateMedevacSeatPortrait();
 		}
 	}
 	else

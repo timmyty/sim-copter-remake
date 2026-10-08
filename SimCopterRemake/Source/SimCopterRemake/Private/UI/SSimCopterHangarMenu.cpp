@@ -383,6 +383,16 @@ void SSimCopterHangarMenu::BuildHangarPage(SConstraintCanvas& Canvas)
 		AddAt(Canvas, HangarButtonX[Index], HangarButtonY, ShellButtonWidth, ShellButtonHeight,
 			MakeArtButton(ShellButtonStrip, ButtonFrameCount, Labels[Index], Clicked));
 	}
+	if (const auto* Missions = Shop.Missions.Get(); Missions && Missions->CanAdvanceToNextCareerCity())
+	{
+		AddAt(Canvas, 245.0f, HangarButtonY - 40.0f, 150.0f, ShellButtonHeight,
+			MakeArtButton(ShellButtonStrip, ButtonFrameCount, TEXT("Next Level"),
+				FOnClicked::CreateLambda([this]()
+				{
+					if (auto* Current = Shop.Missions.Get()) Current->RequestNextCareerCity();
+					return FReply::Handled();
+				})));
+	}
 }
 
 // --- catalog ---------------------------------------------------------------------------------
@@ -413,7 +423,7 @@ void SSimCopterHangarMenu::BuildCatalogTabs(SConstraintCanvas& Canvas)
 			SNew(SImage).Image(Strip));
 	}
 
-	for (int32 Tab = 0; Tab < CatalogTabCount; ++Tab)
+	for (int32 Tab = 0; Tab < CivilianCatalogTabCount; ++Tab)
 	{
 		const int32 TypeIndex = SimCopterHangarLayout::GetTypeIndexForCatalogRow(Tab);
 		AddAt(Canvas, CatalogTabLeft[Tab], CatalogTabStripY, CatalogTabRight[Tab] - CatalogTabLeft[Tab], CatalogTabHitHeight,
@@ -421,6 +431,13 @@ void SSimCopterHangarMenu::BuildCatalogTabs(SConstraintCanvas& Canvas)
 				FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSelectCatalogRow, Tab),
 				SimCopterHangarShop::GetModelDisplayName(TypeIndex)));
 	}
+
+	const auto MysteryState = SimCopterHangarShop::GetHelicopterRowState(Shop, ApacheCatalogRow);
+	const TCHAR* MysteryLabel = MysteryState.bMystery ? TEXT("?  Mystery helicopter") : TEXT("Apache");
+	AddAt(Canvas, 330.0f, 443.0f, 215.0f, 16.0f,
+		MakePageText(MysteryLabel, 9, CatalogRow == ApacheCatalogRow ? SelectionTint : PaperInk, ETextJustify::Center, true, false));
+	AddAt(Canvas, 330.0f, 442.0f, 215.0f, 19.0f,
+		MakeHotspot(FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSelectCatalogRow, ApacheCatalogRow), MysteryLabel));
 
 	// The "Upgrades" tab (string 435) is printed under the model tabs on both catalog pages.
 	const bool bUpgrades = CatalogRow < 0 || CatalogRow >= CatalogTabCount;
@@ -434,8 +451,18 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 {
 	USimCopterHangarArt* ArtObject = Art.Get();
 	const int32 TypeIndex = SimCopterHangarLayout::GetTypeIndexForCatalogRow(CatalogRow);
+	const SimCopterHangarShop::FRowState State = SimCopterHangarShop::GetHelicopterRowState(Shop, CatalogRow);
 
-	if (const FSlateBrush* Drawing = ArtObject != nullptr ? ArtObject->GetCatalogDrawing(CatalogRow) : nullptr)
+	if (TypeIndex == 2)
+	{
+		AddAt(Canvas, CatalogDrawingX + 12, CatalogDrawingY + 12, CatalogDrawingWidth - 24, 38,
+			MakePageText(State.bMystery ? TEXT("MYSTERY HELICOPTER") : TEXT("AH-64 APACHE"), 17, PaperInk, ETextJustify::Center, true, false));
+		AddAt(Canvas, CatalogDrawingX + 12, CatalogDrawingY + 62, CatalogDrawingWidth - 24, 80,
+			MakePageText(State.bMystery ? TEXT("?") : TEXT("ARMED / READY TO FLY"), State.bMystery ? 64 : 18, PaperInkDim, ETextJustify::Center, true, false));
+		AddAt(Canvas, CatalogDrawingX + 20, CatalogDrawingY + 158, CatalogDrawingWidth - 40, 70,
+			MakePageText(State.bMystery ? TEXT("A classified aircraft awaits in the late-game cities.") : TEXT("Missiles + machine gun\nNo passenger seats"), 12, PaperInk, ETextJustify::Center, false, true, CatalogDrawingWidth - 40));
+	}
+	else if (const FSlateBrush* Drawing = ArtObject != nullptr ? ArtObject->GetCatalogDrawing(CatalogRow) : nullptr)
 	{
 		AddAt(Canvas, CatalogDrawingX, CatalogDrawingY, CatalogDrawingWidth, CatalogDrawingHeight,
 			SNew(SImage).Image(Drawing));
@@ -447,24 +474,25 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 			MakePageText(SimCopterHangarShop::GetModelDisplayName(TypeIndex), 22, PaperInk, ETextJustify::Left, true, false));
 	}
 
-	// Left panel: History (430) then Specialties (431).
-	AddAt(Canvas, CatalogHistoryX + 6.0f, CatalogHistoryY + 3.0f, CatalogHistoryWidth - 12.0f, 16.0f,
-		MakePageText(TEXT("History"), 11, PaperInk, ETextJustify::Left, true, false));
-	AddAt(Canvas, CatalogHistoryX + 10.0f, CatalogHistoryY + 22.0f, CatalogHistoryWidth - 16.0f, 30.0f,
-		MakePageText(SimCopterHangarShop::GetCatalogHistory(CatalogRow), 9, PaperInkDim, ETextJustify::Left, false, true, CatalogHistoryWidth - 16.0f));
-	AddAt(Canvas, CatalogHistoryX + 6.0f, CatalogHistoryY + 54.0f, CatalogHistoryWidth - 12.0f, 16.0f,
-		MakePageText(TEXT("Specialties"), 11, PaperInk, ETextJustify::Left, true, false));
-	AddAt(Canvas, CatalogHistoryX + 10.0f, CatalogHistoryY + 73.0f, CatalogHistoryWidth - 16.0f, 30.0f,
-		MakePageText(SimCopterHangarShop::GetCatalogSpecialties(CatalogRow), 9, PaperInkDim, ETextJustify::Left, false, true, CatalogHistoryWidth - 16.0f));
-
-	// Right panel: Description (432).
+	// Expanded details retain the catalog layout and scroll inside their paper panels.
+	AddAt(Canvas, CatalogHistoryX + 6.0f, CatalogHistoryY + 3.0f, CatalogHistoryWidth - 12.0f, 101.0f,
+		SNew(SScrollBox).ScrollBarAlwaysVisible(true)
+		+ SScrollBox::Slot()
+		[
+			SNew(SVerticalBox)
+			+ SVerticalBox::Slot().AutoHeight()[MakePageText(TEXT("History"), 11, PaperInk, ETextJustify::Left, true, false)]
+			+ SVerticalBox::Slot().AutoHeight().Padding(0, 4, 12, 8)[MakePageText(State.bMystery ? TEXT("Identity classified. Visit the city where this helicopter is hidden to uncover its card.") : SimCopterHangarShop::GetCatalogHistory(CatalogRow), 10, PaperInkDim, ETextJustify::Left, false, true, CatalogHistoryWidth - 36)]
+			+ SVerticalBox::Slot().AutoHeight()[MakePageText(TEXT("Specialties"), 11, PaperInk, ETextJustify::Left, true, false)]
+			+ SVerticalBox::Slot().AutoHeight().Padding(0, 4, 12, 4)[MakePageText(State.bMystery ? TEXT("Details unlock with the aircraft.") : SimCopterHangarShop::GetCatalogSpecialties(CatalogRow), 10, PaperInkDim, ETextJustify::Left, false, true, CatalogHistoryWidth - 36)]
+		]);
 	AddAt(Canvas, CatalogDescriptionX + 6.0f, CatalogDescriptionY + 3.0f, CatalogDescriptionWidth - 12.0f, 16.0f,
 		MakePageText(TEXT("Description"), 11, PaperInk, ETextJustify::Left, true, false));
-	AddAt(Canvas, CatalogDescriptionX + 10.0f, CatalogDescriptionY + 22.0f, CatalogDescriptionWidth - 16.0f, 82.0f,
-		MakePageText(SimCopterHangarShop::GetCatalogDescription(CatalogRow), 9, PaperInkDim, ETextJustify::Left, false, true, CatalogDescriptionWidth - 16.0f));
+	AddAt(Canvas, CatalogDescriptionX + 8.0f, CatalogDescriptionY + 22.0f, CatalogDescriptionWidth - 16.0f, 82.0f,
+		SNew(SScrollBox).ScrollBarAlwaysVisible(true)
+		+ SScrollBox::Slot().Padding(0, 0, 12, 4)
+		[MakePageText(State.bMystery ? TEXT("The model, equipment and purchase price remain hidden until you reach its special city.") : SimCopterHangarShop::GetCatalogDescription(CatalogRow), 10, PaperInkDim, ETextJustify::Left, false, true, CatalogDescriptionWidth - 40)]);
 
 	// Funds and value readouts (strings 433 / 434).
-	const SimCopterHangarShop::FRowState State = SimCopterHangarShop::GetHelicopterRowState(Shop, CatalogRow);
 	AddAt(Canvas, CatalogPanelX, CatalogFundsLabelY, CatalogPanelWidth, 32.0f,
 		MakePageText(TEXT("Current\nFunds"), 11, PaperInk, ETextJustify::Center, true, false));
 	AddAt(Canvas, CatalogPanelX, CatalogFundsValueY, CatalogPanelWidth, 20.0f,
@@ -472,7 +500,7 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 	AddAt(Canvas, CatalogPanelX, CatalogValueLabelY, CatalogPanelWidth, 32.0f,
 		MakePageText(TEXT("Item\nValue"), 11, PaperInk, ETextJustify::Center, true, false));
 	AddAt(Canvas, CatalogPanelX, CatalogValueValueY, CatalogPanelWidth, 20.0f,
-		MakePageText(FormatDollars(State.ItemValue), 14, PaperInk, ETextJustify::Center, true, false));
+		MakePageText(State.bMystery ? TEXT("???") : FormatDollars(State.ItemValue), 14, PaperInk, ETextJustify::Center, true, false));
 
 	// Buy (442) / Sell (443) / Done (444).
 	AddAt(Canvas, CatalogPanelX, CatalogButtonY[0], CatalogButtonWidth, CatalogButtonHeight,
@@ -494,49 +522,18 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 
 void SSimCopterHangarMenu::BuildCatalogUpgradesPage(SConstraintCanvas& Canvas)
 {
-	// The page's three letterheads (strings 439..441) are part of cataloge.bmp itself, so nothing
-	// is drawn for them here - printing them again just doubles the ink.
-
-	for (int32 Row = 0; Row < SimCopterHangarShop::UpgradeRowCount; ++Row)
+	AddAt(Canvas, 12, 20, 570, 292, SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(0.86f,0.83f,0.71f)));
+	AddAt(Canvas, 24, 27, 530, 20, MakePageText(TEXT("HELICOPTER EQUIPMENT"), 14, PaperInk, ETextJustify::Left, true, false));
+	const TCHAR* ShortHelp[] = { TEXT("Drop water on fires. Refill at open water."),TEXT("Direct traffic, suspects and crowds."),TEXT("Disperse rioters. Includes ten canisters."),TEXT("Aim water at fires; draws water from the bucket."),TEXT("Winch stranded people into the cabin."),TEXT("T: equip. Recover cars to yards and boats to harbors."),TEXT("V: equip. Capture up to four people; reel fully up to board.") };
+	for (int32 Row=0; Row<SimCopterHangarShop::UpgradeRowCount; ++Row)
 	{
-		const SimCopterHangarShop::FRowState State = SimCopterHangarShop::GetUpgradeRowState(Shop, Row);
-
-		// The icon is printed on the page; the selected row gets the original's blue outline.
-		if (Row == UpgradeRow)
-		{
-			AddAt(Canvas, UpgradeIconLeft[Row] - 2.0f, UpgradeIconTop[Row] - 2.0f, UpgradeIconWidth + 4.0f, UpgradeIconHeight + 4.0f,
-				SNew(SBorder)
-				.BorderImage(FCoreStyle::Get().GetBrush(TEXT("Border")))
-				.BorderBackgroundColor(SelectionTint));
-		}
-
-		// Font 8 with a 4px margin is the largest that fits every one of the five blurbs inside a
-		// 167x96 cell without the last line running off the bottom.
-		AddAt(Canvas, UpgradeTextLeft[Row] + 4.0f, UpgradeTextTop[Row] + 4.0f, UpgradeTextWidth - 8.0f, UpgradeTextHeight - 6.0f,
-			MakePageText(
-				SimCopterHangarShop::GetUpgradeDescription(Row),
-				8,
-				State.bOwned ? PaperInk : PaperInkDim,
-				ETextJustify::Left,
-				false,
-				true,
-				UpgradeTextWidth - 8.0f));
-
-		if (State.bOwned)
-		{
-			AddAt(Canvas, UpgradeIconLeft[Row], UpgradeIconTop[Row] + UpgradeIconHeight - 14.0f, UpgradeIconWidth, 13.0f,
-				MakePageText(TEXT("OWNED"), 8, SelectionTint, ETextJustify::Center, true, false));
-		}
-
-		// Both cells select the row, as the original's whole-cell hit test does.
-		AddAt(Canvas, UpgradeIconLeft[Row], UpgradeIconTop[Row], UpgradeIconWidth, UpgradeIconHeight,
-			MakeHotspot(
-				FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSelectUpgradeRow, Row),
-				SimCopterHelicopterRegistry::GetToolDisplayName(SimCopterHangarShop::GetToolForUpgradeRow(Row))));
-		AddAt(Canvas, UpgradeTextLeft[Row], UpgradeTextTop[Row], UpgradeTextWidth, UpgradeTextHeight,
-			MakeHotspot(
-				FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSelectUpgradeRow, Row),
-				SimCopterHelicopterRegistry::GetToolDisplayName(SimCopterHangarShop::GetToolForUpgradeRow(Row))));
+		const auto State=SimCopterHangarShop::GetUpgradeRowState(Shop,Row);
+		const auto Tool=SimCopterHangarShop::GetToolForUpgradeRow(Row);
+		const float Y=53+Row*36;
+		if(Row==UpgradeRow) AddAt(Canvas,20,Y-2,548,34,SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(0.65f,0.72f,0.74f)));
+		AddAt(Canvas,26,Y,250,15,MakePageText(FString::Printf(TEXT("%s   %s%s"), SimCopterHelicopterRegistry::GetToolDisplayName(Tool), *FormatDollars(State.ItemValue),State.bOwned?TEXT("  OWNED"):TEXT("")),10,PaperInk,ETextJustify::Left,true,false));
+		AddAt(Canvas,26,Y+15,530,16,MakePageText(ShortHelp[Row],8,PaperInk,ETextJustify::Left,false,false));
+		AddAt(Canvas,20,Y-2,548,34,MakeHotspot(FOnClicked::CreateSP(this,&SSimCopterHangarMenu::HandleSelectUpgradeRow,Row),SimCopterHelicopterRegistry::GetToolDisplayName(Tool)));
 	}
 
 	// Readouts (strings 437 / 438) in the bottom-right cell.

@@ -310,6 +310,7 @@ FString USimCopterAudioSubsystem::ResolveSoundRoot() const
 
 FString USimCopterAudioSubsystem::ResolveWavPath(const FString& WavName, SimCopterSound::ESoundDir Dir) const
 {
+	if (!FPaths::IsRelative(WavName) && FPaths::FileExists(WavName)) return WavName;
 	if (SoundRoot.IsEmpty() || WavName.IsEmpty())
 	{
 		return FString();
@@ -437,7 +438,7 @@ const FSimCopterPcmClip* USimCopterAudioSubsystem::LoadClip(const FString& WavNa
 // The radio's channel
 // ---------------------------------------------------------------------------------------------
 
-bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float VolumeMultiplier)
+bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float VolumeMultiplier, float StartSeconds)
 {
 	UWorld* World = GetWorld();
 	if (World == nullptr || !bSoundsAvailable || AbsolutePath.IsEmpty())
@@ -453,6 +454,12 @@ bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float 
 		return false;
 	}
 
+	// Procedural waves cannot seek; discard complete interleaved PCM frames before queueing.
+	const int32 Frames = Clip.Pcm16.Num() / (2 * Clip.Channels);
+	const int32 SkipFrames = FMath::Clamp(FMath::FloorToInt(FMath::Max(0.0f, StartSeconds) * Clip.SampleRate), 0, Frames);
+	if (SkipFrames >= Frames) { return false; }
+	Clip.Pcm16.RemoveAt(0, SkipFrames * 2 * Clip.Channels, EAllowShrinking::No);
+	Clip.Duration = static_cast<float>(Frames - SkipFrames) / Clip.SampleRate;
 	USoundWaveProcedural* Wave = MakeWave(Clip, /*bLoop=*/false, this);
 	if (Wave == nullptr)
 	{
@@ -492,7 +499,7 @@ void USimCopterAudioSubsystem::ApplyRadioVolume()
 	if (RadioComponent != nullptr)
 	{
 		RadioComponent->SetVolumeMultiplier(
-			RadioVolumeMultiplier * VolumeIndexToGain(MasterVolume));
+			2.0f * RadioVolumeMultiplier * VolumeIndexToGain(MasterVolume));
 	}
 }
 

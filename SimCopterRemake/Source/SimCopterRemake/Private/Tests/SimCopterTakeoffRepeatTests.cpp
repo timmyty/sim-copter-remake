@@ -333,7 +333,8 @@ bool FSimCopterCanExitHelicopterTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Can exit helicopter as soon as landed without holding control"), Pawn->CanExitHelicopter());
 
 	Pawn->SetTestState(false, 0.0f, 50.0f);
-	TestFalse(TEXT("Cannot exit helicopter while airborne"), Pawn->CanExitHelicopter());
+	// Air operations allows airborne exits; the on-foot system applies fall damage.
+	TestTrue(TEXT("Pilot can exit an airborne helicopter"), Pawn->CanExitHelicopter());
 
 	return true;
 }

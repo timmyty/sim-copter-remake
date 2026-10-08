@@ -13,6 +13,7 @@
 #include "Framework/Application/IInputProcessor.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Game/SimCopterKeyboardFocus.h"
+#include "City/SimCopterHangar.h"
 #include "Game/SimCopterMacModifierResync.h"
 #include "Game/SimCopterSessionSubsystem.h"
 #include "Game/SimCopterSaveSubsystem.h"
@@ -1061,11 +1062,7 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 						Store->Save();
 					}
 					EnterScreen(ESimCopterSettingsScreen::Menu);
-				}))
-			.OnCancelled(FSimpleDelegate::CreateLambda([this]()
-			{
-				EnterScreen(ESimCopterSettingsScreen::Menu);
-			}));
+				}));
 	}
 
 	case ESimCopterSettingsScreen::Controls:
@@ -1298,14 +1295,23 @@ void ASimCopterPlayerController::RestoreGameViewportKeyboardFocusIfStolen()
 
 void ASimCopterPlayerController::HandleApplicationActivationChanged(const bool bIsActive)
 {
-	if (bIsActive)
+	if (!bIsActive)
 	{
+		FlushPressedKeys();
+		if (!bPausedForApplicationDeactivation)
+		{
+			bPausedForApplicationDeactivation = true;
+			PushPause();
+		}
 		return;
 	}
-
-	// Nothing arrives from a background window - not the key-up for whatever is being held - so this
-	// is the one case where dropping the player's keys is the right answer rather than the bug.
-	FlushPressedKeys();
+	if (bPausedForApplicationDeactivation)
+	{
+		// Returning to active gameplay opens Continue; existing screens keep their own focus.
+		if (!IsSettingsOpen() && !ASimCopterHangar::IsAnyShellOpen(GetWorld())) OpenSettings();
+		bPausedForApplicationDeactivation = false;
+		PopPause();
+	}
 }
 
 void ASimCopterPlayerController::SimInputFocus()

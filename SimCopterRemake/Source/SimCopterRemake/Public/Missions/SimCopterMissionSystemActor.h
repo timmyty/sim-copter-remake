@@ -10,6 +10,7 @@
 #include "UI/SimCopterMissionMarkerLayout.h"
 #include "SimCopterMissionSystemActor.generated.h"
 
+class USimCopterWitnessBriefing;
 class ASimCopterTrafficSystemActor;
 class ASimCopterHelicopterPawn;
 class ASimCopterGroundAgent;
@@ -96,6 +97,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public SimCopterMissions::ISimCopterMissionWorld
 {
 	GENERATED_BODY()
+	friend class FSimCopterRescuePilotRuntimeTest;
 	
 public:	
 	ASimCopterMissionSystemActor();
@@ -127,6 +129,7 @@ public:
 
 	virtual void PlayRadioVoice(int32 VoiceId, int32 Volume) override;
 	virtual void PlayUiSound(int32 SoundId) override;
+	UPROPERTY(Transient) TObjectPtr<USimCopterWitnessBriefing> WitnessBriefing;
 	virtual void OnUiMessage(const SimCopterMissions::FSimCopterMissionUiMessage& Message) override;
 
 	virtual bool TryActivatePlaneCrash(int32 EventId) override;
@@ -139,6 +142,8 @@ public:
 	// fire or a boat rescue at the impact tile, and FUN_004b49b0 promotes the train's own record.
 	int32 CreateMissionAt(int32 TileX, int32 TileY, int32 TypeMask);
 	void PostMissionEvent(int32 Code, int32 EventId, int32 Value, bool bSilent);
+	void SuppressMissionRewards(int32 EventId);
+	void ShowAirOperationsMessage(const FString& Text) { PushMissionLogMessage(Text, FLinearColor(0.1f,0.8f,1.0f)); }
 	void PostMissionEventAt(int32 Code, int32 EventId, int32 X, int32 Y, int32 Value, bool bSilent);
 	bool CanIgniteCrashSite(int32 TileX, int32 TileY) const { return MissionSystem.CanIgniteCrashSite(TileX, TileY); }
 	// True while the mission layer still holds a live record for this event - what a crash wreck
@@ -192,16 +197,19 @@ public:
 	// counters.
 	bool NotifyMissionPersonBoarded(ASimCopterGroundAgent* Person);
 	bool NotifyMissionPersonDelivered(ASimCopterGroundAgent* Person);
+	bool AcceptEntrancePatient(ASimCopterGroundAgent* Person);
 	/** Evaluate a surviving seat-window drop at its actual landing point. Patients remain for medics. */
 	bool TryCompleteSafelyDroppedPassenger(ASimCopterGroundAgent* Person);
 	bool NotifyMissionPersonDied(ASimCopterGroundAgent* Person);
+	bool CanAdvanceToNextCareerCity() const;
+	void RequestNextCareerCity();
 	// FUN_004c9bc0 accepts an ordinary passenger's release only within six original units of
 	// terrain. The remake's rendered roofs are walkable surfaces too, so using the generic walk
 	// surface here would let a rooftop survivor step straight back out and finish where they began.
-	// Medevac is the one exception: its intended destination is the D1 hospital roof.
+	// Medevac uses the D1 hospital roof; transports may use their own destination building roof.
 	bool IsPassengerDeliveryLocationAllowed(
 		ESimCopterMissionPassengerKind Kind,
-		const FVector& FeetWorldLocation) const;
+		const FVector& FeetWorldLocation, int32 EventId = INDEX_NONE) const;
 	static bool IsPassengerDeliverySurfaceAllowed(
 		ESimCopterMissionPassengerKind Kind,
 		bool bIsWater,
@@ -217,6 +225,13 @@ public:
 	// only while an active medevac still has a patient waiting to be retrieved.
 	bool CanHospitalParamedicBoardPlayerHelicopter(const ASimCopterHelicopterPawn* Helicopter) const;
 	bool CreatePlayerCausedMedevacForVictim(ASimCopterGroundAgent* Victim);
+	bool CreateIncidentMedevacForVictim(ASimCopterGroundAgent* Victim);
+	bool IsPedestrianFireHazard(const FVector& Feet, float SafetyMarginCm = 0.0f);
+	bool ShouldAvoidFireStep(const FVector& FromFeet, const FVector& ToFeet);
+	// Shared spatial cache, rebuilt at most once per frame and independent of render visibility.
+	void RefreshPedestrianFireHazards();
+	TMap<FIntPoint, TArray<FBox>> PedestrianFireHazards;
+	uint64 PedestrianFireHazardsFrame = MAX_uint64;
 	bool CreatePlayerCausedCarFireForVehicle(ASimCopterGroundAgent* Vehicle);
 	bool ConvertDroppedTransportPassengerToMedevac(ASimCopterGroundAgent* Victim, int32 SourceTransportEventId);
 
@@ -467,6 +482,10 @@ public:
 	static bool IsHelicopterSettledForAlight(const ASimCopterHelicopterPawn& Helicopter);
 
 private:
+	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterServicePostsTest;
+	friend class FSimCopterApacheShopTest;
 	friend class FSimCopterSafePassengerLandingTest;
 	UPROPERTY(EditInstanceOnly, Category = "SimCopter|Traffic")
 	TObjectPtr<ASimCopterTrafficSystemActor> SourceTrafficSystem;
@@ -723,6 +742,10 @@ private:
 	int32 MarchingBandVoiceSlot = INDEX_NONE;
 	void StopMarchingBandAudio();
 	float MarchingBandTargetUpdateTimer = 2.0f;
+	float MarchingBandElapsed = 0;
+	int32 MarchingBandLastPhase = INDEX_NONE;
+	FVector MarchingBandFormationCenter = FVector::ZeroVector;
+	float MarchingBandFormationYaw = 0;
 	FVector LastMarchingBandPlayerLocation = FVector::ZeroVector;
 	float FireworksTimer = 0.0f;
 	float NextFireworksInterval = 0.5f;

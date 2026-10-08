@@ -11,6 +11,7 @@
 #include "City/SimCopterAirport.h"
 #include "City/SimCopterHangar.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterHelicopterParking.h"
 #include "Game/SimCopterCareerSubsystem.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Game/SimCopterSaveSubsystem.h"
@@ -240,6 +241,16 @@ void ASimCopterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ASimCopterGameMode::ApplyPendingAircraftRestores(UWorld* World)
 {
+	// Run after all saved aircraft and career flags have been restored. A repeat call
+	// or reload must never duplicate the secret airframe or replace one already sold.
+	ON_SCOPE_EXIT
+	{
+		if (GetGameInstance())
+			SimCopterHelicopterParking::EnsureApacheEncounter(
+				Cast<ASimCopterTrafficSystemActor>(UGameplayStatics::GetActorOfClass(World, ASimCopterTrafficSystemActor::StaticClass())),
+				SimCopterHelicopterParking::ResolveCurrentAircraft(World),
+				GetGameInstance()->GetSubsystem<USimCopterCareerSubsystem>());
+	};
 	if (USimCopterSaveSubsystem* Saves = USimCopterSaveSubsystem::Get(this); Saves != nullptr)
 	{
 		Saves->ApplyPendingAircraftState(World);

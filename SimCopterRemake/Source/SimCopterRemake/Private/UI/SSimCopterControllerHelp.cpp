@@ -36,6 +36,8 @@ FState ReadState(APawn* Pawn)
 		State.Message = SimCopterHelicopterRegistry::GetMegaphoneMessageName(Helicopter->GetSelectedMegaphoneMessage());
 		switch (Tool)
 		{
+		case ESimCopterHelicopterTool::TowClamp: State.ToolAction = TEXT("Deploy / grab tow clamp"); State.bRope=true; break;
+		case ESimCopterHelicopterTool::CaptureCage: State.ToolAction = TEXT("Deploy / close cage"); State.bRope=true; break;
 		case ESimCopterHelicopterTool::WaterBucket: State.ToolAction = TEXT("Dump water bucket"); break;
 		case ESimCopterHelicopterTool::WaterCannon: State.ToolAction = TEXT("Hold to spray water"); break;
 		case ESimCopterHelicopterTool::TearGas: State.ToolAction = TEXT("Fire tear gas"); break;

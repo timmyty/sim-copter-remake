@@ -35,7 +35,7 @@ struct FRegistryRow
 const FRegistryRow RegistryRows[] = {
 	{ 0, TEXT("Jet Ranger"),    0x076, TEXT("JETRANG"),  0x117, TEXT("JETRROTR"), 0x159, 0x160,  4,  0.534f,  8.0f, -25.00f, false, false, TEXT("COPLOOP5.WAV"), 1 },
 	{ 1, TEXT("Hughes 500"),    0x116, TEXT("HUGH500"),  0x078, TEXT("H500ROTR"), 0x158, 0x15f,  4,  0.534f,  8.0f, -20.00f, false, false, TEXT("COPLOOP6.WAV"), 2 },
-	{ 2, TEXT("Apache"),        0x119, TEXT("APACHE"),   0x11a, TEXT("APACROTR"), 0x15b, 0x162,  0,  2.400f, 11.5f, -26.70f, false, true,  TEXT("COPLOOP.WAV"),  INDEX_NONE },
+	{ 2, TEXT("Apache"),        0x119, TEXT("APACHE"),   0x11a, TEXT("APACROTR"), 0x15b, 0x162,  0,  2.400f, 11.5f, -26.70f, false, true,  TEXT("COPLOOP.WAV"),  8 },
 	{ 3, TEXT("Bell 212"),      0x124, TEXT("BELL212"),  0x126, TEXT("BELLROTR"), 0x156, 0x15d, 14, -0.400f, 11.0f, -29.00f, false, false, TEXT("COPLOOP3.WAV"), 4 },
 	{ 4, TEXT("Schwiezer 300"), 0x125, TEXT("SCWZR300"), 0x127, TEXT("SCWZROTR"), 0x15a, 0x161,  2, -0.400f,  6.1f, -18.20f, false, false, TEXT("COPLOOP4.WAV"), 0 },
 	{ 5, TEXT("Agusta"),        0x141, TEXT("AGUSTA"),   0x142, TEXT("AGUSROTR"), 0x155, 0x15c,  7, -0.400f, 10.0f, -23.00f, false, false, TEXT("COPLOOP6.WAV"), 5 },
@@ -53,6 +53,8 @@ const FSimCopterEquipmentDefinition EquipmentRows[] = {
 	{ ESimCopterHelicopterTool::RescueHarness, 0x04, 2,  800, TEXT("Rescue Harness"),      0x2ab },
 	{ ESimCopterHelicopterTool::TearGas,       0x08, 3, 2500, TEXT("Tear Gas Launcher"),   0x2ac },
 	{ ESimCopterHelicopterTool::WaterCannon,   0x10, 4, 1500, TEXT("Water Cannon"),        0x2a9 },
+	{ ESimCopterHelicopterTool::TowClamp, 0x20, 5, 1200, TEXT("Tow Clamp"), 0 },
+	{ ESimCopterHelicopterTool::CaptureCage, 0x40, 6, 1800, TEXT("Capture Cage"), 0 },
 };
 
 const TCHAR* const MegaphoneMessageNames[] = {
@@ -71,6 +73,8 @@ const TCHAR* const ToolNames[] = {
 	TEXT("Tear Gas"),
 	TEXT("Apache Missile"),
 	TEXT("Apache Machine Gun"),
+	TEXT("Tow Clamp"),
+	TEXT("Capture Cage"),
 };
 
 static_assert(UE_ARRAY_COUNT(ToolNames) == static_cast<int32>(ESimCopterHelicopterTool::Count),

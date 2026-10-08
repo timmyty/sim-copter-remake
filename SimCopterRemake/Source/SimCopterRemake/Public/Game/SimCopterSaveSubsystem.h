@@ -157,6 +157,9 @@ public:
 
 	UPROPERTY()
 	TArray<uint8> AircraftRuntimeState;
+	UPROPERTY() bool bAirSupportUnlocked = false;
+	UPROPERTY() bool bApacheEncounterSpawned = false;
+	UPROPERTY() TArray<uint8> AirOperationsRuntimeState;
 	UPROPERTY()
 	FName ActiveAircraftIdentity;
 
