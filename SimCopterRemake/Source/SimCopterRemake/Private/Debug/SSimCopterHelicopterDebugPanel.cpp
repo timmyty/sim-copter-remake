@@ -484,13 +484,8 @@ TSharedRef<SWidget> SSimCopterHelicopterDebugPanel::BuildGeneralTabContent()
 					.ToolTipText(NSLOCTEXT(
 						"SimCopterDebug",
 						"VehicleMetallicTip",
-						"Metallic on the shared vehicle material - the fuselage, the ground cars and the "
-						"ambient planes/trains/boats all move together. The original had no PBR at all, so "
-						"0 (dielectric) is the faithful look and anything above it is taste.\n\n"
-						"The city's buildings deliberately stay on the plain material, so this cannot turn "
-						"the skyline to chrome.\n\n"
-						"Does nothing until M_SimCopterLitVertexColor exposes a \"Metallic\" scalar "
-						"parameter wired to its Metallic input."))
+						"Metallic on this helicopter's paint. The default is 0.04 for a painted finish. "
+						"This preview adjustment resets when the aircraft model changes."))
 					+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 					[
 						SNew(SBox).WidthOverride(86.0f)

@@ -168,6 +168,10 @@ struct FSimCopterDispatchVehicle
 	// on the ground. Its person+0x170 points back to Agent, so BHAV 269 can return
 	// to this exact ambulance and opcode 61 can release it.
 	TWeakObjectPtr<ASimCopterGroundAgent> DeployedParamedic;
+	// Remake body recovery: 0 ordinary dispatch, 1 collecting, 2 carrying, 3 aboard.
+	TWeakObjectPtr<ASimCopterGroundAgent> RecoveryBody;
+	uint8 BodyRecoveryPhase = 0;
+	float BodyRecoverySeconds = 0.0f;
 	// The waypoint marker hanging over DestinationTile, and the original's "marker is linked"
 	// flag +0x2b1 & 0x20. Created on the first dispatch and reused for the slot's lifetime, the
 	// way the original keeps one render node per vehicle.
@@ -187,6 +191,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterTrafficSystemActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterRescuePilotRuntimeTest;
 
 public:
 	ASimCopterTrafficSystemActor();
@@ -293,7 +298,14 @@ public:
 	// goes invisible). Backfilling on the very next tick is what produced a second paramedic
 	// appearing on the roof the instant the first one climbed aboard, so a replacement waits
 	// HospitalParamedicRespawnDelaySeconds after the last time one was actually seen standing there.
-	ASimCopterGroundAgent* EnsureHospitalParamedicAtTile(int32 TileX, int32 TileY);
+	ASimCopterGroundAgent* EnsureHospitalParamedicAtTile(int32 TileX, int32 TileY, int32 DesiredCrew = 1);
+	ASimCopterGroundAgent* EnsureServiceRoofCrew(int32 TileX, int32 TileY, int32 DesiredCrew = 1);
+	ASimCopterGroundAgent* EnsureBuildingEntranceCrew(int32 TileX, int32 TileY);
+	bool TryGetBuildingEntrancePost(int32 TileX, int32 TileY, FVector& OutSurface);
+	bool IsResponderSpawnClear(const FVector& Surface, const ASimCopterGroundAgent* Ignore = nullptr) const;
+	bool IsAtHospitalEntrance(const FVector& Feet) const;
+	void UpdateServiceEntrances(float DeltaSeconds);
+	void ClearServiceEntrancePosts();
 
 	// One hospital (XBLD 0xD1, HO209) in the loaded city: the origin tile of its footprint - what
 	// EnsureHospitalParamedicAtTile and the roof-post cache are keyed on - and the footprint's
@@ -789,7 +801,14 @@ protected:
 	int32 ActivePedestrianCount = 0;
 
 private:
+	friend class USimCopterAirOperationsSubsystem;
+	friend class USimCopterAirOperationsComponent;
+	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterServicePostsTest;
+	friend class FSimCopterApacheShopTest;
 	friend class FSimCopterSafePassengerLandingTest;
+	friend class FSimCopterPlaneDeckRescueTest;
 	friend class FSimCopterTunnelTransitTest;
 	struct FTunnelTransit
 	{
@@ -820,6 +839,9 @@ private:
 	// Drives EnsureHospitalParamedicAtTile's respawn delay. An absent entry means the roof has
 	// never been staffed, so the first medic posts immediately.
 	TMap<FIntPoint, double> HospitalParamedicLastSeenSeconds;
+	TMap<FIntPoint, FVector> BuildingEntrancePosts;
+	TMap<FIntPoint, double> EntranceCrewLastSeenSeconds;
+	float ServiceEntranceUpdateSeconds = 0.0f;
 	// Per building tile: the rendered roof point resolved for persistent crew or rescue victims.
 	TMap<FIntPoint, FVector> BuildingRoofPostByTile;
 	TArray<uint8> PeopleTileClasses;
@@ -831,6 +853,8 @@ private:
 	float WholeMapSimAccumulatorSeconds = 0.0f;
 	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> VehicleAgents;
 	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> PedestrianAgents;
+	TArray<int32> RescueAppearanceBag;
+	int32 RescueAppearanceEventId = INDEX_NONE;
 	TMap<TObjectKey<ASimCopterGroundAgent>, FSimCopterVehicleTrafficState> VehicleTrafficStates;
 	TWeakObjectPtr<ASimCopterGroundAgent> NextCarFireTarget;
 	TWeakObjectPtr<ASimCopterGroundAgent> LastSpeederAgent;
@@ -865,11 +889,12 @@ public:
 	SimCopterDispatch::EDispatchResult RequestEmergencyDispatch(
 		SimCopterDispatch::EService Service,
 		const FIntPoint& TargetTile,
-		bool bChaseSpotlight);
+		bool bChaseSpotlight, ASimCopterGroundAgent* RecoveryBody = nullptr);
 
 	// FUN_0049b3f0: release the first vehicle of this service within two rings of the
 	// spotlight tile. A vehicle of a different service on the way aborts the scan, as in
 	// the original.
+	void RecallPoliceNearest(const FIntPoint& Tile);
 	bool ClearEmergencyDispatch(SimCopterDispatch::EService Service, const FIntPoint& SpotlightTile);
 
 	// Remake dispatch-panel action: immediately despawn every active response/chase unit and
@@ -998,7 +1023,7 @@ public:
 		const FVector& RoofCenter,
 		float SearchHalfExtentCm,
 		int32 CandidateOffset,
-		FVector& OutSurfacePoint) const;
+		FVector& OutSurfacePoint, const ASimCopterGroundAgent* Ignore = nullptr) const;
 
 	// The world half of that rule: ring RoofSpawnSupportRadiusCm of probes round a resolved roof
 	// point and put them through IsRooftopSpawnFootprintSupported. RoofDeckZ is the post's own
@@ -1032,7 +1057,7 @@ public:
 	ASimCopterGroundAgent* FindPersonCarriedBy(const ASimCopterGroundAgent& Carrier) const;
 
 	// FUN_004cc830: the first medevac victim (person state 6) riding the given carrier.
-	ASimCopterGroundAgent* FindMedevacPassengerAboard(const AActor* Carrier) const;
+	ASimCopterGroundAgent* FindMedevacPassengerAboard(const AActor* Carrier, ASimCopterGroundAgent* RequestingMedic = nullptr) const;
 
 	// Anyone riding Carrier on behalf of EventId. The seat window drops real people now, so it
 	// has to find the one it is dropping rather than spawn a stand-in.
@@ -1211,7 +1236,7 @@ public:
 		// the hospital paramedic and the aerial cop wait on their helipad.
 		bool bPlaceOnBuildingRoof = false,
 		// Mission service points cannot disappear merely because the ambient crowd budget is full.
-		bool bBypassPopulationCap = false);
+		bool bBypassPopulationCap = false, const FVector* ExplicitWorldSurface = nullptr);
 	bool TryResolvePedestrianNodeForTile(int32 TileX, int32 TileY, int32& OutNodeIndex) const;
 	bool IsOriginalAmbientTileGateOpen(int32 TileX, int32 TileY) const;
 	bool HasAmbientPedestrianNearTile(int32 TileX, int32 TileY, float RadiusTiles) const;
@@ -1227,6 +1252,11 @@ public:
 	void RebuildDispatchStations();
 	// Per-frame state machines (FUN_004b9e40 and its fire/ambulance siblings).
 	void UpdateDispatchVehicles(float DeltaSeconds);
+	void DispatchAmbulancesForBodies(float DeltaSeconds);
+	void UpdateBodyRecovery(FSimCopterDispatchVehicle& Vehicle, float DeltaSeconds);
+	float BodyDispatchCountdown = 0.0f;
+	friend class FSimCopterBodyRecoveryTest;
+	friend class FSimCopterGameplayPolishTest;
 	void UpdateOneDispatchVehicle(SimCopterDispatch::EService Service, int32 SlotIndex, float DeltaSeconds);
 
 	// FUN_004be890 / FUN_004be820 / FUN_004be750, folded into one step: hang the service's

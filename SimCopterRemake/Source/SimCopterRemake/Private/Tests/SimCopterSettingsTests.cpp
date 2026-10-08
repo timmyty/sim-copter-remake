@@ -9,6 +9,7 @@
 #include "HAL/FileManager.h"
 #include "HAL/IConsoleManager.h"
 #include "Misc/AutomationTest.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Misc/Paths.h"
 #include "SceneUtils.h"
 #include "UI/SSimCopterCheckupSlider.h"
@@ -32,17 +33,16 @@ bool FSimCopterSettingsMenuItemsTest::RunTest(const FString& Parameters)
 {
 	using namespace SimCopterSettingsMenuLayout;
 
-	// FUN_00437d10's two descriptor variants. The command base is 0 with City Settings on the page
-	// and 1 without, which is what keeps an item's id the same either way - so every row below the
-	// first must map to the SAME command in both.
-	TestEqual(TEXT("User game row 0 is City Settings"),
-		SSimCopterSettingsMenu::GetItemForRow(0, /*bHasCitySettings=*/true), ESimCopterSettingsItem::CitySettings);
-	TestEqual(TEXT("Career row 0 opens the Options command"),
-		SSimCopterSettingsMenu::GetItemForRow(0, /*bHasCitySettings=*/false), ESimCopterSettingsItem::Graphics);
+	TestEqual(TEXT("User game resumes first"),
+		SSimCopterSettingsMenu::GetItemForRow(0, true), ESimCopterSettingsItem::Continue);
+	TestEqual(TEXT("Career resumes first"),
+		SSimCopterSettingsMenu::GetItemForRow(0, false), ESimCopterSettingsItem::Continue);
+	TestEqual(TEXT("City Settings follows Continue"),
+		SSimCopterSettingsMenu::GetItemForRow(1, true), ESimCopterSettingsItem::CitySettings);
 	TestEqual(TEXT("The old Graphics menu text is now Options"),
 		SSimCopterSettingsMenu::GetItemLabel(ESimCopterSettingsItem::Graphics).ToString(), FString(TEXT("Options")));
 
-	for (int32 Row = 0; Row < FullItemCount - 1; ++Row)
+	for (int32 Row = 1; Row < FullItemCount - 1; ++Row)
 	{
 		TestEqual(
 			*FString::Printf(TEXT("Career row %d matches user-game row %d"), Row, Row + 1),
@@ -50,11 +50,11 @@ bool FSimCopterSettingsMenuItemsTest::RunTest(const FString& Parameters)
 			SSimCopterSettingsMenu::GetItemForRow(Row + 1, /*bHasCitySettings=*/true));
 	}
 
-	// The last row is Continue in both.
+	// Resume moved to the first row; Leave City is now last in both modes.
 	TestEqual(TEXT("User game last row"),
-		SSimCopterSettingsMenu::GetItemForRow(FullItemCount - 1, true), ESimCopterSettingsItem::Continue);
+		SSimCopterSettingsMenu::GetItemForRow(FullItemCount - 1, true), ESimCopterSettingsItem::LeaveCity);
 	TestEqual(TEXT("Career last row"),
-		SSimCopterSettingsMenu::GetItemForRow(FullItemCount - 2, false), ESimCopterSettingsItem::Continue);
+		SSimCopterSettingsMenu::GetItemForRow(FullItemCount - 2, false), ESimCopterSettingsItem::LeaveCity);
 
 	// Every item has a label; a gap would show as an empty plate.
 	for (int32 Index = 0; Index < FullItemCount; ++Index)
@@ -235,15 +235,16 @@ bool FSimCopterSoundSettingsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Radio volume is vertical"), RadioVolumeRect.Height() > RadioVolumeRect.Width());
 	TestTrue(TEXT("Tuner is vertical"), TunerRect.Height() > TunerRect.Width());
 
-	// Changing a radio channel returns the dashboard rocker to full volume. Re-selecting the
-	// current channel is not a change and leaves the player's volume alone.
+	// Tuning must preserve the player's volume, including mute.
 	USimCopterSettings* Settings = NewObject<USimCopterSettings>(NewObject<UGameInstance>());
 	Settings->SetRadioVolume(VolumeMin);
 	Settings->SetRadioStation(2);
-	TestEqual(TEXT("Changing channel resets radio volume"), Settings->GetRadioVolume(), VolumeMax);
-	Settings->SetRadioVolume(VolumeMin);
+	TestEqual(TEXT("Changing channel preserves radio volume"), Settings->GetRadioVolume(), VolumeMin);
 	Settings->SetRadioStation(2);
 	TestEqual(TEXT("Re-selecting the channel preserves volume"), Settings->GetRadioVolume(), VolumeMin);
+	Settings->SetRadioVolume(0);
+	Settings->SetRadioStation(0);
+	TestEqual(TEXT("Changing channel preserves mute"), Settings->GetRadioVolume(), 0);
 
 	// Its label sits under it, and the three toggles sit above theirs.
 	TestTrue(TEXT("Game Volume label is below the fader"), GameVolumeLabelRect.Top >= GameVolumeRect.Bottom);
@@ -254,6 +255,80 @@ bool FSimCopterSoundSettingsTest::RunTest(const FString& Parameters)
 	// The two buttons stack in the same column, one button height apart.
 	TestEqual(TEXT("Buttons share a column"), OkButtonY + SimCopterFrontEnd::ButtonHeight, CancelButtonY);
 
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FSimCopterSoundSettingsPersistenceTest,
+	"SimCopter.Settings.SoundVolumePersistence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterSoundSettingsPersistenceTest::RunTest(const FString& Parameters)
+{
+	const FString TestIni = FConfigCacheIni::NormalizeConfigIniPath(FPaths::Combine(
+		FPaths::ProjectSavedDir(), TEXT("Automation/SimCopterSoundVolumePersistenceTest.ini")));
+	UGameInstance* Outer = NewObject<UGameInstance>();
+	USimCopterSettings* Store = NewObject<USimCopterSettings>(Outer);
+	const auto Push = [Store](const FSimCopterSoundSettingsValues& New)
+	{
+		Store->SetGameVolume(New.GameVolume);
+		Store->SetRadioVolume(New.RadioVolume);
+		Store->SetRadioStation(New.RadioStation);
+	};
+	const auto ReadValues = [](const USimCopterSettings* Settings)
+	{
+		FSimCopterSoundSettingsValues Values;
+		Values.GameVolume = Settings->GetGameVolume();
+		Values.RadioVolume = Settings->GetRadioVolume();
+		Values.RadioStation = Settings->GetRadioStation();
+		return Values;
+	};
+	for (const FKey ExitKey : { EKeys::Escape, EKeys::Enter, EKeys::Gamepad_FaceButton_Right })
+	{
+		for (const float Alpha : { 0.35f, 0.0f, 1.0f })
+		{
+			Store->SetRadioStation(0);
+			Store->SetRadioVolume(8000);
+			bool bSaved = false;
+			TSharedRef<SSimCopterSoundSettings> Panel = SNew(SSimCopterSoundSettings)
+				.Values(ReadValues(Store))
+				.StationCount(3)
+				.OnPreviewChanged(FOnSimCopterSoundSettingsAccepted::CreateLambda(Push))
+				.OnAccepted(FOnSimCopterSoundSettingsAccepted::CreateLambda(
+					[&](const FSimCopterSoundSettingsValues& New)
+					{
+						Push(New);
+						Store->SaveConfig(CPF_Config, *TestIni);
+						bSaved = true;
+					}));
+			Panel->RadioVolumeSlider->SetValue(Alpha);
+			const int32 ExpectedVolume = FMath::RoundToInt(Alpha * USimCopterSettings::VolumeMax);
+			TestEqual(TEXT("Dragging updates the live volume"), Store->GetRadioVolume(), ExpectedVolume);
+			Panel->TunerSlider->SetValue(1.0f);
+			TestEqual(TEXT("Tuning keeps the selected volume"), Store->GetRadioVolume(), ExpectedVolume);
+			const FKeyEvent ExitEvent(ExitKey, FModifierKeysState(), 0, false, 0, 0);
+			if (ExitKey.IsGamepadKey()) { Panel->OnPreviewKeyDown(FGeometry(), ExitEvent); }
+			else { Panel->OnKeyDown(FGeometry(), ExitEvent); }
+			TestTrue(TEXT("Exiting the panel saves settings"), bSaved);
+			TestEqual(TEXT("Exiting keeps the selected volume"), Store->GetRadioVolume(), ExpectedVolume);
+			USimCopterSettings* Restored = NewObject<USimCopterSettings>(Outer);
+			FConfigFile DiskSettings;
+			DiskSettings.Read(TestIni);
+			int32 DiskVolume = USimCopterSettings::VolumeMax;
+			DiskSettings.GetInt(TEXT("/Script/SimCopterRemake.SimCopterSettings"), TEXT("RadioVolume"), DiskVolume);
+			TestEqual(TEXT("Selected volume is written to disk"), DiskVolume, ExpectedVolume);
+			Restored->LoadConfig(USimCopterSettings::StaticClass(), *TestIni);
+			TestEqual(TEXT("Volume survives config reload"), Restored->GetRadioVolume(), ExpectedVolume);
+			TSharedRef<SSimCopterSoundSettings> Reopened = SNew(SSimCopterSoundSettings)
+				.Values(ReadValues(Restored)).StationCount(3);
+			TestEqual(TEXT("Reopened slider retains its position"), Reopened->RadioVolumeSlider->GetValue(), Alpha);
+			// UE marks standalone INIs read through LoadConfig as NoSave. Discard that test-only
+			// branch so the next SaveConfig writes a fresh temporary branch, as on the first pass.
+			GConfig->UnloadFile(TestIni);
+		}
+	}
+	GConfig->UnloadFile(TestIni);
+	IFileManager::Get().Delete(*TestIni);
 	return true;
 }
 
@@ -711,7 +786,9 @@ bool FSimCopterGraphicsSettingsPersistenceTest::RunTest(const FString& Parameter
 	// SaveConfig, and USimCopterSettings::Initialize reads them back with LoadConfig. That is the
 	// whole mechanism "click OK, it's still set next time" rests on, so round-trip it directly
 	// against a scratch ini rather than the developer's own GameUserSettings.ini.
-	const FString TestIni = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Automation/SimCopterGraphicsSettingsPersistenceTest.ini"));
+	// SaveConfig normalizes filenames; use the same cache key for both reloads as well.
+	const FString TestIni = FConfigCacheIni::NormalizeConfigIniPath(FPaths::Combine(
+		FPaths::ProjectSavedDir(), TEXT("Automation/SimCopterGraphicsSettingsPersistenceTest.ini")));
 	IFileManager::Get().Delete(*TestIni);
 
 	// USimCopterSettings is a UGameInstanceSubsystem, so its class carries ClassWithin=GameInstance -

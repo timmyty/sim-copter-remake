@@ -18,7 +18,7 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 	Pawn->ControllerToolWheelPressed();
 	TestFalse(TEXT("Opening a wheel clears A flight hold"), Pawn->bControllerClimbHeld);
 	Pawn->ControllerPassengerPressed();
-	TestTrue(TEXT("LB+X opens passengers"), Pawn->ControllerMode == ESimCopterControllerMode::PassengerSelect);
+	TestTrue(TEXT("X in Tools opens passengers"), Pawn->ControllerMode == ESimCopterControllerMode::PassengerSelect);
 	Pawn->ControllerToolWheelReleased();
 	TestTrue(TEXT("Releasing LB leaves passengers open"), Pawn->ControllerMode == ESimCopterControllerMode::PassengerSelect);
 	Pawn->MissionPassengerSlots.AddDefaulted();
@@ -54,16 +54,30 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 	Pawn->ControllerDispatchWheelPressed();
 	Pawn->ControllerRightY(-1.0f);
 	Pawn->ControllerPrimaryPressed();
-	TestTrue(TEXT("A leaves dispatch open for shoulder-release selection"),
-		Pawn->ControllerMode == ESimCopterControllerMode::DispatchWheel);
+	TestTrue(TEXT("A confirms dispatch without holding a bumper"),
+		Pawn->ControllerMode == ESimCopterControllerMode::None);
 	TestFalse(TEXT("Held dispatch A does not become climb"), Pawn->bControllerClimbHeld);
 	Pawn->ControllerDispatchWheelReleased();
 	TestTrue(TEXT("Later RB release remains outside dispatch context"),
 		Pawn->ControllerMode == ESimCopterControllerMode::None);
 	Pawn->ControllerPrimaryReleased();
+	Pawn->ControllerEnterExitPressed();
+	TestTrue(TEXT("Y alone opens Tools"), Pawn->ControllerMode == ESimCopterControllerMode::ToolWheel);
+	Pawn->ControllerEnterExitPressed();
+	TestTrue(TEXT("Y alone switches to Dispatch"), Pawn->ControllerMode == ESimCopterControllerMode::DispatchWheel);
+	Pawn->ControllerEnterExitPressed();
+	TestTrue(TEXT("Y alone switches back to Tools"), Pawn->ControllerMode == ESimCopterControllerMode::ToolWheel);
+	Pawn->ControllerPrimaryPressed();
+	TestTrue(TEXT("A confirms Tools without holding a bumper"), Pawn->ControllerMode == ESimCopterControllerMode::None);
+	TestFalse(TEXT("Confirming Tools cannot climb"), Pawn->bControllerClimbHeld);
+	Pawn->ControllerPrimaryReleased();
+	Pawn->bControllerCameraAdjustHeld=true;
+	Pawn->ControllerCancelPressed();
+	TestFalse(TEXT("R3+B exit shortcut cannot descend"), Pawn->bControllerDescendHeld);
+	Pawn->bControllerCameraAdjustHeld=false;
 	Pawn->GroundClearanceCm = 0;
 	Pawn->bIsLanded = false;
-	TestFalse(TEXT("Exit hint eligibility requires landed, even at zero clearance"), Pawn->CanExitHelicopter());
+	TestTrue(TEXT("Pilot can deliberately exit an airborne helicopter"), Pawn->CanExitHelicopter());
 	Pawn->bIsLanded = true;
 	TestTrue(TEXT("Landed helicopter can offer exit"), Pawn->CanExitHelicopter());
 	Pawn->ControllerMode = ESimCopterControllerMode::None;
@@ -109,7 +123,7 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 	const FString PadHint = ASimCopterHelicopterPawn::GetCollectiveUpKeyDisplayName(true).ToString();
 	TestTrue(TEXT("Controller hint includes A"), PadHint.Contains(TEXT("A")));
 	TestFalse(TEXT("Controller hint excludes keyboard alternatives"), PadHint.Contains(TEXT("F10")));
-	TestEqual(TEXT("Controller exit hint names Y"), ASimCopterHelicopterPawn::GetExitHelicopterKeyDisplayName(true).ToString(), FString(TEXT("Y")));
+	TestEqual(TEXT("Controller exit hint names R3+B"), ASimCopterHelicopterPawn::GetExitHelicopterKeyDisplayName(true).ToString(), FString(TEXT("R3+B")));
 	Settings->RemoveAxisMapping(Extra, false);
 	return true;
 }

@@ -104,9 +104,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FSimCopterHangarCatalogTest::RunTest(const FString& Parameters)
 {
 	// FUN_0042d840's helicopter permutation {4, 0, 1, 8, 3, 5, 6, 7}: eight rows, and the Apache
-	// (runtime type 2) is on none of them.
+	// (runtime type 2) now follows as the mystery row.
 	{
-		const int32 Expected[SimCopterHangarLayout::CatalogTabCount] = { 4, 0, 1, 8, 3, 5, 6, 7 };
+		const int32 Expected[SimCopterHangarLayout::CatalogTabCount] = { 4, 0, 1, 8, 3, 5, 6, 7, 2 };
 		for (int32 Row = 0; Row < SimCopterHangarLayout::CatalogTabCount; ++Row)
 		{
 			TestEqual(
@@ -119,8 +119,8 @@ bool FSimCopterHangarCatalogTest::RunTest(const FString& Parameters)
 				Row);
 		}
 
-		TestEqual(TEXT("The Apache is not in the shop"), SimCopterHangarLayout::GetCatalogRowForTypeIndex(2), int32(INDEX_NONE));
-		TestEqual(TEXT("There is no row 8"), SimCopterHangarLayout::GetTypeIndexForCatalogRow(8), int32(INDEX_NONE));
+		TestEqual(TEXT("Apache is the mystery row"), SimCopterHangarLayout::GetCatalogRowForTypeIndex(2), int32(8));
+		TestEqual(TEXT("There is no row 9"), SimCopterHangarLayout::GetTypeIndexForCatalogRow(9), int32(INDEX_NONE));
 		TestEqual(TEXT("There is no row -1"), SimCopterHangarLayout::GetTypeIndexForCatalogRow(INDEX_NONE), int32(INDEX_NONE));
 	}
 
@@ -133,8 +133,10 @@ bool FSimCopterHangarCatalogTest::RunTest(const FString& Parameters)
 			ESimCopterHelicopterTool::TearGas,
 			ESimCopterHelicopterTool::WaterCannon,
 			ESimCopterHelicopterTool::RescueHarness,
+			ESimCopterHelicopterTool::TowClamp,
+			ESimCopterHelicopterTool::CaptureCage,
 		};
-		const int32 ExpectedIndices[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2 };
+		const int32 ExpectedIndices[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 5, 6 };
 
 		for (int32 Row = 0; Row < SimCopterHangarShop::UpgradeRowCount; ++Row)
 		{
@@ -192,7 +194,7 @@ bool FSimCopterHangarCatalogTest::RunTest(const FString& Parameters)
 
 	// The eight tab hit boxes are in order, do not overlap, and cover the strip the page prints.
 	{
-		for (int32 Tab = 0; Tab < SimCopterHangarLayout::CatalogTabCount; ++Tab)
+		for (int32 Tab = 0; Tab < SimCopterHangarLayout::CivilianCatalogTabCount; ++Tab)
 		{
 			TestTrue(
 				*FString::Printf(TEXT("Tab %d has width"), Tab),

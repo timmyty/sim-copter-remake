@@ -14,6 +14,7 @@ public class SimCopterRemake : ModuleRules
 		// a file was added. Per-file compilation keeps those helpers properly private.
 		bUseUnity = false;
 		RuntimeDependencies.Add("$(ProjectDir)/Config/FigureAdjustments.json", StagedFileType.NonUFS);
+		RuntimeDependencies.Add("$(ProjectDir)/Content/Briefings/*.wav", StagedFileType.NonUFS);
 
 		// MeshDescription/StaticMeshDescription back UStaticMesh::BuildFromMeshDescriptions, which the
 		// city build uses to turn each distinct GEO building model into a runtime static mesh so

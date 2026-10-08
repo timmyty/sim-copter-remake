@@ -1,4 +1,8 @@
 import unreal
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import CitySurfaceDetail as surface_detail
 
 
 MATERIAL_DIR = "/Game/Materials"
@@ -17,7 +21,7 @@ def save(asset_path):
 
 def create_or_load_material(name):
     asset_path = f"{MATERIAL_DIR}/{name}"
-    existing = unreal.EditorAssetLibrary.load_asset(asset_path)
+    existing = unreal.EditorAssetLibrary.load_asset(asset_path) if unreal.EditorAssetLibrary.does_asset_exist(asset_path) else None
     if existing:
         return existing
 
@@ -537,7 +541,7 @@ def create_city_atlas_material():
     rather than as yellow paint. Which texels those are comes from the hand-painted
     Content/NightWindows/windows_page_<page>.png where one exists, and is inferred from the art
     otherwise."""
-    material = create_or_load_material("M_SimCopterCityAtlas")
+    material = create_or_load_material("M_SimCopterCitySurface")
     clear_expressions(material)
 
     in_cell_uv = unreal.MaterialEditingLibrary.create_material_expression(
@@ -611,8 +615,10 @@ def create_city_atlas_material():
     blended = unreal.MaterialEditingLibrary.create_material_expression(
         material, unreal.MaterialExpressionLinearInterpolate, -60, 40
     )
-    unreal.MaterialEditingLibrary.connect_material_expressions(texture, "RGB", blended, "A")
-    unreal.MaterialEditingLibrary.connect_material_expressions(night_texture, "RGB", blended, "B")
+    surface_day = surface_detail.filtered_atlas(material, "SurfaceTexture", in_cell_uv, cell_index)
+    surface_night = surface_detail.filtered_atlas(material, "SurfaceNightTexture", in_cell_uv, cell_index)
+    unreal.MaterialEditingLibrary.connect_material_expressions(surface_day, "", blended, "A")
+    unreal.MaterialEditingLibrary.connect_material_expressions(surface_night, "", blended, "B")
     unreal.MaterialEditingLibrary.connect_material_expressions(albedo_blend, "", blended, "Alpha")
 
     # City family: buildings and roads. The albedo ceiling goes on the DAY/NIGHT-BLENDED colour, not
@@ -769,7 +775,7 @@ def create_city_atlas_material():
         (has_window_mask, "", "HasAuthored"),
     ):
         if not unreal.MaterialEditingLibrary.connect_material_expressions(source, source_output, window_mask, pin):
-            unreal.log_error(f"M_SimCopterCityAtlas: window mask pin '{pin}' not connected.")
+            unreal.log_error(f"M_SimCopterCitySurface: window mask pin '{pin}' not connected.")
 
     # --- glass ------------------------------------------------------------------------------------
     #
@@ -821,7 +827,23 @@ def create_city_atlas_material():
         if not unreal.MaterialEditingLibrary.connect_material_expressions(
             source, source_output, window_glass_mask, pin
         ):
-            unreal.log_error(f"M_SimCopterCityAtlas: glass mask pin '{pin}' not connected.")
+            unreal.log_error(f"M_SimCopterCitySurface: glass mask pin '{pin}' not connected.")
+
+    # Keep windows and authored pond/pool cells smooth. Details affect opaque masonry/roofs only.
+    detail_weight = add_custom_node(material, "MasonryWeight",
+        "float idx = (7.0-Cell.y)*8.0+Cell.x; return (1.0-saturate(Glass)) * (1.0-step(0.5,Water)*((abs(idx)<0.1 || abs(idx-5.0)<0.1)?1.0:0.0));",
+        ["Glass", "Cell", "Water"], 400, 1600, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    surface_detail.connect(window_glass_mask, "", detail_weight, "Glass")
+    surface_detail.connect(cell_index, "", detail_weight, "Cell")
+    surface_detail.connect(animate_water, "", detail_weight, "Water")
+    base_normal = unreal.MaterialEditingLibrary.create_material_expression(material, unreal.MaterialExpressionVertexNormalWS)
+    low_power_detail = add_collection_parameter(material, "LowPower", 400, 1750)
+    surface_grain = surface_detail.add_surface_detail(material, _clamped, base_normal, detail_weight, low_power_detail)
+    varied_roughness = add_custom_node(material, "MasonryRoughness", "return saturate(Base + Grain.x * 0.12);",
+        ["Base", "Grain"], 600, 1750, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    surface_detail.connect(city_roughness, "", varied_roughness, "Base")
+    surface_detail.connect(surface_grain, "", varied_roughness, "Grain")
+    city_roughness = varied_roughness
 
     window_roughness = add_collection_parameter(material, "CityWindowRoughness", -560, 1300)
     window_specular = add_collection_parameter(material, "CityWindowSpecular", -560, 1380)
@@ -930,7 +952,7 @@ def create_city_atlas_material():
     material.set_editor_property("used_with_instanced_static_meshes", True)
     material.set_editor_property("used_with_nanite", True)
     unreal.MaterialEditingLibrary.recompile_material(material)
-    save(f"{MATERIAL_DIR}/M_SimCopterCityAtlas")
+    save(f"{MATERIAL_DIR}/M_SimCopterCitySurface")
 
 
 def create_rotor_disc_material():
@@ -1712,7 +1734,7 @@ TERRAIN_NOISE_CODE = (
 
 
 def create_terrain_material():
-    material = create_or_load_material("M_SimCopterTerrain")
+    material = create_or_load_material("M_SimCopterLandSurface")
     clear_expressions(material)
 
     # Base color / lit shading, identical to MI_TerrainLow so the ground reads the same.
@@ -1720,8 +1742,22 @@ def create_terrain_material():
         material, unreal.MaterialExpressionTextureSampleParameter2D, -400, 0
     )
     texture.set_editor_property("parameter_name", "Texture")
-    # Ground family: matte, and albedo-capped so a sunlit hillside stops reading as bare highlight.
-    add_family_shading_nodes(material, texture, "RGB", "Terrain")
+    # CPU terrain UVs are inset by half a source texel; undo that inset inside each cell.
+    terrain_uv = unreal.MaterialEditingLibrary.create_material_expression(material, unreal.MaterialExpressionTextureCoordinate)
+    cell = add_custom_node(material, "LandAtlasCell", "return clamp(floor(UV * 8.0), 0.0, 7.0);",
+        ["UV"], -700, 100, unreal.CustomMaterialOutputType.CMOT_FLOAT2)
+    local_uv = add_custom_node(material, "LandCellUV", "return clamp((frac(UV * 8.0) * 32.0 - 0.5) / 31.0, 0.0, 0.999999);",
+        ["UV"], -700, 200, unreal.CustomMaterialOutputType.CMOT_FLOAT2)
+    surface_detail.connect(terrain_uv,"",cell,"UV")
+    surface_detail.connect(terrain_uv,"",local_uv,"UV")
+    filtered = surface_detail.filtered_atlas(material, "SurfaceTexture", local_uv, cell)
+    # Retain the original Texture parameter: terrain water also reads it from these instances.
+    blend = unreal.MaterialEditingLibrary.create_material_expression(material, unreal.MaterialExpressionLinearInterpolate)
+    use_filtered = add_scalar_parameter(material, "UseFilteredSurface", 1.0, 20, 1750)
+    surface_detail.connect(texture,"RGB",blend,"A")
+    surface_detail.connect(filtered,"",blend,"B")
+    surface_detail.connect(use_filtered,"",blend,"Alpha")
+    land_color, _, land_roughness, _ = add_family_shading_nodes(material, blend, "", "Terrain")
 
     world_pos = unreal.MaterialEditingLibrary.create_material_expression(
         material, unreal.MaterialExpressionWorldPosition, -1000, 700
@@ -1762,11 +1798,21 @@ def create_terrain_material():
         noise, "", unreal.MaterialProperty.MP_NORMAL
     )
 
+    detail_weight = add_custom_node(material, "LandDetailWeight", "return saturate(Weight);", ["Weight"], 300, 1800,
+        unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    surface_detail.connect(weight, "R", detail_weight, "Weight")
+    land_grain = surface_detail.add_surface_detail(material, land_color, noise, detail_weight, low_power, terrain=True)
+    roughness = add_custom_node(material, "LandRoughness", "return saturate(Base + Grain.x * 0.16);",
+        ["Base", "Grain"], 600, 1800, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    surface_detail.connect(land_roughness,"",roughness,"Base")
+    surface_detail.connect(land_grain,"",roughness,"Grain")
+    unreal.MaterialEditingLibrary.connect_material_property(roughness,"",unreal.MaterialProperty.MP_ROUGHNESS)
+
     # The perturbed normal is world-space, so the Normal input must not be treated as tangent-space.
     material.set_editor_property("tangent_space_normal", False)
     material.set_editor_property("two_sided", False)
     unreal.MaterialEditingLibrary.recompile_material(material)
-    save(f"{MATERIAL_DIR}/M_SimCopterTerrain")
+    save(f"{MATERIAL_DIR}/M_SimCopterLandSurface")
 
 
 # 4x4 ordered (Bayer) dither, keyed by absolute screen pixel position. This reproduces the
@@ -1932,43 +1978,74 @@ def create_lit_vertex_color_material():
     save(f"{MATERIAL_DIR}/M_SimCopterLitVertexColor")
 
 
-ensure_directory(MATERIAL_DIR)
-# FIRST, before any material that reads a collection scalar - which is now most of them.
-#
-# A CollectionParameter node resolves its ParameterId from the name THROUGH the collection, so if
-# the collection is missing the parameter at the moment the node is created, the node keeps a null
-# name and compiles to a constant 0. It is not enough for the collection asset to exist: adding a
-# new scalar here and reading it from a material built earlier in this same script binds nothing,
-# silently, and a zero albedo ceiling is a black building. That is exactly what happened when the
-# City family went in with this call still further down.
-create_day_night_parameter_collection()
 
-create_if_missing("M_SimCopterLitTexture", create_lit_texture_material)
-create_if_missing("M_SimCopterLitVertexColor", create_lit_vertex_color_material)
-create_if_missing("M_SimCopterRotorDisc", create_rotor_disc_material)
-# PP200's fan disc uses the existing rotor material on an InstancedStaticMeshComponent. This must
-# run even when create_if_missing preserves the hand-tuned graph: the first city-side implementation
-# only put the flag in create_rotor_disc_material, so the already-existing asset never received it
-# and Unreal replaced the fan with its opaque default material.
-ensure_instanced_static_mesh_usage("M_SimCopterRotorDisc")
-create_if_missing("M_SimCopterSpriteTexture", create_sprite_texture_material)
-# Not in the delete-and-recreate list below: MI_CityImage_* instances hold a hard reference to this
-# parent, and deleting the asset would null it out. To re-tune it, delete it by hand and re-run -
-# the re-parent pass at the end re-attaches the instances.
-create_if_missing("M_SimCopterLitSpriteTexture", create_lit_sprite_texture_material)
-# The water material's shader is fully defined here and still being tuned, so rebuild it every run.
-# Delete any existing asset first and recreate it fresh: reloading an existing material and clearing
-# its expressions asserts (!IsRooted in DeleteMaterialExpression) in this engine build, whereas a
-# freshly created material has no expressions to clear. The asset keeps the same /Game path, so the
-# renderer's ConstructorHelpers reference still resolves.
-for _tuned in ("M_SimCopterCityAtlas", "M_SimCopterWater", "M_SimCopterTerrain", "M_SimCopterParticleFX", "M_SimCopterParticleFXSoft"):
-    if unreal.EditorAssetLibrary.does_asset_exist(f"{MATERIAL_DIR}/{_tuned}"):
-        unreal.EditorAssetLibrary.delete_asset(f"{MATERIAL_DIR}/{_tuned}")
-create_city_atlas_material()
-create_water_material()
-create_terrain_material()
-create_particle_fx_material()
-create_particle_fx_soft_material()
-upgrade_sprite_texture_emissive()
-upgrade_lit_vertex_color_emissive()
-reparent_baked_direct_image_instances()
+def create_city_solid_surface_material():
+    # Dedicated city parent: vehicle paint still uses M_SimCopterLitVertexColor.
+    material = create_or_load_material("M_SimCopterCitySolidSurface")
+    clear_expressions(material)
+    vertex = unreal.MaterialEditingLibrary.create_material_expression(material, unreal.MaterialExpressionVertexColor)
+    color, _, roughness, _ = add_family_shading_nodes(material, vertex, "", "City")
+    normal = unreal.MaterialEditingLibrary.create_material_expression(material, unreal.MaterialExpressionVertexNormalWS)
+    weight = add_scalar_parameter(material, "SurfaceDetailWeight", 1.0, 20, 1000)
+    low_power = add_collection_parameter(material, "LowPower", 0, 1100)
+    grain = surface_detail.add_surface_detail(material, color, normal, weight, low_power)
+    varied = add_custom_node(material, "SolidSurfaceRoughness", "return saturate(Base + Grain.x * 0.12);",
+        ["Base", "Grain"], 600, 1750, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    surface_detail.connect(roughness,"",varied,"Base")
+    surface_detail.connect(grain,"",varied,"Grain")
+    unreal.MaterialEditingLibrary.connect_material_property(varied,"",unreal.MaterialProperty.MP_ROUGHNESS)
+    material.set_editor_property("used_with_instanced_static_meshes", True)
+    material.set_editor_property("used_with_nanite", True)
+    unreal.MaterialEditingLibrary.recompile_material(material)
+    save(f"{MATERIAL_DIR}/M_SimCopterCitySolidSurface")
+
+
+def main():
+    ensure_directory(MATERIAL_DIR)
+    # FIRST, before any material that reads a collection scalar - which is now most of them.
+    #
+    # A CollectionParameter node resolves its ParameterId from the name THROUGH the collection, so if
+    # the collection is missing the parameter at the moment the node is created, the node keeps a null
+    # name and compiles to a constant 0. It is not enough for the collection asset to exist: adding a
+    # new scalar here and reading it from a material built earlier in this same script binds nothing,
+    # silently, and a zero albedo ceiling is a black building. That is exactly what happened when the
+    # City family went in with this call still further down.
+    create_day_night_parameter_collection()
+
+    create_if_missing("M_SimCopterLitTexture", create_lit_texture_material)
+    create_if_missing("M_SimCopterLitVertexColor", create_lit_vertex_color_material)
+    create_if_missing("M_SimCopterRotorDisc", create_rotor_disc_material)
+    # PP200's fan disc uses the existing rotor material on an InstancedStaticMeshComponent. This must
+    # run even when create_if_missing preserves the hand-tuned graph: the first city-side implementation
+    # only put the flag in create_rotor_disc_material, so the already-existing asset never received it
+    # and Unreal replaced the fan with its opaque default material.
+    ensure_instanced_static_mesh_usage("M_SimCopterRotorDisc")
+    create_if_missing("M_SimCopterSpriteTexture", create_sprite_texture_material)
+    # Not in the delete-and-recreate list below: MI_CityImage_* instances hold a hard reference to this
+    # parent, and deleting the asset would null it out. To re-tune it, delete it by hand and re-run -
+    # the re-parent pass at the end re-attaches the instances.
+    create_if_missing("M_SimCopterLitSpriteTexture", create_lit_sprite_texture_material)
+    # The water material's shader is fully defined here and still being tuned, so rebuild it every run.
+    # Delete any existing asset first and recreate it fresh: reloading an existing material and clearing
+    # its expressions asserts (!IsRooted in DeleteMaterialExpression) in this engine build, whereas a
+    # freshly created material has no expressions to clear. The asset keeps the same /Game path, so the
+    # renderer's ConstructorHelpers reference still resolves.
+    for _tuned in ("M_SimCopterCitySurface", "M_SimCopterWater", "M_SimCopterLandSurface", "M_SimCopterCitySolidSurface", "M_SimCopterParticleFX", "M_SimCopterParticleFXSoft"):
+        if unreal.EditorAssetLibrary.does_asset_exist(f"{MATERIAL_DIR}/{_tuned}"):
+            unreal.EditorAssetLibrary.delete_asset(f"{MATERIAL_DIR}/{_tuned}")
+    create_city_atlas_material()
+    create_water_material()
+    create_terrain_material()
+    create_city_solid_surface_material()
+    create_particle_fx_material()
+    create_particle_fx_soft_material()
+    upgrade_sprite_texture_emissive()
+    upgrade_lit_vertex_color_emissive()
+    reparent_baked_direct_image_instances()
+    # Keep generated city/land instances attached after recreating their dedicated parents.
+    from UpgradeCitySurfaces import main as upgrade_surfaces
+    upgrade_surfaces(rebuild_materials=False)
+
+
+if __name__ == "__main__":
+    main()

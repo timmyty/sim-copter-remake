@@ -72,6 +72,9 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterRescuePilotRuntimeTest;
+	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterHospitalCityTest;
 
 public:
 	ASimCity2000CityActor();
@@ -128,6 +131,8 @@ public:
 	// Samples the same conditioned terrain triangle and terrain-class grid used to build the
 	// visible city. Terrain classes below 10 are water in the original water gameplay routines.
 	// Returns false outside the original 128x128 gameplay map or before a city has been rebuilt.
+	// Bucket-only extension: visible pools/ponds and the rendered ocean beyond the SC2 grid.
+	bool TryGetBucketWaterSurface(const FVector& WorldLocation, float& OutSurfaceWorldZ, uint8& OutTerrainClass, FIntPoint* OutTile = nullptr) const;
 	bool TryGetWaterGameplaySurface(
 		const FVector& WorldLocation,
 		float& OutSurfaceWorldZ,
@@ -202,6 +207,9 @@ public:
 	bool IsInsideStandingBuildingBounds(const FVector& WorldLocation, float ClearanceCm = 0.0f) const;
 
 private:
+	friend class FSimCopterCityBuildingDemolitionTest;
+	friend class FSimCopterSafePassengerLandingTest;
+	friend class FSimCopterWaterSupplyGeometryTest;
 	// Countdown to the next SimCopterCloudTuning::Apply (once a second, from Tick).
 	float CloudTuningCheckSeconds = 0.0f;
 
@@ -560,6 +568,8 @@ private:
 
 	// Conditioned 129x129 terrain vertices and 128x128 class grid retained for the water bucket
 	// and particle collision paths. Rendering used to discard both after RebuildCity.
+	TMap<FIntPoint, TArray<FVector>> WaterSupplyTriangles;
+	void AddWaterSupplyTriangle(const FVector& A, const FVector& B, const FVector& C);
 	TArray<float> WaterGameplayCornerZ;
 	TArray<uint8> WaterGameplayTerrainClasses;
 

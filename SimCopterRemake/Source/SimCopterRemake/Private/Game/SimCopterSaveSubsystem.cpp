@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Game/SimCopterSaveSubsystem.h"
+#include "Flight/SimCopterAirOperations.h"
 
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Flight/SimCopterHelicopterParking.h"
@@ -331,6 +332,10 @@ USimCopterSaveGame* USimCopterSaveSubsystem::CaptureCurrentGame(
 		: FString();
 	Save->Cash = Missions->GetSessionCash();
 	Save->Score = Missions->GetSessionScore();
+	if(auto* Ops=WorldContextObject->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
+	{
+		FMemoryWriter Writer(Save->AirOperationsRuntimeState,true); Ops->SerializeState(Writer);
+	}
 	Save->SessionElapsedSeconds = Missions->GetSessionElapsedSeconds();
 
 	const SimCopterMissions::FSimCopterCareerCity& City = Missions->GetSessionCareerCity();
@@ -360,6 +365,8 @@ USimCopterSaveGame* USimCopterSaveSubsystem::CaptureCurrentGame(
 		Save->OwnedHelicopterMask = Career->GetOwnedHelicopterMask();
 		Save->HelicopterDepreciation = Career->GetHelicopterDepreciationValues();
 		Save->CareerLog = Career->GetLogEntries();
+		Save->bAirSupportUnlocked = Career->IsAirSupportUnlocked();
+		Save->bApacheEncounterSpawned = Career->HasSpawnedApacheEncounter();
 	}
 
 	ASimCopterHelicopterPawn* Helicopter = ResolveCareerHelicopter(WorldContextObject);
@@ -658,6 +665,8 @@ bool USimCopterSaveSubsystem::ApplyPendingMissionAndCareerState(
 			? GetGameInstance()->GetSubsystem<USimCopterCareerSubsystem>()
 			: nullptr)
 	{
+		Career->SetAirSupportUnlocked(PendingLoadedGame->bAirSupportUnlocked);
+		Career->SetApacheEncounterSpawned(PendingLoadedGame->bApacheEncounterSpawned);
 		Career->RestoreCareerState(
 			PendingLoadedGame->OwnedHelicopterMask,
 			PendingLoadedGame->HelicopterDepreciation,
@@ -730,6 +739,12 @@ bool USimCopterSaveSubsystem::ApplyPendingAircraftState(UWorld* World)
 		PendingLoadedGame->SelectedToolIndex);
 
 	bool bApplySucceeded = true;
+	if (!PendingLoadedGame->AirOperationsRuntimeState.IsEmpty())
+		if (auto* Ops=World->GetSubsystem<USimCopterAirOperationsSubsystem>())
+		{
+			FMemoryReader Reader(PendingLoadedGame->AirOperationsRuntimeState,true); Ops->SerializeState(Reader);
+			bApplySucceeded=!Reader.IsError();
+		}
 	// Recreate the other aircraft before restoring people and their cabin-seat references.
 	TArray<AActor*> ExistingFleet;
 	UGameplayStatics::GetAllActorsOfClass(World, ASimCopterHelicopterPawn::StaticClass(), ExistingFleet);
@@ -805,6 +820,7 @@ bool USimCopterSaveSubsystem::ApplyPendingAircraftState(UWorld* World)
 					{
 						bRuntimeRestored = OnFoot->RestoreRuntimeSaveState(PendingLoadedGame->OnFootRuntimeState);
 						OnFoot->SetOwner(Helicopter);
+						OnFoot->SetParkedHelicopter(Helicopter);
 					}
 					else
 					{

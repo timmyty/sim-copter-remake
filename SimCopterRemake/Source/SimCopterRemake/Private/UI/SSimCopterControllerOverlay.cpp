@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Flight/SimCopterControllerInput.h"
+#include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterRegistry.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Layout/SBorder.h"
@@ -46,6 +47,30 @@ void SSimCopterControllerOverlay::Construct(const FArguments& InArgs)
 	ChildSlot
 	[
 		SNew(SOverlay)
+		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)
+		[SNew(STextBlock).Text(FText::FromString(TEXT("+"))).Font(ControllerFont(28,true))
+		.Visibility_Lambda([this]() { const auto* H=Pawn.Get(); return H && H->GetAirOperations()->IsPoliceTaserActive()?EVisibility::HitTestInvisible:EVisibility::Collapsed; })]
+		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Top).Padding(FMargin(10,15,10,0))
+		[SNew(STextBlock).Font(ControllerFont(13,true)).Justification(ETextJustify::Center)
+		.Text_Lambda([this]()
+		{
+			const auto* H=Pawn.Get(); if(!H) return FText::GetEmpty();
+			auto* Ops=H->GetAirOperations(); FString Text;
+			if(Ops->IsPoliceTaserActive() || Ops->IsDeployed()) Text=Ops->GetStatus();
+			if(Ops->IsDeployed())
+			{
+				Text+=FString::Printf(TEXT("\nCable %.1fm | PgUp/PgDn or D-pad up/down winch | X / click grab | G / D-pad left release"),Ops->GetCableLength()/100);
+				if(auto* System=H->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
+					if(auto* Site=System->FindRecoverySite(H->GetActorLocation(),Ops->HasBoat()))
+					{
+						const FVector Delta=Site->GetActorLocation()-H->GetActorLocation();
+						const float Heading=FRotator::ClampAxis(Delta.Rotation().Yaw-H->GetActorRotation().Yaw);
+						Text+=FString::Printf(TEXT("\n%s %.0fm | bearing %.0f degrees relative"),Ops->HasBoat()?TEXT("Harbor"):TEXT("Recovery yard"),Delta.Size2D()/100,Heading);
+					}
+			}
+			if(auto* System=H->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>();System && System->IsSupportUnlocked()) Text+=TEXT("\n")+System->GetSupportStatus();
+			return FText::FromString(Text);
+		})]
 		+ SOverlay::Slot()
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Fill)
@@ -160,7 +185,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildDispatchWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"DispatchInstructions",
-			"RELEASE RB  DISPATCH\nB  CANCEL     Y  RECALL ALL"), DispatchWheel);
+			"A: DISPATCH   Y: TOOLS\nX: RECALL ALL   B: CANCEL"), DispatchWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
@@ -185,7 +210,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"ToolInstructions",
-			"RELEASE LB  EQUIP     B  CANCEL\nX  PASSENGERS"), ToolWheel);
+			"A: EQUIP   Y: DISPATCH\nX: PASSENGERS   B: CANCEL"), ToolWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildRadialWheel(

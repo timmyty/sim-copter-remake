@@ -39,7 +39,7 @@ import zlib
 import unreal
 
 OUTPUT_DIR = "/Game/Generated/CityAtlas"
-ATLAS_MATERIAL = "/Game/Materials/M_SimCopterCityAtlas"
+ATLAS_MATERIAL = "/Game/Materials/M_SimCopterCitySurface"
 TERRAIN_MATERIAL = "/Game/Materials/M_SimCopterLitTexture"
 # Masked, so palette index 0 punches out of tree/sign sprite cards, and LIT, so they track the
 # day/night sequence with the rest of the city. The unlit M_SimCopterSpriteTexture that used to be
@@ -321,4 +321,10 @@ def main():
     )
 
 
-main()
+if __name__ == "__main__":
+    main()
+    # Rebuild filtered copies from the newly decoded art and bind the enhanced parents.
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from UpgradeCitySurfaces import main as upgrade_surfaces
+    upgrade_surfaces()

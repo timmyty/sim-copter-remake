@@ -54,7 +54,8 @@ enum class ESimCopterCameraMode : uint8
 	Orbit,
 	Rescue,
 	// First person from the pilot's seat: no boom, and a crosshair for aiming the tools.
-	Cockpit
+	Cockpit,
+	Spotlight
 };
 
 SIMCOPTERREMAKE_API bool CameraModeShowsCrosshair(ESimCopterCameraMode Mode, bool bIsApache = false);
@@ -259,6 +260,27 @@ class SIMCOPTERREMAKE_API ASimCopterHelicopterPawn
 
 public:
 	ASimCopterHelicopterPawn();
+	class USimCopterAirOperationsComponent* GetAirOperations() const { return AirOperations; }
+	void SetAutopilotTransform(const FVector& Location, const FRotator& Rotation, float DeltaSeconds);
+	void RequestAirSupport(bool bAutomatic = false);
+	void TogglePoliceTaser();
+	FVector GetCargoAnchorWorldLocation() const { return GetRopeAnchorWorldLocation(); }
+	void SelectTowClamp() { SetSelectedTool(ESimCopterHelicopterTool::TowClamp); }
+	void SelectCaptureCage() { SetSelectedTool(ESimCopterHelicopterTool::CaptureCage); }
+	bool IsSupportAircraft() const;
+	void SetAirOperationsStatus(const FString& Text) { LastToolStatus = Text; }
+	void RefreshPassengerDisplay() { RefreshDashboardSeats(); }
+private:
+	UPROPERTY() TObjectPtr<class USimCopterAirOperationsComponent> AirOperations;
+	float CargoKeyboardCableInput = 0;
+	bool bBumperChordLatched = false;
+	bool bBumperLeftHeld = false;
+	bool bBumperRightHeld = false;
+	void ControllerLeftBumperPressed();
+	void ControllerLeftBumperReleased();
+	void ControllerRightBumperPressed();
+	void ControllerRightBumperReleased();
+public:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -556,6 +578,7 @@ public:
 	 */
 	FVector GetPassengerDropWorldLocation(int32 SlotIndex = INDEX_NONE) const;
 	float GetPassengerDropHeightOffsetCm() const;
+	bool FindClearPassengerExit(const ASimCopterGroundAgent* Person, FVector& OutCenter) const;
 
 	// Read-only controller presentation state consumed by the radial/passenger Slate layer.
 	ESimCopterControllerMode GetControllerMode() const { return ControllerMode; }
@@ -646,8 +669,7 @@ public:
 	// --- Debug appearance knobs (SSimCopterHelicopterDebugPanel) ---
 	bool IsTypingDebugMoney() const;
 
-	// Metallic on the shared vehicle material: the fuselage, the cars and the ambient
-	// planes/trains/boats all move together, and the city's buildings deliberately do not.
+	// Metallic on this helicopter's dedicated paint material.
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Debug")
 	float GetVehicleMetallic() const;
 
@@ -934,6 +956,10 @@ protected:
 	// Original SimCopter fuselage mesh (replaces the placeholder body when loaded).
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")
 	TObjectPtr<UProceduralMeshComponent> HeliBodyMeshComponent;
+	UPROPERTY(Transient) TObjectPtr<UProceduralMeshComponent> CabinOccupantsMesh;
+	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> CabinGlassMaterial;
+	uint32 CabinOccupantsKey = MAX_uint32;
+	void RefreshCabinOccupants();
 
 	// Original SimCopter main rotor mesh; spun about the mast each frame.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")
@@ -1005,6 +1031,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")
 	TObjectPtr<UCameraComponent> CameraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UCameraComponent> SpotlightCameraComponent;
 
 	// Screen-space presentation at a world-space aim point: the component projects its location
 	// through the active camera, but Slate keeps the mark pixel-sized and above scene depth.
@@ -1591,6 +1620,10 @@ protected:
 	TObjectPtr<UMaterialInstanceDynamic> RotorDiscMaterialInstance;
 
 private:
+	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterApacheShopTest;
+	friend class FSimCopterFleetPaintTest;
 	friend class FSimCopterPoliceRoofBoardingTest;
 	friend class FSimCopterControllerContextsTest;
 	// The decompiled original flight simulation; the pawn feeds it inputs and
@@ -1621,6 +1654,8 @@ private:
 	FVector SmoothedCameraTranslationWorld = FVector::ZeroVector;
 	FRotator SmoothedCameraViewWorldRotation = FRotator::ZeroRotator;
 	bool bCameraViewSmoothingInitialized = false;
+	friend class FSimCopterSpotlightCameraRuntimeTest;
+	friend class FSimCopterRescuePilotRuntimeTest;
 	static constexpr int32 CameraModeCount = 4;
 	TStaticArray<FSimCopterCameraViewDebugOffset, CameraModeCount> CameraViewDebugOffsets;
 
@@ -2036,6 +2071,13 @@ private:
 
 	// Latches for the level-triggered transitions the original reads off state instead.
 	bool bAudioWasFuelStarved = false;
+	bool bLowFuelWarningPlayed = false;
+	float CrashSirenSecondsRemaining = 0.0f;
+	// Retain the last deliberate horizontal input when the stick returns to centre.
+	float PreferredExitSide = 1.0f;
+	void RememberExitSide(float HorizontalInput);
+	void StopCrashSiren();
+	friend class FSimCopterGameplayPolishTest;
 
 	// The collective this step ran with. FUN_00487160 keys the spool-up/down sounds on
 	// heli[3], the collective command, not on the rotor speed it produces.

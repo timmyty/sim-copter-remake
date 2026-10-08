@@ -324,30 +324,12 @@ void FSimCopterMissionSystem::UpdateSchedulerCadence()
 
 	NagInterval = ScaledMissionTimer >> 3;
 
-	// DELIBERATE DIVERGENCE: the Base Location record does not take a job slot here.
-	//
-	// The original counts it in DAT_0057f9c8 like a live job (the FUN_004a7a10 tail), so the cap of
-	// Max Easy + tier always has one slot taken. The countdown only speeds up while two or more
-	// slots are free (the IntervalAdj term is zero at one free slot), so a tier-1 city (career
-	// cities 0-8 and 10) runs one job at a time and waits the full 380 s Easy Interval for a
-	// second one. That plays as long stretches with nothing to do. Leaving the base out of the count here gives
-	// every tier the job count it had before the base record was ported: two jobs fast and a third
-	// after the full interval at tier 1, up to four fast and a fifth slow at tier 4. ActiveCount
-	// itself stays faithful for everything else that reads it. Logged as divergence 3 in
-	// Docs/memory/simcopter-pacing-divergences.md.
-	int32 JobCount = ActiveCount;
-	for (const FSimCopterMissionRecord& Record : Records)
+	// FUN_004a6e60 includes Base Location in DAT_0057f9c8 (FUN_004a7a10).
+	// Restore the original availability: tier 1 normally has one job, with a second
+	// only after the full 380-second interval. Excluding the base crowded early cities.
+	if (ActiveCount < MaxEasyWithDifficulty)
 	{
-		if (IsBaseLocationRecord(Record))
-		{
-			--JobCount;
-			break;
-		}
-	}
-
-	if (JobCount < MaxEasyWithDifficulty)
-	{
-		SpawnCountdown = (SpawnCountdown - FrameDeltaEma) + ((JobCount - MaxEasyWithDifficulty) + 1) * Tuning.IntervalAdj;
+		SpawnCountdown = (SpawnCountdown - FrameDeltaEma) + ((ActiveCount - MaxEasyWithDifficulty) + 1) * Tuning.IntervalAdj;
 	}
 }
 
@@ -1090,6 +1072,8 @@ const TCHAR* FSimCopterMissionSystem::GetTypeDisplayName(int32 TypeMask)
 	if ((TypeMask & TYPE_PlaneCrash) != 0) return TEXT("Plane Crash");
 	if ((TypeMask & TYPE_BuildingFire) != 0) return TEXT("Building Fire");
 	if ((TypeMask & TYPE_BaseLocation) != 0) return TEXT("Base Location");
+	if ((TypeMask & TYPE_VehicleTow) != 0) return TEXT("Stalled vehicle");
+	if ((TypeMask & TYPE_BoatTow) != 0) return TEXT("Boat Recovery");
 	return TEXT("Mission");
 }
 
@@ -1481,6 +1465,11 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 		// The original explicitly leaves Secondary/Tertiary at -1. Healthy survivors can be put
 		// down on any safe dry surface; a fabricated destination changed both the phase and marker.
 	}
+	else if (TypeMask == TYPE_VehicleTow || TypeMask == TYPE_BoatTow)
+	{
+		Rec.CarsCrashed = 1;
+		Rec.Name = FString::Printf(TEXT("%s #%d"), TypeMask == TYPE_BoatTow ? TEXT("Boat Recovery") : TEXT("Stalled vehicle"), Rec.EventId);
+	}
 	else if (TypeMask == TYPE_BaseLocation)
 	{
 		// SCHOOK: CreateMission 0x004a7a10, the 0x100000 branch. `sprintf(rec, "%s", DAT_005816b8)`
@@ -1494,8 +1483,8 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 
 		// The shared tail, without its presentation. The original adopts it as the map's selection
 		// when nothing is selected and counts it in DAT_0057f9c8 like any live job - which is why
-		// the original's concurrency cap (Max Easy + tier) always has one slot taken; the remake's
-		// scheduler leaves it out, see UpdateSchedulerCadence - and resets
+		// the concurrency cap (Max Easy + tier) always has one slot taken; the scheduler
+		// includes it, see UpdateSchedulerCadence - and resets
 		// DAT_00505fb4 to DAT_00505fac.
 		//
 		// DIVERGENCES, both deliberate: (1) the tail also posts the kind-5 "started" message with
@@ -1523,6 +1512,28 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 
 int32 FSimCopterMissionSystem::CreatePlayerCausedMedevacAt(int32 TileX, int32 TileY)
 {
+	return CreateExistingVictimMedevacAt(TileX, TileY, true);
+}
+
+int32 FSimCopterMissionSystem::CreateIncidentMedevacAt(int32 TileX, int32 TileY)
+{
+	return CreateExistingVictimMedevacAt(TileX, TileY, false);
+}
+
+void FSimCopterMissionSystem::ReleaseInjuredMissionPerson(int32 EventId, int32 PersonState)
+{
+	const int32 Index = FindRecordIndex(EventId);
+	if (!Records.IsValidIndex(Index) || !Records[Index].bActive) return;
+	auto& Rec = Records[Index];
+	// Transfer a living person to medical care without reporting a death or stranding the old job.
+	if (PersonState == 4) Rec.TransportPassengers = FMath::Max(0, Rec.TransportPassengers - 1);
+	else if (PersonState == 1 || PersonState == 2) Rec.RescueVictims = FMath::Max(0, Rec.RescueVictims - 1);
+	else if (PersonState == 3) Rec.RiotSize = FMath::Max(0, Rec.RiotSize - 1);
+	else if (PersonState >= 10 && PersonState <= 13) Rec.TargetCount = FMath::Max(0, Rec.TargetCount - 1);
+}
+
+int32 FSimCopterMissionSystem::CreateExistingVictimMedevacAt(int32 TileX, int32 TileY, bool bPlayerCaused)
+{
 	const int32 RecIndex = AllocateRecord();
 	if (RecIndex == INDEX_NONE)
 	{
@@ -1540,14 +1551,14 @@ int32 FSimCopterMissionSystem::CreatePlayerCausedMedevacAt(int32 TileX, int32 Ti
 	// You hurt them, so you do not get paid for carting them to hospital. The original did pay
 	// out, which made deliberately mowing people down and delivering them a profitable strategy;
 	// this is a deliberate remake divergence.
-	Rec.bSuppressCompletionRewards = true;
+	Rec.bSuppressCompletionRewards = bPlayerCaused;
 
 	// REMAKE DIVERGENCE: an immediate fine for putting a civilian in hospital. With the completion
 	// reward suppressed above, the incentive runs the right way round - hurting someone costs you,
 	// and letting them die costs you again, so the cheapest thing you can do is fly carefully and
 	// the second cheapest is to get them treated.
-	Cash -= PlayerCausedInjuryFine;
-	if (World)
+	if (bPlayerCaused) Cash -= PlayerCausedInjuryFine;
+	if (World && bPlayerCaused)
 	{
 		FSimCopterMissionUiMessage Message;
 		Message.Kind = 1;
@@ -1819,6 +1830,8 @@ void FSimCopterMissionSystem::UpdateLifecycle()
 		}
 
 		bool bComplete = true;
+		if ((Rec.TypeMask & (TYPE_VehicleTow | TYPE_BoatTow)) != 0 && Rec.CarsCleared < Rec.CarsCrashed)
+			bComplete = false;
 		if ((Rec.TypeMask & TYPE_Debris) != 0 && Rec.DebrisDoused + Rec.DebrisExpired + Rec.DebrisCleared < Rec.DebrisCreated)
 		{
 			bComplete = false;
@@ -1966,7 +1979,8 @@ void FSimCopterMissionSystem::UpdateLifecycle()
 		{
 			// The getaway-car branch does not compare TargetCount: either the burglar is caught or
 			// dies. Returning to the car leaves both zero and the same mission continues.
-			const bool bIncomplete = Rec.CriminalsCaught == 0 && Rec.Casualties == 0;
+			// A remake medical transfer removes the target instead, without reporting a death.
+			const bool bIncomplete = Rec.TargetCount > 0 && Rec.CriminalsCaught == 0 && Rec.Casualties == 0;
 			if (bIncomplete)
 			{
 				bComplete = false;
@@ -3039,6 +3053,11 @@ void FSimCopterMissionSystem::CompleteMission(FSimCopterMissionRecord& Rec)
 {
 	int32 EarnedPoints = 0;
 	int32 EarnedCash = 0;
+	if ((Rec.TypeMask & (TYPE_VehicleTow | TYPE_BoatTow)) != 0 && Rec.CarsCleared >= Rec.CarsCrashed)
+	{
+		EarnedPoints = 100;
+		EarnedCash = (Rec.TypeMask & TYPE_BoatTow) != 0 ? 400 : 200;
+	}
 	int32 VoiceId = -1;
 
 	if ((Rec.TypeMask & TYPE_Debris) != 0)
@@ -3092,8 +3111,11 @@ void FSimCopterMissionSystem::CompleteMission(FSimCopterMissionRecord& Rec)
 	}
 	if ((Rec.TypeMask & TYPE_CarFire) != 0)
 	{
-		EarnedPoints += Tuning.CarFirePoints * Rec.CarsCleared - Tuning.CarFirePoints * Rec.CarsBurned;
-		EarnedCash += Tuning.CarFireMoney * Rec.CarsCleared - Tuning.CarFireMoney * Rec.CarsBurned;
+		// Wrecks have no traffic-jam clearing event. Dousing is their successful outcome;
+		// using only CarsCleared announced a failed train crash after every fire was put out.
+		const int32 SavedVehicles = FMath::Max(Rec.CarsCleared, Rec.CarsDoused);
+		EarnedPoints += Tuning.CarFirePoints * SavedVehicles - Tuning.CarFirePoints * Rec.CarsBurned;
+		EarnedCash += Tuning.CarFireMoney * SavedVehicles - Tuning.CarFireMoney * Rec.CarsBurned;
 		VoiceId = 0x5f;
 	}
 	if ((Rec.TypeMask & TYPE_TrafficJam) != 0)

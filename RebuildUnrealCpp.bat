@@ -3,6 +3,7 @@ setlocal
 
 set "REPO_ROOT=%~dp0"
 set "UE_ROOT=C:\GameDev\UE_5.8"
+if not exist "%UE_ROOT%\Engine\Build\BatchFiles\Build.bat" set "UE_ROOT=%ProgramFiles%\Epic Games\UE_5.8"
 set "PROJECT_FILE=%REPO_ROOT%SimCopterRemake\SimCopterRemake.uproject"
 set "BUILD_SCRIPT=%UE_ROOT%\Engine\Build\BatchFiles\Build.bat"
 set "BUILD_TARGET=SimCopterRemakeEditor"

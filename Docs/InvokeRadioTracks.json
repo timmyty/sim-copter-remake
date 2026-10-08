@@ -1,0 +1,212 @@
+[
+  {
+    "order": 1,
+    "title": "Expectations Increasing",
+    "screenshot_seconds": 95,
+    "source_modified": "2026-07-11T13:41:49.5371042-05:00",
+    "duration_seconds": 94.600958,
+    "output": "01 Expectations Increasing.wav",
+    "sha256": "4232c7606dca4f8502595d2710719e28e26a614e0952f10600b3c0b060f1068d",
+    "source_file": "Expectations Increasing (mastered).wav"
+  },
+  {
+    "order": 2,
+    "title": "Dancing to Our Doom",
+    "screenshot_seconds": 218,
+    "source_modified": "2026-07-11T13:45:22.7763331-05:00",
+    "duration_seconds": 217.788458,
+    "output": "02 Dancing to Our Doom.wav",
+    "sha256": "3fb798878568ce3c26bc5a713e2e64d200f5c361921ad68695cfdfc09a1e4bc5",
+    "source_file": "DancingToOurDoom (mastered).wav"
+  },
+  {
+    "order": 3,
+    "title": "Greed Demon (Greedy Men)",
+    "screenshot_seconds": 294,
+    "source_modified": "2026-07-18T23:55:07.462624-05:00",
+    "duration_seconds": 293.88,
+    "output": "03 Greed Demon (Greedy Men).wav",
+    "sha256": "69578b2f61137f82da67839879887f7aa77b47f1009f5550874a30bbbdec679c",
+    "source_file": "GDGMMasteredSmaller.wav"
+  },
+  {
+    "order": 4,
+    "title": "Disconnect the Net (Swim Free)",
+    "screenshot_seconds": 176,
+    "source_modified": "2026-06-21T01:18:57.7364642-05:00",
+    "duration_seconds": 176.293271,
+    "output": "04 Disconnect the Net (Swim Free).wav",
+    "sha256": "7e3f7beb42dc8772a5ff54d7631e25669221319cad593b9177cb2e684fbd742a",
+    "source_file": "DisconnectTheNetSwimFree.wav"
+  },
+  {
+    "order": 5,
+    "title": "I Will Hold Her Close Tonight",
+    "screenshot_seconds": 242,
+    "source_modified": "2026-07-11T13:38:32.4033002-05:00",
+    "duration_seconds": 241.759625,
+    "output": "05 I Will Hold Her Close Tonight.wav",
+    "sha256": "9b1c3630d3b6233ee0ad1e619f865ca6ca62fb8001ae0e3fd0b8bd9367054bc4",
+    "source_file": "IWillHoldHerCloseTonight (mastered).wav"
+  },
+  {
+    "order": 6,
+    "title": "We Will Be More",
+    "screenshot_seconds": 143,
+    "source_modified": "2026-07-11T14:40:27.2264669-05:00",
+    "duration_seconds": 143.240375,
+    "output": "06 We Will Be More.wav",
+    "sha256": "e69b1f48572c4e162eb11285ffa0530e71557d6149fac7db7f76e5cd34b98b58",
+    "source_file": "WeWillBeMore (mastered).wav"
+  },
+  {
+    "order": 7,
+    "title": "Arise My Tribe (Constructive Interference)",
+    "screenshot_seconds": 270,
+    "source_modified": "2026-07-19T01:03:07.8774118-05:00",
+    "duration_seconds": 269.88,
+    "output": "07 Arise My Tribe (Constructive Interference).wav",
+    "sha256": "5f9527f55ca374047d805f6b1532efa4b459be5ec0c9e2906524223a0a4f56bd",
+    "source_file": "AMTCIMasteredSmaller.wav"
+  },
+  {
+    "order": 8,
+    "title": "We Will Be More (Reprise)",
+    "screenshot_seconds": 362,
+    "source_modified": "2026-07-19T01:15:30.7241227-05:00",
+    "duration_seconds": 362.2,
+    "output": "08 We Will Be More (Reprise).wav",
+    "sha256": "33589e2bb4e6c722c54c54626aa91f73a49157babd61d5ba16821bfee5ccd609",
+    "source_file": "WWBMRMasteredSmaller.wav"
+  },
+  {
+    "order": 9,
+    "title": "The Great Filter (RenAIssance)",
+    "screenshot_seconds": 355,
+    "source_modified": "2025-08-12T23:03:16.1172861-05:00",
+    "duration_seconds": 355.157333,
+    "output": "09 The Great Filter (RenAIssance).wav",
+    "sha256": "a1300d0b286194d28e278b2057ea94bfd908b9f18dc77ca50b95560de5e5f5fe",
+    "source_file": "renAyeIssance (The Great Filter) correct.wav"
+  },
+  {
+    "order": 10,
+    "title": "Invoke the Revoked",
+    "screenshot_seconds": 197,
+    "source_modified": "2025-08-25T20:04:06.6680658-05:00",
+    "duration_seconds": 197.322125,
+    "output": "10 Invoke the Revoked.wav",
+    "sha256": "65011b48d8514a130e84282998b9ed804df06461dcb18a0bc239dbf2a6c398d4",
+    "source_file": "Invoke the Revoked-Mix1.wav"
+  },
+  {
+    "order": 11,
+    "title": "I Want a Real Raise!",
+    "screenshot_seconds": 113,
+    "source_modified": "2025-08-24T04:46:16.2748201-05:00",
+    "duration_seconds": 113.408,
+    "output": "11 I Want a Real Raise.wav",
+    "sha256": "bbed1f70d32204a27c75b0e8776dabc79d9cd249d348fb866b98a5b9265a4aa2",
+    "source_file": "I Want a Real Raise! (Edit).wav"
+  },
+  {
+    "order": 12,
+    "title": "I Didn't Build This Life Alone",
+    "screenshot_seconds": 241,
+    "source_modified": "2025-08-05T02:38:33.6790826-05:00",
+    "duration_seconds": 240.839979,
+    "output": "12 I Didn't Build This Life Alone.wav",
+    "sha256": "ff9a4bd124e9612875b7f7318402781bb2556f0aa118894174ef7fab14bfb916",
+    "source_file": "Growth Struggle (Remix).wav"
+  },
+  {
+    "order": 13,
+    "title": "Speak, My Dead God, Speak!",
+    "screenshot_seconds": 264,
+    "source_modified": "2025-10-01T10:38:29.9913824-05:00",
+    "duration_seconds": 264.013401,
+    "output": "13 Speak, My Dead God, Speak.wav",
+    "sha256": "5106a6f70aef3a767b680128795dd1979838556785dccad13f3979d687e7667a",
+    "source_file": "Speak My Dead God SpeakFinal.wav"
+  },
+  {
+    "order": 14,
+    "title": "Positive Peace",
+    "screenshot_seconds": 270,
+    "source_modified": "2025-08-14T02:25:58.8455491-05:00",
+    "duration_seconds": 269.994667,
+    "output": "14 Positive Peace.wav",
+    "sha256": "58011d85ad126171488234552415af25968c17b6fac1627b05568052dc9841e3",
+    "source_file": "Positive Peace.wav"
+  },
+  {
+    "order": 15,
+    "title": "NuHuman Godplex Rush",
+    "screenshot_seconds": 208,
+    "source_modified": "2025-08-22T10:55:29.2356314-05:00",
+    "duration_seconds": 207.786667,
+    "output": "15 NuHuman Godplex Rush.wav",
+    "sha256": "7889d4692a04b2e2bdd0a97ca3055babb59cca655ba730c8f45f441febb1ddd5",
+    "source_file": "NuHuman Godplex Rush.wav"
+  },
+  {
+    "order": 16,
+    "title": "Depose the Dragons",
+    "screenshot_seconds": 210,
+    "source_modified": "2025-09-12T11:29:42.1671798-05:00",
+    "duration_seconds": 209.749333,
+    "output": "16 Depose the Dragons.wav",
+    "sha256": "0c4a23ba26e07bce1f87ec3fa6a504f485619ef28c153eca08f63ecc851e723c",
+    "source_file": "Depose the Dragons(1).wav"
+  },
+  {
+    "order": 17,
+    "title": "Dive to Hell for Super Earth",
+    "screenshot_seconds": 220,
+    "source_modified": "2025-09-06T17:06:11.362666-05:00",
+    "duration_seconds": 220.039979,
+    "output": "17 Dive to Hell for Super Earth.wav",
+    "sha256": "578a2b382339890d5abf380d241b738bd793cc63787fb69d3ff34dab43ec828d",
+    "source_file": "Dive to Hell for Super Earth (previous).wav"
+  },
+  {
+    "order": 18,
+    "title": "The Systems Are Built for the Rich ($y$TEM$)",
+    "screenshot_seconds": 367,
+    "source_modified": "2025-11-25T02:01:58.9958898-06:00",
+    "duration_seconds": 366.662083,
+    "output": "18 The Systems Are Built for the Rich (SySTEMS).wav",
+    "sha256": "311ccb870b22d0fb051df665de2e845e38bd8d9023c092ebcd3f73e20ebb846f",
+    "source_file": "The Systems Are Built for the Rich ($Y$TEM$).wav"
+  },
+  {
+    "order": 19,
+    "title": "Humanist Superintelligence (HSI)",
+    "screenshot_seconds": 206,
+    "source_modified": "2025-11-22T00:27:20.4954947-06:00",
+    "duration_seconds": 206.064,
+    "output": "19 Humanist Superintelligence (HSI).wav",
+    "sha256": "8e7a92c7cef63cbf4b4802f3f80efb6d5b7e925452328911c1b1736be321966a",
+    "source_file": "Humanist Superintelligence (HSI).mp3"
+  },
+  {
+    "order": 20,
+    "title": "Structured Cognitive Dissonance",
+    "screenshot_seconds": 314,
+    "source_modified": "2026-01-14T14:27:19.4462964-06:00",
+    "duration_seconds": 314.136,
+    "output": "20 Structured Cognitive Dissonance.wav",
+    "sha256": "48ac0778a16d266b98d20e4ef428438a053c51a757cb83f81f14393a3f403396",
+    "source_file": "Current-SCD-CorrectedChoice.mp3"
+  },
+  {
+    "order": 21,
+    "title": "In Honor to a Loss",
+    "screenshot_seconds": 282,
+    "source_modified": "2026-03-14T18:37:05.2056661-05:00",
+    "duration_seconds": 282.490375,
+    "output": "21 In Honor to a Loss.wav",
+    "sha256": "6f164b79da853d69a5aeacb05ebbf72ffcc55ad517bc6682b25039ee4f4aedb4",
+    "source_file": "In Honor to a Loss.wav"
+  }
+]

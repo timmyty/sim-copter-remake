@@ -10,6 +10,8 @@
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
 #include "Engine/World.h"
+#include "City/SimCity2000CityActor.h"
+#include "ProceduralMeshComponent.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Formats/SimCity2000Reader.h"
 #include "Formats/SimCopterPeopleReader.h"
@@ -185,7 +187,7 @@ bool FSimCopterSafePassengerLandingTest::RunTest(const FString& Parameters)
 	if (!TestTrue(TEXT("Load passenger behavior"), FSimCopterPeopleReader::LoadFromFile(
 		FSimCopterPeopleReader::ResolvePeoplePath(Root), *Model, Error))) return false;
 	const UWorld::InitializationValues Init = UWorld::InitializationValues()
-		.AllowAudioPlayback(false).CreatePhysicsScene(false).CreateNavigation(false).CreateAISystem(false);
+		.AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false).CreateAISystem(false);
 	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
 	ASimCopterTrafficSystemActor* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
 	Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
@@ -304,6 +306,50 @@ bool FSimCopterSafePassengerLandingTest::RunTest(const FString& Parameters)
 	ISimCopterBehaviorWorld& MedicActions = *Medic;
 	TestTrue(TEXT("Paramedic can pick up that same patient"), MedicActions.PutSelectedPersonOnMe(Medic->BehaviorContext));
 	TestTrue(TEXT("Patient is carried by medic"), Patient->GetBehaviorCarrier() == Medic);
+	// Real thin triangle roof: a released passenger must hit it, complete only on the
+	// destination building, and keep that surface while walking afterwards.
+	ASimCity2000CityActor* City = World->SpawnActor<ASimCity2000CityActor>();
+	Traffic->SourceCityActor = City;
+	City->BuildingTileFlags.Init(1, FSimCity2000City::TileCount);
+	const int32 RoofEvent = Missions->MissionSystem.CreateEventAt(64, 64, TYPE_Transport);
+	ASimCopterGroundAgent* RoofPassenger = CreatePerson(4, RoofEvent, FIntPoint(64, 64));
+	const FVector RoofCenter(200, -200, 1000);
+	FSimCopterGroundRouteNode Node;
+	Node.Location = FVector(200, -200, 0); Node.PeopleFootprintSize = 1;
+	Traffic->PedestrianNodeIndexByTile.Add(FIntPoint(64, 64), Traffic->PedestrianNodes.Add(Node));
+	Traffic->BuildingRoofPostByTile.Add(FIntPoint(64, 64), RoofCenter);
+	UProceduralMeshComponent* Mesh = City->OriginalMeshComponent;
+	TArray<FVector> V = { RoofCenter + FVector(-180,-180,0), RoofCenter + FVector(180,-180,0),
+		RoofCenter + FVector(180,180,0), RoofCenter + FVector(-180,180,0) };
+	Mesh->bUseAsyncCooking = false;
+	Mesh->CreateMeshSection(0, V, TArray<int32>{0,2,1,0,3,2,0,1,2,0,2,3}, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	const FVector Feet = RoofCenter + FVector(0,0,1);
+	TestTrue(TEXT("Destination roof accepts transport"), Missions->IsPassengerDeliveryLocationAllowed(ESimCopterMissionPassengerKind::Transport, Feet, RoofEvent));
+	TestFalse(TEXT("Unidentified mission cannot use roof"), Missions->IsPassengerDeliveryLocationAllowed(ESimCopterMissionPassengerKind::Transport, Feet));
+	TestFalse(TEXT("Rescue still cannot finish on roof"), Missions->IsPassengerDeliveryLocationAllowed(ESimCopterMissionPassengerKind::Rescue, Feet, RoofEvent));
+	TestFalse(TEXT("Airborne release is not a roof landing"), Missions->IsPassengerDeliveryLocationAllowed(ESimCopterMissionPassengerKind::Transport, Feet + FVector(0,0,1000), RoofEvent));
+	RoofPassenger->SetActorLocation(Feet + FVector(0,0,RoofPassenger->GetCapsuleHalfHeightCm()+50));
+	RoofPassenger->BeginPassengerFall(RoofEvent, 200);
+	for (int32 I = 0; I < 60; ++I) RoofPassenger->UpdateGroundSnap(1.0f / 60);
+	TestTrue(TEXT("Passenger lands above roof, never street"), RoofPassenger->GetActorLocation().Z - RoofPassenger->GetCapsuleHalfHeightCm() >= 1000);
+	TestTrue(TEXT("Safe destination roof drop completes passenger"), RoofPassenger->HasMissionResolutionReported());
+	TestTrue(TEXT("Delivered passenger has roof containment"), RoofPassenger->bHasHospitalRoofPost);
+	float WalkZ = 0;
+	TestTrue(TEXT("Can sample roof for walking"), RoofPassenger->TryGetWalkSurfaceZAt(Feet + FVector(25,0,0), WalkZ));
+	TestTrue(TEXT("Walking surface stays on roof"), FMath::IsNearlyEqual(WalkZ, 1000.0f, 1.0f));
+	// Nearest eligible police assignment is recalled; other assignments keep responding.
+	auto& Police = Traffic->DispatchVehicles[static_cast<int32>(SimCopterDispatch::EService::Police)];
+	Police.SetNum(2);
+	for (int32 I = 0; I < 2; ++I)
+	{
+		Police[I].Agent = CreatePerson(7, INDEX_NONE, FIntPoint(64 + I * 4, 64));
+		Police[I].State = ESimCopterDispatchVehicleState::Responding;
+	}
+	Traffic->RecallPoliceNearest(FIntPoint(64,64));
+	TestEqual(TEXT("Nearest police recalled"), Police[0].State, ESimCopterDispatchVehicleState::Returning);
+	TestEqual(TEXT("Other police retained"), Police[1].State, ESimCopterDispatchVehicleState::Responding);
 	World->DestroyWorld(false);
 	return true;
 }
@@ -649,6 +695,37 @@ bool FSimCopterMissionSystemFireLifecycleTest::RunTest(const FString& Parameters
 		TestEqual(TEXT("Nothing was saved from a fire nobody fought"), Record->ObjectsCaughtFire, 0);
 	}
 
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMissionAvailabilityTest, "SimCopter.Missions.OriginalMissionAvailability", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterMissionAvailabilityTest::RunTest(const FString& Parameters)
+{
+	for (int32 Tier = 1; Tier <= 4; ++Tier)
+	{
+		FSimCopterCareerCity City;
+		City.Difficulty = Tier - 1;
+		for (float& Weight : City.Weights) Weight = 0.0f;
+		City.Weights[6] = 100.0f;
+		FSimCopterTestMissionWorld World;
+		FSimCopterMissionSystem System;
+		System.Initialize(&World, 1);
+		System.SetCareerCity(City);
+		System.EnsureBaseLocationRecord(64, 64);
+		TestTrue(TEXT("Immediate opening job"), System.RollScheduledMissionNow());
+		const auto AdvanceSeconds = [&System](int32 Seconds)
+		{
+			for (int32 Frame = 0; Frame < Seconds * 60; ++Frame) System.Tick(1.0f / 60.0f);
+		};
+		AdvanceSeconds(60);
+		TestEqual(FString::Printf(TEXT("Tier %d normal job count"), Tier), CountActiveMissionsOfType(System, TYPE_Transport), Tier);
+		AdvanceSeconds(300);
+		TestEqual(TEXT("Last slot waits the full interval"), CountActiveMissionsOfType(System, TYPE_Transport), Tier);
+		AdvanceSeconds(120);
+		TestEqual(TEXT("Scheduled job cap"), CountActiveMissionsOfType(System, TYPE_Transport), Tier + 1);
+		TestEqual(TEXT("Base takes one slot"), System.GetActiveMissionCount(), Tier + 2);
+	}
 	return true;
 }
 
@@ -2076,7 +2153,7 @@ bool FSimCopterRooftopRescueAlignmentTest::RunTest(const FString& Parameters)
 			150.0f,
 			OriginalSixUnitGroundBandCm));
 	TestFalse(
-		TEXT("A transport passenger may not complete on a roof"),
+		TEXT("A transport passenger without a matching destination may not complete on a roof"),
 		ASimCopterMissionSystemActor::IsPassengerDeliverySurfaceAllowed(
 			ESimCopterMissionPassengerKind::Transport,
 			/*bIsWater*/ false,

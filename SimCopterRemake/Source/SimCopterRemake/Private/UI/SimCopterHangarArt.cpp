@@ -17,7 +17,7 @@
 namespace
 {
 // cat_<model>.bmp, in catalog row order.
-const TCHAR* const CatalogDrawingFiles[SimCopterHangarLayout::CatalogTabCount] = {
+const TCHAR* const CatalogDrawingFiles[SimCopterHangarLayout::CivilianCatalogTabCount] = {
 	TEXT("CAT_SCHW.BMP"), // 0 Schweizer 300
 	TEXT("CAT_JET.BMP"),  // 1 Jet Ranger
 	TEXT("CAT_HUGH.BMP"), // 2 MD 500 (the exe calls it Hughes 500)
@@ -29,7 +29,7 @@ const TCHAR* const CatalogDrawingFiles[SimCopterHangarLayout::CatalogTabCount] =
 };
 
 // cat_<model>t.bmp, same order, plus the upgrades page's strip.
-const TCHAR* const CatalogTabStripFiles[SimCopterHangarLayout::CatalogTabCount] = {
+const TCHAR* const CatalogTabStripFiles[SimCopterHangarLayout::CivilianCatalogTabCount] = {
 	TEXT("CAT_SCHT.BMP"),
 	TEXT("CAT_JETT.BMP"),
 	TEXT("CAT_HUGT.BMP"),
@@ -576,7 +576,7 @@ const FSlateBrush* USimCopterHangarArt::GetSubImage(
 
 const FSlateBrush* USimCopterHangarArt::GetCatalogDrawing(const int32 CatalogRow)
 {
-	if (CatalogRow < 0 || CatalogRow >= SimCopterHangarLayout::CatalogTabCount)
+	if (CatalogRow < 0 || CatalogRow >= SimCopterHangarLayout::CivilianCatalogTabCount)
 	{
 		return nullptr;
 	}
@@ -585,7 +585,7 @@ const FSlateBrush* USimCopterHangarArt::GetCatalogDrawing(const int32 CatalogRow
 
 const FSlateBrush* USimCopterHangarArt::GetCatalogTabStrip(const int32 CatalogRow)
 {
-	const bool bUpgrades = CatalogRow < 0 || CatalogRow >= SimCopterHangarLayout::CatalogTabCount;
+	const bool bUpgrades = CatalogRow < 0 || CatalogRow >= SimCopterHangarLayout::CivilianCatalogTabCount;
 	return GetBitmap(bUpgrades ? UpgradesTabStripFile : CatalogTabStripFiles[CatalogRow]);
 }
 

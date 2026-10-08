@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Ground/SimCopterGroundAgent.h"
 #include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterPopulationSprite.h"
 #include "Missions/SimCopterMissionSystem.h"
@@ -24,6 +25,7 @@
 #include "Widgets/SNullWidget.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/SWindow.h"
+#include "SceneInterface.h"
 #include "Widgets/Text/STextBlock.h"
 
 namespace
@@ -130,6 +132,26 @@ public:
 		ChildSlot[InArgs._Content.Widget];
 	}
 
+	virtual int32 OnPaint(const FPaintArgs& Args,const FGeometry& Geometry,const FSlateRect& Cull,FSlateWindowElementList& Elements,int32 Layer,const FWidgetStyle& Style,bool Enabled) const override
+	{
+		const int32 Painted=SCompoundWidget::OnPaint(Args,Geometry,Cull,Elements,Layer,Style,Enabled);
+		const auto* Heli=Pawn.Get();
+		if(!Heli || !Heli->GetMissionPassengerSlots().IsValidIndex(SlotIndex)) return Painted;
+		const auto* Person=Heli->GetMissionPassengerSlots()[SlotIndex].Person.Get();
+		if(!Person || !Person->IsHandcuffed()) return Painted;
+		const FVector2f Size=Geometry.GetLocalSize();
+		const float Radius=Size.X*0.16f, Y=Size.Y*0.79f;
+		for(float X : {Size.X*0.27f,Size.X*0.73f})
+		{
+			TArray<FVector2f> Ring;
+			for(int32 K=0;K<=20;++K) { const float A=K*2*PI/20; Ring.Add(FVector2f(X+FMath::Cos(A)*Radius,Y+FMath::Sin(A)*Radius)); }
+			FSlateDrawElement::MakeLines(Elements,Painted+1,Geometry.ToPaintGeometry(),Ring,ESlateDrawEffect::None,FLinearColor::Black,true,4);
+			FSlateDrawElement::MakeLines(Elements,Painted+2,Geometry.ToPaintGeometry(),Ring,ESlateDrawEffect::None,FLinearColor(0.8f,0.9f,1),true,2);
+		}
+		TArray<FVector2f> Chain={FVector2f(Size.X*0.43f,Y),FVector2f(Size.X*0.57f,Y)};
+		FSlateDrawElement::MakeLines(Elements,Painted+2,Geometry.ToPaintGeometry(),Chain,ESlateDrawEffect::None,FLinearColor::White,true,2);
+		return Painted+2;
+	}
 	virtual FReply OnMouseButtonDown(const FGeometry&, const FPointerEvent& MouseEvent) override
 	{
 		if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
@@ -1370,6 +1392,21 @@ TSharedRef<SWidget> SSimCopterDashboard::BuildDash4()
 		+ (bUseUpscaledDashboardArt ? UpscaledCompassWindowXOffset : 0.0f);
 	const float CompassY = CompassWindowY
 		+ (bUseUpscaledDashboardArt ? UpscaledCompassWindowYOffset : 0.0f);
+	AddAtPage(*Canvas, CompassX - 66.0f, CompassY - 2.0f, 62.0f, 18.0f,
+		SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+		.BorderBackgroundColor(FLinearColor(0.015f, 0.025f, 0.025f)).Padding(1.0f)
+		[
+			SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Bold", FMath::RoundToInt(7.0f * Scale)))
+			.ColorAndOpacity(FLinearColor(0.65f, 1.0f, 0.72f))
+			.Text_Lambda([this]()
+			{
+				float Speed = 0, MinGust = 0, MaxGust = 0;
+				FVector Direction = FVector::ZeroVector;
+				if (const auto* Heli = GetPawn(); Heli && Heli->GetWorld() && Heli->GetWorld()->Scene)
+					Heli->GetWorld()->Scene->GetWindParameters_GameThread(Heli->GetActorLocation(), Direction, Speed, MinGust, MaxGust);
+				return FText::FromString(FString::Printf(TEXT("WIND %.0f KT"), FMath::Max(0.0f, Speed) * 1.9438445f));
+			})
+		]);
 	AddAtPage(*Canvas, CompassX, CompassY, CompassWindowWidth,
 		static_cast<float>(CompassStripHeight),
 		SNew(SBox)

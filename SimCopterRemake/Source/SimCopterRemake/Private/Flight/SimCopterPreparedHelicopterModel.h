@@ -28,6 +28,7 @@ struct FSimCopterPreparedHelicopterModel
 	// Resolved geometry. Rotors keep their face-type-11 blur disc in a separate section so
 	// the RPM >= 300 toggle still works after a switch.
 	FMaxisMeshSection BodySection;
+	FMaxisMeshSection CabinGlassSection;
 	FMaxisMeshSection MainRotorOpaqueSection;
 	FMaxisMeshSection MainRotorDiscSection;
 	FMaxisMeshSection TailRotorOpaqueSection;

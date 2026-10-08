@@ -54,12 +54,10 @@ void SSimCopterSoundSettings::Construct(const FArguments& InArgs)
 {
 	Art = InArgs._Art;
 	Values = InArgs._Values;
-	Entered = Values;
 	StationCount = InArgs._StationCount;
 	StationCallSigns = InArgs._StationCallSigns;
 	OnPreviewChanged = InArgs._OnPreviewChanged;
 	OnAccepted = InArgs._OnAccepted;
-	OnCancelled = InArgs._OnCancelled;
 
 	USimCopterHangarArt* ArtObject = Art;
 	TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
@@ -115,17 +113,18 @@ void SSimCopterSoundSettings::Construct(const FArguments& InArgs)
 		.ThumbBrush(VerticalThumbBrush)
 		.OnValueChanged_Lambda([this](const float Alpha)
 		{
-			Values.RadioVolume = AlphaToVolume(Alpha);
+			Values.RadioVolume = FMath::RoundToInt(FMath::Clamp(Alpha, 0.0f, 1.0f) * VolumeMax);
+			RefreshReadouts();
 			Preview();
 		}));
-	RadioVolumeSlider->SetValue(VolumeToAlpha(Values.RadioVolume));
+	RadioVolumeSlider->SetValue(static_cast<float>(Values.RadioVolume) / VolumeMax);
 
 	AddAtPage(VolLabelRect,
-		SNew(STextBlock)
-		.Text(LOCTEXT("Vol", "Vol.")) // STRINGTABLE 140
+		SAssignNew(RadioVolumeLabel, STextBlock)
+		.Text(LOCTEXT("Vol", "Radio")) // STRINGTABLE 140
 		.Justification(ETextJustify::Center)
 		.Visibility(EVisibility::HitTestInvisible)
-		.Font(PageFont(LabelFontHeight, /*bBold=*/true))
+		.Font(PageFont(11, /*bBold=*/true))
 		.ColorAndOpacity(FSlateColor(LabelColor)));
 
 	// --- tuner, command 10 ---
@@ -170,7 +169,7 @@ void SSimCopterSoundSettings::Construct(const FArguments& InArgs)
 	AddLabel(DjLabelRect, LOCTEXT("Dj", "DJ"), ETextJustify::Center);                            // 137
 	AddLabel(AutoQuietLabelRect, LOCTEXT("AutoQuiet", "Auto-Quiet"), ETextJustify::Right);       // 139
 
-	// --- OK / Cancel, commands 1 and 2 ---
+	// Sound adjustments are kept on either exit, including Escape/controller Back.
 	AddAtPage(FRect{ ButtonX, OkButtonY, ButtonX + ButtonWidth, OkButtonY + ButtonHeight },
 		MakeButton(
 			ArtObject,
@@ -182,9 +181,9 @@ void SSimCopterSoundSettings::Construct(const FArguments& InArgs)
 	AddAtPage(FRect{ ButtonX, CancelButtonY, ButtonX + ButtonWidth, CancelButtonY + ButtonHeight },
 		MakeButton(
 			ArtObject,
-			LOCTEXT("Cancel", "Cancel"), // STRINGTABLE 142
+			LOCTEXT("Back", "Back"),
 			ButtonFontHeight,
-			FOnClicked::CreateLambda([this]() { Cancel(); return FReply::Handled(); }),
+			FOnClicked::CreateLambda([this]() { Accept(); return FReply::Handled(); }),
 			ButtonStyles));
 
 	ChildSlot
@@ -234,10 +233,19 @@ void SSimCopterSoundSettings::RefreshReadouts()
 			FText::AsNumber(FMath::RoundToInt(VolumeToAlpha(Values.GameVolume) * 100.0f))));
 	}
 
+	if (RadioVolumeLabel.IsValid())
+	{
+		RadioVolumeLabel->SetText(FText::Format(LOCTEXT("RadioGain", "{0}%"), FText::AsNumber(FMath::RoundToInt(Values.RadioVolume * 200.0f / VolumeMax))));
+	}
+
 	if (StationLabel.IsValid())
 	{
 		StationLabel->SetText(StationCallSigns.IsValidIndex(Values.RadioStation)
 			? FText::FromString(StationCallSigns[Values.RadioStation].ToUpper())
+			: FText::GetEmpty());
+		StationLabel->SetToolTipText(StationCallSigns.IsValidIndex(Values.RadioStation)
+			&& StationCallSigns[Values.RadioStation] == TEXT("KINV")
+			? LOCTEXT("InvokeStation", "Invoke the Revoked — Dancing to Our Doom, then songs 1–13")
 			: FText::GetEmpty());
 	}
 }
@@ -252,24 +260,10 @@ void SSimCopterSoundSettings::Accept()
 	OnAccepted.ExecuteIfBound(Values);
 }
 
-void SSimCopterSoundSettings::Cancel()
-{
-	// The page previews as it is dragged, so Cancel has to put back what was there on entry -
-	// the original never has to, because it only pushes the sliders into the mixer on OK.
-	Values = Entered;
-	OnPreviewChanged.ExecuteIfBound(Values);
-	OnCancelled.ExecuteIfBound();
-}
-
 FReply SSimCopterSoundSettings::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
 	const FKey Key = InKeyEvent.GetKey();
-	if (Key == EKeys::Escape)
-	{
-		Cancel();
-		return FReply::Handled();
-	}
-	if (Key == EKeys::Enter)
+	if (Key == EKeys::Escape || Key == EKeys::Enter)
 	{
 		Accept();
 		return FReply::Handled();

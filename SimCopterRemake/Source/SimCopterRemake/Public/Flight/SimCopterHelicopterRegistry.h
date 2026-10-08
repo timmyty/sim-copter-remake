@@ -32,6 +32,8 @@ enum class ESimCopterHelicopterTool : uint8
 	TearGas,
 	ApacheMissile,
 	ApacheMachineGun,
+	TowClamp,
+	CaptureCage,
 	Count UMETA(Hidden)
 };
 
@@ -191,7 +193,7 @@ SIMCOPTERREMAKE_API int32 GetEquipmentPrice(ESimCopterHelicopterTool Tool);
 SIMCOPTERREMAKE_API int32 GetEquipmentSellValue(ESimCopterHelicopterTool Tool);
 
 // Career mask of every purchasable tool (0x1f).
-constexpr int32 AllCareerEquipmentBits = 0x1f;
+constexpr int32 AllCareerEquipmentBits = 0x7f;
 
 // SCHOOK: CareerGameInit 0x004080c0 / UserGameInit 0x00407f30. Both original new-game
 // paths write 3 to career + 0x48: the starting bucket (0x01) and megaphone (0x02).

@@ -209,7 +209,7 @@ void USimCopterSettings::Initialize(FSubsystemCollectionBase& Collection)
 	LoadConfig();
 
 	GameVolume = FMath::Clamp(GameVolume, VolumeMin, VolumeMax);
-	RadioVolume = FMath::Clamp(RadioVolume, VolumeMin, VolumeMax);
+	RadioVolume = FMath::Clamp(RadioVolume, 0, VolumeMax);
 	RadioStation = FMath::Max(RadioStation, 0);
 	HudScale = FMath::Clamp(HudScale, HudScaleMin, HudScaleMax);
 	FrameGenMultiple = FMath::Clamp(FrameGenMultiple, FrameGenMultipleMin, FrameGenMultipleMax);
@@ -358,13 +358,10 @@ void USimCopterSettings::ApplySound(const UObject* WorldContextObject)
 		Radio->SetSlotEnabled(ESimCopterRadioSlot::Commercial, bCommercialsEnabled);
 		if (Radio->GetStationCount() > 0)
 		{
-			// SetStationIndex deliberately returns the rocker to full on a real channel change. During
-			// settings restore the saved volume is authoritative, so settle the station first and apply
-			// that volume last; the opposite order made the dash show the saved low value while the
-			// already-playing radio remained at full gain.
+			// Restore the station and the user's saved volume together.
 			Radio->SetStationIndex(FMath::Clamp(RadioStation, 0, Radio->GetStationCount() - 1));
 		}
-		Radio->SetVolume(VolumeIndexToScale(RadioVolume) * (bAutoQuiet ? AutoQuietScale : 1.0f));
+		Radio->SetVolume((static_cast<float>(RadioVolume) / VolumeMax) * (bAutoQuiet ? AutoQuietScale : 1.0f));
 	}
 }
 
@@ -375,18 +372,12 @@ void USimCopterSettings::SetGameVolume(const int32 Value)
 
 void USimCopterSettings::SetRadioVolume(const int32 Value)
 {
-	RadioVolume = FMath::Clamp(Value, VolumeMin, VolumeMax);
+	RadioVolume = FMath::Clamp(Value, 0, VolumeMax);
 }
 
 void USimCopterSettings::SetRadioStation(const int32 Index)
 {
-	const int32 NewStation = FMath::Max(Index, 0);
-	if (NewStation != RadioStation)
-	{
-		// The channel selector physically returns the radio rocker to the top.
-		RadioVolume = VolumeMax;
-	}
-	RadioStation = NewStation;
+	RadioStation = FMath::Max(Index, 0);
 }
 
 void USimCopterSettings::SetDjEnabled(const bool bEnabled)

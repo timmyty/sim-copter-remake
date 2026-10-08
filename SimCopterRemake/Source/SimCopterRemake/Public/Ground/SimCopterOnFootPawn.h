@@ -28,6 +28,8 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class FSimCopterRescuePilotRuntimeTest;
+	friend class FSimCopterAirOperationsTest;
 
 public:
 	ASimCopterOnFootPawn();
@@ -52,11 +54,19 @@ public:
 	virtual void UnPossessed() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void Landed(const FHitResult& Hit) override;
+	void BeginAirborneExit(const FVector& Location, const FVector& Velocity);
+	bool IsTaserAiming() const { return bTaserAiming; }
+	void ToggleParachute();
+	bool IsParachuteDeployed() const { return bParachuteDeployed; }
+	float GetPilotHealth() const { return PilotHealth; }
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	// Backed by the character movement velocity (used by nearby NPCs to gauge the player's speed).
 	FVector GetCurrentVelocityCmPerSec() const { return GetVelocity(); }
 	float GetWalkSpeedCmPerSec() const { return WalkSpeedCmPerSec; }
+	ASimCopterHelicopterPawn* GetParkedHelicopter() const { return ParkedHelicopter; }
+	void SetParkedHelicopter(ASimCopterHelicopterPawn* Helicopter) { ParkedHelicopter = Helicopter; }
 	bool CanBoardNearbyHelicopter() const { return FindHelicopterWithinReach(HelicopterInteractionReachCm) != nullptr; }
 	bool IsCarryingMissionPerson() const { return CarriedMissionPerson.IsValid(); }
 	int32 GetCarriedMissionEventId() const { return CarriedMissionEventId; }
@@ -268,6 +278,21 @@ private:
 	void ControllerLookYaw(float Value);
 	void ControllerLookPitch(float Value);
 	void Interact();
+	void StartTaserAim();
+	void StopTaserAim();
+	void FireTaser();
+	bool TryCarryDownedPerson();
+	void UpdateAirOperations(float DeltaSeconds);
+	bool bTaserAiming = false;
+	float TaserCooldown = 0;
+	float PilotHealth = 100;
+	float FallPeakZ = 0;
+	float InjurySeconds = 0;
+	FString TaserStatus;
+	UPROPERTY(Transient) TObjectPtr<UProceduralMeshComponent> TaserMesh;
+	UPROPERTY(Transient) TObjectPtr<UProceduralMeshComponent> ParachuteMesh;
+	bool bParachuteDeployed = false;
+	void SetParachuteDeployed(bool bDeployed);
 	void DropCarriedMissionPerson();
 	void ToggleGamePause();
 	bool TryBoardCarriedMissionPerson(ASimCopterHelicopterPawn* Helicopter);

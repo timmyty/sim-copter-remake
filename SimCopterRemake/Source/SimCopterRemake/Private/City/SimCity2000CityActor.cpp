@@ -3187,7 +3187,13 @@ int32 AppendMaxisMeshObject(
 		// texture, so left alone it falls into the opaque INDEX_NONE section and draws as a solid
 		// plate - which is what made a windmill a flat teal disc with the tower hidden behind it.
 		const bool bTranslucentDiscFace = !bTexturedFace && FMaxisProceduralMeshBuilder::IsTranslucentFaceType(Face.FaceType);
-		const int32 SectionKey = bBakedAtlasTexturedFace
+		// HO209-only presentation override; no vertex, triangulation or collision changes.
+		const bool bHospital = MeshObject.Header.Id == 0x016;
+		const int32 HospitalSection = !bHospital ? INDEX_NONE :
+			(Face.FaceType == 18 && Face.TextureAtlasIndex == 39 ? -201 :
+			 Face.FaceType == 18 && Face.TextureAtlasIndex == 2 && Face.MaterialIndex == 9 ? -202 :
+			 Face.FaceType == 15 ? -203 : INDEX_NONE);
+		const int32 SectionKey = HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
 			? MakeBakedAtlasPageSectionKey(Face.TextureAtlasIndex)
 			: (bBakedDirectTexturedFace ? MakeBakedDirectImageSectionKey(Face.MaterialIndex) : (bRuntimeTexturedFace ? TextureKey : (bTranslucentDiscFace ? TranslucentDiscSectionKeyFlag : INDEX_NONE)));
 		FOriginalMeshSectionData& Section = Sections.FindOrAdd(SectionKey);
@@ -3398,7 +3404,7 @@ ASimCity2000CityActor::ASimCity2000CityActor()
 	// city responds to the scene's directional/sky lighting and to dynamic night lights (street
 	// lights, car headlights, the helicopter spotlight). Both expose a low "SelfIllum" floor plus
 	// "Roughness"/"Specular" scalar parameters so day<->night can be tuned at runtime.
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> VertexColorMaterialFinder(TEXT("/Game/Materials/M_SimCopterLitVertexColor.M_SimCopterLitVertexColor"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> VertexColorMaterialFinder(TEXT("/Game/Materials/M_SimCopterCitySolidSurface.M_SimCopterCitySolidSurface"));
 	if (VertexColorMaterialFinder.Succeeded())
 	{
 		VertexColorMaterial = VertexColorMaterialFinder.Object;
@@ -3442,7 +3448,7 @@ ASimCity2000CityActor::ASimCity2000CityActor()
 	// Ground material with three-octave procedural detail-noise normals (see M_SimCopterTerrain). Fed
 	// the terrain-low/high texture plus the noise parameters; a per-vertex weight (vertex-color R)
 	// fades the noise out near the shoreline and on building/road pads.
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> TerrainMaterialFinder(TEXT("/Game/Materials/M_SimCopterTerrain.M_SimCopterTerrain"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> TerrainMaterialFinder(TEXT("/Game/Materials/M_SimCopterLandSurface.M_SimCopterLandSurface"));
 	if (TerrainMaterialFinder.Succeeded())
 	{
 		TerrainMaterial = TerrainMaterialFinder.Object;
@@ -3511,6 +3517,16 @@ void ASimCity2000CityActor::BeginPlay()
 
 void ASimCity2000CityActor::RebuildCity()
 {
+	// Existing saved city actors may serialize the former defaults. Upgrade those exact defaults
+	// while retaining any user-authored material override; no level resave is required.
+	if (TerrainMaterial && TerrainMaterial->GetPathName() == TEXT("/Game/Materials/M_SimCopterTerrain.M_SimCopterTerrain"))
+	{
+		TerrainMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_SimCopterLandSurface.M_SimCopterLandSurface"));
+	}
+	if (VertexColorMaterial && VertexColorMaterial->GetPathName() == TEXT("/Game/Materials/M_SimCopterLitVertexColor.M_SimCopterLitVertexColor"))
+	{
+		VertexColorMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_SimCopterCitySolidSurface.M_SimCopterCitySolidSurface"));
+	}
 	USimCopterLoadingSubsystem::SetStage(this, 1);
 	WaterTextureFramesPerSecond = SanitizeWaterTextureFramesPerSecond(WaterTextureFramesPerSecond);
 	LastLoadError.Reset();
@@ -3521,6 +3537,7 @@ void ASimCity2000CityActor::RebuildCity()
 	LastOriginalTextureCount = 0;
 	LastOriginalTexturedTriangleCount = 0;
 	BuildingTileFlags.Reset();
+	WaterSupplyTriangles.Reset();
 	WaterGameplayCornerZ.Reset();
 	WaterGameplayTerrainClasses.Reset();
 	RoadSurfaceProfiles.Reset();
@@ -4116,7 +4133,13 @@ void ASimCity2000CityActor::RebuildCity()
 		}
 
 		UMaterialInterface* Resolved = nullptr;
-		if (SectionKey == INDEX_NONE)
+		if (SectionKey >= -203 && SectionKey <= -201)
+		{
+			Resolved = LoadGeneratedCityAtlasMaterial(SectionKey == -201 ? TEXT("M_HospitalFacade") :
+				SectionKey == -202 ? TEXT("M_HospitalHelipad") : TEXT("M_HospitalRoof"));
+			if (!Resolved) Resolved = VertexColorMaterial;
+		}
+		else if (SectionKey == INDEX_NONE)
 		{
 			Resolved = VertexColorMaterial;
 		}
@@ -4474,6 +4497,13 @@ void ASimCity2000CityActor::RebuildCity()
 					SurfaceCorner(FileX + 1, FileY + 1), SurfaceCorner(FileX, FileY + 1),
 					TerrainAtlasTileIndex,
 					bWaterTile ? TerrainWaterSection : (bUseHighPageForTile ? TerrainPage0DSection : TerrainPage14Section));
+				if (!bWaterTile && IsWaterTerrainBase(TerrainType))
+				{
+					const auto& Section = bUseHighPageForTile ? TerrainPage0DSection : TerrainPage14Section;
+					const int32 Last = Section.Vertices.Num() - 4;
+					AddWaterSupplyTriangle(Section.Vertices[Last], Section.Vertices[Last + 1], Section.Vertices[Last + 2]);
+					AddWaterSupplyTriangle(Section.Vertices[Last], Section.Vertices[Last + 2], Section.Vertices[Last + 3]);
+				}
 				if (bWaterTile)
 				{
 					AppendWaterCornerWeights(FileX, FileY);
@@ -4629,6 +4659,20 @@ void ASimCity2000CityActor::RebuildCity()
 								RoadSurfaceProfiles[TileIndex]);
 						}
 
+						// SIM3D page 20 cells 0..9 are the authored water textures (FUN_004814c0).
+						// Pools are water polygons inside land tiles, not entire water-class tiles.
+						for (const auto& Face : MeshObject->Faces)
+						{
+							if (Face.FaceType != 18 || Face.TextureAtlasIndex != 20 || Face.MaterialIndex >= 10) continue;
+							TArray<FVector> Points;
+							for (const auto V : Face.VertexIndices)
+							{
+								if (!MeshObject->Vertices.IsValidIndex(V)) continue;
+								const FVector P = FMaxisMeshReader::ConvertMaxisVertexToUnreal(MeshObject->Vertices[V], OriginalMeshUnitsPerCentimeter) * OriginalMeshScale;
+								Points.Add(TileOrigin + FVector(-P.X, -P.Y, P.Z));
+							}
+							for (int32 I = 1; I + 1 < Points.Num(); ++I) AddWaterSupplyTriangle(Points[0], Points[I], Points[I + 1]);
+						}
 						// Blink markers are face type 25, which AppendMaxisMeshObject drops (a single
 						// vertex is neither a polygon nor one of its two-point lines). Collect them here
 						// for both the instanced-building and the baked-section paths, since the original
@@ -5213,6 +5257,13 @@ void ASimCity2000CityActor::RebuildCity()
 					Z01,
 					TerrainAtlasTileIndex,
 					bWaterTile ? TerrainWaterSection : (bUseHighPageForTile ? TerrainPage0DSection : TerrainPage14Section));
+				if (!bWaterTile && IsWaterTerrainBase(TerrainType))
+				{
+					const auto& Section = bUseHighPageForTile ? TerrainPage0DSection : TerrainPage14Section;
+					const int32 Last = Section.Vertices.Num() - 4;
+					AddWaterSupplyTriangle(Section.Vertices[Last], Section.Vertices[Last + 1], Section.Vertices[Last + 2]);
+					AddWaterSupplyTriangle(Section.Vertices[Last], Section.Vertices[Last + 2], Section.Vertices[Last + 3]);
+				}
 				if (bWaterTile)
 				{
 					AppendWaterCornerWeights(FileX, FileY);
@@ -5271,6 +5322,13 @@ void ASimCity2000CityActor::RebuildCity()
 			if (NoiseMID != nullptr)
 			{
 				NoiseMID->SetTextureParameterValue(TEXT("Texture"), NoiseTexture);
+				// Keep original point-sampled art for water/masks; land gets its own mipmapped copy.
+				UTexture* FilteredTexture = nullptr;
+				if (SurfaceMaterial != nullptr)
+				{
+					SurfaceMaterial->GetTextureParameterValue(FMaterialParameterInfo(TEXT("SurfaceTexture")), FilteredTexture);
+				}
+				NoiseMID->SetTextureParameterValue(TEXT("SurfaceTexture"), FilteredTexture != nullptr ? FilteredTexture : NoiseTexture);
 				NoiseMID->SetScalarParameterValue(TEXT("NoiseAmpFine"), TerrainNoiseAmpFine);
 				NoiseMID->SetScalarParameterValue(TEXT("NoiseScaleFine"), TerrainNoiseScaleFine);
 				NoiseMID->SetScalarParameterValue(TEXT("NoiseAmpMed"), TerrainNoiseAmpMed);
@@ -5348,6 +5406,11 @@ void ASimCity2000CityActor::RebuildCity()
 	CreateTerrainSurfaceSection(TerrainPage14Section, BakedCityAtlasMaterials.TerrainLowMaterial, TerrainTexture);
 	CreateTerrainSurfaceSection(TerrainPage0DSection, BakedCityAtlasMaterials.TerrainHighMaterial, HighTerrainTexture);
 
+	// Use the same triangles the player sees, including generated map-edge water.
+	for (int32 I = 0; I + 2 < TerrainWaterSection.Triangles.Num(); I += 3)
+		AddWaterSupplyTriangle(TerrainWaterSection.Vertices[TerrainWaterSection.Triangles[I]],
+			TerrainWaterSection.Vertices[TerrainWaterSection.Triangles[I + 1]],
+			TerrainWaterSection.Vertices[TerrainWaterSection.Triangles[I + 2]]);
 	// Water gets its own section using M_SimCopterWater: same TILED1 texturing as the terrain, but the
 	// vertices undulate in the vertex shader (World Position Offset) and light with analytic wave
 	// normals - no per-frame CPU work, and it animates in the editor and in game alike. The shoreline
@@ -5483,7 +5546,11 @@ void ASimCity2000CityActor::RebuildCity()
 
 		UMaterialInterface* SectionMaterial = nullptr;
 		UTexture2D* RuntimeTexture = nullptr;
-		if (IsTranslucentDiscSectionKey(TextureKey))
+		if (TextureKey >= -203 && TextureKey <= -201)
+		{
+			SectionMaterial = ResolveBuildingSectionMaterial(TextureKey);
+		}
+		else if (IsTranslucentDiscSectionKey(TextureKey))
 		{
 			SectionMaterial = BlurDiscMaterial;
 		}
@@ -5732,6 +5799,49 @@ bool ASimCity2000CityActor::TryGetRoadSurfaceWorldZ(
 	OutSurfaceWorldZ = CityTransform.TransformPosition(
 		FVector(LocalLocation.X, LocalLocation.Y, LocalSurfaceZ)).Z;
 	return true;
+}
+
+void ASimCity2000CityActor::AddWaterSupplyTriangle(const FVector& A, const FVector& B, const FVector& C)
+{
+	if (TileSize <= 0 || FMath::Abs(FVector::CrossProduct(B - A, C - A).GetSafeNormal().Z) < 0.95f) return;
+	FBox Bounds(ForceInit); Bounds += A; Bounds += B; Bounds += C;
+	for (int32 X = FMath::FloorToInt(Bounds.Min.X / TileSize); X <= FMath::FloorToInt(Bounds.Max.X / TileSize); ++X)
+		for (int32 Y = FMath::FloorToInt(Bounds.Min.Y / TileSize); Y <= FMath::FloorToInt(Bounds.Max.Y / TileSize); ++Y)
+		{
+			auto& Points = WaterSupplyTriangles.FindOrAdd(FIntPoint(X, Y));
+			Points.Add(A); Points.Add(B); Points.Add(C);
+		}
+}
+
+bool ASimCity2000CityActor::TryGetBucketWaterSurface(const FVector& WorldLocation,
+	float& OutSurfaceWorldZ, uint8& OutTerrainClass, FIntPoint* OutTile) const
+{
+	const bool bTerrainSample = TryGetWaterGameplaySurface(WorldLocation, OutSurfaceWorldZ, OutTerrainClass, OutTile);
+	bool bWater = bTerrainSample && SimCopterWaterGameplay::IsWaterTerrainClass(OutTerrainClass);
+	if (TileSize <= 0) return bWater;
+	const FVector P = GetActorTransform().InverseTransformPosition(WorldLocation);
+	const auto* Points = WaterSupplyTriangles.Find(FIntPoint(FMath::FloorToInt(P.X / TileSize), FMath::FloorToInt(P.Y / TileSize)));
+	if (Points != nullptr)
+	{
+		for (int32 I = 0; I + 2 < Points->Num(); I += 3)
+		{
+			const FVector A = (*Points)[I], B = (*Points)[I + 1], C = (*Points)[I + 2];
+			const double Den = (B.Y - C.Y) * (A.X - C.X) + (C.X - B.X) * (A.Y - C.Y);
+			if (FMath::Abs(Den) < UE_SMALL_NUMBER) continue;
+			const double U = ((B.Y - C.Y) * (P.X - C.X) + (C.X - B.X) * (P.Y - C.Y)) / Den;
+			const double V = ((C.Y - A.Y) * (P.X - C.X) + (A.X - C.X) * (P.Y - C.Y)) / Den;
+			if (U < -0.0001 || V < -0.0001 || U + V > 1.0001) continue;
+			const float Z = GetActorTransform().TransformPosition(FVector(P.X, P.Y, U * A.Z + V * B.Z + (1 - U - V) * C.Z)).Z;
+			if (!bWater || Z > OutSurfaceWorldZ) OutSurfaceWorldZ = Z;
+			bWater = true;
+		}
+	}
+	if (bWater)
+	{
+		OutTerrainClass = 5;
+		if (OutTile && !bTerrainSample) *OutTile = FIntPoint(INDEX_NONE, INDEX_NONE);
+	}
+	return bWater;
 }
 
 bool ASimCity2000CityActor::TryGetWaterGameplaySurface(

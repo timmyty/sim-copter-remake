@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterOnFootPawn.h"
+#include "Widgets/Text/STextBlock.h"
+#include "Framework/Application/SlateApplication.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Audio/SimCopterSoundTable.h"
@@ -49,7 +51,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogSimCopterOnFootPawn, Log, All);
 namespace
 {
 constexpr uint32 OnFootRuntimeSaveMagic = 0x464f4f54; // 'FOOT'
-constexpr int32 OnFootRuntimeSaveVersion = 1;
+constexpr int32 OnFootRuntimeSaveVersion = 3;
 
 void SerializeOnFootBool(FArchive& Archive, bool& Value)
 {
@@ -299,6 +301,7 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 		MissionPickupCooldownSeconds = FMath::Max(0.0f, MissionPickupCooldownSeconds - DeltaSeconds);
 	}
 
+	UpdateAirOperations(DeltaSeconds);
 	UpdateLookYaw(DeltaSeconds);
 	TryAutoEnterHelicopter();
 	if (IsActorBeingDestroyed())
@@ -392,8 +395,16 @@ void ASimCopterOnFootPawn::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &ASimCopterOnFootPawn::DropCarriedMissionPerson);
 
 	// Drop a carried person on the ground (e.g. when the helicopter is full and you need to come
-	// back for them later). Bound directly to F so no input-mapping config edit is required.
-	PlayerInputComponent->BindKey(EKeys::F, IE_Pressed, this, &ASimCopterOnFootPawn::DropCarriedMissionPerson);
+	// back for them later). Bound directly to G so no input-mapping config edit is required.
+	PlayerInputComponent->BindKey(EKeys::P, IE_Pressed, this, &ASimCopterOnFootPawn::ToggleParachute);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Right, IE_Pressed, this, &ASimCopterOnFootPawn::ToggleParachute);
+	PlayerInputComponent->BindKey(EKeys::G, IE_Pressed, this, &ASimCopterOnFootPawn::DropCarriedMissionPerson);
+	PlayerInputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ASimCopterOnFootPawn::StartTaserAim);
+	PlayerInputComponent->BindKey(EKeys::RightMouseButton, IE_Released, this, &ASimCopterOnFootPawn::StopTaserAim);
+	PlayerInputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &ASimCopterOnFootPawn::FireTaser);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftTrigger, IE_Pressed, this, &ASimCopterOnFootPawn::StartTaserAim);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftTrigger, IE_Released, this, &ASimCopterOnFootPawn::StopTaserAim);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_RightTrigger, IE_Pressed, this, &ASimCopterOnFootPawn::FireTaser);
 
 	// Jump with air control (works while carrying someone - the carried person is attached to the
 	// capsule). Bound directly to Space so no input-mapping config edit is required.
@@ -496,7 +507,12 @@ void ASimCopterOnFootPawn::EnsureControllerOverlayWidget()
 				.Pawn(nullptr)
 		]
 		+ SOverlay::Slot().HAlign(HAlign_Left).VAlign(VAlign_Bottom).Padding(FMargin(16))
-		[SSimCopterControllerHelp::ForPawn(this)];
+		[SSimCopterControllerHelp::ForPawn(this)]
+		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)
+		[SNew(STextBlock).Text(FText::FromString(TEXT("+"))).Font(FCoreStyle::GetDefaultFontStyle("Bold", 24))
+		.Visibility_Lambda([this]() { return bTaserAiming ? EVisibility::HitTestInvisible : EVisibility::Collapsed; })]
+		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(FMargin(0,0,0,90))
+		[SNew(STextBlock).Text_Lambda([this]() { return FText::FromString(FString::Printf(TEXT("Pilot %.0f%% | RMB / LT aim taser | LMB / RT fire | Walk up to carry downed people | G / X put down | P / B parachute: %s"), PilotHealth, bParachuteDeployed ? TEXT("OPEN") : TEXT("CLOSED"))); })];
 	GEngine->GameViewport->AddViewportWidgetContent(ControllerOverlayWidget.ToSharedRef(), 60);
 }
 
@@ -526,7 +542,12 @@ void ASimCopterOnFootPawn::DropCarriedMissionPerson()
 	// pickup so they can be collected again later.
 	const FRotationMatrix YawFrame(FRotator(0.0f, GetActorRotation().Yaw, 0.0f));
 	const FVector DropLocation = GetActorLocation() + YawFrame.GetUnitAxis(EAxis::X) * 60.0f;
-	Patient->SetDroppedInjuredOnGround(DropLocation);
+	if (GetCharacterMovement()->IsFalling() || Patient->IsInPoliceCustody())
+	{
+		Patient->SetActorLocation(DropLocation);
+		Patient->BeginPassengerFall(Patient->MissionEventId,900.0f);
+	}
+	else Patient->SetDroppedInjuredOnGround(DropLocation);
 
 	// Don't let the auto-pickup logic re-grab them on the very next frame.
 	MissionPickupCooldownSeconds = MissionDropRepickupCooldownSeconds;
@@ -623,6 +644,10 @@ bool ASimCopterOnFootPawn::CaptureRuntimeSaveState(TArray<uint8>& OutData) const
 	Writer << SavedJumpForceTimeRemaining;
 	Writer << SavedJumpCurrentCount;
 	Writer << SavedJumpCurrentCountPreJump;
+	float Health=PilotHealth, Peak=FallPeakZ, Injury=InjurySeconds;
+	Writer << Health << Peak << Injury;
+	bool bSavedParachute = bParachuteDeployed;
+	SerializeOnFootBool(Writer, bSavedParachute);
 	return !Writer.IsError();
 }
 
@@ -633,7 +658,7 @@ bool ASimCopterOnFootPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 	int32 Version = 0;
 	Reader << Magic;
 	Reader << Version;
-	if (Reader.IsError() || Magic != OnFootRuntimeSaveMagic || Version != OnFootRuntimeSaveVersion)
+	if (Reader.IsError() || Magic != OnFootRuntimeSaveMagic || (Version < 1 || Version > OnFootRuntimeSaveVersion))
 	{
 		return false;
 	}
@@ -684,6 +709,10 @@ bool ASimCopterOnFootPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 	Reader << SavedJumpForceTimeRemaining;
 	Reader << SavedJumpCurrentCount;
 	Reader << SavedJumpCurrentCountPreJump;
+	if (Version >= 2) Reader << PilotHealth << FallPeakZ << InjurySeconds;
+	bool bSavedParachute = false;
+	if (Version >= 3) SerializeOnFootBool(Reader, bSavedParachute);
+	if (!FMath::IsFinite(PilotHealth) || PilotHealth < 0 || PilotHealth > 100 || !FMath::IsFinite(FallPeakZ) || !FMath::IsFinite(InjurySeconds) || InjurySeconds < 0) return false;
 
 	if (Reader.IsError() || Reader.Tell() != Data.Num() || Transform.ContainsNaN() || Velocity.ContainsNaN() ||
 		MovementMode >= MOVE_MAX || !FMath::IsFinite(SavedCameraPitchDeg) ||
@@ -723,6 +752,7 @@ bool ASimCopterOnFootPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		Move->SetMovementMode(static_cast<EMovementMode>(MovementMode), CustomMovementMode);
 		Move->Velocity = Velocity;
 	}
+	SetParachuteDeployed(bSavedParachute && MovementMode == MOVE_Falling);
 	CameraPitchDeg = SavedCameraPitchDeg;
 	if (CameraBoom != nullptr)
 	{
@@ -863,6 +893,7 @@ bool ASimCopterOnFootPawn::TryBoardCarriedMissionPerson(ASimCopterHelicopterPawn
 
 void ASimCopterOnFootPawn::TryAutoEnterHelicopter()
 {
+	if (MissionPickupCooldownSeconds > 0 || GetCharacterMovement()->IsFalling()) return;
 	TryEnterHelicopter(HelicopterAutoEnterReachCm);
 }
 
@@ -912,7 +943,7 @@ void ASimCopterOnFootPawn::UpdateCamera(float DeltaSeconds)
 	const USimCopterSettings* Settings = USimCopterSettings::Get(this);
 	const float MouseSensitivity = Settings != nullptr ? Settings->GetMouseSensitivityY() : 1.0f;
 	const float ControllerSensitivity = Settings != nullptr ? Settings->GetControllerSensitivityY() : 1.0f;
-	CameraComponent->SetFieldOfView(Settings != nullptr ? Settings->GetOnFootFov() : USimCopterSettings::DefaultFov);
+	CameraComponent->SetFieldOfView(bTaserAiming ? 55.0f : (Settings != nullptr ? Settings->GetOnFootFov() : USimCopterSettings::DefaultFov));
 
 	CameraPitchDeg = FMath::Clamp(
 		CameraPitchDeg -

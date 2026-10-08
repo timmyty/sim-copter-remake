@@ -234,7 +234,7 @@ public:
 	// through the clip cache; each play decodes once and drops the samples when it ends.
 
 	/** Absolute path, because the radio tree is nested well below the slot search roots. */
-	bool PlayRadioFile(const FString& AbsolutePath, float VolumeMultiplier = 1.0f);
+	bool PlayRadioFile(const FString& AbsolutePath, float VolumeMultiplier = 1.0f, float StartSeconds = 0.0f);
 	/** Updates both the stored radio gain and the item that is already playing. */
 	void SetRadioVolumeMultiplier(float VolumeMultiplier);
 	float GetRadioVolumeMultiplier() const { return RadioVolumeMultiplier; }
@@ -301,7 +301,9 @@ public:
 	static constexpr float OriginalUnitToCm = 6.25f;
 
 private:
+	friend class FSimCopterRadioSequentialTest;
 	friend class FSimCopterAudioOverlapTest;
+	friend class FSimCopterGameplayPolishTest;
 	/** Runtime state of one of the 130 slots. The UAudioComponent lives in SlotComponents. */
 	struct FSlot
 	{

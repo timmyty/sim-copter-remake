@@ -121,6 +121,8 @@ private:
 	TSharedPtr<SWidget> ScreenWidget;
 	TSharedPtr<SWidget> InitialFocusWidget;
 	ESimCopterSettingsScreen Screen = ESimCopterSettingsScreen::None;
+	bool bPausedForApplicationDeactivation = false;
+	friend class FSimCopterGameplayPolishTest;
 
 	FText PendingMessage;
 	bool bLeaveAfterSaveAs = false;

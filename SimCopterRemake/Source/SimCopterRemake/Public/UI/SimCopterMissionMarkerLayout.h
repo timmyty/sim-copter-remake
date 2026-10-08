@@ -7,6 +7,9 @@
 
 namespace SimCopterMissionMarkerLayout
 {
+/** Includes the actual label/distance text and the plate's 12 pixels of horizontal padding. */
+SIMCOPTERREMAKE_API FVector2D MeasureMarkerSize(const FString& PlateText, const FVector2D& PreferredSize);
+
 struct SIMCOPTERREMAKE_API FUiObstacle
 {
 	FBox2D Bounds;

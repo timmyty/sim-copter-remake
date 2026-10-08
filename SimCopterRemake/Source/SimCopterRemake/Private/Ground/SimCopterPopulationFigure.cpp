@@ -283,6 +283,7 @@ void AppendBall(
 		}
 	}
 }
+#include "SimCopterCowGeometry.inl"
 } // namespace
 
 TSharedPtr<FSimCopterPrivAnimShared> FSimCopterPopulationFigure::GetShared(const FString& OriginalGameRoot, FString& OutError)
@@ -482,8 +483,10 @@ bool FSimCopterPopulationFigure::BuildClipSections(
 	{
 		FMeshArrays Body;
 		FMeshArrays Head;
+		const bool bRedesignedCow = Figure.Name == TEXT("Coww");
+		if (bRedesignedCow) BuildCowFrame(Body, Frame, Clip.FrameCount, Params.HeightCm);
 
-		for (int32 PartIndex = 0; PartIndex < Clip.PartCount; ++PartIndex)
+		for (int32 PartIndex = 0; !bRedesignedCow && PartIndex < Clip.PartCount; ++PartIndex)
 		{
 			const FPrivAnimPart& Part = Figure.Parts[PartIndex];
 			if (FigureAdjustments != nullptr)
