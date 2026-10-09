@@ -1,5 +1,7 @@
 # Memory Index
 
+- [Localized audio at every drive-in](../DriveInLocalizedAudio.md) — 2026-10-09: Unreal media timing V2 feeds only one audio sink. Decode once into a mono source bus, then play independent spatial speakers at every theater; keep silent speakers running for re-entry. Six targeted tests and Editor/Shipping passed, including captured Windows mixer output at eight theaters, switching movies, falloff/re-entry, pause/resume and demolition. The offline renderer did not mix source buses correctly; use the private Windows mixer with captured output silenced. Original movie AAC is silent. Evidence: `Docs/scratchpad/drive-in-multi-audio/`.
+
 - [Drive-in picture sizing](../DriveInPictureSizing.md) — 2026-10-09: user requested stretching the whole picture to full theater width and about three-quarters height. Replaced aspect fitting with a centered 75%-height picture and complete source UVs. Editor/Shipping and five targeted tests passed; both theater frames inspected. Evidence: `Docs/scratchpad/drive-in-full-screen/`.
 
 - [Drive-in video visibility](../DriveInVideoVisibility.md) — 2026-10-09: fixed reversed screen normal/depth layering that hid movies behind the theater and black backing while audio played. Before-fix scene readbacks changed zero pixels; real lowercase hsi/original movie cheat execution now renders both pictures on the theater. Editor/Shipping and all five targeted tests passed. No manual playtest; evidence in `Docs/scratchpad/drive-in-video-fix/`.

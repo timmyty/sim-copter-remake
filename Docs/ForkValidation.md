@@ -1,5 +1,17 @@
 # Fork validation
 
+## Localized drive-in audio v1.0.5 - October 9, 2026
+
+Every theater now receives the shared movie soundtrack through its own positional
+speaker. Editor and Shipping builds succeeded; all six targeted tests passed.
+A private Windows mixer measured HSI at all eight theaters in Metropolis before
+and after switching movies, plus distance falloff, returning, pause/resume and
+independent demolition. Captured output was silenced before hardware playback.
+The original movie has a silent AAC track and is checked for soundtrack leakage.
+Existing screen rendering/framing, all-map placement and minimap tests also passed.
+No foreground flight or physical-speaker listening test was performed.
+[Details](DriveInLocalizedAudio.md) and [results](validation/DriveInLocalizedAudioResults.json).
+
 ## Drive-in picture sizing v1.0.4 - October 9, 2026
 
 Movies now stretch to full screen width and 75% height, centered with no cropping.
