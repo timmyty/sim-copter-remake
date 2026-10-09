@@ -256,6 +256,24 @@ void FSimCopterMapRaster::Render(const FSimCopterMapFrame& Frame, const FSimCopt
 	FireAnimStep = (FireAnimStep + 1) & (Color::FireRampSteps - 1);
 
 	RasteriseTiles(Frame, Settings);
+	// Small screen/play logo, independent of mission/service toggles. Paint those overlays
+	// afterwards so navigation remains legible. Clip at the map edge instead of pinning there.
+	const int32 Scale = 1 << FMath::Clamp(Settings.Zoom, 0, MaxZoom);
+	static const char* Logo[] = {"111111111", "122222221", "122232221", "122233221", "122232221", "122222221", "111111111", "000010000", "001111100"};
+	for (const FIntPoint Tile : Frame.DriveInTiles)
+	{
+		const int32 X = CentreX - (Tile.Y - Frame.CentreTile.Y) * Scale;
+		const int32 Y = CentreY - (Tile.X - Frame.CentreTile.X) * Scale;
+		if (X < ViewOriginX || X >= ViewOriginX + ViewTilesX || Y < ViewOriginY || Y >= ViewOriginY + ViewTilesY) continue;
+		for (int32 Row = 0; Row < 9; ++Row)
+		for (int32 Col = 0; Col < 9; ++Col)
+		{
+			const int32 Px = X + Col - 4, Py = Y + Row - 4;
+			const char Ink = Logo[Row][Col];
+			if (Ink != '0' && Px >= ViewOriginX && Px < ViewOriginX + ViewTilesX && Py >= ViewOriginY && Py < ViewOriginY + ViewTilesY)
+				SetPixel(Px, Py, Ink == '1' ? Color::LabelText : Ink == '2' ? Color::LabelBackground : Color::Heading);
+		}
+	}
 	DrawMissionLines(Frame, Settings);
 	DrawHeadingNeedle(Frame);
 	DrawOtherMissions(Frame, Settings);

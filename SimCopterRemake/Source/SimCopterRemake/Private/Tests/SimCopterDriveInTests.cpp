@@ -3,6 +3,7 @@
 #include "City/SimCopterDriveIn.h"
 #include "City/SimCity2000CityActor.h"
 #include "Formats/SimCity2000Reader.h"
+#include "Formats/SimCopterOriginalGamePaths.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -30,11 +31,13 @@ public:
 			World->InitializeActorsForPlay(FURL());
 			City = World->SpawnActorDeferred<ASimCity2000CityActor>(ASimCity2000CityActor::StaticClass(), FTransform::Identity);
 			City->bLoadOnConstruction = false;
+			City->bRenderProceduralMapExtension = false;
+			City->bRenderStreetLightSpotLights = false;
+			City->CityFile.FilePath = SimCopterOriginalGame::ResolveRoot() / TEXT("cities/career/city0.sc2");
 			City->FinishSpawning(FTransform::Identity);
-			auto& Building = City->Buildings.AddDefaulted_GetRef();
-			Building.XbldId = 182; Building.OriginTile = FIntPoint::ZeroValue;
-			Building.PlacementOrigin = FVector::ZeroVector;
-			City->TileBuildingIds.Init(INDEX_NONE, FSimCity2000City::TileCount); City->TileBuildingIds[0] = 0;
+			City->RebuildCity();
+			TArray<FIntPoint> Theaters; City->GetDriveInTiles(Theaters);
+			Test->TestEqual(TEXT("Loaded map has a real theater and minimap location"), Theaters.Num(), 1);
 			DriveIn = ASimCopterDriveInPlayer::Get(World);
 			Test->AddInfo(DriveIn->PlayVideo(TEXT("HSI.mp4")));
 			Test->TestEqual(TEXT("The authored theater screen is found"), DriveIn->GetScreenCount(), 1);
@@ -71,6 +74,14 @@ public:
 		Test->TestFalse(TEXT("Repeating original cheat stops playback"), DriveIn->IsVideoActive());
 		Test->TestEqual(TEXT("Stopping removes screens"), DriveIn->GetScreenCount(), 0);
 		Test->TestEqual(TEXT("Stopping removes sound components"), DriveIn->Sounds.Num(), 0);
+		TArray<FIntPoint> Theaters, Cleared;
+		City->GetDriveInTiles(Theaters);
+		if (!Theaters.IsEmpty()) City->DemolishBuildingAtTile(Theaters[0].X, Theaters[0].Y, Cleared, true);
+		City->GetDriveInTiles(Theaters);
+		Test->TestTrue(TEXT("Demolished theater no longer has a minimap logo"), Theaters.IsEmpty());
+		TArray<FSimCopterDriveInSurface> Surfaces;
+		City->GetDriveInSurfaces(Surfaces);
+		Test->TestTrue(TEXT("Demolished theater no longer supplies a movie screen"), Surfaces.IsEmpty());
 		return Finish();
 	}
 private:

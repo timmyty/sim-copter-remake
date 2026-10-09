@@ -184,6 +184,8 @@ public:
 	/** The tuner slider, 0..2 in the original. Clamped to the stations actually discovered. */
 	int32 GetRadioStation() const { return RadioStation; }
 	void SetRadioStation(int32 Index);
+	int32 ResolveRadioStation(const TArray<struct FSimCopterRadioStation>& Stations) const;
+	bool RememberRadioStation(int32 Index, const FString& CallSign);
 
 	bool IsDjEnabled() const { return bDjEnabled; }
 	void SetDjEnabled(bool bEnabled);
@@ -438,6 +440,7 @@ public:
 	static void FlushRenderingForSettingsChange();
 
 private:
+	friend class FSimCopterRadioPreferenceTest;
 	UPROPERTY(Config)
 	int32 GameVolume = VolumeMax;
 
@@ -445,7 +448,11 @@ private:
 	int32 RadioVolume = VolumeMax;
 
 	UPROPERTY(Config)
-	int32 RadioStation = 0;
+	int32 RadioStation = INDEX_NONE;
+
+	// Call signs survive station list changes; the old index remains readable for existing INIs.
+	UPROPERTY(Config)
+	FString RadioStationCallSign;
 
 	UPROPERTY(Config)
 	bool bDjEnabled = true;

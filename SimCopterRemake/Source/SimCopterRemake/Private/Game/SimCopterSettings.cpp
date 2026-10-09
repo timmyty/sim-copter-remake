@@ -210,7 +210,7 @@ void USimCopterSettings::Initialize(FSubsystemCollectionBase& Collection)
 
 	GameVolume = FMath::Clamp(GameVolume, VolumeMin, VolumeMax);
 	RadioVolume = FMath::Clamp(RadioVolume, 0, VolumeMax);
-	RadioStation = FMath::Max(RadioStation, 0);
+	RadioStation = FMath::Max(RadioStation, -1);
 	HudScale = FMath::Clamp(HudScale, HudScaleMin, HudScaleMax);
 	FrameGenMultiple = FMath::Clamp(FrameGenMultiple, FrameGenMultipleMin, FrameGenMultipleMax);
 	StaticTimeOfDayHours = FMath::Clamp(StaticTimeOfDayHours, StaticTimeOfDayMinHours, StaticTimeOfDayMaxHours);
@@ -359,7 +359,7 @@ void USimCopterSettings::ApplySound(const UObject* WorldContextObject)
 		if (Radio->GetStationCount() > 0)
 		{
 			// Restore the station and the user's saved volume together.
-			Radio->SetStationIndex(FMath::Clamp(RadioStation, 0, Radio->GetStationCount() - 1));
+			Radio->SetStationIndex(ResolveRadioStation(Radio->GetStations()));
 		}
 		Radio->SetVolume((static_cast<float>(RadioVolume) / VolumeMax) * (bAutoQuiet ? AutoQuietScale : 1.0f));
 	}
@@ -377,7 +377,33 @@ void USimCopterSettings::SetRadioVolume(const int32 Value)
 
 void USimCopterSettings::SetRadioStation(const int32 Index)
 {
+	if (RadioStation != FMath::Max(Index, 0)) RadioStationCallSign.Reset();
 	RadioStation = FMath::Max(Index, 0);
+}
+
+int32 USimCopterSettings::ResolveRadioStation(const TArray<FSimCopterRadioStation>& Stations) const
+{
+	const auto Find = [&Stations](const FString& CallSign)
+	{
+		return Stations.IndexOfByPredicate([&CallSign](const FSimCopterRadioStation& Station)
+			{ return Station.CallSign.Equals(CallSign, ESearchCase::IgnoreCase); });
+	};
+	const int32 Saved = Find(RadioStationCallSign);
+	if (Saved != INDEX_NONE) return Saved;
+	if (RadioStationCallSign.IsEmpty() && Stations.IsValidIndex(RadioStation)) return RadioStation;
+	// Requested remake default. Original FUN_00430890 used KMIX for an absent preference.
+	const int32 Artist = Find(TEXT("KINV"));
+	if (Artist != INDEX_NONE) return Artist;
+	const int32 Mix = Find(TEXT("KMIX"));
+	return Mix != INDEX_NONE ? Mix : Stations.IsEmpty() ? INDEX_NONE : 0;
+}
+
+bool USimCopterSettings::RememberRadioStation(int32 Index, const FString& CallSign)
+{
+	if (RadioStation == Index && RadioStationCallSign == CallSign) return false;
+	RadioStation = Index;
+	RadioStationCallSign = CallSign;
+	return true;
 }
 
 void USimCopterSettings::SetDjEnabled(const bool bEnabled)

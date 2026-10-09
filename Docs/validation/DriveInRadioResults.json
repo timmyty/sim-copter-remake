@@ -1,0 +1,389 @@
+{
+  "date": "2026-10-09",
+  "editor_build": "Succeeded",
+  "shipping_build": "Succeeded",
+  "headless": {
+    "succeeded": 309,
+    "succeededWithWarnings": 9,
+    "failed": 2,
+    "notRun": 0
+  },
+  "known_failures": [
+    "SimCopter.Formats.SimCity2000.ReferenceCity",
+    "SimCopter.UI.FlapLayout"
+  ],
+  "offscreen_playback": {
+    "succeeded": 0,
+    "succeededWithWarnings": 1,
+    "failed": 0,
+    "notRun": 0
+  },
+  "maps": [
+    {
+      "file": "arcocity.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        35,
+        93
+      ]
+    },
+    {
+      "file": "cancer.sc2",
+      "theaters": 3,
+      "last_theater_origin": [
+        101,
+        82
+      ]
+    },
+    {
+      "file": "CAPE WELLS.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        82,
+        50
+      ]
+    },
+    {
+      "file": "career/city0.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        71,
+        98
+      ]
+    },
+    {
+      "file": "career/city1.sc2",
+      "theaters": 2,
+      "last_theater_origin": [
+        55,
+        83
+      ]
+    },
+    {
+      "file": "career/city10.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        54,
+        5
+      ]
+    },
+    {
+      "file": "career/city11.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        62,
+        116
+      ]
+    },
+    {
+      "file": "career/city12.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        45,
+        34
+      ]
+    },
+    {
+      "file": "career/city13.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        4,
+        66
+      ]
+    },
+    {
+      "file": "career/city14.sc2",
+      "theaters": 2,
+      "last_theater_origin": [
+        106,
+        81
+      ]
+    },
+    {
+      "file": "career/city15.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        83,
+        66
+      ]
+    },
+    {
+      "file": "career/city16.sc2",
+      "theaters": 4,
+      "last_theater_origin": [
+        124,
+        99
+      ]
+    },
+    {
+      "file": "career/city17.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        2,
+        45
+      ]
+    },
+    {
+      "file": "career/city18.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        114,
+        73
+      ]
+    },
+    {
+      "file": "career/city19.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        69,
+        45
+      ]
+    },
+    {
+      "file": "career/city2.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        72,
+        54
+      ]
+    },
+    {
+      "file": "career/city20.sc2",
+      "theaters": 2,
+      "last_theater_origin": [
+        97,
+        65
+      ]
+    },
+    {
+      "file": "career/city21.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        38,
+        80
+      ]
+    },
+    {
+      "file": "career/city22.sc2",
+      "theaters": 3,
+      "last_theater_origin": [
+        43,
+        101
+      ]
+    },
+    {
+      "file": "career/city23.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        84,
+        59
+      ]
+    },
+    {
+      "file": "career/city24.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        116,
+        60
+      ]
+    },
+    {
+      "file": "career/city25.sc2",
+      "theaters": 2,
+      "last_theater_origin": [
+        77,
+        87
+      ]
+    },
+    {
+      "file": "career/city26.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        70,
+        94
+      ]
+    },
+    {
+      "file": "career/city27.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        46,
+        49
+      ]
+    },
+    {
+      "file": "career/city28.sc2",
+      "theaters": 3,
+      "last_theater_origin": [
+        54,
+        120
+      ]
+    },
+    {
+      "file": "career/city29.sc2",
+      "theaters": 8,
+      "last_theater_origin": [
+        99,
+        109
+      ]
+    },
+    {
+      "file": "career/city3.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        22,
+        57
+      ]
+    },
+    {
+      "file": "career/city4.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        26,
+        85
+      ]
+    },
+    {
+      "file": "career/city5.sc2",
+      "theaters": 2,
+      "last_theater_origin": [
+        33,
+        94
+      ]
+    },
+    {
+      "file": "career/city6.sc2",
+      "theaters": 3,
+      "last_theater_origin": [
+        17,
+        106
+      ]
+    },
+    {
+      "file": "career/city7.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        27,
+        24
+      ]
+    },
+    {
+      "file": "career/city8.sc2",
+      "theaters": 5,
+      "last_theater_origin": [
+        87,
+        85
+      ]
+    },
+    {
+      "file": "career/city9.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        10,
+        124
+      ]
+    },
+    {
+      "file": "EGYPT FALLS.SC2",
+      "theaters": 1,
+      "last_theater_origin": [
+        66,
+        34
+      ]
+    },
+    {
+      "file": "glorioso.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        56,
+        84
+      ]
+    },
+    {
+      "file": "happylnd.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        67,
+        58
+      ]
+    },
+    {
+      "file": "hawaii.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        62,
+        86
+      ]
+    },
+    {
+      "file": "KATHY'S RETREAT.SC2",
+      "theaters": 1,
+      "last_theater_origin": [
+        31,
+        31
+      ]
+    },
+    {
+      "file": "la-isla.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        62,
+        96
+      ]
+    },
+    {
+      "file": "lakeland.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        59,
+        66
+      ]
+    },
+    {
+      "file": "rio.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        65,
+        39
+      ]
+    },
+    {
+      "file": "stchrisc.sc2",
+      "theaters": 3,
+      "last_theater_origin": [
+        67,
+        77
+      ]
+    },
+    {
+      "file": "THE BAHAMAS.SC2",
+      "theaters": 1,
+      "last_theater_origin": [
+        14,
+        102
+      ]
+    },
+    {
+      "file": "TOKYO.SC2",
+      "theaters": 1,
+      "last_theater_origin": [
+        17,
+        49
+      ]
+    },
+    {
+      "file": "volcano.sc2",
+      "theaters": 1,
+      "last_theater_origin": [
+        37,
+        44
+      ]
+    }
+  ],
+  "source_publication_match": true,
+  "shipping_sha256": "4f40b175fa2d98aaa48053082652aaa9d1973722ee8d38fa171010ad14f8e1ce",
+  "limitations": [
+    "No foreground gameplay or listening check.",
+    "Custom maps without a safe site are preserved rather than forcibly rebuilt."
+  ]
+}

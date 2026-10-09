@@ -13,6 +13,41 @@
 #include "Misc/FileHelper.h"
 #include "Misc/ConfigCacheIni.h"
 #include "HAL/FileManager.h"
+#include "Engine/GameInstance.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterRadioPreferenceTest,
+	"SimCopter.Radio.StationPreference", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterRadioPreferenceTest::RunTest(const FString&)
+{
+	TArray<FSimCopterRadioStation> Stations;
+	for (const TCHAR* Name : {TEXT("KJAZ"), TEXT("KMIX"), TEXT("KINV")}) Stations.AddDefaulted_GetRef().CallSign = Name;
+	USimCopterSettings* Store = NewObject<USimCopterSettings>(NewObject<UGameInstance>());
+	Store->RadioStation = INDEX_NONE; Store->RadioStationCallSign.Reset();
+	TestEqual(TEXT("Fresh preference defaults to KINV"), Store->ResolveRadioStation(Stations), 2);
+	Store->SetRadioStation(1);
+	TestEqual(TEXT("Legacy saved index is respected"), Store->ResolveRadioStation(Stations), 1);
+	Store->RememberRadioStation(1, TEXT("KMIX"));
+	Store->SetRadioVolume(3500);
+	const FString TestIni = FConfigCacheIni::NormalizeConfigIniPath(FPaths::ProjectSavedDir() / TEXT("Automation/RadioStationPreference.ini"));
+	Store->SaveConfig(CPF_Config, *TestIni);
+	GConfig->UnloadFile(TestIni);
+	USimCopterSettings* Reload = NewObject<USimCopterSettings>(NewObject<UGameInstance>());
+	Reload->LoadConfig(USimCopterSettings::StaticClass(), *TestIni);
+	TestEqual(TEXT("Last selected station survives disk reload"), Reload->ResolveRadioStation(Stations), 1);
+	TestEqual(TEXT("Volume survives alongside station"), Reload->GetRadioVolume(), 3500);
+	Stations.Swap(0, 1);
+	TestEqual(TEXT("Call sign survives reordered station list"), Reload->ResolveRadioStation(Stations), 0);
+	Reload->SetRadioStation(2);
+	TestEqual(TEXT("Settings tuner replaces previous call sign"), Reload->ResolveRadioStation(Stations), 2);
+	Reload->RememberRadioStation(8, TEXT("REMOVED"));
+	TestEqual(TEXT("Missing station falls back to KINV"), Reload->ResolveRadioStation(Stations), 2);
+	Stations.Pop();
+	TestEqual(TEXT("Missing KINV falls back to KMIX"), Reload->ResolveRadioStation(Stations), 0);
+	Stations.Reset();
+	TestEqual(TEXT("Empty station list is safe"), Reload->ResolveRadioStation(Stations), INDEX_NONE);
+	GConfig->UnloadFile(TestIni); IFileManager::Get().Delete(*TestIni);
+	return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterRadioSequentialTest,
 	"SimCopter.Radio.SequentialResume", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)

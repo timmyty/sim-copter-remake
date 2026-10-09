@@ -202,6 +202,7 @@ struct SIMCOPTERREMAKE_API FSimCopterMapFrame
 	int32 CurrentMission = INDEX_NONE;
 
 	TArray<FSimCopterMapServiceBlip> ServiceBlips;
+	TArray<FIntPoint> DriveInTiles;
 };
 
 // The two toggles and the zoom, which outlive a frame. The original keeps them in globals

@@ -3440,9 +3440,11 @@ bool ASimCopterTrafficSystemActor::RebuildSpawnData()
 
 	// FUN_0047c0c0/FUN_004829f0 build the airport into the city before any cell is made, so the
 	// grid this actor caches has to see the stamped block - twelve bare pads and a terminal -
-	// rather than the SimCity 2000 airport the file was saved with. No corner grid here: this
-	// actor takes its heights from ALTM, which FUN_004829f0 never touches.
-	AirportOriginTile = SimCopterAirport::BuildAirportIntoCity(City, nullptr);
+	// rather than the SimCity 2000 airport the file was saved with. Ground-agent heights still
+	// come from ALTM, which FUN_004829f0 never touches.
+	// Use the renderer's preparation too: the added drive-in is occupied ground for people,
+	// traffic and missions, and must be at exactly the same deterministic site.
+	ASimCity2000CityActor::PrepareCityForGameplay(City, &AirportOriginTile);
 
 	const float HalfMapSize = FSimCity2000City::MapSize * ActiveTileSize * 0.5f;
 

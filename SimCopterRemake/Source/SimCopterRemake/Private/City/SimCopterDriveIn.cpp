@@ -46,6 +46,16 @@ FVector2D SimCopterDriveIn::FitVideo(float VideoAspect, float ScreenAspect)
 	return VideoAspect > ScreenAspect ? FVector2D(1, ScreenAspect / VideoAspect) : FVector2D(VideoAspect / ScreenAspect, 1);
 }
 
+void ASimCity2000CityActor::GetDriveInTiles(TArray<FIntPoint>& OutTiles) const
+{
+	OutTiles.Reset();
+	for (const auto& Building : Buildings)
+	{
+		if (!Building.bDemolished && Building.XbldId == 182)
+			OutTiles.Add(Building.OriginTile + FIntPoint(1, 1));
+	}
+}
+
 void ASimCity2000CityActor::GetDriveInSurfaces(TArray<FSimCopterDriveInSurface>& OutSurfaces) const
 {
 	// SCHOOK: MovieTexture 0x0049ab10 / 0x0049ad10. CO182 object 7 samples SIM3D
@@ -110,7 +120,7 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 		City->GetDriveInSurfaces(NewSurfaces);
 		for (int32 Index = Before; Index < NewSurfaces.Num(); ++Index) NewCities.Add(*City);
 	}
-	if (NewSurfaces.IsEmpty()) return TEXT("This city has no standing drive-in theater. Try Cape Wells.");
+	if (NewSurfaces.IsEmpty()) return TEXT("This city has no standing drive-in theater available.");
 	StopVideo();
 	Surfaces = MoveTemp(NewSurfaces); Cities = MoveTemp(NewCities);
 	if (!Player)

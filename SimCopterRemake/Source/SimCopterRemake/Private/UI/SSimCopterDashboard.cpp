@@ -612,8 +612,7 @@ public:
 			RadioPtr->SetStationIndex(Station);
 			if (USimCopterSettings* SettingsPtr = Settings.Get())
 			{
-				// Changing channels returns the set to full volume and persists both values. The
-				// subsystem does the same runtime reset inside SetStationIndex.
+				// Keep the settings page in sync; tuning preserves the current volume.
 				SettingsPtr->SetRadioStation(Station);
 				SettingsPtr->Save();
 			}
