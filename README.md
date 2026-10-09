@@ -24,6 +24,12 @@ Use Git LFS when cloning: custom music, prepared MP4 videos, textures, Unreal as
 included through LFS. Supply your original game data and the required Unreal/NVIDIA build
 dependencies locally. This source publication is not a new prebuilt Windows release.
 
+## Launching a Windows build
+
+1. Extract the entire packaged build, open its `Windows` folder, and double-click **`SimCopterRemake.exe`**.
+2. Keep `Engine`, `SimCopter`, `SimCopterRemake`, and `DriveInVideos` beside the launcher.
+3. Choose **New Career Game** or **New User Game**, then select a city to begin.
+
 ## Original upstream project overview
 
 The following describes the upstream remake's foundation. Its fidelity goals describe
