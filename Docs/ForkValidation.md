@@ -1,5 +1,18 @@
 # Fork validation
 
+## Whole-city intro tours - October 9, 2026
+
+Each loaded city now gets a continuous 24-second whole-map orbit, following the
+composition of the original career previews. Two visible airliners move on a
+presentation clock while gameplay timers and saved fleet state remain protected.
+Editor and Shipping builds succeeded. All 105 selected tests passed with the
+offscreen D3D12 renderer (100 clean, five with synthetic-fixture warning groups).
+Eight fixed-daylight views of Sea Cliff and Metropolis were inspected; isolated
+aircraft normal-buffer captures confirm movement. The original accident tests
+and gameplay regression checks also passed. No manual gameplay or final HUD/sky
+inspection was performed. See [feature details](CityIntrosAndAccidents.md) and
+[machine-readable results](validation/CityTourRevisionResults.json).
+
 ## Localized drive-in audio v1.0.5 - October 9, 2026
 
 Every theater now receives the shared movie soundtrack through its own positional

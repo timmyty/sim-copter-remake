@@ -810,6 +810,7 @@ private:
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterCityIntroTest;
+	friend class FSimCopterCityTourRenderTest;
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;

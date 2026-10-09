@@ -190,6 +190,13 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
+	// Cinematic aircraft use the original PLANE1 geometry and a separate presentation
+	// clock. They never advance crash missions, respawn timers or the saved fleet.
+	void BeginCityTour(const FBox& Bounds);
+	void UpdateCityTour(float ElapsedSeconds);
+	void EndCityTour();
+	static FTransform EvaluateCityTourPlane(const FBox& Bounds, float Seconds, int32 Index);
+
 	// --- ISimCopterMissionWorld hooks, forwarded by ASimCopterMissionSystemActor ---
 
 	// FUN_004b3aa0: mark the idle PLANE1 as crashing. Fails when it is already going down.
@@ -273,6 +280,12 @@ public:
 	float WreckBurnTimeoutSeconds = 180.0f;
 
 private:
+	friend class FSimCopterCityIntroTest;
+	friend class FSimCopterCityTourRenderTest;
+	UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> CityTourPlanes;
+	FBox CityTourBounds = FBox(ForceInit);
+	bool bCityTourActive = false;
+	bool CityTourPreviousVisibility[SimCopterAmbientVehicles::PlaneSlots] = {};
 	// Crash debris and boat wakes go through the same typed effect pools the fire/water FX use.
 	UPROPERTY(VisibleAnywhere, Category = "SimCopter|Ambient Vehicles")
 	TObjectPtr<USimCopterParticleFXComponent> EffectComponent;

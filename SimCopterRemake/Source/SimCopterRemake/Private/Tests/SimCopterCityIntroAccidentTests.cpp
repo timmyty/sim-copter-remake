@@ -2,18 +2,32 @@
 #include "Misc/AutomationTest.h"
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Camera/CameraActor.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/SceneComponent.h"
 #include "City/SimCity2000CityActor.h"
+#include "City/SimCopterDayNight.h"
 #include "Game/SimCopterCityIntro.h"
 #include "Game/SimCopterGameMode.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Ground/SimCopterAmbientVehicles.h"
+#include "ProceduralMeshComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Formats/SimCopterOriginalGamePaths.h"
+#include "ImageUtils.h"
+#include "HAL/FileManager.h"
+#include "Misc/Paths.h"
+#include "RenderingThread.h"
+#include "ShaderCompiler.h"
+#include "AssetCompilingManager.h"
 #include "Missions/SimCopterMissionSystemActor.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterCarAccidentTest,"SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
@@ -122,23 +136,50 @@ bool FSimCopterCityIntroTest::RunTest(const FString& Parameters)
 	Traffic->SourceCityActor=City; Traffic->TileCenterWorldZ.Init(0,128*128);
 	Traffic->XbldTileIds.Init(0,128*128); Traffic->ActiveTileSize=400;
 	Traffic->AirportOriginTile=FIntPoint(10,10);
-	const auto Land=USimCopterCityIntro::BuildShots(*Traffic);
-	TestTrue(TEXT("Imported empty land city still gets an overview and tour"),Land.Num()>=3);
-	TestEqual(TEXT("Tour ends at airport"),Land.Last().Caption,FString(TEXT("Your home base")));
-	for (const auto& Shot:Land)
+	auto Route=USimCopterCityIntro::BuildRoute(*Traffic);
+	TestTrue(TEXT("Complete 128-tile map edges included"),Route.Bounds.GetSize().Equals(FVector(51200,51200,0),0.1));
+	// Tall/translated maps and narrow/ultrawide windows must keep all eight corners
+	// visible throughout the orbit, not just at its cardinal points.
+	for (const float Height : {0.0f,18000.0f})
+	for (const float Aspect : {0.5625f,1.0f,4.0f/3,16.0f/9,32.0f/9})
 	{
-		const FTransform A=Shot.Evaluate(0),B=Shot.Evaluate(1);
-		TestFalse(TEXT("Every shot moves"),A.GetLocation().Equals(B.GetLocation()));
-		TestTrue(TEXT("Camera stays above city"),A.GetLocation().Z>Shot.Focus.Z);
-		TestTrue(TEXT("Camera faces landmark"),FVector::DotProduct(A.GetRotation().GetForwardVector(),(Shot.Focus-A.GetLocation()).GetSafeNormal())>0.999);
-		TestFalse(TEXT("Camera transform is finite"),Shot.Evaluate(0.5f).ContainsNaN());
+		Route.Bounds.Min=FVector(-12000,23000,800);
+		Route.Bounds.Max=Route.Bounds.Min+FVector(51200,51200,Height);
+		Route.Fit(Aspect);
+		const float TanX=FMath::Tan(FMath::DegreesToRadians(Route.FieldOfView*0.5f)), TanY=TanX/Aspect;
+		for (int32 Frame=0;Frame<=240;++Frame)
+		{
+			const FTransform Camera=Route.Evaluate(Frame/240.0f);
+			for (int32 Corner=0;Corner<8;++Corner)
+			{
+				const FVector Point=Route.Bounds.GetCenter()+Route.Bounds.GetExtent()*FVector(Corner&1?1:-1,Corner&2?1:-1,Corner&4?1:-1);
+				const FVector Local=Camera.InverseTransformPosition(Point);
+				if (Local.X<=0 || FMath::Abs(Local.Y/Local.X)>TanX*0.92 || FMath::Abs(Local.Z/Local.X)>TanY*0.80)
+				{ AddError(TEXT("City corner leaves the unobscured frame during its orbit")); return false; }
+			}
+			TestTrue(TEXT("Camera clears the highest roof"),Camera.GetLocation().Z>Route.Bounds.Max.Z);
+		}
 	}
-	Traffic->XbldTileIds[64*128+64]=0xd1;
-	const auto Service=USimCopterCityIntro::BuildShots(*Traffic);
-	TestTrue(TEXT("Land city selects its emergency services"),Service.ContainsByPredicate([](const auto& S){return S.Caption==TEXT("Emergency services");}));
-	for (int32 Y=0;Y<128;++Y) for(int32 X=0;X<40;++X) City->WaterGameplayTerrainClasses[Y*128+X]=0;
-	const auto Coastal=USimCopterCityIntro::BuildShots(*Traffic);
-	TestTrue(TEXT("Coastal city showcases its waterfront"),Coastal.ContainsByPredicate([](const auto& S){return S.Caption==TEXT("Waterfront");}));
+	TestTrue(TEXT("One seamless full revolution"),Route.Evaluate(0).Equals(Route.Evaluate(1),0.01));
+	TestFalse(TEXT("The midpoint shows the other side of the map"),Route.Evaluate(0).GetLocation().Equals(Route.Evaluate(0.5f).GetLocation()));
+	auto* Ambient=World->SpawnActor<ASimCopterAmbientVehiclesActor>();
+	Ambient->EnsurePools();
+	TArray<uint8> Before,After;
+	TestTrue(TEXT("Ambient fleet baseline captured"),Ambient->CaptureRuntimeSaveState(Before));
+	const int32 MeshesBefore=Ambient->OwnedMeshes.Num();
+	Ambient->BeginCityTour(Route.Bounds);
+	TestEqual(TEXT("Two original airliners are visible during the whole-map tour"),Ambient->CityTourPlanes.Num(),2);
+	if (Ambient->CityTourPlanes.Num()!=2) return false;
+	const FVector PlaneStart=Ambient->CityTourPlanes[0]->GetComponentLocation();
+	Ambient->UpdateCityTour(2);
+	TestTrue(TEXT("Aircraft visibly move while gameplay is held"),FVector::Distance(PlaneStart,Ambient->CityTourPlanes[0]->GetComponentLocation())>100);
+	TestEqual(TEXT("Tour aircraft cannot collide with gameplay"),Ambient->CityTourPlanes[0]->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
+	Ambient->CaptureRuntimeSaveState(After);
+	TestTrue(TEXT("Tour cannot advance or overwrite saved ambient fleet state"),Before==After);
+	Ambient->EndCityTour(); Ambient->EndCityTour();
+	TestEqual(TEXT("Tour removes its temporary meshes exactly once"),Ambient->OwnedMeshes.Num(),MeshesBefore);
+	Ambient->CaptureRuntimeSaveState(After);
+	TestTrue(TEXT("Fleet save is identical after the intro"),Before==After);
 	auto* Mode=World->SpawnActor<ASimCopterGameMode>();
 	auto* Tour=Mode->FindComponentByClass<USimCopterCityIntro>();
 	TestNotNull(TEXT("Every city game mode owns an intro"),Tour);
@@ -151,6 +192,7 @@ bool FSimCopterCityIntroTest::RunTest(const FString& Parameters)
 	Tour->Controller=PC; Tour->Camera=World->SpawnActor<ACameraActor>();
 	PC->SetViewTarget(Tour->Camera); PC->SetIgnoreMoveInput(true); PC->SetIgnoreLookInput(true);
 	PC->bShouldPerformFullTickWhenPaused=true;
+	PC->PushPause(); PC->PushPause();
 	Tour->bPlaying=true; Tour->Elapsed=0.1f; Tour->RequestSkip();
 	TestFalse(TEXT("Loading key cannot immediately skip tour"),Tour->bSkipRequested);
 	Tour->Elapsed=1; Tour->RequestSkip();
@@ -160,8 +202,145 @@ bool FSimCopterCityIntroTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Camera returns to actual possessed pawn"),PC->GetViewTarget()==Pilot);
 	TestFalse(TEXT("Move and look input released"),PC->IsMoveInputIgnored() || PC->IsLookInputIgnored());
 	TestFalse(TEXT("Normal paused camera policy restored"),PC->bShouldPerformFullTickWhenPaused);
+	TestEqual(TEXT("Intro releases only its own pause"),PC->PauseDepth,1);
+	PC->PopPause();
 	Tour->Finish();
 	TestFalse(TEXT("Repeated cleanup is harmless"),PC->IsMoveInputIgnored());
+	return true;
+}
+
+// Render on separate engine frames so material uniforms, visibility and exposure
+// history can reach the GPU. Multiple synchronous captures in one frame reuse state.
+class FSimCopterTourCaptureCommand : public IAutomationLatentCommand
+{
+public:
+	FAutomationTestBase* Test;
+	UGameInstance* Instance;
+	UWorld* World;
+	ASimCity2000CityActor* City;
+	ASimCopterAmbientVehiclesActor* Ambient;
+	USceneCaptureComponent2D* Capture;
+	UTextureRenderTarget2D* Target;
+	TArray<UPrimitiveComponent*> Aircraft;
+	FSimCopterCityIntroRoute Route;
+	FString Evidence;
+	int32 CityIndex, Stage=0;
+	double NextFrame=0;
+	TArray<FColor> Overview,Before;
+	virtual bool Update() override
+	{
+		const double Now=FPlatformTime::Seconds();
+		if (Now<NextFrame) return false;
+		NextFrame=Now+0.15;
+		switch (Stage++)
+		{
+		case 0: Read(0,0,TEXT("warmup")); break;
+		case 1:
+			Overview=Read(0,0,TEXT("start"));
+			// Isolate the two meshes and read their visible normals. Motion must not
+			// depend on water, emissive city lights or the aircraft paint's brightness.
+			Capture->PrimitiveRenderMode=ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+			for (auto* Mesh:Aircraft) Capture->ShowOnlyComponent(Mesh);
+			Capture->CaptureSource=SCS_Normal;
+			break;
+		case 2: Read(0,0,TEXT("aircraft-warmup")); break;
+		case 3: Before=Read(0,0,TEXT("aircraft-before")); break;
+		case 4:
+		{
+			const auto Moved=Read(4,0,TEXT("aircraft-after"));
+			int32 Changed=0,Lit=0;
+			for (int32 Pixel=0;Pixel<Before.Num();++Pixel)
+			{
+				const auto A=Before[Pixel],B=Moved[Pixel],O=Overview[Pixel];
+				if (FMath::Max3(O.R,O.G,O.B)>20) ++Lit;
+				if (FMath::Abs(int(A.R)-int(B.R))+FMath::Abs(int(A.G)-int(B.G))+FMath::Abs(int(A.B)-int(B.B))>30) ++Changed;
+			}
+			Test->TestTrue(TEXT("Full city renders visible scenery"),Lit>Before.Num()/10);
+			Test->TestTrue(TEXT("Moving aircraft change actual scene pixels with a stationary camera"),Changed>10);
+			Test->AddInfo(FString::Printf(TEXT("City %d: %d lit pixels; %d pixels changed by aircraft"),CityIndex,Lit,Changed));
+			Capture->ShowOnlyComponents.Reset();
+			Capture->PrimitiveRenderMode=ESceneCapturePrimitiveRenderMode::PRM_RenderScenePrimitives;
+			Capture->CaptureSource=SCS_FinalColorLDR;
+			break;
+		}
+		case 5: Read(6,6,TEXT("quarter")); break;
+		case 6: Read(12,12,TEXT("half")); break;
+		case 7: Read(18,18,TEXT("three-quarter")); break;
+		default:
+			Ambient->EndCityTour(); Capture->DestroyComponent();
+			Instance->Shutdown(); GEngine->DestroyWorldContext(World); World->DestroyWorld(false);
+			return true;
+		}
+		return false;
+	}
+private:
+	TArray<FColor> Read(float Time,float CameraTime,const TCHAR* Label)
+	{
+		Ambient->UpdateCityTour(Time); Capture->SetWorldTransform(Route.Evaluate(CameraTime/Route.Duration));
+		World->SendAllEndOfFrameUpdates(); Capture->CaptureScene(); FlushRenderingCommands();
+		TArray<FColor> Pixels; Target->GameThread_GetRenderTargetResource()->ReadPixels(Pixels);
+		for (auto& Pixel:Pixels) Pixel.A=255;
+		FImageUtils::SaveImageByExtension(*(Evidence/FString::Printf(TEXT("city%d-%s.png"),CityIndex,Label)),FImageView(Pixels.GetData(),1280,720));
+		return Pixels;
+	}
+};
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterCityTourRenderTest,"SimCopter.CityIntro.FullMapRendering",
+	EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter|EAutomationTestFlags::NonNullRHI)
+bool FSimCopterCityTourRenderTest::RunTest(const FString&)
+{
+	const FString Evidence=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/city-tour-revision");
+	IFileManager::Get().MakeDirectory(*Evidence,true);
+	for (const int32 CityIndex : {0,29})
+	{
+		auto* Instance=NewObject<UGameInstance>(GEngine);
+		Instance->InitializeStandalone();
+		auto* World=Instance->GetWorld(); World->InitializeActorsForPlay(FURL());
+		auto* City=World->SpawnActorDeferred<ASimCity2000CityActor>(ASimCity2000CityActor::StaticClass(),FTransform::Identity);
+		City->bLoadOnConstruction=false; City->bLoadOnBeginPlay=false;
+		City->bRenderStreetLightSpotLights=false;
+		City->CityFile.FilePath=SimCopterOriginalGame::ResolveRoot()/FString::Printf(TEXT("cities/career/city%d.sc2"),CityIndex);
+		City->FinishSpawning(FTransform::Identity); City->RebuildCity();
+		auto* Sun=NewObject<UDirectionalLightComponent>(City);
+		Sun->SetIntensity(120000); Sun->SetWorldRotation(FRotator(-55,-25,0)); Sun->RegisterComponent();
+		auto* Traffic=World->SpawnActor<ASimCopterTrafficSystemActor>(); Traffic->SourceCityActor=City;
+		if (!TestTrue(TEXT("Actual city routing loads"),Traffic->RebuildSpawnData())) return false;
+		auto Route=USimCopterCityIntro::BuildRoute(*Traffic); Route.Fit(16.0f/9);
+		AddInfo(FString::Printf(TEXT("City %d bounds %s, orbit distance %.1f"),CityIndex,*Route.Bounds.ToString(),Route.Distance));
+		auto* Ambient=World->SpawnActor<ASimCopterAmbientVehiclesActor>(); Ambient->BeginCityTour(Route.Bounds);
+		if (!TestEqual(TEXT("Original airliner geometry loads"),Ambient->CityTourPlanes.Num(),2)) return false;
+		auto* Capture=NewObject<USceneCaptureComponent2D>(City);
+		Capture->bCaptureEveryFrame=false; Capture->bCaptureOnMovement=false; Capture->bAlwaysPersistRenderingState=true;
+		Capture->CaptureSource=SCS_FinalColorLDR; Capture->FOVAngle=Route.FieldOfView;
+		Capture->PostProcessSettings.bOverride_AutoExposureMethod=true;
+		Capture->PostProcessSettings.AutoExposureMethod=AEM_Manual;
+		Capture->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure=true;
+		Capture->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure=true;
+		Capture->PostProcessSettings.bOverride_CameraISO=true; Capture->PostProcessSettings.CameraISO=100;
+		Capture->PostProcessSettings.bOverride_CameraShutterSpeed=true; Capture->PostProcessSettings.CameraShutterSpeed=125;
+		Capture->PostProcessSettings.bOverride_DepthOfFieldFstop=true; Capture->PostProcessSettings.DepthOfFieldFstop=8;
+		Capture->PostProcessSettings.bOverride_AutoExposureBias=true; Capture->PostProcessSettings.AutoExposureBias=0;
+		Capture->UnlitViewmode=ESceneCaptureUnlitViewmode::Disabled;
+		Capture->ShowFlags.SetBloom(false);
+		Capture->ShowFlags.SetTemporalAA(false); Capture->ShowFlags.SetMotionBlur(false);
+		auto* Target=NewObject<UTextureRenderTarget2D>(City);
+		Target->RenderTargetFormat=RTF_RGBA8; Target->InitAutoFormat(1280,720); Target->UpdateResourceImmediate(true);
+		Capture->TextureTarget=Target; Capture->RegisterComponent();
+		// This synthetic world has not ticked. Publish the normal city/vehicle
+		// albedo ceilings before capturing; uninitialized collection values are black.
+		World->GetSubsystem<USimCopterDayNightSubsystem>()->Tick(0);
+		World->UpdateParameterCollectionInstances(true,true);
+		FAssetCompilingManager::Get().FinishAllCompilation();
+		if (GShaderCompilingManager) GShaderCompilingManager->FinishAllCompilation();
+		for (const auto& Mesh:Ambient->CityTourPlanes)
+			AddInfo(FString::Printf(TEXT("Aircraft bounds %s, visible %d"),*Mesh->Bounds.GetBox().ToString(),Mesh->IsVisible()));
+		auto Command=MakeShared<FSimCopterTourCaptureCommand>();
+		Command->Test=this; Command->Instance=Instance; Command->World=World; Command->City=City;
+		Command->Ambient=Ambient; Command->Capture=Capture; Command->Target=Target;
+		for (const auto& Mesh:Ambient->CityTourPlanes) Command->Aircraft.Add(Mesh);
+		Command->Route=Route; Command->Evidence=Evidence; Command->CityIndex=CityIndex;
+		FAutomationTestFramework::Get().EnqueueLatentCommand(Command);
+	}
 	return true;
 }
 #endif

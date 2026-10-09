@@ -10,11 +10,35 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Ground/SimCopterAmbientVehicles.h"
 #include "Missions/SimCopterMissionSystemActor.h"
 #include "Misc/App.h"
 #include "Rendering/DrawElements.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/SLeafWidget.h"
+#include "SceneView.h"
+#include "SceneViewExtension.h"
+
+// Keep shader-driven water/clouds moving without consuming mission time during
+// the showcase. This changes rendering time only, in this world only.
+class FSimCopterTourViewExtension final : public FSceneViewExtensionBase
+{
+public:
+	FSimCopterTourViewExtension(const FAutoRegister& Register, UWorld* InWorld)
+		: FSceneViewExtensionBase(Register), World(InWorld), StartTime(InWorld->GetTimeSeconds()) {}
+	float Elapsed = 0, Delta = 0;
+	bool bEnabled = true;
+	virtual void SetupViewFamily(FSceneViewFamily& Family) override
+	{
+		if (!bEnabled || !World.IsValid() || !Family.Scene || Family.Scene->GetWorld() != World.Get()) return;
+		Family.Time = FGameTime::CreateDilated(Family.Time.GetRealTimeSeconds(),
+			Family.Time.GetDeltaRealTimeSeconds(), StartTime + Elapsed, Delta);
+		Family.bWorldIsPaused = Delta <= 0;
+	}
+private:
+	TWeakObjectPtr<UWorld> World;
+	double StartTime;
+};
 
 namespace
 {
@@ -24,7 +48,7 @@ public:
 	SLATE_BEGIN_ARGS(SSimCopterCityTour) {}
 		SLATE_EVENT(FSimpleDelegate, OnSkip)
 	SLATE_END_ARGS()
-	FString CityName, Caption;
+	FString CityName;
 	float Fade = 1;
 	void Construct(const FArguments& Args) { OnSkip = Args._OnSkip; ForceVolatile(true); }
 	virtual FVector2D ComputeDesiredSize(float) const override { return FVector2D(640, 480); }
@@ -43,17 +67,16 @@ public:
 		const FVector2D Size = G.GetLocalSize();
 		const float Scale = FMath::Min(Size.X / 1280.0, Size.Y / 720.0);
 		const FSlateBrush* White = FCoreStyle::Get().GetBrush("WhiteBrush");
-		for (float Y : {0.0f, float(Size.Y - 92 * Scale)})
-			FSlateDrawElement::MakeBox(E, L, G.ToPaintGeometry(FVector2D(Size.X,92*Scale),
+		for (float Y : {0.0f, float(Size.Y - 48 * Scale)})
+			FSlateDrawElement::MakeBox(E, L, G.ToPaintGeometry(FVector2D(Size.X,48*Scale),
 				FSlateLayoutTransform(FVector2D(0,Y))), White, ESlateDrawEffect::None, FLinearColor::Black);
 		auto Text = [&](const FString& Value, float Y, int32 FontSize)
 		{
 			FSlateDrawElement::MakeText(E,L+1,G.ToPaintGeometry(Size,FSlateLayoutTransform(Scale,FVector2D(36*Scale,Y))),
 				Value,FCoreStyle::GetDefaultFontStyle("Regular",FontSize),ESlateDrawEffect::None,FLinearColor::White);
 		};
-		Text(CityName, 24*Scale, 26);
-		Text(Caption, Size.Y-76*Scale, 20);
-		Text(TEXT("Press any key or controller button to skip"), Size.Y-38*Scale, 13);
+		Text(CityName, 10*Scale, 23);
+		Text(TEXT("Press any key or controller button to skip"), Size.Y-32*Scale, 14);
 		FSlateDrawElement::MakeBox(E,L+2,G.ToPaintGeometry(),White,ESlateDrawEffect::None,FLinearColor(0,0,0,Fade));
 		return L+2;
 	}
@@ -68,67 +91,56 @@ void SetTourHud(UWorld* World, bool bHide)
 }
 }
 
-FTransform FSimCopterCityIntroShot::Evaluate(float Alpha) const
+FTransform FSimCopterCityIntroRoute::Evaluate(float Alpha) const
 {
-	const float T = FMath::Clamp(Alpha,0.0f,1.0f);
-	const float Angle = FMath::DegreesToRadians(-35.0f + 40.0f * T);
-	const FVector Position = Focus + FVector(FMath::Cos(Angle)*Radius,FMath::Sin(Angle)*Radius,CameraZ-Focus.Z);
-	return FTransform((Focus-Position).Rotation(), Position);
+	// SCHOOK: CityRide 0x0044ce50 plays a city-specific Smacker movie (open: 0x00448400).
+	// CITY*_S career previews establish the whole-map circular composition; this
+	// slower live route recreates that view for any city, rather than landmark cuts.
+	const FRotator Rotation(-Elevation, -45 + 360 * FMath::Clamp(Alpha,0.0f,1.0f), 0);
+	return FTransform(Rotation, Bounds.GetCenter() - Rotation.Vector() * Distance);
 }
 
-TArray<FSimCopterCityIntroShot> USimCopterCityIntro::BuildShots(const ASimCopterTrafficSystemActor& Traffic)
+void FSimCopterCityIntroRoute::Fit(float AspectRatio)
 {
-	TArray<FSimCopterCityIntroShot> Result;
+	Distance = 0;
+	if (!Bounds.IsValid) return;
+	const float TanX = FMath::Tan(FMath::DegreesToRadians(FieldOfView * 0.5f)) * 0.90f;
+	const float TanY = TanX / FMath::Clamp(AspectRatio,0.35f,4.0f) * 0.84f;
+	// A single distance for every bearing prevents zoom pumping at the diagonals.
+	// Sample densely and retain a 10% margin, also covering between-sample extrema.
+	for (int32 Bearing=0; Bearing<360; Bearing+=2)
+	{
+		const FRotationMatrix Axes(FRotator(-Elevation,float(Bearing),0));
+		for (int32 Corner=0;Corner<8;++Corner)
+		{
+			const FVector Offset = Bounds.GetExtent() * FVector(Corner&1 ? 1 : -1,Corner&2 ? 1 : -1,Corner&4 ? 1 : -1);
+			const double Depth = FVector::DotProduct(Offset,Axes.GetUnitAxis(EAxis::X));
+			Distance = FMath::Max(Distance,float(FMath::Max(
+				FMath::Abs(FVector::DotProduct(Offset,Axes.GetUnitAxis(EAxis::Y))) / TanX,
+				FMath::Abs(FVector::DotProduct(Offset,Axes.GetUnitAxis(EAxis::Z))) / TanY) - Depth));
+		}
+	}
+	Distance = FMath::Max(Distance,float(Bounds.GetExtent().Z + 2000) / FMath::Sin(FMath::DegreesToRadians(Elevation)));
+}
+
+FSimCopterCityIntroRoute USimCopterCityIntro::BuildRoute(const ASimCopterTrafficSystemActor& Traffic)
+{
+	FSimCopterCityIntroRoute Result;
 	const ASimCity2000CityActor* City = Traffic.GetCityActor();
 	if (!City) return Result;
-	FBox Bounds(ForceInit), Landmark(ForceInit);
-	FVector Shore = FVector::ZeroVector, Services = FVector::ZeroVector;
-	bool bShore = false, bServices = false;
-	float BestLandmarkHeight = -1;
+	const float HalfTile = City->GetTileSize() * 0.5f;
 	for (int32 Y=0;Y<128;++Y)
 	for (int32 X=0;X<128;++X)
 	{
 		FVector Point;
 		if (!Traffic.TryGetTileCenterWorldLocation(X,Y,Point)) continue;
-		Bounds += Point;
-		const int32 Id = Traffic.GetXbldTileId(X,Y);
+		// Include the outside edges, not just tile centres, and all rendered roofs.
+		Result.Bounds += Point - FVector(HalfTile,HalfTile,0);
+		Result.Bounds += Point + FVector(HalfTile,HalfTile,0);
 		FBox Building;
-		if (City->TryGetBuildingBoundsAtTile(X,Y,Building))
-		{
-			Bounds += Building;
-			if (Building.GetSize().Z > BestLandmarkHeight)
-			{ BestLandmarkHeight=Building.GetSize().Z; Landmark=Building; }
-		}
-		if (!bServices && (Id==0xd1 || Id==0xd2 || Id==0xd3))
-		{ Services=Point; bServices=true; }
-		float WaterZ; uint8 TerrainClass;
-		if (!bShore && X>8 && Y>8 && X<120 && Y<120 &&
-			City->TryGetWaterGameplaySurface(Point,WaterZ,TerrainClass) && TerrainClass<10)
-		{
-			FVector Neighbor;
-			float NeighborZ; uint8 NeighborClass;
-			if (Traffic.TryGetTileCenterWorldLocation(X+1,Y,Neighbor) &&
-				City->TryGetWaterGameplaySurface(Neighbor,NeighborZ,NeighborClass) && NeighborClass>=10)
-			{ Shore=FVector(Point.X,Point.Y,WaterZ); bShore=true; }
-		}
+		if (City->TryGetBuildingBoundsAtTile(X,Y,Building)) Result.Bounds += Building;
 	}
-	if (!Bounds.IsValid) return Result;
-	const float Tile = City->GetTileSize();
-	const float Span = FMath::Max3(float(Bounds.GetSize().X),float(Bounds.GetSize().Y),Tile*16);
-	auto Add = [&](FVector Focus,float Radius,const TCHAR* Caption)
-	{
-		FSimCopterCityIntroShot& Shot = Result.AddDefaulted_GetRef();
-		Shot.Focus=Focus; Shot.Radius=Radius; Shot.Caption=Caption;
-		// Stay above the highest rendered roof/terrain throughout each orbit.
-		Shot.CameraZ=Bounds.Max.Z+FMath::Max(Tile*3,Radius*0.55f);
-	};
-	Add(Bounds.GetCenter(),Span*0.65f,TEXT("Welcome to the city"));
-	if (Landmark.IsValid) Add(Landmark.GetCenter(),FMath::Max(Tile*8,float(Landmark.GetSize().Size())),TEXT("Skyline and landmarks"));
-	if (bShore) Add(Shore,Tile*12,TEXT("Waterfront"));
-	else if (bServices) Add(Services,Tile*10,TEXT("Emergency services"));
-	else Add(Bounds.GetCenter()+FVector(0,Span*0.2f,0),Span*0.4f,TEXT("Around the city"));
-	FVector Pad;
-	if (Traffic.TryGetAirportPadWorldLocation(0,Pad)) Add(Pad,Tile*8,TEXT("Your home base"));
+	Result.Fit(16.0f/9);
 	return Result;
 }
 
@@ -148,12 +160,13 @@ bool USimCopterCityIntro::Start()
 	ASimCopterTrafficSystemActor* Traffic=nullptr;
 	for (TActorIterator<ASimCopterTrafficSystemActor> It(World); It; ++It) { Traffic=*It; break; }
 	if (!Traffic) return false;
-	Shots=BuildShots(*Traffic);
-	if (Shots.IsEmpty()) return false;
+	Route=BuildRoute(*Traffic);
+	if (!Route.Bounds.IsValid) return false;
 	Camera=World->SpawnActor<ACameraActor>();
 	if (!Camera) return false;
-	Camera->GetCameraComponent()->SetFieldOfView(65);
+	Camera->GetCameraComponent()->SetFieldOfView(FSimCopterCityIntroRoute::FieldOfView);
 	Camera->GetCameraComponent()->bConstrainAspectRatio=false;
+	Camera->GetCameraComponent()->AspectRatioAxisConstraint=EAspectRatioAxisConstraint::AspectRatio_MaintainXFOV;
 	Controller=PC; Elapsed=0; bSkipRequested=false; bPlaying=true;
 	bPreviousCursor=PC->bShowMouseCursor;
 	bPreviousFullCameraUpdate=PC->bShouldPerformFullTickWhenPaused;
@@ -161,6 +174,9 @@ bool USimCopterCityIntro::Start()
 	PC->FlushPressedKeys();
 	PC->PushPause();
 	PC->SetIgnoreMoveInput(true); PC->SetIgnoreLookInput(true);
+	PresentationClock=FSceneViewExtensions::NewExtension<FSimCopterTourViewExtension>(World);
+	for (TActorIterator<ASimCopterAmbientVehiclesActor> It(World); It; ++It)
+	{ Ambient=*It; It->BeginCityTour(Route.Bounds); break; }
 	SetTourHud(World,true);
 	auto Widget=SNew(SSimCopterCityTour).OnSkip(FSimpleDelegate::CreateUObject(this,&USimCopterCityIntro::RequestSkip));
 	Widget->CityName=Traffic->GetCityActor()->GetCityName();
@@ -179,16 +195,18 @@ bool USimCopterCityIntro::Start()
 
 void USimCopterCityIntro::UpdateCamera()
 {
-	const int32 Index=FMath::Clamp(FMath::FloorToInt(Elapsed/ShotSeconds),0,Shots.Num()-1);
-	const float Time=FMath::Fmod(Elapsed,ShotSeconds);
-	Camera->SetActorTransform(Shots[Index].Evaluate(Time/ShotSeconds));
+	FVector2D Size(1280,720);
+	if (GetWorld()->GetGameViewport()) GetWorld()->GetGameViewport()->GetViewportSize(Size);
+	const float Aspect = Size.Y>0 ? float(Size.X/Size.Y) : 16.0f/9;
+	if (!FMath::IsNearlyEqual(ViewportAspect,Aspect)) { Route.Fit(Aspect); ViewportAspect=Aspect; }
+	Camera->SetActorTransform(Route.Evaluate(Elapsed/FSimCopterCityIntroRoute::Duration));
+	if (Ambient.IsValid()) Ambient->UpdateCityTour(Elapsed);
 	if (Controller.IsValid() && Controller->PlayerCameraManager)
 		Controller->PlayerCameraManager->UpdateCamera(0);
 	if (Overlay.IsValid())
 	{
 		auto Widget=StaticCastSharedPtr<SSimCopterCityTour>(Overlay);
-		Widget->Caption=Shots[Index].Caption;
-		Widget->Fade=1-FMath::Clamp(FMath::Min(Time,ShotSeconds-Time)/0.35f,0.0f,1.0f);
+		Widget->Fade=1-FMath::Clamp(FMath::Min(Elapsed,FSimCopterCityIntroRoute::Duration-Elapsed)/0.6f,0.0f,1.0f);
 	}
 }
 
@@ -198,10 +216,12 @@ void USimCopterCityIntro::TickComponent(float DeltaTime,ELevelTick TickType,FAct
 	if (!bPlaying) return;
 	const double Now=FPlatformTime::Seconds();
 	// Pause the tour as well when the player switches applications.
-	if (FSlateApplication::IsInitialized() && FSlateApplication::Get().IsActive())
-		Elapsed+=FMath::Min(float(Now-LastTickSeconds),0.1f);
+	const float Step = FSlateApplication::IsInitialized() && FSlateApplication::Get().IsActive()
+		? FMath::Clamp(float(Now-LastTickSeconds),0.0f,0.1f) : 0;
+	Elapsed+=Step;
+	if (PresentationClock) { PresentationClock->Elapsed=Elapsed; PresentationClock->Delta=Step; }
 	LastTickSeconds=Now;
-	if (bSkipRequested || Elapsed>=Shots.Num()*ShotSeconds || !Controller.IsValid() || !IsValid(Camera)) Finish();
+	if (bSkipRequested || Elapsed>=FSimCopterCityIntroRoute::Duration || !Controller.IsValid() || !IsValid(Camera)) Finish();
 	else UpdateCamera();
 }
 
@@ -213,6 +233,10 @@ void USimCopterCityIntro::Finish()
 	UWorld* World=GetWorld();
 	if (World && World->GetGameViewport() && Overlay.IsValid()) World->GetGameViewport()->RemoveViewportWidgetContent(Overlay.ToSharedRef());
 	Overlay.Reset();
+	if (PresentationClock) PresentationClock->bEnabled=false;
+	PresentationClock.Reset();
+	if (Ambient.IsValid()) Ambient->EndCityTour();
+	Ambient.Reset();
 	if (auto* PC=Controller.Get())
 	{
 		// Restore the possessed pawn, including a helicopter restored from a saved game.
@@ -227,7 +251,7 @@ void USimCopterCityIntro::Finish()
 	}
 	if (World) SetTourHud(World,false);
 	if (IsValid(Camera)) Camera->Destroy();
-	Camera=nullptr; Controller.Reset(); Shots.Reset();
+	Camera=nullptr; Controller.Reset(); ViewportAspect=0;
 }
 
 void USimCopterCityIntro::EndPlay(const EEndPlayReason::Type Reason)
