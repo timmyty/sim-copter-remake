@@ -1,5 +1,14 @@
 # Fork validation
 
+## Drive-in picture sizing v1.0.4 - October 9, 2026
+
+Movies now stretch to full screen width and 75% height, centered with no cropping.
+Editor and Shipping builds succeeded; all five targeted tests passed, including
+real movie-cheat execution, rendered theater pictures, geometry dimensions,
+complete source UV coverage, all-map placement and minimap markers. The frames
+were inspected offscreen; no manual flight or listening test was performed.
+[Details](DriveInPictureSizing.md) and [results](validation/DriveInPictureSizingResults.json).
+
 ## Drive-in visibility patch v1.0.3 - October 9, 2026
 
 Fixed the reversed movie-screen offset that let audio play while the theater geometry

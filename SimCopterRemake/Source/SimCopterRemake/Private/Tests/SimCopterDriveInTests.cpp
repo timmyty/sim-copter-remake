@@ -108,6 +108,21 @@ private:
 		const auto& Corners = DriveIn->Surfaces[0].Corners;
 		const FVector Centre = (Corners[0] + Corners[2]) * .5;
 		const float Width = FVector::Distance(Corners[0], Corners[1]);
+		const auto* Picture = DriveIn->Screens[0]->GetProcMeshSection(1);
+		if (!Test->TestNotNull(TEXT("Decoded movie has a picture section"), Picture)) return;
+		if (!Test->TestEqual(TEXT("Picture has all four corners"), Picture->ProcVertexBuffer.Num(), 4)) return;
+		const auto& Vertices = Picture->ProcVertexBuffer;
+		const double Height = FVector::Distance(Corners[0], Corners[3]);
+		Test->TestTrue(TEXT("Movie spans the complete theater screen width"),
+			FMath::IsNearlyEqual(FVector::Distance(Vertices[0].Position, Vertices[1].Position), double(Width), 0.1));
+		Test->TestTrue(TEXT("Movie occupies three quarters of the theater screen height"),
+			FMath::IsNearlyEqual(FVector::Distance(Vertices[0].Position, Vertices[3].Position), Height * .75, 0.1));
+		const FVector Offset = (Vertices[0].Position + Vertices[2].Position) * .5 - Centre;
+		Test->TestTrue(TEXT("Movie stays vertically centred"),
+			FMath::Abs(FVector::DotProduct(Offset, (Corners[3] - Corners[0]).GetSafeNormal())) < .1);
+		Test->TestTrue(TEXT("Stretching keeps the complete source picture without cropping"),
+			Vertices[0].UV0.Equals(FVector2D(0, 0)) && Vertices[1].UV0.Equals(FVector2D(1, 0)) &&
+			Vertices[2].UV0.Equals(FVector2D(1, 1)) && Vertices[3].UV0.Equals(FVector2D(0, 1)));
 		// CO182's parking lot is on the +X side of its screen after the Maxis-to-city transform.
 		const FVector Eye = Centre + City->GetActorTransform().TransformVectorNoScale(FVector::ForwardVector) * Width;
 		auto* Capture = NewObject<USceneCaptureComponent2D>(DriveIn);
@@ -128,7 +143,7 @@ private:
 		Capture->RegisterComponent();
 		if (GShaderCompilingManager) GShaderCompilingManager->FinishAllCompilation();
 		World->SendAllEndOfFrameUpdates();
-		const FString Evidence = FPaths::ProjectDir() / TEXT("../Docs/scratchpad/drive-in-video-fix");
+		const FString Evidence = FPaths::ProjectDir() / TEXT("../Docs/scratchpad/drive-in-full-screen");
 		IFileManager::Get().MakeDirectory(*Evidence, true);
 		auto Read = [&](const TCHAR* Name)
 		{

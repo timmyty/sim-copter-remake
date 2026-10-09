@@ -1,5 +1,7 @@
 # Memory Index
 
+- [Drive-in picture sizing](../DriveInPictureSizing.md) — 2026-10-09: user requested stretching the whole picture to full theater width and about three-quarters height. Replaced aspect fitting with a centered 75%-height picture and complete source UVs. Editor/Shipping and five targeted tests passed; both theater frames inspected. Evidence: `Docs/scratchpad/drive-in-full-screen/`.
+
 - [Drive-in video visibility](../DriveInVideoVisibility.md) — 2026-10-09: fixed reversed screen normal/depth layering that hid movies behind the theater and black backing while audio played. Before-fix scene readbacks changed zero pixels; real lowercase hsi/original movie cheat execution now renders both pictures on the theater. Editor/Shipping and all five targeted tests passed. No manual playtest; evidence in `Docs/scratchpad/drive-in-video-fix/`.
 
 - [Drive-ins on every map and remembered radio](../DriveInPlacementAndRadio.md) — 2026-10-09: all 45 bundled maps have theaters on level foundations, with safe minimal grading only where needed; cinema minimap logos follow demolition. Fresh profiles default to KINV and tuning persists by call sign. Editor/Shipping succeeded; 318 headless tests and offscreen real-city movie playback passed, with the same two known failures. Evidence: `Docs/scratchpad/drive-in-radio/` and `Docs/validation/DriveInRadioResults.json`.

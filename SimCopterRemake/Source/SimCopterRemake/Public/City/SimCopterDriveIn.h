@@ -22,7 +22,6 @@ namespace SimCopterDriveIn
 {
 	SIMCOPTERREMAKE_API FString VideoDirectory();
 	SIMCOPTERREMAKE_API bool ResolveVideo(const FString& FileName, FString& OutPath, FString& OutError);
-	SIMCOPTERREMAKE_API FVector2D FitVideo(float VideoAspect, float ScreenAspect);
 }
 
 UCLASS()
@@ -51,7 +50,7 @@ private:
 	FString CurrentFile;
 	bool bWasPaused = false;
 	void ClearScreens();
-	void BuildScreen(int32 Index, float Aspect);
+	void BuildScreen(int32 Index);
 	UFUNCTION() void MediaOpened(FString Url);
 	UFUNCTION() void MediaFailed(FString Url);
 };
