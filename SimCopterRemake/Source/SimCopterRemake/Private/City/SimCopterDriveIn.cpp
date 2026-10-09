@@ -6,6 +6,8 @@
 #include "MediaPlayer.h"
 #include "MediaTexture.h"
 #include "MediaSoundComponent.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundSourceBus.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "ProceduralMeshComponent.h"
 #include "Engine/World.h"
@@ -96,6 +98,8 @@ ASimCopterDriveInPlayer* ASimCopterDriveInPlayer::Get(UWorld* World)
 void ASimCopterDriveInPlayer::ClearScreens()
 {
 	for (auto Sound : Sounds) if (Sound) { Sound->Stop(); Sound->DestroyComponent(); }
+	if (DecodedSound) { DecodedSound->Stop(); DecodedSound->DestroyComponent(); DecodedSound = nullptr; }
+	SoundBus = nullptr;
 	for (auto Screen : Screens) if (Screen) Screen->DestroyComponent();
 	Sounds.Reset(); Screens.Reset(); Cities.Reset(); Surfaces.Reset();
 }
@@ -133,6 +137,22 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 		ScreenMaterial->SetTextureParameterValue(TEXT("VideoTexture"), Texture);
 	}
 	Player->SetLooping(true);
+	// Media timing V2 feeds only its primary audio sink. Decode once into a bus,
+	// then play that bus independently at every theater instead of competing for samples.
+	SoundBus = NewObject<USoundSourceBus>(this);
+	SoundBus->VirtualizationMode = EVirtualizationMode::PlayWhenSilent;
+	DecodedSound = NewObject<UMediaSoundComponent>(this);
+	DecodedSound->Channels = EMediaSoundChannels::Mono;
+	DecodedSound->SetupAttachment(RootComponent);
+	DecodedSound->bAutoActivate = false;
+	DecodedSound->bAllowSpatialization = false;
+	DecodedSound->bEnableBaseSubmix = false;
+	DecodedSound->bEnableSubmixSends = false;
+	FSoundSourceBusSendInfo Send;
+	Send.SoundSourceBus = SoundBus;
+	DecodedSound->PreEffectBusSends.Add(Send);
+	DecodedSound->SetMediaPlayer(Player);
+	DecodedSound->RegisterComponent();
 	for (int32 Index = 0; Index < Surfaces.Num(); ++Index)
 	{
 		auto* Screen = NewObject<UProceduralMeshComponent>(this);
@@ -140,14 +160,16 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 		Screen->SetCastShadow(false); Screen->RegisterComponent();
 		Screen->SetMaterial(0, ScreenMaterial); Screen->SetMaterial(1, ScreenMaterial);
 		Screens.Add(Screen); BuildScreen(Index);
-		auto* Sound = NewObject<UMediaSoundComponent>(this);
+		auto* Sound = NewObject<UAudioComponent>(this);
+		Sound->bAutoActivate = false;
+		Sound->bAutoDestroy = false;
 		Sound->SetupAttachment(RootComponent); Sound->bAllowSpatialization = true;
 		Sound->bOverrideAttenuation = true; Sound->AttenuationOverrides.bAttenuate = true;
 		Sound->AttenuationOverrides.AttenuationShapeExtents = FVector(300);
 		Sound->AttenuationOverrides.FalloffDistance = 4000;
-		Sound->SetMediaPlayer(Player); Sound->RegisterComponent();
+		Sound->SetSound(SoundBus);
 		Sound->SetWorldLocation((Surfaces[Index].Corners[0] + Surfaces[Index].Corners[2]) * 0.5);
-		Sound->SetVolumeMultiplier(0.65f); Sounds.Add(Sound);
+		Sound->SetVolumeMultiplier(0.65f); Sound->RegisterComponent(); Sounds.Add(Sound);
 	}
 	CurrentFile = FileName;
 	if (!Player->OpenFile(Path)) { StopVideo(); return TEXT("Could not open this movie. Use H.264 video and AAC audio in an MP4 file."); }
@@ -183,8 +205,9 @@ void ASimCopterDriveInPlayer::MediaOpened(FString)
 {
 	if (CurrentFile.IsEmpty()) return;
 	bWasPaused = UGameplayStatics::IsGamePaused(this);
+	DecodedSound->Start();
+	for (auto Sound : Sounds) Sound->Play();
 	if (!bWasPaused) Player->Play();
-	for (auto Sound : Sounds) Sound->Start();
 }
 
 void ASimCopterDriveInPlayer::MediaFailed(FString)

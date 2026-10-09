@@ -1,0 +1,193 @@
+{
+  "date": "2026-10-09",
+  "editor_build": "Succeeded",
+  "shipping_build": "Succeeded",
+  "architecture": "One media audio decoder, one mono source bus, one spatial audio component per theater",
+  "audio_test_city": "Metropolis (cities/career/city29.sc2)",
+  "theaters": 8,
+  "windows_mixer_measurements": [
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "near",
+      "peak": 0.160335
+    },
+    {
+      "movie": 0,
+      "theater": 1,
+      "condition": "near",
+      "peak": 0.156596
+    },
+    {
+      "movie": 0,
+      "theater": 2,
+      "condition": "near",
+      "peak": 0.187441
+    },
+    {
+      "movie": 0,
+      "theater": 3,
+      "condition": "near",
+      "peak": 0.161436
+    },
+    {
+      "movie": 0,
+      "theater": 4,
+      "condition": "near",
+      "peak": 0.196067
+    },
+    {
+      "movie": 0,
+      "theater": 5,
+      "condition": "near",
+      "peak": 0.189417
+    },
+    {
+      "movie": 0,
+      "theater": 6,
+      "condition": "near",
+      "peak": 0.170828
+    },
+    {
+      "movie": 0,
+      "theater": 7,
+      "condition": "near",
+      "peak": 0.194473
+    },
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "far",
+      "peak": 0.0
+    },
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "returned",
+      "peak": 0.189015
+    },
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "silent_movie",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "near",
+      "peak": 0.160335
+    },
+    {
+      "movie": 1,
+      "theater": 1,
+      "condition": "near",
+      "peak": 0.156596
+    },
+    {
+      "movie": 1,
+      "theater": 2,
+      "condition": "near",
+      "peak": 0.187441
+    },
+    {
+      "movie": 1,
+      "theater": 3,
+      "condition": "near",
+      "peak": 0.161436
+    },
+    {
+      "movie": 1,
+      "theater": 4,
+      "condition": "near",
+      "peak": 0.196067
+    },
+    {
+      "movie": 1,
+      "theater": 5,
+      "condition": "near",
+      "peak": 0.189417
+    },
+    {
+      "movie": 1,
+      "theater": 6,
+      "condition": "near",
+      "peak": 0.170828
+    },
+    {
+      "movie": 1,
+      "theater": 7,
+      "condition": "near",
+      "peak": 0.194473
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "far",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "returned",
+      "peak": 0.189015
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "paused",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "resumed",
+      "peak": 0.182788
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "demolished",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 1,
+      "condition": "surviving",
+      "peak": 0.202629
+    }
+  ],
+  "targeted_tests": [
+    {
+      "name": "SimCopter.Cheats.DriveInCommands",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.AllMaps",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.LocalizedAudio",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.MinimapLogo",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.Playback",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.SafePlacement",
+      "state": "Success"
+    }
+  ],
+  "passed": 6,
+  "failed": 0,
+  "shipping_sha256": "a11ec4f6b4a6200ffe60e60ebc2f10b9d151ef0c64fb2db7c78db9f24006d557",
+  "limitations": [
+    "No manual flight or speaker listening test; audio captured through a private Windows mixer and silenced before hardware output.",
+    "The original bundled movie has a silent AAC track."
+  ]
+}

@@ -7,6 +7,8 @@ class ASimCity2000CityActor;
 class UMediaPlayer;
 class UMediaTexture;
 class UMediaSoundComponent;
+class UAudioComponent;
+class USoundSourceBus;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UProceduralMeshComponent;
@@ -39,12 +41,15 @@ public:
 	int32 GetScreenCount() const { return Screens.Num(); }
 private:
 	friend class FSimCopterDriveInPlaybackCommand;
+	friend class FSimCopterDriveInAudioCommand;
 	UPROPERTY(Transient) TObjectPtr<UMediaPlayer> Player;
 	UPROPERTY(Transient) TObjectPtr<UMediaTexture> Texture;
 	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> ScreenMaterial;
 	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> ScreenParent;
 	UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> Screens;
-	UPROPERTY(Transient) TArray<TObjectPtr<UMediaSoundComponent>> Sounds;
+	UPROPERTY(Transient) TObjectPtr<UMediaSoundComponent> DecodedSound;
+	UPROPERTY(Transient) TObjectPtr<USoundSourceBus> SoundBus;
+	UPROPERTY(Transient) TArray<TObjectPtr<UAudioComponent>> Sounds;
 	TArray<TWeakObjectPtr<ASimCity2000CityActor>> Cities;
 	TArray<FSimCopterDriveInSurface> Surfaces;
 	FString CurrentFile;

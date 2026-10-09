@@ -555,6 +555,7 @@ private:
 	TSet<int32> CheatPortraitComponents;
 	friend class FSimCopterCheatCityEffectsTest;
 	friend class FSimCopterDriveInPlaybackCommand;
+	friend class FSimCopterDriveInAudioCommand;
 
 	// The runtime static meshes those components render, held so they survive collection.
 	UPROPERTY(Transient)

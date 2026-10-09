@@ -26,7 +26,7 @@ build dependencies locally. To play, use the packaged Windows download below.
 
 ## Launching a Windows build
 
-1. Download **`SimCopterRemake-v1.0.4-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
+1. Download **`SimCopterRemake-v1.0.5-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
 2. Keep `Engine`, `SimCopter`, `SimCopterRemake`, and `DriveInVideos` beside the launcher.
 3. Choose **New Career Game** or **New User Game**, then select a city to begin.
 
@@ -91,7 +91,7 @@ The underlying game is intentionally kept close to the original, but a number of
 
 While playing a city, press **Ctrl + Alt + X** to open the original bitmap cheat dialog. Type a code and press **Enter** or click **OK** to apply it and resume. **Esc** or **Cancel** dismisses it without applying a code. Codes are case-sensitive. See [the full cheat guide](Docs/CheatCodes.md) for the original cheats.
 
-Drive-in theaters play local MP4 videos, including HD and higher resolutions, with sound near the screen. The complete picture stretches across the theater screen's full width and 75% of its height, centered vertically, without cropping. Movies loop until stopped, pause with the game, and end when leaving the city or when all theaters are demolished. Cities without a theater receive one on a clear, level lot during loading. Look for the small screen/play logo on the minimap. Imported maps need a suitable 3x3 lot; occupied or uneven ground is preserved.
+Drive-in theaters play local MP4 videos, including HD and higher resolutions, with localized sound at every theater, fading with distance from each screen. The complete picture stretches across the theater screen's full width and 75% of its height, centered vertically, without cropping. Movies loop until stopped, pause with the game, and end when leaving the city or when all theaters are demolished. Cities without a theater receive one on a clear, level lot during loading. Look for the small screen/play logo on the minimap. Imported maps need a suitable 3x3 lot; occupied or uneven ground is preserved.
 
 New profiles start on **KINV**. Once you tune another station, the game remembers that choice across cities and restarts, together with your existing volume setting. See [placement and radio details](Docs/DriveInPlacementAndRadio.md).
 
