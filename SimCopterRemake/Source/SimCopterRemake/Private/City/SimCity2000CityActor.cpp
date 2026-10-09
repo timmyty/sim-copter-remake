@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "City/SimCity2000CityActor.h"
+#include "City/SimCopterDriveInPlacement.h"
 #include "Game/SimCopterCheats.h"
 #include "Ground/SimCopterParticleFX.h"
 #include "Missions/SimCopterMissionSystemActor.h"
@@ -3520,6 +3521,25 @@ void ASimCity2000CityActor::BeginPlay()
 	}
 }
 
+TArray<int16> ASimCity2000CityActor::PrepareCityForGameplay(FSimCity2000City& City, FIntPoint* OutAirportOrigin)
+{
+	TArray<int16> Corners = BuildConditionedTerrainCornerSamples(City);
+	const FIntPoint Airport = SimCopterAirport::BuildAirportIntoCity(City, &Corners);
+	if (OutAirportOrigin) *OutAirportOrigin = Airport;
+	const FIntPoint Theater = SimCopterDriveInPlacement::FindSite(City, Corners);
+	SimCopterDriveInPlacement::Stamp(City, Theater, &Corners);
+	if (Theater.X != INDEX_NONE)
+	{
+		UE_LOG(LogSimCity2000CityActor, Display, TEXT("Drive-in added to %s at (%d, %d) on level ground."),
+			*City.CityName, Theater.X, Theater.Y);
+	}
+	else if (!City.Tiles.ContainsByPredicate([](const FSimCity2000Tile& Tile) { return Tile.Building == SimCopterDriveInPlacement::BuildingId; }))
+	{
+		UE_LOG(LogSimCity2000CityActor, Warning, TEXT("No clear, level 3x3 drive-in site in %s; city terrain preserved."), *City.CityName);
+	}
+	return Corners;
+}
+
 void ASimCity2000CityActor::RebuildCity()
 {
 	// Existing saved city actors may serialize the former defaults. Upgrade those exact defaults
@@ -3596,9 +3616,9 @@ void ASimCity2000CityActor::RebuildCity()
 	// demolishes whatever SimCity 2000 zoned there and rebuilds it as SimCopter's own airport -
 	// a 2x2 terminal ringed by twelve bare helipads - so it has to happen before anything reads
 	// XBLD, and the flatten has to read a corner grid conditioned from the pre-stamp ids.
-	TArray<int16> ConditionedTerrainCorners = BuildConditionedTerrainCornerSamples(City);
+	FIntPoint AirportOrigin;
+	TArray<int16> ConditionedTerrainCorners = PrepareCityForGameplay(City, &AirportOrigin);
 	{
-		const FIntPoint AirportOrigin = SimCopterAirport::BuildAirportIntoCity(City, &ConditionedTerrainCorners);
 		UE_LOG(
 			LogSimCity2000CityActor,
 			Display,

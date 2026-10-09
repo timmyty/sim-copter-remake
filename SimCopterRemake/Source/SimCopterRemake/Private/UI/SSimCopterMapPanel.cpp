@@ -280,6 +280,7 @@ bool SSimCopterMapPanel::BuildFrame(FSimCopterMapFrame& OutFrame)
 	OutFrame.City = &CityData;
 	OutFrame.MissionIcons = MissionIcons.IsValid() ? &MissionIcons : nullptr;
 	OutFrame.ServiceIcons = ServiceIcons.IsValid() ? &ServiceIcons : nullptr;
+	if (const ASimCity2000CityActor* City = CachedCityActor.Get()) City->GetDriveInTiles(OutFrame.DriveInTiles);
 
 	int32 TileX = 0;
 	int32 TileY = 0;

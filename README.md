@@ -83,7 +83,9 @@ The underlying game is intentionally kept close to the original, but a number of
 
 While playing a city, press **Ctrl + Alt + X** to open the original bitmap cheat dialog. Type a code and press **Enter** or click **OK** to apply it and resume. **Esc** or **Cancel** dismisses it without applying a code. Codes are case-sensitive. See [the full cheat guide](Docs/CheatCodes.md) for the original cheats.
 
-Drive-in theaters play local MP4 videos, including HD and higher resolutions, with sound near the screen. The picture fits the original square theater screen without stretching or cropping; widescreen movies have black bars. Movies loop until stopped, pause with the game, and end when leaving the city or when all theaters are demolished. A city must contain a standing drive-in theater (for example, Cape Wells).
+Drive-in theaters play local MP4 videos, including HD and higher resolutions, with sound near the screen. The picture fits the original square theater screen without stretching or cropping; widescreen movies have black bars. Movies loop until stopped, pause with the game, and end when leaving the city or when all theaters are demolished. Cities without a theater receive one on a clear, level lot during loading. Look for the small screen/play logo on the minimap. Imported maps need a suitable 3x3 lot; occupied or uneven ground is preserved.
+
+New profiles start on **KINV**. Once you tune another station, the game remembers that choice across cities and restarts, together with your existing volume setting. See [placement and radio details](Docs/DriveInPlacementAndRadio.md).
 
 1. Put your videos in **`DriveInVideos` beside `SimCopterRemake.exe`** in the packaged game folder. Source builds also read `SimCopterRemake/Content/DriveInVideos`.
 2. Use **H.264 video and AAC audio in `.mp4` files** for Windows playback. Use a plain filename, including spaces if needed, without a folder path or URL.

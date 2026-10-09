@@ -1,6 +1,7 @@
 #include "Audio/SimCopterRadio.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
+#include "Game/SimCopterSettings.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "HAL/FileManager.h"
@@ -84,17 +85,9 @@ void USimCopterRadioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		return;
 	}
 
-	// FUN_00430890 falls back to PTR_DAT_004f8f8c - the literal "KMIX" - when the saved state
-	// carries no station, so that is what the radio opens on.
-	StationIndex = 0;
-	for (int32 Index = 0; Index < Stations.Num(); ++Index)
-	{
-		if (Stations[Index].CallSign.Equals(TEXT("KMIX"), ESearchCase::IgnoreCase))
-		{
-			StationIndex = Index;
-			break;
-		}
-	}
+	const USimCopterSettings* Settings = USimCopterSettings::Get(this);
+	if (!Settings) Settings = GetDefault<USimCopterSettings>();
+	StationIndex = Settings->ResolveRadioStation(Stations);
 
 	RebuildPlaylists();
 	RearmSchedule(/*bStopCurrent=*/false);
@@ -576,6 +569,9 @@ void USimCopterRadioSubsystem::SetStationIndex(int32 Index)
 		return;
 	}
 	const int32 Clamped = FMath::Clamp(Index, 0, Stations.Num() - 1);
+	// Every tuning path (dashboard, keys, settings and console) reaches here.
+	if (USimCopterSettings* Settings = USimCopterSettings::Get(this))
+		if (Settings->RememberRadioStation(Clamped, Stations[Clamped].CallSign)) Settings->SaveConfig();
 	if (Clamped == StationIndex)
 	{
 		return;

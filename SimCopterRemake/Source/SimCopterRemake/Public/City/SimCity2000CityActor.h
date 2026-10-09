@@ -187,6 +187,9 @@ public:
 	void GetDemolishedBuildingOrigins(TArray<FIntPoint>& OutOrigins) const;
 	void ShowCheatPortraits();
 	void GetDriveInSurfaces(TArray<struct FSimCopterDriveInSurface>& OutSurfaces) const;
+	void GetDriveInTiles(TArray<FIntPoint>& OutTiles) const;
+	// Shared by rendering and traffic so added lots have the same geometry and occupancy.
+	static TArray<int16> PrepareCityForGameplay(struct FSimCity2000City& City, FIntPoint* OutAirportOrigin = nullptr);
 	int32 ApplyNuclearCheat(TArray<FIntPoint>& OutClearedTiles);
 	void RestoreDemolishedBuildingOrigins(const TArray<FIntPoint>& Origins, TArray<FIntPoint>& OutClearedTiles);
 
