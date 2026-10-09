@@ -1,8 +1,8 @@
 # Building the gameplay fork
 
 This is an Unreal Engine 5.8 source fork. The October 8, 2026 validation uses
-UE 5.8.3 on Windows. It includes all 21 KINV music WAVs plus custom artwork and
-audio through Git LFS. It does not include a newly published Windows executable.
+UE 5.8.3 on Windows. It includes all 21 KINV music WAVs, both prepared drive-in MP4 videos, and custom
+artwork/audio through Git LFS. It does not include a newly published Windows executable.
 
 ## Checkout and dependencies
 
@@ -41,6 +41,10 @@ and [loading screen](OriginalLoadingScreen.md).
 The authored UFO, city materials, helicopter paint/glass, briefing WAVs, warning
 sounds and Windows icon are retained in this fork. Their creator scripts are
 under `Tools/Unreal`. After the original city atlas exists, run
+`CreateDriveInMaterial.py` regenerates the included drive-in screen material and
+fallback texture. MP4s stage as loose files in package-root `DriveInVideos`; their
+SHA-256 values and dimensions are recorded in
+`SimCopterRemake/Content/DriveInVideos/prepared-videos.json`. Run
 `CreateHospitalPresentation.py` inside the editor to generate the locally baked
 hospital materials and impact sound asset. Other reproducible material scripts
 are `CreateUfoMaterials.py`, `CreateHelicopterPaint.py`, `CreateHelicopterGlass.py`
@@ -66,6 +70,17 @@ cmd /c "RebuildUnrealCpp.bat Shipping < nul"
 Do not run a headless editor while relying on the live editor MCP port. Consult
 [AGENTS.md](../AGENTS.md) for the project's established validation workflow and
 [ForkValidation.md](ForkValidation.md) for known test limitations.
+
+The movie decoder/material and witness-photograph tests require rendering and are
+excluded from NullRHI runs. Run those checks and enable the actual cheat/Gort Slate
+previews separately:
+
+```powershell
+& "$Engine/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" $Project `
+  -unattended -nop4 -nosplash -RenderOffscreen -SimCheatDialogPreview -SimGortPreview `
+  '-ExecCmds=Automation RunTests SimCopter.DriveIn.Playback+SimCopter.Witness.PhotoRendering+SimCopter.Cheats.OriginalDialogArt+SimCopter.Cheats.GortRender;Quit' `
+  '-TestExit=Automation Test Queue Empty'
+```
 
 Packaging uses the existing RunUAT cook/stage/archive workflow. Original runtime
 data stays loose under `<package>/SimCopter`, not inside the pak. Verify both maps,

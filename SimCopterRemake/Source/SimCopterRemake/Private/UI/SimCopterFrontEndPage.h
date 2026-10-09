@@ -93,7 +93,8 @@ TSharedRef<SWidget> MakeButton(
 	const FText& Label,
 	int32 WindowsFontHeight,
 	FOnClicked OnClicked,
-	TArray<TSharedRef<FButtonStyle>>& StyleKeepAlive);
+	TArray<TSharedRef<FButtonStyle>>& StyleKeepAlive,
+	bool bFocusable = true);
 
 // A button with no visuals at all, for the main menu's item rows: the artwork is already printed
 // on the page and the row only needs to catch the pointer.

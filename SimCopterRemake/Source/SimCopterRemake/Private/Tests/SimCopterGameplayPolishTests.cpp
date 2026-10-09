@@ -10,6 +10,9 @@
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Ground/SimCopterUfoMesh.h"
+#include "Ground/SimCopterFlashingLights.h"
+#include "Formats/MaxisMeshLibrary.h"
+#include "Formats/SimCopterOriginalGamePaths.h"
 #include "Formats/SimCity2000Reader.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/FileHelper.h"
@@ -230,7 +233,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterUfoMeshTest, "SimCopter.Polish.UfoGeo
 bool FSimCopterUfoMeshTest::RunTest(const FString& Parameters)
 {
 	TArray<FMaxisMeshSection> Parts;
-	SimCopterUfoMesh::Build(300, Parts);
+	FMaxisMeshLibrary Library; FString Error;
+	if (!TestTrue(TEXT("Original mesh library loads"), Library.LoadFromOriginalGameRoot(SimCopterOriginalGame::ResolveRoot(), Error))) return false;
+	const TArray<FColor>* Palette = nullptr;
+	const auto* Object = Library.FindObjectByObjectId(0x17c, &Palette);
+	if (!TestNotNull(TEXT("Original UFO object exists"), Object)) return false;
+	SimCopterUfoMesh::Build(*Object, Palette, 2621.44f, .25f, Parts);
+	TestEqual(TEXT("Only authored hull is opaque"), Parts.Num(), 1);
+	TArray<FSimCopterFlashingLightPoint> Lights;
+	FSimCopterFlashingLightSchedule::ExtractLightPoints(*Object, Palette, 2621.44f, .25f, false, Lights);
+	int32 ExpectedLights = 0;
+	for (const auto& Face : Object->Faces) if (Face.FaceType == 25) ++ExpectedLights;
+	TestTrue(TEXT("Authored rim lights exist"), ExpectedLights > 0);
+	TestEqual(TEXT("Every original rim marker retained"), Lights.Num(), ExpectedLights);
 	FString Obj;
 	int32 Offset = 1;
 	for (int32 PartIndex = 0; PartIndex < Parts.Num(); ++PartIndex)
@@ -242,18 +257,20 @@ bool FSimCopterUfoMeshTest::RunTest(const FString& Parameters)
 		{
 			const auto& V = Part.Vertices[Index]; const auto& UV = Part.UVs[Index];
 			TestFalse(TEXT("Finite saucer vertex"), V.ContainsNaN());
-			Obj += FString::Printf(TEXT("v %.5f %.5f %.5f\nvt %.6f %.6f\n"), V.X, V.Y, V.Z, UV.X, UV.Y);
+			Obj += FString::Printf(TEXT("v %.5f %.5f %.5f %.5f %.5f %.5f\nvt %.6f %.6f\n"), V.X, V.Y, V.Z, Part.VertexColors[Index].R, Part.VertexColors[Index].G, Part.VertexColors[Index].B, UV.X, UV.Y);
 		}
 		for (int32 Index = 0; Index < Part.Triangles.Num(); Index += 3)
 		{
 			int32 A = Part.Triangles[Index], B = Part.Triangles[Index+1], C = Part.Triangles[Index+2];
 			const FVector Normal = FVector::CrossProduct(Part.Vertices[B]-Part.Vertices[A], Part.Vertices[C]-Part.Vertices[A]);
-			TestTrue(TEXT("Outward, nondegenerate saucer triangles"), FVector::DotProduct(Normal, Part.Normals[A]) > 0.01);
+			// The shared original-mesh builder adds reversed backfaces using the same
+			// vertices/normals. Both windings must be finite and nondegenerate.
+			TestTrue(TEXT("Nondegenerate original saucer triangles"), FMath::Abs(FVector::DotProduct(Normal, Part.Normals[A])) > 0.01);
 			Obj += FString::Printf(TEXT("f %d/%d %d/%d %d/%d\n"), A+Offset,A+Offset,B+Offset,B+Offset,C+Offset,C+Offset);
 		}
 		Offset += Part.Vertices.Num();
 	}
-	FFileHelper::SaveStringToFile(Obj, *FPaths::Combine(FPaths::ProjectDir(), TEXT("../Docs/scratchpad/gameplay-polish/ufo-mesh.obj")));
+	FFileHelper::SaveStringToFile(Obj, *FPaths::Combine(FPaths::ProjectDir(), TEXT("../Docs/scratchpad/drive-in-ufo/ufo-mesh.obj")));
 	return true;
 }
 #endif

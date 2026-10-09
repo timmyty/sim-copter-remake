@@ -116,6 +116,15 @@ void ASimCopterOnFootPawn::BeginAirborneExit(const FVector& Location,const FVect
 	MissionPickupCooldownSeconds=2;
 	if(auto* Move=GetCharacterMovement()) { Move->SetMovementMode(MOVE_Falling); Move->Velocity=Velocity; }
 }
+void ASimCopterOnFootPawn::TeleportForCheat(const FVector& Location)
+{
+	SetParachuteDeployed(false);
+	StopJumping();
+	GetCharacterMovement()->StopMovementImmediately();
+	SetActorLocation(Location, false, nullptr, ETeleportType::TeleportPhysics);
+	FallPeakZ = Location.Z;
+	GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+}
 void ASimCopterOnFootPawn::Landed(const FHitResult& Hit)
 {
 	const float Distance=FMath::Max(0.0f,FallPeakZ-float(GetActorLocation().Z));

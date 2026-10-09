@@ -202,6 +202,7 @@ void USimCopterCareerSubsystem::AddLogEntry(
 
 void USimCopterCareerSubsystem::BeginCareer()
 {
+	Cheats = {};
 	bApacheEncounterSpawned = false;
 	bAirSupportUnlocked = false;
 	LogEntries.Reset();

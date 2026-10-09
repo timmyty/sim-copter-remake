@@ -74,6 +74,8 @@ class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 	GENERATED_BODY()
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCarAccidentTest;
+	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterHospitalCityTest;
 
 public:
@@ -94,6 +96,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "SimCopter|City")
 	float GetTileSize() const;
+	const FString& GetCityName() const { return LastLoadedCityName; }
 
 	// Debug tuning for the buildings' blink markers. The scale multiplies whatever this city's
 	// beacons were tuned to, so it stays in balance with the helicopter's own markers.
@@ -182,6 +185,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|City")
 	bool DemolishBuildingAtTile(int32 FileX, int32 FileY, TArray<FIntPoint>& OutClearedTiles, bool bLeaveRubble = true);
 	void GetDemolishedBuildingOrigins(TArray<FIntPoint>& OutOrigins) const;
+	void ShowCheatPortraits();
+	void GetDriveInSurfaces(TArray<struct FSimCopterDriveInSurface>& OutSurfaces) const;
+	int32 ApplyNuclearCheat(TArray<FIntPoint>& OutClearedTiles);
 	void RestoreDemolishedBuildingOrigins(const TArray<FIntPoint>& Origins, TArray<FIntPoint>& OutClearedTiles);
 
 	// True while the tile is covered by a building that has not been demolished.
@@ -543,6 +549,9 @@ private:
 	// model in the city. Kept parallel with BuildingInstanceTiles below.
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UInstancedStaticMeshComponent>> BuildingInstanceComponents;
+	TSet<int32> CheatPortraitComponents;
+	friend class FSimCopterCheatCityEffectsTest;
+	friend class FSimCopterDriveInPlaybackCommand;
 
 	// The runtime static meshes those components render, held so they survive collection.
 	UPROPERTY(Transient)

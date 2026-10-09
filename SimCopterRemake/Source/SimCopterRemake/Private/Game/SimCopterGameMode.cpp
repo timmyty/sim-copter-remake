@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Game/SimCopterGameMode.h"
+#include "Game/SimCopterCityIntro.h"
 #include "Game/SimCopterLoadingSubsystem.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Engine/GameViewportClient.h"
@@ -32,6 +33,7 @@ ASimCopterGameMode::ASimCopterGameMode()
 	TrafficSystemClass = ASimCopterTrafficSystemActor::StaticClass();
 	MissionSystemClass = ASimCopterMissionSystemActor::StaticClass();
 	HangarClass = ASimCopterHangar::StaticClass();
+	CityIntro = CreateDefaultSubobject<USimCopterCityIntro>(TEXT("CityIntro"));
 }
 
 void ASimCopterGameMode::BeginPlay()
@@ -90,7 +92,7 @@ void ASimCopterGameMode::PlaceSessionOnAirportPads()
 {
 	USimCopterLoadingSubsystem::SetStage(this, 14);
 	// Also release the presentation gate for maps without airport/aircraft placement.
-	ON_SCOPE_EXIT { FinishStartupCamera(); };
+	ON_SCOPE_EXIT { FinishStartupCamera(); CityIntro->Start(); };
 	UWorld* World = GetWorld();
 	if (World == nullptr)
 	{
@@ -232,6 +234,7 @@ void ASimCopterGameMode::FinishStartupCamera()
 
 void ASimCopterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	CityIntro->Finish();
 	if (bStartupWorldHidden && GetWorld() != nullptr && GetWorld()->GetGameViewport() != nullptr)
 	{
 		GetWorld()->GetGameViewport()->bDisableWorldRendering = false;
@@ -239,8 +242,14 @@ void ASimCopterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+bool ASimCopterGameMode::IsCityIntroPlaying() const
+{
+	return CityIntro && CityIntro->IsPlaying();
+}
+
 void ASimCopterGameMode::ApplyPendingAircraftRestores(UWorld* World)
 {
+	ON_SCOPE_EXIT { ASimCopterHelicopterPawn::EnsureTransportPlane(World); };
 	// Run after all saved aircraft and career flags have been restored. A repeat call
 	// or reload must never duplicate the secret airframe or replace one already sold.
 	ON_SCOPE_EXIT

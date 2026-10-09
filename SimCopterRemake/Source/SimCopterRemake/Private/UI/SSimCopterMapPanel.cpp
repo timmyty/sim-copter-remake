@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterMapPanel.h"
+#include "Ground/SimCopterOnFootPawn.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "City/SimCity2000CityActor.h"
 #include "Engine/Texture2D.h"
@@ -281,7 +283,9 @@ bool SSimCopterMapPanel::BuildFrame(FSimCopterMapFrame& OutFrame)
 
 	int32 TileX = 0;
 	int32 TileY = 0;
-	if (TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Helicopter->GetActorLocation(), TileX, TileY))
+	const APawn* MapPawn = UGameplayStatics::GetPlayerPawn(Helicopter, 0);
+	if (!Cast<ASimCopterOnFootPawn>(MapPawn)) MapPawn = Helicopter;
+	if (TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(MapPawn->GetActorLocation(), TileX, TileY))
 	{
 		OutFrame.CentreTile = FIntPoint(TileX, TileY);
 	}
@@ -289,7 +293,7 @@ bool SSimCopterMapPanel::BuildFrame(FSimCopterMapFrame& OutFrame)
 	// The needle steps a 16.16 unit vector out from the centre; in North-Up orientation,
 	// Screen X (Right, East) = -TileDirection.Y, Screen -Y (Up, North) = +TileDirection.X.
 	FVector2D TileDirection = FVector2D::ZeroVector;
-	if (TrafficSystem->TryGetPeopleTileDirection(Helicopter->GetActorForwardVector(), TileDirection))
+	if (TrafficSystem->TryGetPeopleTileDirection(MapPawn->GetActorForwardVector(), TileDirection))
 	{
 		OutFrame.HeadingX1616 = -FMath::RoundToInt(TileDirection.Y * 65536.0f);
 		OutFrame.HeadingZ1616 = FMath::RoundToInt(TileDirection.X * 65536.0f);
@@ -307,6 +311,8 @@ bool SSimCopterMapPanel::BuildFrame(FSimCopterMapFrame& OutFrame)
 			Mission.TypeMask = Record.TypeMask;
 			Mission.Category = Record.Category;
 			Mission.bActive = Record.bActive;
+			if (Helicopter->IsFixedWingAircraft() && (Record.TypeMask & SimCopterMissions::TYPE_Transport) == 0 &&
+				!SimCopterMissions::FSimCopterMissionSystem::IsBaseLocationRecord(Record)) Mission.bActive = false;
 			Mission.Tile = FIntPoint(Record.TileX, Record.TileY);
 			Mission.Secondary = FIntPoint(Record.SecondaryX, Record.SecondaryY);
 			Mission.Tertiary = FIntPoint(Record.TertiaryX, Record.TertiaryY);

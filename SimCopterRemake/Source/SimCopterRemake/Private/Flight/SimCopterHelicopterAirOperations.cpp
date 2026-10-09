@@ -75,6 +75,7 @@ void ASimCopterHelicopterPawn::ControllerRightBumperReleased()
 }
 void ASimCopterHelicopterPawn::RequestAirSupport(bool bAutomatic)
 {
+	if (IsFixedWingAircraft()) { LastToolStatus=TEXT("Transport only - board a helicopter for emergency response."); return; }
 	auto* Ops=GetWorld()?GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>():nullptr;
 	auto* Missions=ResolveMissionSystem();
 	int32 EventId=INDEX_NONE;
@@ -91,6 +92,7 @@ void ASimCopterHelicopterPawn::RequestAirSupport(bool bAutomatic)
 }
 void ASimCopterHelicopterPawn::TogglePoliceTaser()
 {
+	if (IsFixedWingAircraft()) return;
 	StopPrimaryToolUse(); // Clear held fire AND a queued projectile press before changing roles.
 	AirOperations->TogglePoliceTaser();
 	RefreshCrosshairVisibility();

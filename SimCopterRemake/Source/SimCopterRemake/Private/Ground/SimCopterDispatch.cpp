@@ -10,7 +10,8 @@ bool IsRoadTileId(int32 XbldId)
 {
 	return (XbldId >= 0x1d && XbldId <= 0x2b)
 		|| (XbldId >= 0x3f && XbldId <= 0x46)
-		|| (XbldId >= 0x51 && XbldId <= 0x59);
+		|| (XbldId >= 0x49 && XbldId <= 0x59)
+		|| (XbldId >= 0x5d && XbldId <= 0x6b);
 }
 
 // SCHOOK: IsIntersectionTileId 0x004bb900
@@ -332,6 +333,15 @@ FDispatchOutcome Dispatch(
 		return Outcome;
 	}
 	Outcome.DestinationTile = DestinationTile;
+	// Road distance, not crow-flight distance: a nearby station across a river may be
+	// much farther away than another station on the same bank.
+	for (FCandidate& Entry : Candidates)
+	{
+		const FIntPoint Origin = Entry.Kind == ECandidateKind::Station
+			? Stations[Entry.Index].RoadTile : Slots[Entry.Index].Tile;
+		const float Seconds = World.RouteTravelSeconds(Origin, DestinationTile);
+		Entry.Cost = Seconds < 100000.0f ? FMath::RoundToInt(Seconds * 1000.0f) : MAX_int32;
+	}
 
 	FCandidate Candidate;
 	while (PopCheapestCandidate(Candidates, Candidate))

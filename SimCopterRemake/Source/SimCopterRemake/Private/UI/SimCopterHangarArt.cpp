@@ -173,7 +173,10 @@ const FSlateBrush* USimCopterHangarArt::GetBitmap(const FString& FileName, const
 			return Upscaled;
 		}
 	}
-	return BuildBrush(FileName, FileName, bColorKeyed, FIntRect(), ESimCopterArtRotation::None);
+	// Opaque inspection and keyed page rendering must not share a cached texture:
+	// otherwise whichever loads MBox.bmp first decides whether its cyan corners show.
+	const FString CacheKey = FileName.ToLower() + (bColorKeyed ? TEXT("|keyed") : TEXT("|opaque"));
+	return BuildBrush(CacheKey, FileName, bColorKeyed, FIntRect(), ESimCopterArtRotation::None);
 }
 
 void USimCopterHangarArt::RegisterRuntimeTexture(const FString& Key, UTexture2D* Texture)

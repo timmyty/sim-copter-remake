@@ -22,6 +22,7 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	bool IsCityIntroPlaying() const;
 
 	// The Settings panel's "Leave City" (help/English/38ref.htm): back to the main menu.
 	UFUNCTION(Exec)
@@ -74,6 +75,7 @@ private:
 	friend class FSimCopterStartupCameraTest;
 	void FinishStartupCamera();
 	bool bStartupWorldHidden = false;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<class USimCopterCityIntro> CityIntro;
 
 	TWeakObjectPtr<ASimCopterMissionSystemActor> MissionSystemActor;
 

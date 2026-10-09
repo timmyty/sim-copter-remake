@@ -387,6 +387,10 @@ public:
 	void ClearXbldTiles(const TArray<FIntPoint>& Tiles);
 	// The city actor this traffic system is bound to; owns the building instances.
 	ASimCity2000CityActor* GetCityActor() const;
+	// Safe door-side exits, also used for the implicit driver of an ambient car.
+	bool TryGetVehicleEscapeLocation(const ASimCopterGroundAgent& Vehicle, FVector& OutLocation) const;
+	ASimCopterGroundAgent* SpawnVehicleDriver(const FVector& Location, const ASimCopterGroundAgent* Vehicle = nullptr);
+	void NotifyVehicleAccidentExploded(ASimCopterGroundAgent& Vehicle);
 	bool TryGetTileCenterWorldLocation(int32 FileX, int32 FileY, FVector& OutWorldLocation) const;
 	// Convert a source-runtime (X, Y-up, Z) 16.16 offset with the same axis mapping,
 	// city yaw, and actor transform used by the rendered city geometry.
@@ -804,6 +808,8 @@ private:
 	friend class USimCopterAirOperationsSubsystem;
 	friend class USimCopterAirOperationsComponent;
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCarAccidentTest;
+	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;
@@ -1251,6 +1257,12 @@ public:
 	// --- emergency dispatch internals ---
 	// FUN_004bcc80: rescan the three station registries from the XBLD grid.
 	void RebuildDispatchStations();
+	void EnsureEmergencyRoadCoverage();
+	float RoadLinkTravelSeconds(int32 From, int32 To) const;
+	float RoadRouteTravelSeconds(const TArray<int32>& Route) const;
+	void GetRoadRoutingNeighbors(int32 Node, TArray<int32>& Out) const;
+	UPROPERTY(Transient) TArray<TObjectPtr<AActor>> EmergencyDepots;
+	friend class FSimCopterAircraftRoadUpdateTest;
 	// Per-frame state machines (FUN_004b9e40 and its fire/ambulance siblings).
 	void UpdateDispatchVehicles(float DeltaSeconds);
 	void DispatchAmbulancesForBodies(float DeltaSeconds);

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Game/SimCopterCheats.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "SimCopterCareerSubsystem.generated.h"
 
@@ -119,6 +120,7 @@ class SIMCOPTERREMAKE_API USimCopterCareerSubsystem : public UGameInstanceSubsys
 	GENERATED_BODY()
 
 public:
+	SimCopterCheats::FState Cheats;
 	// The runtime type index of the aircraft a new career starts with. FUN_0042d420 opens the
 	// catalog on the row the player owns, and every shipped career starts on the cheapest
 	// airframe - catalog row 0, runtime type 4, the Schweizer 300.

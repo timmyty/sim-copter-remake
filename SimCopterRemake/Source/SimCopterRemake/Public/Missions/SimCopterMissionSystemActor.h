@@ -450,6 +450,9 @@ public:
 	// every ignition next to the fire that threw it. That is the game's fire-spread-from-wreckage
 	// mechanic, and nothing was producing it.
 	void SpawnCrashBurningDebris(const FVector& WorldLocation, int32 OwnerEventId);
+	// Requested aftermath: short-lived visible flames on already demolished plots.
+	// These are cosmetic rubble fires, separate from building-fire mission accounting.
+	void AddPostBlastFire(const FVector& WorldLocation);
 
 	// How many burning-debris slots are alight. Exposed for the automation tests.
 	int32 GetBurningDebrisCount() const { return BurningDebris.Num(); }
@@ -483,6 +486,7 @@ public:
 
 private:
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;
@@ -653,6 +657,7 @@ private:
 		int32 OwnerEventId = INDEX_NONE;
 	};
 	TArray<FSimCopterBurningDebris> BurningDebris;
+	TArray<TPair<FVector, float>> PostBlastFires;
 	void UpdateBurningDebris(float DeltaSeconds);
 	// Shared tail of both spawners: seat the slot on the surface, arm its 60 s burn, play the
 	// grounding sound and post event 7.

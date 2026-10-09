@@ -112,7 +112,7 @@ bool USimCopterSaveGame::IsStructurallyValid(
 	}
 	if (bHasAircraftState &&
 		(ActiveHelicopterTypeIndex < 0 ||
-		 ActiveHelicopterTypeIndex >= SimCopterHelicopterRegistry::GetDefinitionCount() ||
+		 SimCopterHelicopterRegistry::FindByTypeIndex(ActiveHelicopterTypeIndex) == nullptr ||
 		 SelectedToolIndex < 0 ||
 		 SelectedToolIndex >= static_cast<int32>(ESimCopterHelicopterTool::Count) ||
 		 !FMath::IsFinite(FuelFraction) || FuelFraction < 0.0f || FuelFraction > 1.0f ||
@@ -123,7 +123,7 @@ bool USimCopterSaveGame::IsStructurallyValid(
 	}
 	for (const FSimCopterParkedAircraftSave& Parked : ParkedAircraft)
 	{
-		if (Parked.TypeIndex < 0 || Parked.TypeIndex >= SimCopterHelicopterRegistry::GetDefinitionCount() || Parked.RuntimeState.IsEmpty())
+		if (SimCopterHelicopterRegistry::FindByTypeIndex(Parked.TypeIndex) == nullptr || Parked.RuntimeState.IsEmpty())
 		{
 			OutError = TEXT("The save contains an invalid parked aircraft.");
 			return false;

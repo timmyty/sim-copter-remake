@@ -138,6 +138,41 @@ FVector AgustaSeat(int32 Index)
 	return FVector(Row == 0 ? 46 : 32 - (Row - 1) * 13, (Index % 2 == 0 ? -1 : 1) * 9, 17);
 }
 
+bool IsCabinWindow(const FMaxisMeshObject& Object, const FMaxisMeshFace& Face, int32 TypeIndex)
+{
+	if (TypeIndex == 9)
+	{
+		if (Face.MaterialIndex != 0 || Face.VertexIndices.Num() < 3) return false;
+		for (uint16 I : Face.VertexIndices)
+			if (!Object.Vertices.IsValidIndex(I) || Object.Vertices[I].Z > 2 * 262144) return false;
+		return true;
+	}
+	if (TypeIndex == 5) return IsAgustaWindow(Object, Face);
+	if (Face.MaterialIndex != 0 || Face.VertexIndices.Num() < 3) return false;
+	// Measured against each GEO canopy: retain black tires, exhausts and tail hardware.
+	for (uint16 Index : Face.VertexIndices)
+		if (!Object.Vertices.IsValidIndex(Index) || Object.Vertices[Index].Y < 0.5 * 262144 ||
+			Object.Vertices[Index].Z < -0.6 * 262144) return false;
+	return true;
+}
+
+FVector CabinSeat(int32 TypeIndex, int32 Index)
+{
+	if (TypeIndex == 9) return FVector(28 - Index * 16, 0, -1);
+	// GEO local centimetres at ModelScale=0.25. These fit the measured cabin envelopes,
+	// not the whole-airframe bounds (which include the tail, skids and rotor).
+	if (TypeIndex == 5) return AgustaSeat(Index);
+	if (TypeIndex == 2) return FVector(43, 0, 39); // Apache has a pilot and no passenger seats.
+	if (TypeIndex == 4) return FVector(17, (Index - 1) * 9, 21); // three abreast in the bubble
+	if (TypeIndex == 3) return FVector(58 - (Index / 3) * 13, (Index % 3 - 1) * 15, 23);
+	if (TypeIndex == 6) return FVector(53 - (Index / 3) * 11, (Index % 3 - 1) * 11, 25);
+	if (TypeIndex == 7) return FVector(43 - (Index / 2) * 14, (Index % 2 ? 1 : -1) * 9, 29);
+	const float Front = TypeIndex == 0 ? 42 : 30;
+	const float Height = TypeIndex == 0 ? 22 : TypeIndex == 1 ? 30 : 28;
+	if (Index < 2) return FVector(Front, (Index ? 1 : -1) * 8, Height);
+	return FVector(Front - 19, (Index - 3) * 9, Height);
+}
+
 void AppendSeatedOccupant(const FVector& Seat, const FLinearColor& Shirt, bool bPatient, FMaxisMeshSection& Out)
 {
 	auto Box = [&](FVector Center, FVector Half, FLinearColor Color)

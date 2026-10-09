@@ -212,6 +212,10 @@ public:
 
 	/** Stop and discard all one-shot standalone sounds owned by the current front-end screen. */
 	void StopStandaloneSounds();
+	// Original ending (FUN_00446af0): one alNN.wav cue, panned to its speaker.
+	static bool BuildGortVoice(const FString& SoundDirectory, int32 Voice, int32 Speaker, FSimCopterPcmClip& OutClip);
+	UAudioComponent* PlayGortVoice(int32 Voice, int32 Speaker);
+	void StopStandaloneSound(UAudioComponent* Component);
 
 	/**
 	 * The looping half of the same idea, for the one standalone sound object the original plays
@@ -301,6 +305,8 @@ public:
 	static constexpr float OriginalUnitToCm = 6.25f;
 
 private:
+	friend class FSimCopterGortAssetsTest;
+	friend class FSimCopterGortReturnTest;
 	friend class FSimCopterRadioSequentialTest;
 	friend class FSimCopterAudioOverlapTest;
 	friend class FSimCopterGameplayPolishTest;

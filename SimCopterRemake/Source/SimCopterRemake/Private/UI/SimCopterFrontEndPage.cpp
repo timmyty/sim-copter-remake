@@ -159,9 +159,11 @@ TSharedRef<SWidget> MakeButton(
 	const FText& Label,
 	const int32 WindowsFontHeight,
 	FOnClicked OnClicked,
-	TArray<TSharedRef<FButtonStyle>>& StyleKeepAlive)
+	TArray<TSharedRef<FButtonStyle>>& StyleKeepAlive,
+	bool bFocusable)
 {
 	TSharedRef<SButton> Button = SNew(SButton)
+		.IsFocusable(bFocusable)
 		.OnClicked(OnClicked)
 		.HAlign(HAlign_Center)
 		.VAlign(VAlign_Center)

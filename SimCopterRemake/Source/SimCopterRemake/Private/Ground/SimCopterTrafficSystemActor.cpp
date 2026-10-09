@@ -1369,14 +1369,14 @@ void ASimCopterTrafficSystemActor::GetBurningVehicles(TArray<FSimCopterBurningVe
 			continue;
 		}
 		const FSimCopterVehicleTrafficState* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(Vehicle));
-		if (State == nullptr || !State->bMissionOnFire)
+		if (Vehicle->IsHidden() || ((State == nullptr || !State->bMissionOnFire) && !Vehicle->IsVehicleAccidentBurning()))
 		{
 			continue;
 		}
 		FSimCopterBurningVehicle Burning;
 		// Stable, collision-free key distinct from the mission-system flame slot indices.
 		Burning.Key = 0x40000000 | static_cast<int32>(Vehicle->GetUniqueID() & 0x3FFFFFFF);
-		Burning.EventId = State->MissionEventId;
+		Burning.EventId = State ? State->MissionEventId : INDEX_NONE;
 		Burning.World = Vehicle->GetActorLocation();
 		Out.Add(Burning);
 	}
@@ -1397,6 +1397,8 @@ void ASimCopterTrafficSystemActor::DouseBurningVehiclesNear(const FVector& World
 		{
 			continue;
 		}
+		if (FVector::DistSquared(Vehicle->GetActorLocation(), WorldLocation) <= RadiusSq)
+			Vehicle->DouseVehicleAccident();
 		FSimCopterVehicleTrafficState* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(Vehicle));
 		if (State == nullptr || !State->bMissionOnFire)
 		{
@@ -1413,6 +1415,69 @@ void ASimCopterTrafficSystemActor::DouseBurningVehiclesNear(const FVector& World
 		Vehicle->SetTrafficSpeedScale(1.0f);
 		OutExtinguishedEventIds.Add(State->MissionEventId);
 		State->MissionEventId = INDEX_NONE;
+	}
+}
+
+bool ASimCopterTrafficSystemActor::TryGetVehicleEscapeLocation(const ASimCopterGroundAgent& Vehicle, FVector& OutLocation) const
+{
+	const float Radius = FMath::Max(100.0f,Vehicle.GetCollisionRadiusCm()+32+30);
+	for (int32 Ring=0;Ring<4;++Ring)
+	for (int32 Side=0;Side<8;++Side)
+	{
+		const FVector Direction = Vehicle.GetActorRightVector().RotateAngleAxis(float(Side)*45,FVector::UpVector);
+		FVector Candidate = Vehicle.GetActorLocation()+Direction*(Radius+Ring*60);
+		int32 X,Y;
+		if (!TryGetPeopleTileCoordinateAtWorldLocation(Candidate,X,Y)) continue;
+		float SurfaceZ;
+		const auto* City=GetCityActor();
+		const bool bOnRoad = City && City->TryGetRoadSurfaceWorldZ(Candidate,SurfaceZ);
+		if (!bOnRoad && IsWaterTile(X,Y)) continue;
+		if (!bOnRoad &&
+			!TryGetTerrainWorldZAtWorldLocation(Candidate,SurfaceZ)) continue;
+		if (FMath::Abs(SurfaceZ-(Vehicle.GetActorLocation().Z-Vehicle.GetCapsuleHalfHeightCm()))>80) continue;
+		const FVector Feet(Candidate.X,Candidate.Y,SurfaceZ);
+		Candidate=Feet+FVector(0,0,92);
+		if (!IsMissionGroundSpawnValid(Candidate) || !IsResponderSpawnClear(Feet) ||
+			(!bOnRoad && !IsPedestrianSpawnLocationOpen(Candidate))) continue;
+		OutLocation=Candidate;
+		return true;
+	}
+	return false;
+}
+
+ASimCopterGroundAgent* ASimCopterTrafficSystemActor::SpawnVehicleDriver(const FVector& Location, const ASimCopterGroundAgent* Vehicle)
+{
+	if (!GetWorld() || !GroundAgentClass) return nullptr;
+	FActorSpawnParameters Params;
+	Params.Owner=this;
+	Params.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	auto* Person=GetWorld()->SpawnActor<ASimCopterGroundAgent>(GroundAgentClass,Location,FRotator::ZeroRotator,Params);
+	if (!Person) return nullptr;
+	const bool bCriminal = Vehicle && Vehicle->IsCriminalCar();
+	Person->InitialPersonState=bCriminal ? 13 : 0;
+	Person->MissionEventId=bCriminal ? Vehicle->GetCriminalEventId() : INDEX_NONE;
+	Person->SetInitialBehaviorClass(bCriminal ? 0x0f : FSimCopterPeopleCityRules::ChooseUnspecifiedBehaviorClass(PeopleRandomState));
+	const FString Mesh=PedestrianMeshNames.IsEmpty() ? FString() : PedestrianMeshNames[RandomStream.RandRange(0,PedestrianMeshNames.Num()-1)];
+	Person->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian,Mesh,
+		ActiveOriginalGameRootPath.IsEmpty() ? ResolveOriginalGameRoot() : ActiveOriginalGameRootPath,PedestrianSpeedCmPerSec);
+	Person->SetActorLocation(Location-FVector(0,0,92-Person->GetCapsuleHalfHeightCm()));
+	PedestrianAgents.Add(Person);
+	return Person;
+}
+
+void ASimCopterTrafficSystemActor::NotifyVehicleAccidentExploded(ASimCopterGroundAgent& Vehicle)
+{
+	if (auto* State=VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(&Vehicle)))
+	{
+		// A car already owned by a fire/jam cannot leave that mission waiting on
+		// an actor which is about to disappear. Destruction never clears it for pay.
+		if (State->MissionEventId != INDEX_NONE)
+			if (auto* Missions=ResolveMissionSystem())
+			{
+				if (State->bMissionOnFire) Missions->PostMissionEvent(SimCopterMissions::EVT_CarBurned,State->MissionEventId,1,true);
+				else if (State->bMissionJammed) Missions->PostMissionEvent(SimCopterMissions::EVT_SetCategory,State->MissionEventId,SimCopterMissions::CAT_ExpireSilently,true);
+			}
+		State->bMissionOnFire=false; State->bMissionJammed=false; State->MissionEventId=INDEX_NONE;
 	}
 }
 
@@ -3544,6 +3609,7 @@ bool ASimCopterTrafficSystemActor::RebuildSpawnData()
 	PedestrianNodeCount = PedestrianNodes.Num();
 
 	RebuildDispatchStations();
+	EnsureEmergencyRoadCoverage();
 	BuildWholeMapPopulation();
 
 	UE_LOG(
@@ -3719,7 +3785,7 @@ bool ASimCopterTrafficSystemActor::TryPlanRoadRoute(
 				Queue.HeapPush({NewCost, Neighbor}, Earlier);
 			}
 		};
-		for (const int32 Neighbor : RoadNodes[Current].Neighbors) Visit(Neighbor, 1.0f);
+		for (const int32 Neighbor : RoadNodes[Current].Neighbors) Visit(Neighbor, RoadLinkTravelSeconds(Current, Neighbor));
 		if (SimCopterTunnel::IsPortal(RoadNodes[Current].BuildingId))
 		{
 			for (const int32 Approach : RoadNodes[Current].Neighbors)
@@ -3727,9 +3793,7 @@ bool ASimCopterTrafficSystemActor::TryPlanRoadRoute(
 				int32 Exit, ExitRoad;
 				if (FindLinkedTunnelExit(Current, Approach, Exit, ExitRoad))
 				{
-					const int32 Tiles = FMath::Abs(RoadNodes[Current].FileX - RoadNodes[Exit].FileX) +
-						FMath::Abs(RoadNodes[Current].FileY - RoadNodes[Exit].FileY);
-					Visit(Exit, float(Tiles));
+					Visit(Exit, RoadLinkTravelSeconds(Current, Exit));
 				}
 			}
 		}
@@ -3758,7 +3822,7 @@ namespace
 class FTrafficDispatchWorld final : public SimCopterDispatch::ISimCopterDispatchWorld
 {
 public:
-	explicit FTrafficDispatchWorld(const ASimCopterTrafficSystemActor& InActor, TFunctionRef<bool(const FIntPoint&, const FIntPoint&)> InRoute)
+	explicit FTrafficDispatchWorld(const ASimCopterTrafficSystemActor& InActor, TFunctionRef<float(const FIntPoint&, const FIntPoint&)> InRoute)
 		: Actor(InActor)
 		, Route(InRoute)
 	{
@@ -3771,12 +3835,13 @@ public:
 
 	virtual bool CanRouteBetween(const FIntPoint& FromRoadTile, const FIntPoint& ToRoadTile) const override
 	{
-		return Route(FromRoadTile, ToRoadTile);
+		return Route(FromRoadTile, ToRoadTile) < SimCopterDispatch::MaximumTravelSeconds;
 	}
+	virtual float RouteTravelSeconds(const FIntPoint& From, const FIntPoint& To) const override { return Route(From, To); }
 
 private:
 	const ASimCopterTrafficSystemActor& Actor;
-	TFunctionRef<bool(const FIntPoint&, const FIntPoint&)> Route;
+	TFunctionRef<float(const FIntPoint&, const FIntPoint&)> Route;
 };
 }
 
@@ -3822,7 +3887,7 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 	auto RouteQuery = [this](const FIntPoint& From, const FIntPoint& To)
 	{
 		TArray<int32> Unused;
-		return TryPlanRoadRoute(From, To, Unused);
+		return TryPlanRoadRoute(From, To, Unused) ? RoadRouteTravelSeconds(Unused) : TNumericLimits<float>::Max();
 	};
 	const FTrafficDispatchWorld DispatchWorld(*this, RouteQuery);
 
@@ -4148,11 +4213,9 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::SpawnDispatchVehicleAgent(
 		return nullptr;
 	}
 
-	// FUN_0049dbb0 is the shared placement for every vehicle class, so an emergency unit draws
-	// its road speed from the same range an ambient car does. That is deliberate: a police car
-	// cannot out-run a speeder at 1.75x, which is why the player has to slow one with the
-	// searchlight before the chase can end.
-	const float ServiceSpeedCmPerSec = DrawVehicleSpeedCmPerSec();
+	// Intentional extension to FUN_0049dbb0: responders have a higher service speed so
+	// the route-time coverage guarantee includes outlying roads and police pursuits.
+	const float ServiceSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
 	FString MeshName = GetDispatchMeshName(Service);
 	Agent->ConfigureAgent(
 		ESimCopterGroundAgentKind::Vehicle,
@@ -4208,7 +4271,9 @@ bool ASimCopterTrafficSystemActor::TryRetargetDispatchVehicle(FSimCopterDispatch
 
 	Vehicle.DestinationTile = DestinationTile;
 	Vehicle.RouteNodes = MoveTemp(Route);
-	Vehicle.RouteCursor = 0;
+	// The current tile is the route origin, not a destination behind the moving car.
+	// Repeated police chase retargets used to turn back toward its centre every time.
+	Vehicle.RouteCursor = Vehicle.RouteNodes.Num() > 1 ? 1 : 0;
 	AdvanceDispatchRoute(Vehicle);
 	return true;
 }
@@ -4861,6 +4926,7 @@ void ASimCopterTrafficSystemActor::UpdateCriminalCars(const float DeltaSeconds)
 	{
 		ASimCopterGroundAgent* Car = CriminalCars[Index].Get();
 		if (IsInTunnelTransit(Car)) continue;
+		if (Car && Car->IsVehicleTipped()) continue;
 		if (Car == nullptr)
 		{
 			CriminalCars.RemoveAt(Index);
@@ -5304,6 +5370,7 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 		ReleaseDispatchVehicle(Service, SlotIndex);
 		return;
 	}
+	if (Vehicle.Agent->IsVehicleTipped()) return;
 	if (const FSimCopterVehicleTrafficState* TrafficState = VehicleTrafficStates.Find(
 		TObjectKey<ASimCopterGroundAgent>(Vehicle.Agent.Get()));
 		TrafficState != nullptr && TrafficState->bMissionOnFire)
@@ -5315,6 +5382,12 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 	// The original updates the marker inside this same tick, off the state it is about to act
 	// on, so it appears the frame the unit is dispatched and clears the frame it arrives.
 	UpdateDispatchMarker(Service, Vehicle);
+	if (Vehicle.State == ESimCopterDispatchVehicleState::Responding || Vehicle.State == ESimCopterDispatchVehicleState::Chasing ||
+		Vehicle.State == ESimCopterDispatchVehicleState::Returning)
+	{
+		Vehicle.Agent->MovementSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
+		Vehicle.Agent->SetTrafficSpeedScale(1.0f);
+	}
 	if (Vehicle.BodyRecoveryPhase != 0 && Vehicle.State == ESimCopterDispatchVehicleState::OnScene)
 	{
 		UpdateBodyRecovery(Vehicle, DeltaSeconds);
@@ -5352,8 +5425,9 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 
 						// The chase issues the same stop order an arrived unit does, so a
 						// marked speeder can be taken while the police car is still rolling.
-						if (bChasingTarget &&
-							SimCopterCriminalCar::GetTileStepDistance(Vehicle.DestinationTile, TargetTile)
+						FIntPoint PoliceTile;
+						if (bChasingTarget && TryGetDispatchVehicleTile(Vehicle, PoliceTile) &&
+							SimCopterCriminalCar::GetTileStepDistance(PoliceTile, TargetTile)
 								< SimCopterCriminalCar::PursuitMaxTileSteps &&
 							CanVehicleStopOnTile(TargetTile))
 						{

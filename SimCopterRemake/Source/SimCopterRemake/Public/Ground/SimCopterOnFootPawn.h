@@ -56,6 +56,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void Landed(const FHitResult& Hit) override;
 	void BeginAirborneExit(const FVector& Location, const FVector& Velocity);
+	void TeleportForCheat(const FVector& Location);
 	bool IsTaserAiming() const { return bTaserAiming; }
 	void ToggleParachute();
 	bool IsParachuteDeployed() const { return bParachuteDeployed; }

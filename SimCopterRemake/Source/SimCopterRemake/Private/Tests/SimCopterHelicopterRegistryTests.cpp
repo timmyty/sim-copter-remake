@@ -77,7 +77,7 @@ bool FSimCopterHelicopterRegistryShapeTest::RunTest(const FString& Parameters)
 	// FUN_0042d840's helicopter permutation {4,0,1,8,3,5,6,7}: eight civilian rows, Apache
 	// now appended as the requested mystery row.
 	TestEqual(TEXT("nine catalog rows including mystery aircraft"), SeenCatalogIndices.Num(), 9);
-	TestNull(TEXT("out-of-range type index has no entry"), SimCopterHelicopterRegistry::FindByTypeIndex(9));
+	TestNull(TEXT("out-of-range type index has no entry"), SimCopterHelicopterRegistry::FindByTypeIndex(10));
 	TestNull(TEXT("negative type index has no entry"), SimCopterHelicopterRegistry::FindByTypeIndex(-1));
 
 	// Alias lookup checks for Schweizer 300

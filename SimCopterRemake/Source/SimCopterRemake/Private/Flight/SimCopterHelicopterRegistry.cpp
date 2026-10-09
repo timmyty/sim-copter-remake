@@ -119,12 +119,30 @@ const TArray<FSimCopterHelicopterDefinition>& GetDefinitions()
 
 const FSimCopterHelicopterDefinition* FindByTypeIndex(int32 TypeIndex)
 {
+	if (TypeIndex == PlaneTypeIndex)
+	{
+		static const FSimCopterHelicopterDefinition Plane = []
+		{
+			FSimCopterHelicopterDefinition Result;
+			Result.InternalTypeIndex = PlaneTypeIndex;
+			Result.DisplayName = TEXT("Transport Plane");
+			Result.TweakSection = TEXT("Jet Ranger"); // maintenance/fuel defaults, separate flight model
+			Result.BodyObjectId = 0x12e;
+			Result.BodyObjectName = TEXT("PLANE1");
+			Result.PassengerSeats = 1;
+			Result.bNoTailRotor = true;
+			Result.EngineLoopSound = TEXT("CESSLP1.WAV");
+			return Result;
+		}();
+		return &Plane;
+	}
 	const TArray<FSimCopterHelicopterDefinition>& Definitions = GetDefinitions();
 	return Definitions.IsValidIndex(TypeIndex) ? &Definitions[TypeIndex] : nullptr;
 }
 
 const FSimCopterHelicopterDefinition* FindByDisplayName(const FString& Name)
 {
+	if (Name.TrimStartAndEnd().Equals(TEXT("Transport Plane"), ESearchCase::IgnoreCase)) return FindByTypeIndex(PlaneTypeIndex);
 	const FString Trimmed = Name.TrimStartAndEnd();
 	if (Trimmed.IsEmpty())
 	{

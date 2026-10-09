@@ -635,6 +635,9 @@ void FSimCopterFlightModel::StepVertical(int32 Dt, const FSimCopterFlightInputs&
 		{
 			ClimbSpeed = FMath::Min(ClimbSpeed + SpeedDelta * -2, 0);
 		}
+		// SCHOOK: VerticalSuperpower 0x00487160. Preserve the original negative-
+		// collective sign reversal as well as its tenfold multiplier.
+		if (Inputs.bTurbo) ClimbSpeed = -Mul(ClimbSpeed, 0xa0000);
 		if (State == ESimCopterFlightState::Parked)
 		{
 			ClimbSpeed = 0;
@@ -680,6 +683,8 @@ void FSimCopterFlightModel::StepVertical(int32 Dt, const FSimCopterFlightInputs&
 		// Climb: cap at 4x ClimbRate scaled by the load factor.
 		const int32 ClimbCap = Mul(Tuning.ClimbRate * 4, LoadFactor);
 		ClimbSpeed = FMath::Min(ClimbSpeed, ClimbCap);
+		// FUN_00487160 multiplies after the initial cap, before rotor/ceiling checks.
+		if (Inputs.bTurbo) ClimbSpeed = Mul(ClimbSpeed, 0xa0000);
 
 		if (RotorSpeed < RotorLiftGate)
 		{
@@ -690,7 +695,7 @@ void FSimCopterFlightModel::StepVertical(int32 Dt, const FSimCopterFlightInputs&
 		else if (Altitude - Env.TerrainHeight <= CeilingAboveTerrain)
 		{
 			ClimbSpeed += Mul(Tuning.ClimbRate, Dt * 2);
-			ClimbSpeed = FMath::Min(ClimbSpeed, ClimbCap);
+			if (!Inputs.bTurbo) ClimbSpeed = FMath::Min(ClimbSpeed, ClimbCap);
 		}
 		else
 		{
@@ -780,7 +785,7 @@ void FSimCopterFlightModel::StepFuelAndDamage(int32 Dt, FSimCopterFlightEvents& 
 	// out to gallons-per-hour within ~7%; plus the flight timer.
 	if (State == ESimCopterFlightState::Flying)
 	{
-		if (Fuel > 0)
+		if (Fuel > 0 && !bCheatInfiniteFuel) // FUN_00484d20: DAT_0051ac60
 		{
 			Fuel = FMath::Max(0, Fuel - Mul(0x11, Mul(Tuning.FuelRateGalPerHour, Dt)));
 		}
@@ -796,7 +801,7 @@ void FSimCopterFlightModel::StepFuelAndDamage(int32 Dt, FSimCopterFlightEvents& 
 
 void FSimCopterFlightModel::ApplyDamage(int32 Amount, FSimCopterFlightEvents& OutEvents)
 {
-	if (Amount > 0)
+	if (Amount > 0 && !bCheatInvulnerable) // FUN_00484d20 / FUN_00489800: DAT_0051ac5c
 	{
 		HitPoints -= Amount;
 		OutEvents.DamageTaken += Amount;
