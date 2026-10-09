@@ -1,0 +1,36 @@
+[
+  {
+    "source": "HSI.mp4",
+    "source_bytes": 492338216,
+    "output_bytes": 19774886,
+    "source_size": [
+      1920,
+      1080
+    ],
+    "output": "HSI.mp4",
+    "size": [
+      1280,
+      720
+    ],
+    "frame_rate": "24/1",
+    "duration": "206.336000",
+    "sha256": "d559c7ac4d45714c48c892a67e94f71d1870d383a3239001a3ecb3c611c19957"
+  },
+  {
+    "source": "LightsCameraActionSimCopter.mp4",
+    "source_bytes": 3871479,
+    "output_bytes": 3154014,
+    "source_size": [
+      128,
+      128
+    ],
+    "output": "LightsCameraActionSimCopter.mp4",
+    "size": [
+      1080,
+      1080
+    ],
+    "frame_rate": "10/1",
+    "duration": "144.661000",
+    "sha256": "04e93fe5ece2382d1a6022090e2f875d995034a78c2ea7138bd27b21ffaf25c8"
+  }
+]

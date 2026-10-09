@@ -28,6 +28,8 @@ enum class ESimCopterSettingsScreen : uint8
 	Message,       // MBox.bmp, one button
 	Confirm,       // MBox.bmp, Yes/No
 	SaveBeforeLeave,// MBox.bmp, STRINGTABLE 49 Yes/No
+	CheatEntry,
+	CheatEnding,
 };
 
 /**
@@ -45,6 +47,9 @@ class SIMCOPTERREMAKE_API ASimCopterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	friend class USimCopterCityIntro;
+	friend class FSimCopterCityIntroTest;
+	friend class FSimCopterGortReturnTest;
 	bool IsUsingGamepadInput() const { return bLastInputWasGamepad; }
 	void NoteInputDevice(bool bGamepad) { bLastInputWasGamepad = bGamepad; }
 	void NoteGamepadDevice(FInputDeviceId Device);
@@ -57,6 +62,10 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetupInputComponent() override;
+	virtual void PlayerTick(float DeltaSeconds) override;
+	void OpenCheatEntry();
+	FString ExecuteCheatCodes(const FString& Text);
+	bool HandleCheatKey(const FKeyEvent& Event);
 
 	/** Console equivalent of the key, so the screen can be reached without a binding. */
 	UFUNCTION(Exec)
@@ -115,6 +124,11 @@ public:
 	void PopPause();
 
 private:
+	TSharedPtr<SWidget> OnFootCheatMap;
+	TWeakObjectPtr<class ACameraActor> CheatCarCamera;
+	TWeakObjectPtr<class ASimCopterGroundAgent> CheatCar;
+	void UpdateCheatViews();
+	void RemoveCheatViews();
 	UPROPERTY(Transient)
 	TObjectPtr<USimCopterHangarArt> Art;
 

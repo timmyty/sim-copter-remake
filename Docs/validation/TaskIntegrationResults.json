@@ -1,0 +1,2061 @@
+{
+  "source_file_count": 371,
+  "normalized_source_sha256": "6fbbc34efd61752cf33838af6fe843532523fa02f57884b979cd87e32670469f",
+  "normalization": "CRLF to LF; sorted relative path + NUL + per-file SHA-256 + LF",
+  "source_publication_match": true,
+  "assets": [
+    {
+      "path": "SimCopterRemake/Content/DriveInVideos/HSI.mp4",
+      "sha256": "d559c7ac4d45714c48c892a67e94f71d1870d383a3239001a3ecb3c611c19957",
+      "bytes": 19774886
+    },
+    {
+      "path": "SimCopterRemake/Content/DriveInVideos/LightsCameraActionSimCopter.mp4",
+      "sha256": "04e93fe5ece2382d1a6022090e2f875d995034a78c2ea7138bd27b21ffaf25c8",
+      "bytes": 3154014
+    },
+    {
+      "path": "SimCopterRemake/Content/Materials/M_SimCopterDriveIn.uasset",
+      "sha256": "2513442bb65b34785806d0757074aa85b30f12e97bf06d45a1ff604593da4e88",
+      "bytes": 7587
+    },
+    {
+      "path": "SimCopterRemake/Content/Materials/T_DriveInDefault.uasset",
+      "sha256": "f6ff727e051bdb8ceae4c4b08eb6ad7e3faca179d81d3e38713aa04d0ceccb1a",
+      "bytes": 2379
+    }
+  ],
+  "installed_content": [
+    {
+      "path": "DriveInVideos/HSI.mp4",
+      "sha256": "d559c7ac4d45714c48c892a67e94f71d1870d383a3239001a3ecb3c611c19957"
+    },
+    {
+      "path": "DriveInVideos/LightsCameraActionSimCopter.mp4",
+      "sha256": "04e93fe5ece2382d1a6022090e2f875d995034a78c2ea7138bd27b21ffaf25c8"
+    },
+    {
+      "path": "SimCopterRemake/Content/Paks/global.ucas",
+      "sha256": "4f8ba44a37c724af1eff04465a433512a36325d164e75a53f0d2224649210e9f"
+    },
+    {
+      "path": "SimCopterRemake/Content/Paks/global.utoc",
+      "sha256": "68140ea97f7a3461c2f185682e90d01ee187f8d99410e2ac7b7a8981ed54c600"
+    },
+    {
+      "path": "SimCopterRemake/Content/Paks/SimCopterRemake-Windows.pak",
+      "sha256": "034d3f65d28616190292ee60e0c5ed83e06c5fe813e90b73087946d582a16e5a"
+    },
+    {
+      "path": "SimCopterRemake/Content/Paks/SimCopterRemake-Windows.ucas",
+      "sha256": "429fd463bc828f6a5cea42e8049981ee7bacedd3d3c6dadc7e77a9b515a62aa5"
+    },
+    {
+      "path": "SimCopterRemake/Content/Paks/SimCopterRemake-Windows.utoc",
+      "sha256": "046f75eb65afd704e0c92bcab93f069e40b99204a9c046d80fc27a03009449c6"
+    }
+  ],
+  "installed_original_assets_verified": 25,
+  "date": "2026-10-09",
+  "editor_build": "Succeeded",
+  "shipping_build": "Succeeded",
+  "reports": [
+    {
+      "name": "tests-full-final",
+      "succeeded": 305,
+      "succeeded_with_warnings": 9,
+      "failed": 2,
+      "not_run": 0,
+      "tests": [
+        {
+          "name": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.AircraftRoadUpdate.AllCitiesAndAircraft",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Ambient.UfoHitCount",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Apache.AllNinePaintModels",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Apache.MysteryPurchaseAndWeapons",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Apache.OriginalCityMarker",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.ActionDelegation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.HospitalMedicRetire",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.LateOpcodes",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.Opcode22PlayerTileProbe",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.PoliceReturnBudget",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.PoliceReturnInterrupt",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.Reference",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Behavior.VM.SelectionContact",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Camera.StartupPlacement",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Career.CityTransition",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Career.FinalCityEndsTheLadder",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.CEOFreeDeliveryAndLifetime",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.CityEffects",
+          "state": "Success",
+          "warnings": 17,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.DialogEscape",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.DriveInCommands",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.FuelShieldsAndTurbo",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.GortOriginalAssets",
+          "state": "Success",
+          "warnings": 1,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.GortPlayback",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.GortRender",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.GortReturnToGame",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.GortTimeline",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.NuclearPreservesServices",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.OriginalDialogArt",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.OriginalDogAssets",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.OriginalParser",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Checkup.Apply",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Checkup.ClampOrder",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Checkup.Layout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Checkup.Offer",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Checkup.SliderRanges",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Checkup.SliderTravel",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.PeopleRules.ClassMap",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.PeopleRules.SymmetricHeightStep",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.AirportBlockFootprintQuirk",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.AirportBlockStamp",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.AirportFreePad",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.AirportPadTable",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.AirportSearch",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.BuildingDemolition",
+          "state": "Success",
+          "warnings": 34,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.BuildingFootprintClaim",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.DayNightFog",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.DayNightLength",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.EffectExposure",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.HangarPlacement",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.IslandBuildingFootprints",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.IslandHospitalFootprints",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.PowerLineHeight",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.RoadDecorationDispatch",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.RoadDecorationMeshes",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.RuntimeMeshDuplication",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.SmokeStackMarkers",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.SurfaceShadingDefaults",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.City.TreeGrounding",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.CityIntro.RouteAndControlRestoration",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Collision.AirframeColliderFit",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Collision.BuildingWalls",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Collision.StepSweepShape",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Collision.WalkProbeIgnoresOverhead",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Collision.WallContainmentStep",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.Contexts",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.ContextualHelp",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.FlightRouting",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.HelpDeviceStyle",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.HelpPresentation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuConfirmCancel",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuOutlineArt",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuRoutedInput",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuSpatialNavigation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.RadialSelection",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Controller.WheelPresentation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Crime.PullOverOrder",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Crime.PursuitTargetFilter",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Crime.SpeederSpeed",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Crime.SpotlightMark",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.ArrivalAction",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.EmergencyCrewStates",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.Failures",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.HospitalParamedicRespawn",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.HospitalRoofPost",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.MedevacHandoffGates",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.PoliceRoofBoarding",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.Selection",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.Spiral",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.StationScan",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.TargetSnap",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Dispatch.TileRules",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Economy.CareerParsing",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Economy.ScoreProgression",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Economy.UserCityHasNoPointsGoal",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Effects.ApacheMissionBlastDefaults",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Effects.FireMarkerAssets",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Effects.OriginalRasterizerParity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Effects.PoolParity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Effects.PrimitiveParity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Effects.RotorWashParity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "state": "Success",
+          "warnings": 2,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Figures.Adjustments",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Figures.CowGeometry",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.AltitudeCeiling",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.CanExitHelicopter",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.CollectiveDrivesEngine",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.CoordinatedTurn",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.DamagedLanding",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.DryRotorSpoolsDown",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.EasyModel",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.EngineHoldArbitration",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.FixedMath",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.FrameRateIndependence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.LandingRules",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.ObjectCollisionDamage",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.PassengerTransferClearance",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.PitchDrivesSpeed",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.RotorSpoolDown",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.RotorSpoolGate",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.TakeoffPrompt",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.TakeoffRepeat",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.TurbulenceAndDamage",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Flight.TurbulenceFrameRate",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisMesh.AutoSmoothNormals",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisMesh.FlatRoadVariants",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisMesh.HelicopterModel",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisMesh.ProceduralMeshBuilder",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisMesh.ReferencePacks",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisMesh.TileMapping",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisMesh.UvConversion",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisTexture.AtlasTileExtraction",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisTexture.ReferenceCompositeBitmap",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.MaxisTexture.ReferencePeopleWindowsBitmap",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.PrivAnim.Reference",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.SimCity2000.ReferenceCity",
+          "state": "Fail",
+          "warnings": 0,
+          "errors": [
+            "Expected 'Finds flat land ALTM sample' to be not null.",
+            "Expected 'Finds water ALTM sample' to be not null.",
+            "Expected 'Finds sloped ALTM sample' to be not null."
+          ]
+        },
+        {
+          "name": "SimCopter.Formats.SimCity2000.Rle",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.Tweak.Parser",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Formats.Tweak.ReferenceHeli",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.CareerProgression",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.CareerSelectLayout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.CareerSelectNavigation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.IntroInput",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.MainMenuLayout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.MainMenuNavigation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.MainMenuUpscaledArt",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.MenuSkyLayout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.FrontEnd.UserCityDisplayNames",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Input.HeldKeysSurviveUiFocus",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Input.KeyboardFocusGuard",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Interaction.AirframeGap",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Interaction.PassengerDoorOffset",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Interaction.ReactionStack",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Interaction.ReactionTable",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Interaction.SpiralScan",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Knockdown.Bounce",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Knockdown.Contact",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Knockdown.Launch",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Knockdown.Recovery",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Knockdown.RestPose",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Lights.BlinkSchedule",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Map.Buttons",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Map.HeadingOrientation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Map.Layout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Map.MissionCycle",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Map.Overlays",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Map.TileColors",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Map.Zoom",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.ArsonistRenderedBuildingTarget",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.BaseLocationRecord",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.BuildingFireDifficulty",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.BurglarCarStaysOpen",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimeIdentityAndSpawn",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimePlacementNeedsBuilding",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.DispatchLocationVoice",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.FireDouse",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.FireDouseAcrossFootprint",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.FireLifecycle",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.HospitalSites",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.IncrementalUpdateTextAndPenalties",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.MapFocusRules",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.MarkerCoordinates",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.MarkerLabelFits",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.MarkerOverlap",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.MarkerUiAvoidance",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.MedevacCasualtyHasNoDeliveryReward",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.MedevacRecordLayout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.OriginalMissionAvailability",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.OriginalPickupMessage",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.ParamedicCabinHandoff",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.PassengersAboardNeverFailMission",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.PlaneDeckRescue",
+          "state": "Success",
+          "warnings": 11,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.PostAnnouncementVoice",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.PRNGParity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.RiotCountsRewardsAndPenaltyErosion",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.RiotViability",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.RooftopRescueCountsPhasesRewardsAndVoices",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.RuntimeSaveRoundTrip",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.SafePassengerLanding",
+          "state": "Success",
+          "warnings": 12,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.SaveFocusAndTransportLayout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.SchedulerParity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.ServiceFireSuppressionUsesFlameOffset",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.SessionStart",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.TrafficJamCarClearCompletes",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.TransportPassengerSpawnOutsideBuildings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.TransportSchedulerTimer",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.TypeDisplayNames",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.UserCityDefaultSettings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.WeightTableParity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.XbldPropertyTable",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Model.CrosshairVisibility",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Model.RegistryShape",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Model.RegistryValues",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.NpcMedical.BandObstacleRoutes",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.OriginalGamePaths.FallbackNote",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.OriginalGamePaths.Markers",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.OriginalGamePaths.Resolve",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.OriginalGamePaths.RootShape",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Passengers.FaceProgram",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Passengers.FallGravity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Passengers.HeadImages",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Passengers.PortraitRendering",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Passengers.VoiceRates",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.People.LyingPoseClearsGround",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.People.MoveCoreCellRules",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.People.RoadJaywalk",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Polish.AutomaticBodyRecovery",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Polish.ControlsAudioAndPeople",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Polish.UfoGeometry",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Radio.DashboardVolume",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Radio.Dial",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Radio.PossessionGate",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Radio.Random",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Radio.Schedule",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Radio.SequentialResume",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Radio.ShuffleBag",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.Blend",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.ClipNames",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.ClipSerialization",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.InputDoesNotConsume",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.KeyThreshold",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.MnemonicTable",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.Sampling",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Replay.Timebase",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.RescuePilot.PassengerIdentity",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.RescuePilot.RuntimeRegression",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.SaveGame.ArchiveRoundTrip",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.SaveGame.Names",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.SaveGame.QuickSavePersistence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.SaveGame.RestoreState",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.ServicePosts.ActualHospitalGeometry",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.ServicePosts.SpacingEntrancesAndImpact",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.AntiAliasingMethod",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.CitySettings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.ControlBindings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.DisplayResolution",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.GraphicsPersistence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.HorizontalSlider",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.LowPowerMode",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.MenuItems",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.MenuLayout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.OverallQualityLabels",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.RealTimeOfDay",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.SoundSettings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.SoundVolumePersistence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Settings.TimeOfDay",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Sound.Attenuation",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Sound.GameplayMappings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Sound.IndependentPlayback",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Sound.RadioLiveVolume",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Sound.RotorLaw",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Sound.Table",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Sound.VoiceEvents",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Spotlight.DedicatedCamera",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Spotlight.MarchAndBands",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.TearGas.CloudScatter",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.TearGas.Constants",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.TearGas.DragGravityAndBounce",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.TearGas.FlapCounter",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.TearGas.FuseAndCloud",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.TearGas.Launch",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Tools.EquipmentStateLayers",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Tools.EquipmentTable",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Traffic.JamBlockerDirection",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Traffic.JamHornThresholds",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Traffic.JamQueueSpacing",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Traffic.RoadMeshSurfaceRules",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Traffic.TunnelGeometry",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Traffic.TunnelTransit",
+          "state": "Success",
+          "warnings": 4,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.UI.FlapLayout",
+          "state": "Fail",
+          "warnings": 0,
+          "errors": [
+            "Expected 'The four flaps between them cover every career equipment bit' to be 127, but it was 31."
+          ]
+        },
+        {
+          "name": "SimCopter.UI.HangarCatalog",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.UI.HangarParkingRules",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.UI.HangarPurchaseParking",
+          "state": "Success",
+          "warnings": 2,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.UI.HangarShopSellGate",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.UI.SegmentedBar",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.UI.WaterGauge",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.FillDumpPounds",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.FireTruckJetSweep",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.FixedStepReach",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.ImpactStrength",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.ParticleDeterminism",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.ParticleLifeAndDrag",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.RopeAutoZoomGate",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.SupplyGeometry",
+          "state": "Success",
+          "warnings": 11,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.TerrainAndRopeConstants",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Water.TextureAnimationRate",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Winch.CommandResolution",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Winch.Constants",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Winch.RopeEndExchange",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "name": "tests-render",
+      "succeeded": 4,
+      "succeeded_with_warnings": 0,
+      "failed": 0,
+      "not_run": 0,
+      "tests": [
+        {
+          "name": "SimCopter.Cheats.GortRender",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Cheats.OriginalDialogArt",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.DriveIn.Playback",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        },
+        {
+          "name": "SimCopter.Witness.PhotoRendering",
+          "state": "Success",
+          "warnings": 0,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "interactive_gameplay": "Not performed",
+  "shipping_executable_sha256": "62bbddc190d78b2b198179d9b4695b61ae0e219c1507e24847c852eefb9d4bb0",
+  "installation": {
+    "hash_verified": true,
+    "preserved_file_count": 68,
+    "updated_files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "OldSHA256": "62BBDDC190D78B2B198179D9B4695B61AE0E219C1507E24847C852EEFB9D4BB0",
+        "NewSHA256": "62BBDDC190D78B2B198179D9B4695B61AE0E219C1507E24847C852EEFB9D4BB0"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "OldSHA256": "164D88606F36F5D154B84381985477D21881A10619F826DC7D5CB587E255284F",
+        "NewSHA256": "E613E4B4BA9B97DF60D91DA17E1049080CEC378236F70A676A6376AA22826E89"
+      },
+      {
+        "Relative": "README.md",
+        "OldSHA256": "CB1F4177F2C62DDBA7D0AECBF4BBAAFF5227C181E4F18F6914F27A0B95E0BEB8",
+        "NewSHA256": "5E2209CE6722CEF8FFE90B86A1AE276208A0E33A9C5C1393DCA790468FEAA6B1"
+      },
+      {
+        "Relative": "Docs/CheatCodes.md",
+        "OldSHA256": "905272DD761372B2C3D0C38821A82A7E97E0BE380CE8D5957EC88B32D35F1739",
+        "NewSHA256": "B4817D9185BDC46ED42BFA8D5A3958F043107AEE9A18FF6753C624EC3FD68BBF"
+      },
+      {
+        "Relative": "Docs/ForkChanges.md",
+        "OldSHA256": null,
+        "NewSHA256": "CA62A8405C5C4368589F63F2936ABEEEBF350AC3D3B20F0B232A40E74B275384"
+      },
+      {
+        "Relative": "Docs/ForkValidation.md",
+        "OldSHA256": null,
+        "NewSHA256": "73E72A21784B52718C2A15FF58208E45A2036C48542B6621306EBD433FDBB266"
+      },
+      {
+        "Relative": "Docs/CityIntrosAndAccidents.md",
+        "OldSHA256": null,
+        "NewSHA256": "30784AAD226C8D68399ADB2D2D376C61FBDF1F7EDC1F0E2D26EC10C702225F12"
+      },
+      {
+        "Relative": "Docs/memory/aircraft-passengers-road-coverage.md",
+        "OldSHA256": null,
+        "NewSHA256": "3E4A021CC9F761585E28F980587A486BD8DBF0A97081889B8FD222BDB19D92C7"
+      },
+      {
+        "Relative": "Docs/memory/simcopter-gort-sequence.md",
+        "OldSHA256": null,
+        "NewSHA256": "55264186FB4CCDADA15B16E20329829259ED0844BD892B090A2EBE0AB45CBF95"
+      }
+    ]
+  }
+}

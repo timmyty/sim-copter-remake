@@ -15,6 +15,7 @@ public class SimCopterRemake : ModuleRules
 		bUseUnity = false;
 		RuntimeDependencies.Add("$(ProjectDir)/Config/FigureAdjustments.json", StagedFileType.NonUFS);
 		RuntimeDependencies.Add("$(ProjectDir)/Content/Briefings/*.wav", StagedFileType.NonUFS);
+		RuntimeDependencies.Add("$(ProjectDir)/Content/DriveInVideos/*.mp4", StagedFileType.NonUFS);
 
 		// MeshDescription/StaticMeshDescription back UStaticMesh::BuildFromMeshDescriptions, which the
 		// city build uses to turn each distinct GEO building model into a runtime static mesh so

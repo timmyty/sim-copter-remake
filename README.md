@@ -10,13 +10,17 @@ Airborne police tasers are a fictional addition, not authentic 1996 SimCopter be
 Taser hits immobilize living criminals for handcuffing and police delivery; they do not fire
 bullets or kill the target. Separate Apache weapons and other game hazards still exist.
 
+The October 9 update also includes original cheat entry/effects, synchronized Gort
+dialogue, HD drive-in videos, visible aircraft occupants, flyable Transport planes,
+improved emergency road coverage, city intro tours and first-impact car accidents.
+
 - [All changes, departures from the original, and credits](Docs/ForkChanges.md)
 - [Complete file inventory and inherited commits](Docs/ForkFileInventory.md)
 - [Build and dependency instructions](Docs/ForkBuild.md)
 - [Current validation results and known limitations](Docs/ForkValidation.md)
 - [Gameplay controls and air operations](Docs/AirOperations.md)
 
-Use Git LFS when cloning: custom music, textures, Unreal assets and the Windows icon are
+Use Git LFS when cloning: custom music, prepared MP4 videos, textures, Unreal assets and the Windows icon are
 included through LFS. Supply your original game data and the required Unreal/NVIDIA build
 dependencies locally. This source publication is not a new prebuilt Windows release.
 
@@ -74,6 +78,27 @@ The underlying game is intentionally kept close to the original, but a number of
 - **Native modern Windows support:** The remake is a 64-bit application designed to run directly on current Windows systems rather than relying on compatibility modes, wrappers, or emulation.
 
 - **Longer view distance:** The extremely aggressive distance fog of the original game is no longer necessary. You can climb above the city and actually see much more of it beneath you.
+
+## Cheat codes and drive-in videos
+
+While playing a city, press **Ctrl + Alt + X** to open the original bitmap cheat dialog. Type a code and press **Enter** or click **OK** to apply it and resume. **Esc** or **Cancel** dismisses it without applying a code. Codes are case-sensitive. See [the full cheat guide](Docs/CheatCodes.md) for the original cheats.
+
+Drive-in theaters play local MP4 videos, including HD and higher resolutions, with sound near the screen. The picture fits the original square theater screen without stretching or cropping; widescreen movies have black bars. Movies loop until stopped, pause with the game, and end when leaving the city or when all theaters are demolished. A city must contain a standing drive-in theater (for example, Cape Wells).
+
+1. Put your videos in **`DriveInVideos` beside `SimCopterRemake.exe`** in the packaged game folder. Source builds also read `SimCopterRemake/Content/DriveInVideos`.
+2. Use **H.264 video and AAC audio in `.mp4` files** for Windows playback. Use a plain filename, including spaces if needed, without a folder path or URL.
+3. Enter **`Play video: My Movie.mp4`** to play that file at the city's theaters, or **`Stop video`** to stop it. Replacing a file takes effect the next time you play it.
+
+| Cheat | Movie |
+| --- | --- |
+| `Lights, Camera, Action!` | Plays `LightsCameraActionSimCopter.mp4`, the supplied original SimCopter movie, upscaled to 1080×1080 while preserving its square picture and original 10 fps. Enter the code again to stop. |
+| `HSI` | Plays `HSI.mp4`: **FuzeTheory and Invoke the Revoked - Humanist Superintelligence (HSI) - Official Music Video plays**. The supplied 1080p master was compressed to approximately **20 MB**, **1280×720 HD at 24 fps**, retaining the full video and stereo audio. Enter the code again to stop. |
+
+The original movie upscale uses Lanczos scaling and mild sharpening; it cannot recover detail absent from the 128×128 source. User-added HD videos play at their own resolution. The supplied master files are preserved outside the source repository; only the prepared copies are packaged.
+
+Developers can prepare files with FFmpeg and Python using `python Tools/PrepareDriveInVideos.py path/to/movie.mp4`. To target about 20 MB at 720p, use `python Tools/PrepareDriveInVideos.py path/to/HSI.mp4 --target-mb 20`. These commands preserve the inputs and write prepared copies into the source content folder. Movie playback is an MP4 extension of the original cheat, inspired by the [original drive-in format research](https://github.com/CahootsMalone/maxis-mesh-stuff/blob/master/Info/Making-Videos-for-SimCopter%27s-Drive-In-Movie-Theatres.md).
+
+The UFO now uses the original SimCopter mesh and authored palette lights, matching the [Maxis mesh viewer reference](https://github.com/CahootsMalone/maxis-mesh-stuff/blob/master/readme-assets/mmv-gallery.png). `Radioactivity` also leaves scattered smoke and brief rubble fires after the blast. `Gort` fades in the original alien artwork and plays its timed conversation with synchronized subtitles and original left/right voices. Press **Esc**, controller **B**, or **Return to game** at any time. The full sequence returns automatically after **3:06**, with a **10-second pause** before its bonus dialogue. Like the original, the artwork is a still image rather than moving mouths.
 
 ## How It Was Made
 

@@ -359,6 +359,7 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 
 void FSimCopterMissionSystem::DispatchScheduledType(int32 Bucket)
 {
+	if (bTransportOnly) { CreateEventOfType(TYPE_Transport); return; }
 	int32 RandVal = Rand.Rand();
 	int16 Shf = static_cast<int16>(RandVal >> 15);
 	int16 Combined = static_cast<int16>((Shf << 16) | (RandVal & 0xffff));
@@ -1628,6 +1629,18 @@ void FSimCopterMissionSystem::SetMapFocusRecordIndex(const int32 RecordIndex, co
 	// own adoption/re-pick without every call site growing its own hook.
 	(void)Reason;
 	FocusRecordIndex = Records.IsValidIndex(RecordIndex) ? RecordIndex : INDEX_NONE;
+	if (bTransportOnly && (!Records.IsValidIndex(FocusRecordIndex) ||
+		!(Records[FocusRecordIndex].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
+	{
+		FocusRecordIndex = INDEX_NONE;
+		for (int32 Index=0; Index<Records.Num(); ++Index)
+			if (IsMapFocusable(Records[Index]) && (Records[Index].TypeMask & TYPE_Transport))
+			{ FocusRecordIndex=Index; break; }
+		if (FocusRecordIndex == INDEX_NONE)
+			for (int32 Index=0; Index<Records.Num(); ++Index)
+				if (IsMapFocusable(Records[Index]) && IsBaseLocationRecord(Records[Index]))
+				{ FocusRecordIndex=Index; break; }
+	}
 }
 
 void FSimCopterMissionSystem::FocusNextMapRecord()
@@ -1641,7 +1654,7 @@ void FSimCopterMissionSystem::FocusNextMapRecord()
 	}
 	for (int32 Index = FocusRecordIndex + 1; Index < Records.Num(); ++Index)
 	{
-		if (IsMapFocusable(Records[Index]))
+		if (IsMapFocusable(Records[Index]) && (!bTransportOnly || (Records[Index].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
 		{
 			SetMapFocusRecordIndex(Index, EMapFocusReason::CycledNext);
 			return;
@@ -1649,7 +1662,7 @@ void FSimCopterMissionSystem::FocusNextMapRecord()
 	}
 	for (int32 Index = 0; Index < FocusRecordIndex; ++Index)
 	{
-		if (IsMapFocusable(Records[Index]))
+		if (IsMapFocusable(Records[Index]) && (!bTransportOnly || (Records[Index].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
 		{
 			SetMapFocusRecordIndex(Index, EMapFocusReason::CycledNext);
 			return;
@@ -1667,7 +1680,7 @@ void FSimCopterMissionSystem::FocusPreviousMapRecord()
 	}
 	for (int32 Index = FocusRecordIndex - 1; Index >= 0; --Index)
 	{
-		if (IsMapFocusable(Records[Index]))
+		if (IsMapFocusable(Records[Index]) && (!bTransportOnly || (Records[Index].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
 		{
 			SetMapFocusRecordIndex(Index, EMapFocusReason::CycledPrevious);
 			return;
@@ -1675,7 +1688,7 @@ void FSimCopterMissionSystem::FocusPreviousMapRecord()
 	}
 	for (int32 Index = Records.Num() - 1; Index > FocusRecordIndex; --Index)
 	{
-		if (IsMapFocusable(Records[Index]))
+		if (IsMapFocusable(Records[Index]) && (!bTransportOnly || (Records[Index].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
 		{
 			SetMapFocusRecordIndex(Index, EMapFocusReason::CycledPrevious);
 			return;
@@ -1696,7 +1709,7 @@ void FSimCopterMissionSystem::RefocusAfterCompletion(const int32 CompletedRecord
 	int32 FirstLive = INDEX_NONE;
 	for (int32 Index = 0; Index < Records.Num(); ++Index)
 	{
-		if (IsMapFocusable(Records[Index]))
+		if (IsMapFocusable(Records[Index]) && (!bTransportOnly || (Records[Index].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
 		{
 			FirstLive = Index;
 			break;
@@ -1717,7 +1730,7 @@ void FSimCopterMissionSystem::RefocusAfterExpiry(const int32 ExpiredRecordIndex)
 	int32 FirstLive = INDEX_NONE;
 	for (int32 Index = 0; Index < Records.Num(); ++Index)
 	{
-		if (IsMapFocusable(Records[Index]))
+		if (IsMapFocusable(Records[Index]) && (!bTransportOnly || (Records[Index].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
 		{
 			FirstLive = Index;
 			break;
@@ -1735,6 +1748,9 @@ void FSimCopterMissionSystem::UpdateLifecycle()
 		{
 			continue;
 		}
+		// Emergency jobs are unavailable during a plane sortie. Preserve their progress
+		// for the return to a helicopter without issuing deadlines or failure penalties.
+		if (bTransportOnly && !(Rec.TypeMask & (TYPE_Transport | TYPE_BaseLocation))) continue;
 
 		// SCHOOK: MissionLifecycle 0x004a73e0. Robbers, arsonists, burglars, muggers and riots
 		// pause their nag clock while the flying player is close enough to be working the scene.
@@ -3405,7 +3421,7 @@ bool FSimCopterMissionSystem::SerializeRuntimeState(FArchive& Archive)
 		int32 FirstLive = INDEX_NONE;
 		for (int32 Index = 0; Index < Records.Num(); ++Index)
 		{
-			if (IsMapFocusable(Records[Index]))
+			if (IsMapFocusable(Records[Index]) && (!bTransportOnly || (Records[Index].TypeMask & (TYPE_Transport | TYPE_BaseLocation))))
 			{
 				FirstLive = Index;
 				break;

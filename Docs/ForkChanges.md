@@ -10,69 +10,81 @@ particular, controlling a police passenger and firing a taser from a helicopter
 while an AI pilot circles the area is a fictional addition. It is not a claim
 about authentic SimCopter equipment, original mechanics, or real taser range.
 
-## October 9 submission and task coverage
+## October 9 combined task publication
 
-The latest gameplay submission is
-[`1a0be52`](https://github.com/timmyty/sim-copter-remake/commit/1a0be5226790b675fd7341d347cec189a539ee35),
-"Fix witness photos and hospital ground medic behavior." Its previous published
-commit is `e66675d`, "Publish custom gameplay fork with nonlethal police tasers."
-The [complete submitted diff](https://github.com/timmyty/sim-copter-remake/compare/e66675d...1a0be52)
-contains 14 files, 864 insertions and 12 deletions. No new packaged release or
-version number was created by this source submission.
+The GitHub source now includes the completed work from **Add original cheat code
+mechanics**, **Improve vehicles and NPCs**, and **Restore level intros and crash
+event**, alongside the previously published witness-photo and hospital-medic fixes.
+The runtime source and configuration have been synchronized with the development
+build. Required drive-in materials, both prepared movies, authoring tools, regression
+tests and player documentation are included.
 
-### Changes published since e66675d
+This supersedes the "unpublished" status recorded in documentation commit
+`95c6d89`. That note described the earlier `1a0be52` snapshot, which contained only
+the witness-photo and hospital-medic update. The current integration adds the
+missing implementations; it preserves both earlier commits and their history.
 
-- **Witness photographs:** retain one-shot camera rendering state so exposure
-  works in bright daylight, reset metering for each report, and size the camera
-  distance from the visible suspect's bounds. Reuse the production photo widget
-  in an offscreen regression that checks exposure, captions, visibility and
-  snapshot behavior, and reproduces the original defect when the fix is removed.
-- **Hospital ground medics:** extend purposeful approaches to the existing nearby
-  helicopter detection boundary while retaining the compact idle patrol. Preserve
-  hospital identity during the approach, match staffing by assigned post to avoid
-  duplicate medics, restore nearby legacy posts, and keep displaced ground medics
-  assigned. Boarding explicitly releases the post so the medic can travel.
-- **Hospital entrance:** remove the hospital sign text, panel and pole while
-  retaining the entrance service point and patient admission. Police signs remain.
-- **Tests and records:** add medic coverage for idle bounds, displacement,
-  save/restore, staffing, distant/airborne rejection, boarding, seat consumption
-  and travel; add the witness rendering test; include the feature notes, compact
-  medic test-results manifest and memory-index references.
+### Newly included task implementations
 
-These are the results of the tasks **Fix witness photos showing blank** and
-**Update hospital medic behavior**. See [witness-photo details](WitnessPhotoFix.md)
-and [hospital-medic details](HospitalGroundMedics.md).
+- **Cheat codes and original entry UI:** Ctrl+Alt+X opens the original bitmap
+  dialog. Restore command matching and flight, pilot, map, career, cash, portrait
+  and nuclear effects. The CEO code enables free catalog delivery with keys 1-9.
+  See the [full player guide](CheatCodes.md) and
+  [implementation notes](memory/simcopter-cheat-codes.md).
+- **Drive-in videos, UFO and blast effects:** include the prepared HSI movie
+  (19.8 MB, 720p) and original movie upscale, MP4 playback with spatial audio,
+  HSI/custom-video/stop commands, package staging, screen materials and preparation
+  tools. Restore original UFO geometry/lights and scattered post-blast smoke and
+  brief fires. See [movie setup](../README.md#cheat-codes-and-drive-in-videos) and
+  [media/UFO notes](memory/simcopter-drive-in-ufo.md).
+- **Gort sequence:** original fading artwork, 36 synchronized subtitle/voice pairs
+  and left/right audio, the requested 10-second bonus pause, immediate Esc/B/button
+  cancellation and automatic return to the same game at 3:06. The original artwork
+  is a still image, without mouth animation. See
+  [sequence implementation and checks](memory/simcopter-gort-sequence.md).
+- **Aircraft occupants, cows and emergency response:** visible pilot/passenger
+  bodies, model-specific seating/glazing, cows that bounce without becoming medical
+  patients or carryable people, faster emergency vehicles, corrected police routing
+  and headquarters coverage for disconnected road components. See
+  [aircraft and road coverage](memory/aircraft-passengers-road-coverage.md).
+- **Flyable transport planes:** airport aircraft with fixed-wing flight, one fare,
+  Transport-only missions, save/load support and the appropriate restrictions on
+  emergency passengers, dispatch and equipment. The helicopter fleet/catalog
+  remains compatible. Details share the aircraft/road reference above.
+- **City intros and accidents:** skippable tours derived from each loaded city's
+  scenery, with pause, camera and input restoration. First moving helicopter contact
+  tips and ignites a car, reports the original non-mission accident and penalty,
+  evacuates occupants and starts a four-second explosion fuse. Includes dousing,
+  recovery rules and version-7 saves with older-version support. See
+  [city tours and car accidents](CityIntrosAndAccidents.md).
+- **Integration checks:** retain all task regression tests and mark the drive-in
+  decoder/material test as requiring a renderer, so NullRHI runs exclude it and
+  offscreen rendering runs exercise it. The [current validation report](ForkValidation.md)
+  records fresh combined results and exact source/build correspondence.
 
-The October 8 records show successful Editor and Shipping builds, 81 passing
-medic-related tests and 52 passing witness-related tests. Each gameplay test run
-included two previously documented warning-bearing cases. Publication on October 9
-verified those saved logs and passed `git diff --check`; builds and gameplay tests
-were not rerun. Interactive gameplay was not verified.
+### Earlier October 9 changes retained
 
-### Completed local tasks absent from this submission
+[`1a0be52`](https://github.com/timmyty/sim-copter-remake/commit/1a0be5226790b675fd7341d347cec189a539ee35)
+added 14 files/changes after `e66675d`: correct daylight exposure and suspect framing
+in one-shot witness photographs; purposeful hospital-medic approaches, assigned-post
+retention and duplicate-staff prevention; hospital sign removal; regression tests
+and validation records. See [witness photos](WitnessPhotoFix.md),
+[hospital medics](HospitalGroundMedics.md) and the
+[earlier diff](https://github.com/timmyty/sim-copter-remake/compare/e66675d...1a0be52).
 
-The development folder `sim-copter-remake-main` and the Git publication checkout
-`sim-copter-publication` are separate. The scheduled submission committed the
-pending files in the publication checkout; it did not synchronize the development
-folder. The following October 8-9 work was implemented locally after the initial
-publication, but its implementation is **not included in 1a0be52**. These entries
-record outstanding publication work, not features available in this GitHub snapshot.
+### Scope and remaining limits
 
-| Task | Implemented locally, still unpublished here | Local reference in the development folder |
-| --- | --- | --- |
-| Add original cheat code mechanics | Ctrl+Alt+X and the original cheat-entry artwork/controls; original command matching; shields, fuel, turbo/dog, pilot/map/megaphone/car-camera controls, cash and career codes, CEO catalog delivery with keys 1-9, hidden portraits, building-grid export and nuclear demolition. Subsequent work adds scattered blast smoke/flames, HD drive-in playback, HSI/custom-video commands and folder instructions, original UFO geometry/lights, and original Gort artwork/audio. The final Gort follow-up synchronizes 36 subtitle/voice pairs, fades the original still image, uses the requested 10-second bonus pause, supports immediate Esc/B/button return, and finishes automatically at 3:06. | `Docs/CheatCodes.md`; `Docs/memory/simcopter-cheat-codes.md`; `Docs/memory/simcopter-drive-in-ufo.md`; `Docs/memory/simcopter-gort-sequence.md` |
-| Improve vehicles and NPCs | Visible passenger bodies in every helicopter; cows bounce without becoming medical/carryable NPCs; improved emergency vehicle speed, routing and headquarters coverage; flyable airport planes with one passenger and Transport-only missions. | `Docs/memory/aircraft-passengers-road-coverage.md` |
-| Restore level intros and crash event | Skippable city tours with camera/input restoration; first-impact car tipping/fire and the original non-mission accident message/penalty; occupant evacuation and escape; four-second explosion fuse, extinguishing/recovery handling and version-7 save compatibility. | `Docs/CityIntrosAndAccidents.md` |
+The feature descriptions above refer to implementations present in this checkout.
+The development and publication folders are separate, so future task completion
+must include source/asset synchronization and Git publication, not only installation
+of a local executable. Original game data and required external build dependencies
+remain user-supplied as described in [the build guide](ForkBuild.md).
 
-The local reference paths above are deliberately identified as development-folder
-records; they are not links to files shipped in this public checkout. The task
-completion reports describe local installation and validation, which do not imply
-GitHub publication. Nuclear NPC/mission cleanup remains incomplete, the Gort image
-has no original mouth animation, and the city tours recreate the showcase using
-current scenery rather than reproducing the original movies' authored shots.
-
-This documentation follow-up records the distinction without changing gameplay
-or rewriting the already published commit.
+Nuclear NPC/mission cleanup remains unported. City tours recreate the showcase with
+current scenery rather than the original movies' authored shots. Known test failures
+and the lack of an interactive gameplay/listening check remain explicitly documented
+in the validation report; this integration does not claim to complete unimplemented
+parts of the original game.
 
 ## Police tasers and arrests
 

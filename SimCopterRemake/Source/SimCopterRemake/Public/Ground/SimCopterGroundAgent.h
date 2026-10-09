@@ -81,7 +81,11 @@ public:
 	void SetVehicleStalled(bool bPlayerCaused = false);
 	void ApplyHelicopterVehicleImpact(const FVector& WorldImpact);
 	void RebuildVehicleDents();
-	bool IsTowableVehicle() const { return AgentKind == ESimCopterGroundAgentKind::Vehicle && bVehicleStalled && HelicopterImpactCount < 4 && !bMissionResolutionReported; }
+	bool IsTowableVehicle() const { return AgentKind == ESimCopterGroundAgentKind::Vehicle && bVehicleStalled && !IsVehicleAccidentBurning() && !bVehicleExploded && !bMissionResolutionReported; }
+	bool IsVehicleTipped() const { return bVehicleTipped; }
+	bool IsVehicleAccidentBurning() const { return bVehicleTipped && VehicleExplosionSeconds > 0 && !bVehicleExploded; }
+	void DouseVehicleAccident();
+	void BeginVehicleEscape(const FVector& From);
 	bool IsVehicleTowed() const { return bVehicleTowed; }
 	bool IsVehicleImmobilized() const { return bVehicleStalled || bVehicleTowed; }
 	void SetVehicleTowed(bool bTowed);
@@ -91,6 +95,16 @@ public:
 	void EnsureTowMission(bool bPlayerCaused);
 private:
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCarAccidentTest;
+	bool bVehicleTipped = false;
+	bool bVehicleDriverEvacuated = false;
+	float VehicleTipRoll = 90.0f;
+	float VehicleEvacuationRetry = 0.0f;
+	float VehicleEscapeSeconds = 0.0f;
+	FVector VehicleEscapeOrigin = FVector::ZeroVector;
+	void ApplyVehicleTipVisual();
+	void EvacuateVehicleOccupants();
+	bool TickVehicleEscape(float DeltaSeconds);
 	bool bTaserStunned = false;
 	bool bHandcuffed = false;
 	bool bVehicleStalled = false;
@@ -287,6 +301,8 @@ public:
 	int32 GetFigureCurrentFrame() const { return FigureCurrentFrame; }
 	int32 GetPedestrianFigureClothesOffset() const { return FigureClothesOffset; }
 	const FString& GetPedestrianFigureName() const { return PedestrianFigureName; }
+	// Farm animals bounce after impacts; they never enter the human medical/carry pipeline.
+	bool IsCow() const { return PedestrianFigureName.Equals(TEXT("Coww"), ESearchCase::IgnoreCase) || InitialBehaviorClass == 17; }
 	const FString& GetMeshTableName() const { return MeshTableName; }
 	void SetMissionInjuredPose();
 	void SetBandFormationTarget(const FVector& Target, float FacingYaw, bool bEnabled);
@@ -1215,6 +1231,7 @@ public:
 
 private:
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterAircraftRoadUpdateTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;
 	friend class FSimCopterSafePassengerLandingTest;
@@ -1448,7 +1465,7 @@ private:
 	void ResetKnockdownVisualTransform();
 	// Advances the forced clip's frames while the VM is stopped (a forced clip is otherwise a
 	// single held pose).
-	void AdvanceKnockdownFigureFrames(float DeltaSeconds);
+	void AdvanceForcedFigureFrames(float DeltaSeconds);
 	// The sea surface at a point, when that point is over water at all.
 	bool TryGetWaterSurfaceZAt(const FVector& WorldLocation, float& OutSurfaceZ) const;
 	// Sends a person who came down in the sea toward the nearest land tile.

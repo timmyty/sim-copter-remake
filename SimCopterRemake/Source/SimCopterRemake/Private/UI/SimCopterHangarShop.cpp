@@ -429,6 +429,25 @@ bool SellHelicopter(const FContext& Context, const int32 CatalogRow, FString& Ou
 	return true;
 }
 
+bool DeliverCheatHelicopter(const FContext& Context, int32 TypeIndex, FString& OutMessage)
+{
+	auto* Career = GetCareer(Context);
+	if (!Career || !Career->Cheats.bCEO || TypeIndex < 0 || TypeIndex > 8) return false;
+	if (Career->OwnsHelicopter(TypeIndex))
+	{
+		OutMessage = TEXT("That helicopter is already in your fleet.");
+		return false;
+	}
+	// Catalog digits address runtime types directly, bypassing catalog row order.
+	auto* Delivered = SimCopterHelicopterParking::SpawnOnFreePad(
+		Context.Hangar.Get(), Context.Helicopter.Get(), TypeIndex, OutMessage);
+	if (!Delivered) return false;
+	Career->SetHelicopterOwned(TypeIndex, true);
+	if (TypeIndex == 2) Career->SetApacheEncounterSpawned(true);
+	OutMessage = FString::Printf(TEXT("%s delivered free of charge."), GetModelDisplayName(TypeIndex));
+	return true;
+}
+
 bool BuyUpgrade(const FContext& Context, const int32 UpgradeRow, FString& OutMessage)
 {
 	ASimCopterMissionSystemActor* Missions = Context.Missions.Get();

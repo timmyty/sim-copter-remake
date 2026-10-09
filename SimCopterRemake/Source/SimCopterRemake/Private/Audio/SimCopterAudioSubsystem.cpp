@@ -1329,6 +1329,51 @@ void USimCopterAudioSubsystem::SilenceForReplayReview()
 	ClearRadioVoiceQueue();
 }
 
+bool USimCopterAudioSubsystem::BuildGortVoice(const FString& SoundDirectory, int32 Voice, int32 Speaker, FSimCopterPcmClip& OutClip)
+{
+	OutClip = FSimCopterPcmClip();
+	if (Voice < 1 || Voice > 20 || Speaker < 0 || Speaker > 1) return false;
+	FSimCopterPcmClip Mono;
+	if (!DecodeWav(SoundDirectory / FString::Printf(TEXT("al%02d.wav"), Voice), Mono) || Mono.Channels != 1) return false;
+	// SCHOOK: AlienEndingUpdate 0x00446af0. DirectSound pan is -10000/+10000.
+	// Retain every original sample in the speaking side; silence the other side.
+	OutClip.SampleRate = Mono.SampleRate;
+	OutClip.Channels = 2;
+	OutClip.Duration = Mono.Duration;
+	OutClip.Pcm16.SetNumZeroed(Mono.Pcm16.Num() * 2);
+	for (int32 Offset = 0; Offset < Mono.Pcm16.Num(); Offset += 2)
+	{
+		OutClip.Pcm16[Offset * 2 + Speaker * 2] = Mono.Pcm16[Offset];
+		OutClip.Pcm16[Offset * 2 + Speaker * 2 + 1] = Mono.Pcm16[Offset + 1];
+	}
+	return OutClip.IsValid();
+}
+
+UAudioComponent* USimCopterAudioSubsystem::PlayGortVoice(int32 Voice, int32 Speaker)
+{
+	FSimCopterPcmClip Clip;
+	if (!GetWorld() || !bSoundsAvailable || !BuildGortVoice(SoundRoot, Voice, Speaker, Clip)) return nullptr;
+	auto* Wave = MakeWave(Clip, false, this);
+	if (!Wave) return nullptr;
+	auto* Component = NewObject<UAudioComponent>(this);
+	Component->bAutoActivate = false; Component->bAutoDestroy = false;
+	Component->bAllowSpatialization = false; Component->bIsUISound = true;
+	Component->SetSound(Wave); Component->SetVolumeMultiplier(VolumeIndexToGain(MasterVolume));
+	Component->RegisterComponentWithWorld(GetWorld()); Component->Play();
+	LooseComponents.Add(Component);
+	LooseEndTimes.Add(Component, FPlatformTime::Seconds() + Clip.Duration);
+	return Component;
+}
+
+void USimCopterAudioSubsystem::StopStandaloneSound(UAudioComponent* Component)
+{
+	if (!Component) return;
+	Component->Stop(); Component->DestroyComponent();
+	LooseComponents.Remove(Component); LooseEndTimes.Remove(Component);
+	for (auto It = LooseFiles.CreateIterator(); It; ++It)
+		if (It.Value().Get() == Component) It.RemoveCurrent();
+}
+
 void USimCopterAudioSubsystem::StopStandaloneSounds()
 {
 	for (const TObjectPtr<UAudioComponent>& Component : LooseComponents)

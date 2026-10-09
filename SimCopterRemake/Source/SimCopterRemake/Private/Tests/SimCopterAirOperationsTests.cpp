@@ -155,12 +155,11 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  for(const auto& Slot:TArray<FSimCopterMissionPassengerSlot>(Heli->GetMissionPassengerSlots())) if(Slot.Person.IsValid()) Slot.Person->AlightFromCarrier(false);
 
  auto* Car=World->SpawnActor<ASimCopterGroundAgent>(); Car->AgentKind=ESimCopterGroundAgentKind::Vehicle; Car->SetOwner(Traffic); Car->SetActorLocation(FVector(2000,2000,25));
- Car->ApplyHelicopterVehicleImpact(Car->GetActorLocation()+FVector(40,0,0));
- Car->ApplyHelicopterVehicleImpact(Car->GetActorLocation());
- TestEqual(TEXT("Continuous contact debounces damage"),Car->HelicopterImpactCount,1);
- Car->TickAirOperations(0.7f); Car->ApplyHelicopterVehicleImpact(Car->GetActorLocation()+FVector(-40,0,0));
- TestTrue(TEXT("Second impact immobilizes car"),Car->IsVehicleImmobilized());
- TestTrue(TEXT("Second impact creates towing job"),Car->GetTowMissionId()!=INDEX_NONE);
+ // Recovery covers an extinguished/player-caused breakdown. First-hit accidents
+ // now have their own lifecycle and occupant regression test.
+ Car->SetVehicleStalled(true);
+ TestTrue(TEXT("Stalled car is immobilized"),Car->IsVehicleImmobilized());
+ TestTrue(TEXT("Stalled car creates towing job"),Car->GetTowMissionId()!=INDEX_NONE);
  if(const auto* Tow=Missions->MissionSystem.FindRecord(Car->GetTowMissionId())) TestTrue(TEXT("Player-created recovery cannot farm rewards"),Tow->bSuppressCompletionRewards);
  const FVector Near(40,0,10),Far(-100,0,10);
  TestTrue(TEXT("Hit side geometry visibly dents"),!SimCopterAirOperations::DentVertex(Near,Near,FVector::ZeroVector).Equals(Near));
@@ -178,12 +177,6 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestFalse(TEXT("Recovered car cannot be rewarded repeatedly"),Car->IsTowableVehicle());
  Missions->MissionSystem.UpdateLifecycle();
  TestEqual(TEXT("No crash-repair reward"),Missions->MissionSystem.GetScore(),0);
- auto* Wreck=World->SpawnActor<ASimCopterGroundAgent>(); Wreck->SetOwner(Traffic); Wreck->AgentKind=ESimCopterGroundAgentKind::Vehicle;
- for(int32 K=0;K<4;++K) { Wreck->TickAirOperations(0.7f); Wreck->ApplyHelicopterVehicleImpact(FVector(20,0,10)); }
- TestTrue(TEXT("Fourth hit starts a fire/explosion countdown"),Wreck->VehicleExplosionSeconds>0);
- TestFalse(TEXT("Burning wreck cannot be towed"),Wreck->IsTowableVehicle());
- Wreck->TickAirOperations(4.1f);
- TestTrue(TEXT("Four-hit wreck explodes"),Wreck->bVehicleExploded);
 
  auto* Swimmer=Person(0,FVector(100,100,24));
  City->WaterGameplayTerrainClasses.Init(0,128*128);

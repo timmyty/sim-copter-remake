@@ -279,9 +279,7 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UMaterialInterface> VertexColorMaterial;
-	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> UfoHullMaterial;
-	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> UfoCanopyMaterial;
-	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> UfoDriveMaterial;
+	UPROPERTY(Transient) TObjectPtr<class USimCopterFlashingLightsComponent> UfoLights;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UProceduralMeshComponent>> OwnedMeshes;

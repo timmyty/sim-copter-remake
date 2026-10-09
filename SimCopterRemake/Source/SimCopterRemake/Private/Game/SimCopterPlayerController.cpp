@@ -9,6 +9,7 @@
 #include "Audio/SimCopterRadio.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
+#include "Game/SimCopterGameMode.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Framework/Application/IInputProcessor.h"
 #include "Framework/Application/SlateApplication.h"
@@ -29,6 +30,8 @@
 #include "UI/SSimCopterGraphicsSettings.h"
 #include "UI/SSimCopterMessageBox.h"
 #include "UI/SSimCopterSaveNameDialog.h"
+#include "UI/SSimCopterCheatDialog.h"
+#include "UI/SSimCopterGortSequence.h"
 #include "UI/SSimCopterSettingsMenu.h"
 #include "UI/SSimCopterSoundSettings.h"
 #include "UI/SimCopterHangarArt.h"
@@ -102,6 +105,7 @@ public:
 
 	virtual bool HandleKeyDownEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent) override
 	{
+		if (auto* PC = Controller.Get(); PC && PC->HandleCheatKey(InKeyEvent)) return true;
 		if (!InKeyEvent.IsRepeat())
 		{
 			if (auto* PC = Controller.Get())
@@ -271,6 +275,7 @@ void ASimCopterPlayerController::BeginPlay()
 
 void ASimCopterPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	RemoveCheatViews();
 	if (USimCopterReplaySubsystem* Replay = ResolveReplay())
 	{
 		Replay->OnStateChanged().Remove(ReplayStateChangedHandle);
@@ -956,6 +961,29 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 {
 	switch (NewScreen)
 	{
+	case ESimCopterSettingsScreen::CheatEnding:
+	{
+		auto Sequence = SNew(SSimCopterGortSequence).Art(Art ? Art->GetBitmap(TEXT("martian.bmp")) : nullptr)
+			.Audio(USimCopterAudioSubsystem::Get(this))
+			.OnClosed(FSimpleDelegate::CreateUObject(this, &ASimCopterPlayerController::CloseScreen));
+		InitialFocusWidget = Sequence;
+		return Sequence;
+	}
+	case ESimCopterSettingsScreen::CheatEntry:
+	{
+		TSharedRef<SSimCopterCheatDialog> Dialog = SNew(SSimCopterCheatDialog)
+			.Art(Art)
+			.OnEntered(FOnSimCopterCheatEntered::CreateWeakLambda(this, [this](const FString& Text)
+			{
+				const FString Result = ExecuteCheatCodes(Text);
+				if (Screen != ESimCopterSettingsScreen::CheatEnding)
+					if (auto* Missions = ResolveMissionSystem()) Missions->ShowAirOperationsMessage(Result);
+				return Result;
+			}))
+			.OnClosed(FSimpleDelegate::CreateUObject(this, &ASimCopterPlayerController::CloseScreen));
+		InitialFocusWidget = Dialog->GetInitialFocusWidget();
+		return Dialog;
+	}
 	case ESimCopterSettingsScreen::CitySettings:
 	{
 		FSimCopterCitySettingsValues Values;
@@ -1185,6 +1213,7 @@ void ASimCopterPlayerController::CloseScreen()
 	}
 	ScreenWidget.Reset();
 	Screen = ESimCopterSettingsScreen::None;
+	InitialFocusWidget.Reset();
 
 	PopPause();
 	RestoreGameInput();
@@ -1308,7 +1337,9 @@ void ASimCopterPlayerController::HandleApplicationActivationChanged(const bool b
 	if (bPausedForApplicationDeactivation)
 	{
 		// Returning to active gameplay opens Continue; existing screens keep their own focus.
-		if (!IsSettingsOpen() && !ASimCopterHangar::IsAnyShellOpen(GetWorld())) OpenSettings();
+		const auto* CityMode = GetWorld()->GetAuthGameMode<ASimCopterGameMode>();
+		if (!IsSettingsOpen() && !ASimCopterHangar::IsAnyShellOpen(GetWorld()) &&
+			!(CityMode && CityMode->IsCityIntroPlaying())) OpenSettings();
 		bPausedForApplicationDeactivation = false;
 		PopPause();
 	}

@@ -1,4 +1,48 @@
-# Fork publication validation — October 8, 2026
+# Fork validation
+
+## Combined task publication - October 9, 2026
+
+This run validates the combined cheats/Gort/media, aircraft/road, city-intro/accident,
+witness-photo and hospital-medic implementations. The 371 source, configuration,
+project and Windows build-wrapper files match the development build after normalizing
+line endings. The full per-file hash list is retained locally; its deterministic
+tree digest, asset hashes and per-test results are published in
+[TaskIntegrationResults.json](validation/TaskIntegrationResults.json).
+
+| Check | Current result |
+| --- | --- |
+| Required wrapper, Editor Win64 Development | Succeeded after recompiling the media test registration |
+| Required wrapper, Win64 Shipping | Succeeded |
+| Full NullRHI automation suite | 316 executed: 314 passed (9 with warnings), 2 previously documented failures, 0 unrun |
+| Offscreen D3D12 graphics suite | All 4 passed: drive-in playback, original cheat dialog, Gort render and witness photograph |
+| Runtime source/configuration correspondence | All 371 files match the publication checkout |
+| New runtime assets | Both MP4s and both drive-in material/texture assets match the tested source |
+| Existing installed content | Both movies and all 5 cooked content containers match the validated package; required material/maps are present in the cooked inventory |
+| Installed Shipping executable | Updated from the validated build with a verified backup; SHA-256 recorded in the result manifest |
+| Interactive gameplay/listening | Not performed |
+| Public downloadable executable release | Not created; GitHub contains buildable source/assets and the local installed build is updated |
+
+The two remaining failures are unchanged from the initial publication below:
+`SimCopter.Formats.SimCity2000.ReferenceCity` lacks the three expected altitude
+samples in the local fixture, and `SimCopter.UI.FlapLayout` expects equipment mask
+127 where the four original flaps cover 31. Neither test was disabled or rewritten.
+Existing toolchain/deprecation and synthetic-world warnings remain.
+
+The first combined NullRHI run also selected the GPU-only movie test, which correctly
+rejected that environment. Its registration now uses `NonNullRHI`, consistent with
+the existing witness rendering test. The final headless suite excludes both, and
+the separate renderer-backed run passes them. Cheat-dialog and Gort previews were
+explicitly enabled for the graphics run rather than relying on their headless passes.
+
+The playable installation already contained the prior tasks' cooked media/assets;
+those were hash-verified against their package, so a new content cook was unnecessary.
+The final executable/symbols and current player/change documentation were installed
+with backups. Saves, cities, radio tracks and videos were preserved and hash-checked.
+The installation receipt and complete logs are retained locally in
+`Docs/scratchpad/task-integration/`. This source publication does not distribute
+the user's original-game reference data or external SDK dependencies.
+
+## Initial publication validation - October 8, 2026
 
 Validated with UE 5.8.3 on Windows x64 before publication. The source fork contains
 the C++ used for these builds and tests; publication staging was checked against

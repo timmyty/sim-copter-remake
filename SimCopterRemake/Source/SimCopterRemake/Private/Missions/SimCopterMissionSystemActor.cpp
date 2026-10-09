@@ -501,6 +501,15 @@ void ASimCopterMissionSystemActor::Tick(float DeltaTime)
 	// Cheap (a 30-slot scan), and it covers an airport placed after the session opened and a save
 	// restored from before the record existed.
 	EnsureBaseLocationRecord();
+	const auto* Aircraft = Cast<ASimCopterHelicopterPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+	const bool bWasTransportOnly = MissionSystem.bTransportOnly;
+	MissionSystem.bTransportOnly = Aircraft && Aircraft->IsFixedWingAircraft();
+	if (MissionSystem.bTransportOnly && (!bWasTransportOnly ||
+		FMath::FloorToInt(SessionElapsedSeconds) != FMath::FloorToInt(SessionElapsedSeconds-DeltaTime)) &&
+		CountActiveMissionsOfType(SimCopterMissions::TYPE_Transport) == 0)
+		MissionSystem.CreateEventOfType(SimCopterMissions::TYPE_Transport);
+	if (MissionSystem.bTransportOnly && !bWasTransportOnly)
+		MissionSystem.SetMapFocusRecordIndex(MissionSystem.GetMapFocusRecordIndex(), SimCopterMissions::EMapFocusReason::LifecycleAdopt);
 	MissionSystem.Tick(DeltaTime);
 	ProcessPassengerTransfers(DeltaTime);
 	ProcessRescueTransfers();
@@ -1455,8 +1464,15 @@ int32 ASimCopterMissionSystemActor::GetFireHeightDelta1616(const FVector& WorldL
 	return Nearest;
 }
 
+void ASimCopterMissionSystemActor::AddPostBlastFire(const FVector& WorldLocation)
+{
+	if (PostBlastFires.Num() < 100) PostBlastFires.Emplace(WorldLocation, 30.0f);
+}
+
 void ASimCopterMissionSystemActor::UpdateFireVisuals(float DeltaSeconds)
 {
+	for (auto& Fire : PostBlastFires) Fire.Value -= DeltaSeconds;
+	PostBlastFires.RemoveAll([](const auto& Fire) { return Fire.Value <= 0; });
 	if (FireRenderComponent == nullptr || !FireRenderComponent->IsReady())
 	{
 		return;
@@ -1538,6 +1554,18 @@ void ASimCopterMissionSystemActor::UpdateFireVisuals(float DeltaSeconds)
 		Visuals.Add(Visual);
 	}
 
+	// FUN_004a6940 scatters class-1 smoke. The requested visible aftermath also keeps
+	// small flames on those same rubble plots for 30 seconds; no new mission or score.
+	for (int32 Index = 0; Index < PostBlastFires.Num(); ++Index)
+	{
+		FSimCopterFlameVisual Visual;
+		Visual.Key = 0x70000000 + Index;
+		Visual.World = PostBlastFires[Index].Key;
+		Visual.Scale = 0.65f * FMath::Min(PostBlastFires[Index].Value / 3.0f, 1.0f);
+		Visual.FlickerSeed = Index * 0.79f;
+		Visual.bVehicleFire = true;
+		Visuals.Add(Visual);
+	}
 	FireRenderComponent->SyncFlames(Visuals, TimeSeconds, CameraLocation);
 }
 
@@ -1770,6 +1798,7 @@ bool ASimCopterMissionSystemActor::TryResolveTransportSpawnTile(
 
 bool ASimCopterMissionSystemActor::CreateIncidentMedevacForVictim(ASimCopterGroundAgent* Victim)
 {
+	if (Victim && Victim->IsCow()) return false;
 	if (!IsValid(Victim) || Victim->IsMissionPatientDead() || Victim->IsMedevacVictim() ||
 		Victim->GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0 || Victim->GetBehaviorCarrier() != nullptr ||
 		Victim->IsMissionCarried() || Victim->GetAgentKind() != ESimCopterGroundAgentKind::Pedestrian)
@@ -1842,6 +1871,7 @@ bool ASimCopterMissionSystemActor::ShouldAvoidFireStep(const FVector& FromFeet, 
 
 bool ASimCopterMissionSystemActor::CreatePlayerCausedMedevacForVictim(ASimCopterGroundAgent* Victim)
 {
+	if (Victim && Victim->IsCow()) return false;
 	if (Victim == nullptr)
 	{
 		return false;
@@ -4134,6 +4164,8 @@ void ASimCopterMissionSystemActor::BuildMissionWorldMarkers(TArray<FSimCopterMis
 		}
 
 		const bool bHasDropoff = IsValidMissionTile(Record.SecondaryX, Record.SecondaryY);
+		if (PlayerHelicopter && PlayerHelicopter->IsFixedWingAircraft() &&
+			(Record.TypeMask & SimCopterMissions::TYPE_Transport) == 0) continue;
 		const bool bHasPassengerPickup = (Record.TypeMask & SimCopterMissions::TYPE_Transport) != 0;
 		const bool bHasMedicalPickup = (Record.TypeMask & SimCopterMissions::TYPE_Medevac) != 0;
 		const bool bHasRescuePickup = (Record.TypeMask & SimCopterMissions::TYPE_RescuePeople) != 0;
@@ -4537,6 +4569,14 @@ void ASimCopterMissionSystemActor::ClearMissionLogMessage(const FString& Text)
 
 FString ASimCopterMissionSystemActor::FormatMissionUiMessage(const SimCopterMissions::FSimCopterMissionUiMessage& Message, FLinearColor& OutColor) const
 {
+	// FUN_0049f680 posts 0x34 against -1: an accident is a Non-Mission Event
+	// (string 587), never "Mission #-1". Points and cash arrive separately;
+	// keep both accounting entries but present the accident only once.
+	if (Message.EventId == INDEX_NONE && Message.TextId == 0x3bf)
+	{
+		OutColor = FLinearColor(1.0f,0.38f,0.32f);
+		return Message.Kind == 8 ? TEXT("Non-Mission Event: You caused an accident") : FString();
+	}
 	const FString MissionName = !Message.MissionName.IsEmpty()
 		? Message.MissionName
 		: FString::Printf(TEXT("Mission #%d"), Message.EventId);

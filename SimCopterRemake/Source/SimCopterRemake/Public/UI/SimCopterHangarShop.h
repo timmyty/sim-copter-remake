@@ -119,6 +119,7 @@ SIMCOPTERREMAKE_API FRowState GetUpgradeRowState(const FContext& Context, int32 
 // Buy a separate parked aircraft. Money and ownership change only after placement succeeds;
 // the current aircraft and possession are preserved.
 SIMCOPTERREMAKE_API bool BuyHelicopter(const FContext& Context, int32 CatalogRow, FString& OutMessage);
+SIMCOPTERREMAKE_API bool DeliverCheatHelicopter(const FContext& Context, int32 TypeIndex, FString& OutMessage);
 
 // Bank the trade-in, clear ownership and remove the sold parked airframe. The last-aircraft
 // affordability guard still applies.

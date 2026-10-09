@@ -1,6 +1,10 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "City/SimCity2000CityActor.h"
+#include "Game/SimCopterCheats.h"
+#include "Ground/SimCopterParticleFX.h"
+#include "Missions/SimCopterMissionSystemActor.h"
+#include "EngineUtils.h"
 #include "ProfilingDebugging/CsvProfiler.h"
 #include "City/SimCopterCloudTuning.h"
 #include "Game/SimCopterLoadingSubsystem.h"
@@ -3135,7 +3139,8 @@ int32 AppendMaxisMeshObject(
 	bool bBuildVectorLines,
 	const FPlacedObjectRoadFaceFilter& RoadFaceFilter,
 	TMap<int32, FOriginalMeshSectionData>& Sections,
-	int32& OutTexturedTriangleCount)
+	int32& OutTexturedTriangleCount,
+	bool bPortraitOnly = false)
 {
 	int32 AddedTriangleCount = 0;
 
@@ -3169,7 +3174,7 @@ int32 AppendMaxisMeshObject(
 			continue;
 		}
 
-		if (IsDebugPortraitFace(Face))
+		if (IsDebugPortraitFace(Face) != bPortraitOnly)
 		{
 			continue;
 		}
@@ -4179,6 +4184,7 @@ void ASimCity2000CityActor::RebuildCity()
 	};
 
 	TMap<FBuildingModelKey, int32> ModelComponentIndices;
+	TMap<int32, int32> PortraitByModel;
 	// Per model triangle counts, so the reported totals still count every placement even though
 	// the geometry itself is only built once.
 	TArray<int32> ModelTriangleCounts;
@@ -4279,6 +4285,39 @@ void ASimCity2000CityActor::RebuildCity()
 		ModelTexturedTriangleCounts.Add(ModelTexturedTriangles);
 		check(ComponentInstanceBuildings.Num() == BuildingInstanceComponents.Num());
 		ModelComponentIndices.Add(Key, ComponentIndex);
+		// SCHOOK: PAMCAREYGOLDMAN 0x0049a940. Keep the authored portrait sign faces
+		// hidden until requested; a separate building part preserves demolition bookkeeping.
+		TMap<int32, FOriginalMeshSectionData> PortraitSections;
+		int32 PortraitTextured = 0;
+		const int32 PortraitTriangles = AppendMaxisMeshObject(PrimaryObject, PrimaryColorMap,
+			FVector::ZeroVector, OriginalMeshUnitsPerCentimeter, OriginalMeshScale,
+			bRenderOriginalMeshBackfaces, bOriginalTexturesLoaded, AvailableOriginalTextureKeys,
+			AvailableBakedAtlasPageIds, AvailableBakedDirectImageIds, OriginalTexturedFaceFallbackColor,
+			false, NoRoadFaceFilter, PortraitSections, PortraitTextured, true);
+		if (PortraitTriangles > 0)
+		{
+			if (auto* PortraitMesh = BuildBuildingModelStaticMesh(this, PortraitSections, ResolveBuildingSectionMaterial))
+			{
+				auto* Portrait = NewObject<UInstancedStaticMeshComponent>(this);
+				Portrait->SetStaticMesh(PortraitMesh);
+				for (const auto& Material : PortraitMesh->GetStaticMaterials()) EnsureInstancedStaticMeshUsage(Material.MaterialInterface);
+				Portrait->SetupAttachment(SceneRoot);
+				Portrait->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				Portrait->SetCanEverAffectNavigation(false);
+				Portrait->SetMobility(EComponentMobility::Movable);
+				Portrait->SetRemoveSwap();
+				const auto* Cheats = SimCopterCheats::Get(this);
+				Portrait->SetVisibility(Cheats && Cheats->bPortraits);
+				Portrait->RegisterComponent();
+				const int32 PortraitIndex = BuildingInstanceComponents.Add(Portrait);
+				BuildingModelMeshes.Add(PortraitMesh);
+				ComponentInstanceBuildings.AddDefaulted();
+				ModelTriangleCounts.Add(0);
+				ModelTexturedTriangleCounts.Add(0);
+				PortraitByModel.Add(ComponentIndex, PortraitIndex);
+				CheatPortraitComponents.Add(PortraitIndex);
+			}
+		}
 		return ComponentIndex;
 	};
 
@@ -4910,6 +4949,8 @@ void ASimCity2000CityActor::RebuildCity()
 							Building.PlacementOrigin = TileOrigin;
 							Building.XbldId = Tile.Building;
 							Building.Parts.Add(AddBuildingInstance(PlacedComponentIndex, BuildingId, TileOrigin));
+							if (const int32* Portrait = PortraitByModel.Find(PlacedComponentIndex))
+								Building.Parts.Add(AddBuildingInstance(*Portrait, BuildingId, TileOrigin));
 
 							// Every tile the footprint covers resolves to the one building id, so
 							// demolition can be asked for with any of them.
@@ -6051,6 +6092,7 @@ void ASimCity2000CityActor::ResetBuildingInstances()
 		}
 	}
 	BuildingInstanceComponents.Reset();
+	CheatPortraitComponents.Reset();
 	BuildingModelMeshes.Reset();
 	Buildings.Reset();
 	TileBuildingIds.Reset();
@@ -6542,3 +6584,42 @@ bool FSimCopterTunnelGeometryTest::RunTest(const FString& Parameters)
 	return true;
 }
 #endif
+
+void ASimCity2000CityActor::ShowCheatPortraits()
+{
+	for (int32 Index : CheatPortraitComponents)
+		if (BuildingInstanceComponents.IsValidIndex(Index)) BuildingInstanceComponents[Index]->SetVisibility(true);
+}
+
+int32 ASimCity2000CityActor::ApplyNuclearCheat(TArray<FIntPoint>& OutClearedTiles)
+{
+	// SCHOOK: NuclearCityDestruction 0x004a6940. Iterate each footprint exactly once.
+	int32 Count = 0;
+	auto* Effects = FindComponentByClass<USimCopterParticleFXComponent>();
+	for (const auto& Building : Buildings)
+	{
+		if (Building.bDemolished || !SimCopterCheats::CanNuclearBlastDemolish(Building.XbldId, FMath::Rand())) continue;
+		TArray<FIntPoint> Cleared;
+		if (DemolishBuildingAtTile(Building.OriginTile.X, Building.OriginTile.Y, Cleared))
+		{
+			++Count; OutClearedTiles.Append(Cleared);
+			if (SimCopterCheats::ShouldSpawnPostBlastFire(FMath::Rand()))
+			{
+				if (!Effects)
+				{
+					Effects = NewObject<USimCopterParticleFXComponent>(this, TEXT("PostBlastEffects"));
+					Effects->SetupAttachment(GetRootComponent());
+					AddInstanceComponent(Effects); Effects->RegisterComponent();
+					FString Error; Effects->InitEffectAssets(SimCopterOriginalGame::ResolveRoot(), Error);
+				}
+				const FVector Location = GetActorTransform().TransformPosition(Building.PlacementOrigin);
+				// The original emits class-1 smoke on one in 32 demolished plots.
+				Effects->SpawnTilePuff(Location,
+					1, Building.OriginTile.X, Building.OriginTile.Y);
+				for (TActorIterator<ASimCopterMissionSystemActor> Missions(GetWorld()); Missions; ++Missions)
+				{ Missions->AddPostBlastFire(Location); break; }
+			}
+		}
+	}
+	return Count;
+}

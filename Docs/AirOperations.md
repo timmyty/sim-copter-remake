@@ -52,7 +52,7 @@ With a living police officer aboard and the helicopter airborne, activate police
 
 ## Vehicle impacts and persistence
 
-Distinct helicopter contacts dent and darken the car near each impact location. The second hit immobilizes it and creates a towing mission. The fourth hit starts a fire followed by an explosion after four seconds. Sustained overlap does not count as repeated impacts. Player-caused wreck-and-repair jobs do not award completion money or score.
+The first moving helicopter contact dents, tips and ignites the car, posts the original non-mission accident penalty, and sends its occupants running away. It explodes after four seconds unless extinguished first. Repeated contact cannot restart the fuse or repeat the penalty. An extinguished car can be towed, but player-caused recovery jobs do not award completion money or score. See [City tours and car accidents](CityIntrosAndAccidents.md).
 
 Runtime saves include the helper's assignment and unlock, slung cargo identities, cable state, custody state, car impacts, boat recovery state, and pilot health. Existing save versions remain readable. Police taser camera mode ends when loading. Occupied sling fittings and a helicopter carrying slung cargo cannot be sold.
 

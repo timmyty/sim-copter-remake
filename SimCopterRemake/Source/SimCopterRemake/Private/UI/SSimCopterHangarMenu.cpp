@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterHangarMenu.h"
+#include "Game/SimCopterCheats.h"
 #include "SimCopterMenuFocusOutline.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
@@ -790,6 +791,17 @@ FReply SSimCopterHangarMenu::HandleSetLogSort(const ELogSort NewSort)
 
 FReply SSimCopterHangarMenu::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
+	const int32 CheatType = SimCopterCheats::AircraftTypeForKey(InKeyEvent.GetKey());
+	if (Page == EPage::Catalog && CatalogRow != INDEX_NONE && CheatType != INDEX_NONE &&
+		Shop.Career.IsValid() && Shop.Career->Cheats.bCEO)
+	{
+		if (!InKeyEvent.IsRepeat())
+		{
+			SimCopterHangarShop::DeliverCheatHelicopter(Shop, CheatType, StatusText);
+			RebuildPage();
+		}
+		return FReply::Handled();
+	}
 	if (InKeyEvent.GetKey() == EKeys::Gamepad_FaceButton_Right)
 	{
 		return Page == EPage::Hangar

@@ -108,6 +108,11 @@ SIMCOPTERREMAKE_API int32 GetServiceStationXbldId(EService Service);
 // FUN_004bcc80 writes manager[0x2c] = 5 for all three services.
 constexpr int32 VehiclesPerService = 5;
 
+// Requested remake response target. Coverage leaves time for acceleration and junctions.
+constexpr float EmergencySpeedCmPerSec = 1200.0f;
+constexpr float CoverageTravelSeconds = 34.0f;
+constexpr float MaximumTravelSeconds = 45.0f;
+
 // Station footprint the scan clears around a match (FUN_004bcc80 zeroes a 3x3 and
 // records the centre at +1/+1).
 constexpr int32 StationFootprintTiles = 3;
@@ -258,6 +263,10 @@ public:
 	// road tiles? The original ran Dijkstra over its intersection graph; the remake
 	// answers from its own road-tile graph.
 	virtual bool CanRouteBetween(const FIntPoint& FromRoadTile, const FIntPoint& ToRoadTile) const = 0;
+	virtual float RouteTravelSeconds(const FIntPoint& From, const FIntPoint& To) const
+	{
+		return CanRouteBetween(From, To) ? float(TileCost(From, To)) : TNumericLimits<float>::Max();
+	}
 };
 
 struct SIMCOPTERREMAKE_API FDispatchOutcome

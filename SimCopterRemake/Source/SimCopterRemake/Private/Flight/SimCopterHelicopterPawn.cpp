@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Game/SimCopterCheats.h"
 #include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterPresentation.h"
 #include "UI/SSimCopterMegaphoneCarousel.h"
@@ -1457,14 +1458,15 @@ void ASimCopterHelicopterPawn::PrepareHelicopterModel(
 			*RootPath));
 	}
 
-	if (TypeIndex == 5)
+	if (TypeIndex >= 0)
 	{
 		const TArray<FColor>* Palette = nullptr;
 		if (const auto* Source = MeshLibrary.FindObjectByObjectId(Definition.BodyObjectId, &Palette))
 		{
 			FMaxisMeshObject Body = *Source;
+			SimCopterHelicopterPresentation::ApplyCatalogPaintRegions(Body, TypeIndex);
 			for (auto& Face : Body.Faces)
-				if (SimCopterHelicopterPresentation::IsAgustaWindow(Body, Face)) Face.FaceType = 11;
+				if (SimCopterHelicopterPresentation::IsCabinWindow(Body, Face, TypeIndex)) Face.FaceType = 11;
 			TArray<FColor> Paint;
 			if (Palette) SimCopterHelicopterPresentation::MakePaintPalette(*Palette, Paint, TypeIndex);
 			FMaxisProceduralMeshBuilder::BuildPaletteColoredSections(Body, Palette ? &Paint : nullptr,
@@ -1491,11 +1493,11 @@ void ASimCopterHelicopterPawn::PrepareHelicopterModel(
 		}
 	}
 
-	OutPrepared.bHasMainRotor = BuildRotorById(
+	OutPrepared.bHasMainRotor = TypeIndex != SimCopterHelicopterRegistry::PlaneTypeIndex && BuildRotorById(
 		Definition.MainRotorObjectId,
 		OutPrepared.MainRotorOpaqueSection,
 		OutPrepared.MainRotorDiscSection);
-	if (!OutPrepared.bHasMainRotor)
+	if (!OutPrepared.bHasMainRotor && TypeIndex != SimCopterHelicopterRegistry::PlaneTypeIndex)
 	{
 		OutPrepared.Errors.Add(FString::Printf(
 			TEXT("Could not build main rotor mesh '%s' (GEO id 0x%03x)."),
@@ -1538,7 +1540,7 @@ bool ASimCopterHelicopterPawn::ValidateHelicopterModel(
 			*Prepared.DescribeErrors());
 		return false;
 	}
-	if (!Prepared.bHasMainRotor)
+	if (!Prepared.bHasMainRotor && Prepared.Definition->InternalTypeIndex != SimCopterHelicopterRegistry::PlaneTypeIndex)
 	{
 		OutReason = FString::Printf(
 			TEXT("%s: main rotor mesh unavailable (%s)"),
@@ -1556,6 +1558,11 @@ bool ASimCopterHelicopterPawn::ValidateHelicopterModel(
 	}
 
 	const int32 OnboardPassengers = FMath::Max(FlightModel.Passengers, MissionPassengerSlots.Num());
+	if (Prepared.Definition->InternalTypeIndex == SimCopterHelicopterRegistry::PlaneTypeIndex)
+		for (const auto& Slot : MissionPassengerSlots)
+			if (Slot.Kind != ESimCopterMissionPassengerKind::Transport ||
+				(Slot.Person.IsValid() && (Slot.Person->GetBehaviorAttribute(EBhavAttr::State) != 4 || Slot.Person->IsCow())))
+			{ OutReason=TEXT("Planes can only carry a Transport passenger."); return false; }
 	if (Prepared.Definition->PassengerSeats < OnboardPassengers)
 	{
 		OutReason = FString::Printf(
@@ -1935,7 +1942,7 @@ bool ASimCopterHelicopterPawn::LoadHelicopterMeshFromOriginalGameRoot()
 
 	FSimCopterPreparedHelicopterModel Prepared;
 	PrepareHelicopterModel(ActiveHelicopterTypeIndex, Prepared);
-	if (!Prepared.HasBody() || !Prepared.bHasMainRotor)
+	if (!Prepared.HasBody() || (!Prepared.bHasMainRotor && !IsFixedWingAircraft()))
 	{
 		LastModelLoadError = Prepared.Errors.Num() > 0
 			? Prepared.DescribeErrors()
@@ -2861,6 +2868,7 @@ bool ASimCopterHelicopterPawn::CanExitHelicopter() const
 
 bool ASimCopterHelicopterPawn::CanTransferMissionPassengers() const
 {
+	if (IsFixedWingAircraft() && (FlightModel.State != ESimCopterFlightState::Parked || VelocityCmPerSec.Size2D() > 35)) return false;
 	// LOW OR LANDED, never "parked". The original has no flight-state gate on getting in or out:
 	// FUN_004c9bc0 (opcodes 17/21, the alight) asks only for a standable tile and for the person to
 	// be within six original units of the ground under them. Requiring ESimCopterFlightState::Parked
@@ -2880,6 +2888,7 @@ bool ASimCopterHelicopterPawn::CanTransferMissionPassengers() const
 
 bool ASimCopterHelicopterPawn::CanBoardMissionPassengers() const
 {
+	if (IsFixedWingAircraft() && (FlightModel.State != ESimCopterFlightState::Parked || VelocityCmPerSec.Size2D() > 35)) return false;
 	// FUN_004ca940 (opcode 12, the walk-and-board every passenger program reaches) accepts the move
 	// once the walker's body is in contact with the airframe AND the doorsill sits under
 	// `(objectY - personY) & 0xffff0000 < 0x50000`. See PassengerBoardClearanceCm for why that is
@@ -2926,6 +2935,7 @@ int32 ASimCopterHelicopterPawn::AddMissionPassengersForMission(
 	ESimCopterMissionPassengerKind Kind,
 	ASimCopterGroundAgent* Person)
 {
+	if (!CanAcceptPassenger(Kind, Person)) return 0;
 	const int32 Added = FMath::Clamp(Count, 0, GetAvailablePassengerSeats());
 	for (int32 Index = 0; Index < Added; ++Index)
 	{
@@ -5077,6 +5087,7 @@ bool ASimCopterHelicopterPawn::IsToolSelectable(ESimCopterHelicopterTool Tool) c
 
 ESimCopterToolAvailability ASimCopterHelicopterPawn::GetToolAvailability(ESimCopterHelicopterTool Tool) const
 {
+	if (IsFixedWingAircraft()) return ESimCopterToolAvailability::Unavailable;
 	if (Tool == ESimCopterHelicopterTool::ApacheMissile ||
 		Tool == ESimCopterHelicopterTool::ApacheMachineGun)
 	{
@@ -5357,6 +5368,7 @@ bool ASimCopterHelicopterPawn::IsDispatchClearModifierHeld() const
 
 void ASimCopterHelicopterPawn::RequestDispatch(int32 ServiceIndex, bool bChaseSpotlight, bool bClearInstead)
 {
+	if (IsFixedWingAircraft()) { LastToolStatus = TEXT("Transport only - board a helicopter for emergency response."); return; }
 	const int32 ServiceCount = static_cast<int32>(SimCopterDispatch::EService::Count);
 	if (ServiceIndex < 0 || ServiceIndex >= ServiceCount)
 	{
@@ -5479,6 +5491,7 @@ void ASimCopterHelicopterPawn::SimDispatchClear(int32 Service)
 
 void ASimCopterHelicopterPawn::SimDispatchTile(int32 Service, int32 TileX, int32 TileY)
 {
+	if (IsFixedWingAircraft()) return;
 	ASimCopterTrafficSystemActor* TrafficSystem = Cast<ASimCopterTrafficSystemActor>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), ASimCopterTrafficSystemActor::StaticClass()));
 	if (TrafficSystem == nullptr)
@@ -5697,6 +5710,31 @@ void ASimCopterHelicopterPawn::PlayMegaphoneVoice(const int32 MessageIndex)
 	NextIndex = FMath::Clamp(NextIndex, 0, Lines.Num() - 1);
 	Audio->PlayFile2D(Lines[NextIndex], SimCopterSound::ESoundDir::Language);
 	NextIndex = (NextIndex + 1) % Lines.Num();
+}
+
+void ASimCopterHelicopterPawn::RefillFuelForCheat()
+{
+	// FUN_00435680 refills the active airframe when DAT_0051ac60 switches on.
+	FlightModel.Fuel = FlightModel.Tuning.FuelGallons;
+	CurrentFuelGallons = SimCopterFixed::ToFloat(FlightModel.Fuel);
+}
+
+bool ASimCopterHelicopterPawn::SendOnFootMegaphoneMessage(APawn* Pilot, int32 MessageIndex)
+{
+	const auto* Cheats = SimCopterCheats::Get(this);
+	if (!Pilot || MessageIndex < 0 || MessageIndex >= 5 || !Cheats || !Cheats->bMegaphone) return false;
+	auto* Traffic = Cast<ASimCopterTrafficSystemActor>(UGameplayStatics::GetActorOfClass(
+		this, ASimCopterTrafficSystemActor::StaticClass()));
+	FSimCopterInteractionEvent Event;
+	Event.Mode = ESimCopterInteractionMode::Megaphone;
+	Event.Source = Pilot;
+	Event.TargetWorldLocation = Pilot->GetActorLocation();
+	Event.MessageIndex = MessageIndex;
+	if (!Traffic || !Traffic->TryGetPeopleTileCoordinateAtWorldLocation(
+		Event.TargetWorldLocation, Event.TargetTile.X, Event.TargetTile.Y)) return false;
+	PlayMegaphoneVoice(MessageIndex);
+	BroadcastInteraction(Event, SimCopterInteraction::MegaphoneRings);
+	return true;
 }
 
 // SCHOOK: InteractionBroadcast 0x0048ae70
@@ -7121,7 +7159,7 @@ void ASimCopterHelicopterPawn::UpdateEngineState(float DeltaSeconds)
 		EngineStartHoldAlpha = 0.0f;
 	}
 
-	if (bIsLanded && !bAnyEngineStartHeld)
+	if (bIsLanded && !bAnyEngineStartHeld && !IsFixedWingAircraft())
 	{
 		bEngineRunning = false;
 		EngineShutdownHoldElapsed = 0.0f;
@@ -7147,6 +7185,9 @@ void ASimCopterHelicopterPawn::UpdateEngineState(float DeltaSeconds)
 
 void ASimCopterHelicopterPawn::SimulateFlightStep(float DeltaSeconds)
 {
+	const auto* Cheats = SimCopterCheats::Get(this);
+	FlightModel.bCheatInfiniteFuel = Cheats && Cheats->bFuel;
+	FlightModel.bCheatInvulnerable = Cheats && Cheats->bShields;
 	UpdateEngineState(DeltaSeconds);
 
 	if (!bFlightModelSeeded)
@@ -7180,7 +7221,8 @@ void ASimCopterHelicopterPawn::SimulateFlightStep(float DeltaSeconds)
 	const FSimCopterFlightEnvironment Environment = BuildFlightEnvironment();
 	LastClimbCommand = Inputs.ClimbCommand;
 	LastFlightEnvironmentFireDelta = Environment.FireHeightDelta;
-	FlightModel.Step(DeltaSeconds, Inputs, Environment, LastFlightEvents);
+	if (IsFixedWingAircraft()) StepFixedWing(DeltaSeconds, Inputs, Environment);
+	else FlightModel.Step(DeltaSeconds, Inputs, Environment, LastFlightEvents);
 
 	// ApplyFlightModelToActor is where the swept collider raises an object impact, so the audio
 	// pass has to run after it, not before: Step() clears the event block at the top of every
@@ -7348,6 +7390,11 @@ FSimCopterFlightInputs ASimCopterHelicopterPawn::BuildFlightInputs() const
 	}
 
 	constexpr float KeyThreshold = KeyAxisThreshold;
+	if (const auto* Cheats = SimCopterCheats::Get(this); Cheats && Cheats->bSuperpower)
+	{
+		const auto* PC = Cast<APlayerController>(GetController());
+		Inputs.bTurbo = PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
+	}
 	Inputs.bPitchForwardKey = PitchInput > KeyThreshold;
 	Inputs.bPitchBackKey = PitchInput < -KeyThreshold;
 	Inputs.bTurnRightKey = RollInput > KeyThreshold || (bBumperRightHeld && !bBumperLeftHeld && !bBumperChordLatched);
@@ -9239,28 +9286,31 @@ void ASimCopterHelicopterPawn::AdvanceCockpitStabilizedAttitude(float DeltaSecon
 void ASimCopterHelicopterPawn::RefreshCabinOccupants()
 {
 	if (!CabinOccupantsMesh) return;
-	const bool bAgusta = GetHelicopterTypeIndex() == 5 && bUsingOriginalMesh;
-	CabinOccupantsMesh->SetVisibility(bAgusta);
-	if (!bAgusta) return;
-	const bool bHasPilot = Cast<APlayerController>(GetController()) != nullptr;
+	CabinOccupantsMesh->SetVisibility(bUsingOriginalMesh);
+	CabinOccupantsMesh->SetRelativeScale3D(FVector(ModelScale / 0.25f));
+	if (!bUsingOriginalMesh) return;
+	const int32 TypeIndex = GetHelicopterTypeIndex();
+	const bool bHasPilot = GetController() != nullptr || (AirOperations && AirOperations->IsAIPiloted());
 	uint32 Key = bHasPilot ? 1 : 0;
+	Key = HashCombine(Key, GetTypeHash(TypeIndex));
 	Key = HashCombine(Key, GetTypeHash(MissionPassengerSlots.Num()));
 	for (const auto& Slot : MissionPassengerSlots)
 	{
 		Key = HashCombine(Key, GetTypeHash(Slot.Person.Get()));
 		Key = HashCombine(Key, uint32(Slot.Kind));
+		Key = HashCombine(Key, GetTypeHash(Slot.HeadImageIndex));
 	}
 	if (CabinOccupantsKey == Key) return;
 	CabinOccupantsKey = Key;
 	FMaxisMeshSection Occupants;
 	if (bHasPilot) SimCopterHelicopterPresentation::AppendSeatedOccupant(
-		SimCopterHelicopterPresentation::AgustaSeat(0), FLinearColor(0.10f,0.25f,0.55f), false, Occupants);
+		SimCopterHelicopterPresentation::CabinSeat(TypeIndex, 0), FLinearColor(0.10f,0.25f,0.55f), false, Occupants);
 	const FLinearColor Clothes[] = {FLinearColor(0.6f,0.24f,0.1f),FLinearColor(0.2f,0.45f,0.22f),FLinearColor(0.45f,0.35f,0.6f)};
-	for (int32 I = 0; I < FMath::Min(7, MissionPassengerSlots.Num()); ++I)
+	for (int32 I = 0; I < FMath::Min(GetPassengerSeatCount(), MissionPassengerSlots.Num()); ++I)
 	{
 		const auto& Slot = MissionPassengerSlots[I];
 		const int32 ColorIndex = Slot.Person.IsValid() ? Slot.Person->GetHeadImageIndex() % 3 : I % 3;
-		SimCopterHelicopterPresentation::AppendSeatedOccupant(SimCopterHelicopterPresentation::AgustaSeat(I+1),
+		SimCopterHelicopterPresentation::AppendSeatedOccupant(SimCopterHelicopterPresentation::CabinSeat(TypeIndex, I+1),
 			Clothes[FMath::Max(0,ColorIndex)], Slot.Kind == ESimCopterMissionPassengerKind::Medevac, Occupants);
 	}
 	CabinOccupantsMesh->ClearAllMeshSections();
@@ -9316,7 +9366,7 @@ void ASimCopterHelicopterPawn::UpdateVisuals(float DeltaSeconds)
 	// what makes the equipment visible from in here.
 	const bool bHideFuselageForView = CameraModeIsFirstPerson(CameraMode);
 	if (CabinOccupantsMesh)
-		CabinOccupantsMesh->SetVisibility(bUsingOriginalMesh && GetHelicopterTypeIndex() == 5 && !bHideFuselageForView);
+		CabinOccupantsMesh->SetVisibility(bUsingOriginalMesh && !bHideFuselageForView);
 	if (HeliBodyMeshComponent != nullptr)
 	{
 		HeliBodyMeshComponent->SetVisibility(bUsingOriginalMesh && !bHideFuselageForView, false);

@@ -55,7 +55,7 @@ namespace
 constexpr uint32 GroundAgentRuntimeSaveMagic = 0x4147454e; // 'AGEN'
 // 5 adds the vehicle-knockdown phase. Without it a save taken mid-tumble restored a person with no
 // behaviour VM and a forced clip, i.e. a pedestrian frozen in the recoil pose forever.
-constexpr int32 GroundAgentRuntimeSaveVersion = 6;
+constexpr int32 GroundAgentRuntimeSaveVersion = 7;
 
 void SerializeAgentBool(FArchive& Archive, bool& Value)
 {
@@ -453,6 +453,7 @@ int32 ASimCopterGroundAgent::GetRiotAgitation() const
 // SCHOOK: PersonInteractionReaction 0x004c1050
 bool ASimCopterGroundAgent::ApplyInteraction(const FSimCopterInteractionEvent& Event)
 {
+	if (IsCow()) return false; // physical knockback is handled separately, without human injury reactions
 	// FUN_0049a4f0 routes by object class; only the person class (obj[0xc] & 8) lands here.
 	//
 	// The refusal trace has to be ABOVE every early return, not below them. It was below, so a
@@ -3182,7 +3183,7 @@ void ASimCopterGroundAgent::ApplyKnockdownVisual(const FQuat& Rotation, const fl
 	SetVisualRootRelativeLocation(FVector(0.0f, 0.0f, -DropCm * FMath::Clamp(FlatAlpha, 0.0f, 1.0f)));
 }
 
-void ASimCopterGroundAgent::AdvanceKnockdownFigureFrames(const float DeltaSeconds)
+void ASimCopterGroundAgent::AdvanceForcedFigureFrames(const float DeltaSeconds)
 {
 	if (!bUsingPedestrianFigure || FigureFrameCount <= 1)
 	{
@@ -3273,7 +3274,7 @@ bool ASimCopterGroundAgent::UpdateKnockdown(const float DeltaSeconds)
 	if (KnockdownPhase == ESimCopterKnockdownPhase::Airborne)
 	{
 		UpdateKnockdownFlight(DeltaSeconds);
-		AdvanceKnockdownFigureFrames(DeltaSeconds);
+		AdvanceForcedFigureFrames(DeltaSeconds);
 		// The watchdog: a tumble that never finds a surface (spawned over a hole in the collision,
 		// or thrown clean off the map) still has to hand the person back.
 		if (KnockdownPhase == ESimCopterKnockdownPhase::Airborne &&
@@ -3819,6 +3820,7 @@ bool ASimCopterGroundAgent::IsMedevacVictim() const
 
 bool ASimCopterGroundAgent::PrepareForPlayerCausedMedevac()
 {
+	if (IsCow()) return false;
 	if (AgentKind != ESimCopterGroundAgentKind::Pedestrian ||
 		IsMedevacVictim() ||
 		bMissionCarried ||
@@ -3863,6 +3865,7 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	const bool bAllowAirborneCabinTransfer,
 	const bool bAsCarriedBody)
 {
+	if (IsCow()) return false;
 	if (NewCarrier == nullptr || NewCarrier == this)
 	{
 		return false;
@@ -3873,6 +3876,8 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	}
 
 	ASimCopterHelicopterPawn* Helicopter = Cast<ASimCopterHelicopterPawn>(NewCarrier);
+	if (Helicopter && (!Helicopter->CanAcceptPassenger(GetMissionPassengerKind(), this) ||
+		(Helicopter->IsFixedWingAircraft() && bAsHarnessRider))) return false;
 	if (Helicopter != nullptr && bAsHarnessRider)
 	{
 		// A harness pickup is only useful when winding the rider in can actually claim a cabin
@@ -5112,6 +5117,7 @@ int32 ASimCopterGroundAgent::GetActiveMedevacMissionCount() const
 
 bool ASimCopterGroundAgent::CollapseIntoMedevacVictim(FSimCopterPersonContext& Context)
 {
+	if (IsCow()) return false;
 	// SCHOOK: PersonCollapsesIntoCasualty 0x004c9b50
 	UWorld* World = GetWorld();
 	ASimCopterMissionSystemActor* Missions = World != nullptr
@@ -5791,6 +5797,7 @@ bool ASimCopterGroundAgent::CaptureRuntimeSaveState(TArray<uint8>& OutData)
 	Writer << KnockdownResumeFigureMnemonic;
 	Writer << bTaserStunned << bHandcuffed << bVehicleStalled << bVehicleTowed << bVehicleExploded;
 	Writer << HelicopterImpactCount << TowMissionId << VehicleImpactCooldown << VehicleExplosionSeconds << VehicleDents;
+	Writer << bVehicleTipped << bVehicleDriverEvacuated << VehicleTipRoll << VehicleEscapeSeconds << VehicleEscapeOrigin;
 	return !Writer.IsError();
 }
 
@@ -5958,7 +5965,28 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		if (VehicleDents.Num() > 4 || HelicopterImpactCount < 0 || HelicopterImpactCount > 4) return false;
 		UndamagedVehicleVertices.Reset(); RebuildVehicleDents();
 	}
+	if (Version >= 7)
+	{
+		Reader << bVehicleTipped << bVehicleDriverEvacuated << VehicleTipRoll << VehicleEscapeSeconds << VehicleEscapeOrigin;
+		if (!FMath::IsFinite(VehicleTipRoll) || !FMath::IsFinite(VehicleEscapeSeconds) ||
+			VehicleEscapeOrigin.ContainsNaN() || VehicleEscapeSeconds < 0 || VehicleEscapeSeconds > 6) return false;
+	}
+	else
+	{
+		bVehicleTipped = HelicopterImpactCount >= 4;
+		bVehicleDriverEvacuated = false;
+		VehicleTipRoll = 90;
+		VehicleEscapeSeconds = 0;
+	}
+	ApplyVehicleTipVisual();
 	if (Reader.IsError() || Reader.Tell() != Reader.TotalSize()) return false;
+	// Saves can capture the brief removal delay immediately after the explosion.
+	if (bVehicleExploded)
+	{
+		SetActorHiddenInGame(true);
+		SetActorEnableCollision(false);
+		SetLifeSpan(0.2f);
+	}
 	// Version-1 saves already contain SeatPortraitMood but predate the transient impact deadline.
 	// If one captured the old latched frightened row, let it pass through the same recovery once
 	// the carrier reference is relinked instead of preserving that bug forever in the save.
@@ -6764,11 +6792,13 @@ void ASimCopterGroundAgent::ApplyTrafficBrake(float MaxSpeedScale, float DeltaSe
 
 void ASimCopterGroundAgent::AddTrafficVelocityImpulse(const FVector& ImpulseCmPerSec)
 {
+	if (bVehicleTipped) return;
 	ExternalVelocityCmPerSec += FVector(ImpulseCmPerSec.X, ImpulseCmPerSec.Y, 0.0f);
 }
 
 void ASimCopterGroundAgent::MoveByTrafficSeparation(const FVector& WorldDelta)
 {
+	if (bVehicleTipped) return;
 	if (!WorldDelta.IsNearlyZero())
 	{
 		AddActorWorldOffset(WorldDelta, false);
@@ -6972,6 +7002,7 @@ void ASimCopterGroundAgent::BecomeReplayPuppet()
 
 void ASimCopterGroundAgent::SetMissionInjuredPose()
 {
+	if (IsCow()) return;
 	bMissionPatientDead = false;
 	bMissionStationary = true;
 	BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
@@ -7012,6 +7043,7 @@ void ASimCopterGroundAgent::SetMissionInjuredPose()
 
 void ASimCopterGroundAgent::SetMissionDeadPose()
 {
+	if (IsCow()) return;
 	// "Dead" is the corpse, and it is for the dead only. BHAV 310 'Medevac animate' - which BHAV
 	// 280 rec[13] runs on every pass - is the authority on what a LIVING casualty holds:
 	// rec[2] binds 'Inju' on the ground and rec[3] binds 'Slum' while riding. BHAV 800 rec[0]'s
@@ -7484,6 +7516,13 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 		: MovementSpeedCmPerSec;
 	const FVector DesiredVelocity = DesiredDirection * BaseSpeedCmPerSec * EffectiveSpeedScale;
 	CurrentVelocityCmPerSec = FMath::VInterpTo(CurrentVelocityCmPerSec, DesiredVelocity, DeltaSeconds, AgentKind == ESimCopterGroundAgentKind::Vehicle ? 3.0f : 9.0f);
+	if (AgentKind == ESimCopterGroundAgentKind::Vehicle)
+	{
+		// Keep momentum along the road segment. Lateral interpolation used to carry fast
+		// police cars past corners and make them orbit a waypoint they had already crossed.
+		CurrentVelocityCmPerSec = DesiredDirection * FMath::Min(float(CurrentVelocityCmPerSec.Size()),
+			DistanceToTarget / FMath::Max(DeltaSeconds, 0.001f));
+	}
 
 	FVector Delta = (CurrentVelocityCmPerSec + ExternalVelocityCmPerSec) * DeltaSeconds;
 	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian)

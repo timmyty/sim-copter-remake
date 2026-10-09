@@ -165,6 +165,8 @@ struct SIMCOPTERREMAKE_API FSimCopterEquipmentDefinition
 
 namespace SimCopterHelicopterRegistry
 {
+	// Remake transport aircraft; kept outside the original nine-entry helicopter catalog.
+	constexpr int32 PlaneTypeIndex = 9;
 // All nine executable records, indexed by InternalTypeIndex.
 SIMCOPTERREMAKE_API const TArray<FSimCopterHelicopterDefinition>& GetDefinitions();
 

@@ -206,6 +206,8 @@ struct SIMCOPTERREMAKE_API FSimCopterFlightModel
 	// The remake decouples this from the camera: it is a handling option the
 	// developer panel toggles, so either model can be flown from any view.
 	bool bEasyFlightModel = false;
+	bool bCheatInfiniteFuel = false;
+	bool bCheatInvulnerable = false;
 
 	ESimCopterFlightState State = ESimCopterFlightState::Parked; // [1]
 

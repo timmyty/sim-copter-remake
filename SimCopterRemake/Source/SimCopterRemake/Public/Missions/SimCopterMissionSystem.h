@@ -755,6 +755,8 @@ public:
 	// main menu hands the player a first job without the opening wait. Returns true when a mission
 	// was created; a zero-weight city can never create one.
 	bool RollScheduledMissionNow();
+	// Derived from the possessed aircraft, never persisted over a helicopter switch.
+	bool bTransportOnly = false;
 
 	// BOMB-side save payload. The original writes the live 30-record mission table, scheduler
 	// globals and fire pools separately from CINF/CSET. Keep this explicit and pointer-free so a

@@ -3,6 +3,7 @@
 #include "Ground/SimCopterAmbientVehicles.h"
 #include "Ground/SimCopterRescueDeck.h"
 #include "Ground/SimCopterUfoMesh.h"
+#include "Ground/SimCopterFlashingLights.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "City/SimCity2000CityActor.h"
@@ -206,12 +207,7 @@ ASimCopterAmbientVehiclesActor::ASimCopterAmbientVehiclesActor()
 	{
 		VertexColorMaterial = ModelMaterialFinder.Object;
 	}
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Hull(TEXT("/Game/Art/UFO/M_UFO_Hull.M_UFO_Hull"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Canopy(TEXT("/Game/Art/UFO/M_UFO_Canopy.M_UFO_Canopy"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Drive(TEXT("/Game/Art/UFO/M_UFO_Drive.M_UFO_Drive"));
-	UfoHullMaterial = Hull.Object;
-	UfoCanopyMaterial = Canopy.Object;
-	UfoDriveMaterial = Drive.Object;
+
 }
 
 void ASimCopterAmbientVehiclesActor::BeginPlay()
@@ -875,33 +871,6 @@ int32 ASimCopterAmbientVehiclesActor::GetDifficultyTier() const
 
 UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(const int32 ObjectId, const TCHAR* Name)
 {
-	if (ObjectId == SimCopterAmbientVehicles::UfoObjectId)
-	{
-		// The original UFO is palette polygons (types 19/15), lamps (25), and translucent
-		// beam shells (11). The single opaque builder was drawing those beams as solid hull.
-		// User-requested replacement: a textured lenticular saucer with a separate canopy/drive.
-		TArray<FMaxisMeshSection> Sections;
-		SimCopterUfoMesh::Build(GetTileSizeCm() * 0.75f, Sections);
-		auto* Mesh = NewObject<UProceduralMeshComponent>(this, FName(Name));
-		Mesh->SetupAttachment(GetRootComponent());
-		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Mesh->SetCastShadow(true);
-		Mesh->RegisterComponent();
-		UMaterialInterface* Materials[] = { UfoHullMaterial, UfoCanopyMaterial, UfoDriveMaterial };
-		float Top = 0.0f;
-		for (int32 Index = 0; Index < Sections.Num(); ++Index)
-		{
-			const auto& Part = Sections[Index];
-			Mesh->CreateMeshSection_LinearColor(Index, Part.Vertices, Part.Triangles, Part.Normals,
-				Part.UVs, Part.VertexColors, Part.Tangents, false);
-			Mesh->SetMaterial(Index, Materials[Index] != nullptr ? Materials[Index] : VertexColorMaterial.Get());
-			Top = FMath::Max(Top, static_cast<float>(Part.LocalBounds.Max.Z));
-		}
-		ModelTopHeightCm.Add(ObjectId, Top);
-		Mesh->SetVisibility(false);
-		OwnedMeshes.Add(Mesh);
-		return Mesh;
-	}
 	const FString RootPath = ResolveOriginalGameRoot();
 	if (RootPath.IsEmpty())
 	{
@@ -936,6 +905,30 @@ UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(cons
 				ObjectId, *RootPath);
 		}
 		return nullptr;
+	}
+
+	if (ObjectId == SimCopterAmbientVehicles::UfoObjectId)
+	{
+		TArray<FMaxisMeshSection> Parts;
+		const float Scale = GetTileSizeCm() / AmbientModelSourceTileSize;
+		SimCopterUfoMesh::Build(*Object, ColorMap, AmbientModelUnitsPerCentimeter, Scale, Parts);
+		auto* Mesh = NewObject<UProceduralMeshComponent>(this, FName(Name));
+		Mesh->SetupAttachment(GetRootComponent());
+		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Mesh->SetCastShadow(true); Mesh->RegisterComponent();
+		const auto& Part = Parts[0];
+		Mesh->CreateMeshSection_LinearColor(0, Part.Vertices, Part.Triangles, Part.Normals,
+			Part.UVs, Part.VertexColors, Part.Tangents, false);
+		Mesh->SetMaterial(0, VertexColorMaterial);
+		ModelTopHeightCm.Add(ObjectId, static_cast<float>(Part.LocalBounds.Max.Z));
+		UfoLights = NewObject<USimCopterFlashingLightsComponent>(this);
+		UfoLights->SetupAttachment(Mesh); UfoLights->RegisterComponent();
+		TArray<FSimCopterFlashingLightPoint> Points;
+		FSimCopterFlashingLightSchedule::ExtractLightPoints(*Object, ColorMap,
+			AmbientModelUnitsPerCentimeter, Scale, false, Points);
+		UfoLights->SetLightPoints(MoveTemp(Points));
+		Mesh->SetVisibility(false, true); OwnedMeshes.Add(Mesh);
+		return Mesh;
 	}
 
 	FMaxisMeshSection Section;
@@ -1300,6 +1293,12 @@ void ASimCopterAmbientVehiclesActor::Tick(float DeltaSeconds)
 		UpdateTrainRoofRiders();
 	}
 
+	if (UfoLights)
+	{
+		const bool bVisible = Planes[1].bVisible && Planes[1].Mesh && Planes[1].Mesh->IsVisible();
+		UfoLights->SetVisibility(bVisible, true);
+		if (bVisible) UfoLights->SyncLightsFromPlayerCamera(GetWorld()->GetTimeSeconds());
+	}
 	UpdateWrecks(DeltaSeconds);
 	UpdateAmbientVehicleAudio();
 }

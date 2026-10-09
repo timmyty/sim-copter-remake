@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterOnFootPawn.h"
+#include "Game/SimCopterCheats.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Framework/Application/SlateApplication.h"
 
@@ -295,6 +296,25 @@ void ASimCopterOnFootPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	// SCHOOK: PilotSuperpower 0x004c1b50: Shift selects dog class 10 at 20x speed.
+	const auto* Cheats = SimCopterCheats::Get(this);
+	const auto* PC = Cast<APlayerController>(GetController());
+	const bool bDog = Cheats && Cheats->bSuperpower && PC &&
+		(PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
+	if (auto* Move = GetCharacterMovement())
+	{
+		Move->MaxWalkSpeed = WalkSpeedCmPerSec * (bDog ? 20.0f : 1.0f);
+		Move->MaxAcceleration = MaxAccelerationCmPerSec2 * (bDog ? 20.0f / 3.0f : 1.0f);
+	}
+	if (FigureShared.IsValid() && bUsingOriginalFigure)
+	{
+		const int32 FigureIndex = FigureShared->Model.FindFigureIndex(bDog ? TEXT("2DOGG") : PlayerFigureName);
+		if (FigureIndex != INDEX_NONE && FigureIndex != FigureAnim.FigureIndex)
+		{
+			FigureAnim.FigureIndex = FigureIndex;
+			RebuildPlayerFigureClip(TEXT("NoMo"));
+		}
+	}
 
 	if (MissionPickupCooldownSeconds > 0.0f)
 	{
@@ -555,6 +575,7 @@ void ASimCopterOnFootPawn::DropCarriedMissionPerson()
 
 bool ASimCopterOnFootPawn::PickUpMissionPerson(ASimCopterGroundAgent* MissionPerson)
 {
+	if (MissionPerson && MissionPerson->IsCow()) return false;
 	if (MissionPerson == nullptr || CarriedMissionPerson.IsValid() || GetCapsuleComponent() == nullptr)
 	{
 		return false;
@@ -1171,7 +1192,10 @@ bool ASimCopterOnFootPawn::RebuildPlayerFigureClip(const FString& Mnemonic)
 		return false;
 	}
 	const FPrivAnimFigure& Figure = FigureShared->Model.Figures[FigureAnim.FigureIndex];
-	const FPrivAnimClip* Clip = FigureShared->Model.FindClip(Figure, Mnemonic);
+	const bool bDog = Figure.Name.StartsWith(TEXT("2DOG"));
+	const bool bMoving = Mnemonic == TEXT("1Wal") || Mnemonic == TEXT("1Run") || Mnemonic == TEXT("Tote");
+	const FString ClipName = bDog ? (bMoving ? TEXT("DgRn") : TEXT("DgSt")) : Mnemonic;
+	const FPrivAnimClip* Clip = FigureShared->Model.FindClip(Figure, ClipName);
 	if (Clip == nullptr)
 	{
 		Clip = FigureShared->Model.FindClip(Figure, TEXT("NoMo"));
@@ -1181,7 +1205,7 @@ bool ASimCopterOnFootPawn::RebuildPlayerFigureClip(const FString& Mnemonic)
 		return false;
 	}
 
-	const float HeightCm = OnFootBodyHeightCm * PopulationWorldScale;
+	const float HeightCm = OnFootBodyHeightCm * PopulationWorldScale * (bDog ? 1.0f / 3.0f : 1.0f);
 	const FPrivAnimClip* StandingClip = FigureShared->Model.FindClip(Figure, TEXT("1Wal"));
 	const FSimCopterPopulationFigure::FCalibration Calibration =
 		FSimCopterPopulationFigure::Calibrate(StandingClip != nullptr ? *StandingClip : *Clip, HeightCm);
@@ -1189,7 +1213,7 @@ bool ASimCopterOnFootPawn::RebuildPlayerFigureClip(const FString& Mnemonic)
 	FSimCopterPopulationFigure::FBuildParams Params;
 	Params.HeightCm = HeightCm;
 	Params.ClothesOffset = 0;
-	Params.bTexturedHead = FigureHeadMaterialInstance != nullptr;
+	Params.bTexturedHead = !bDog && FigureHeadMaterialInstance != nullptr;
 
 	if (!FSimCopterPopulationFigure::BuildClipSections(
 			OriginalBodySpriteComponent, Figure, *Clip, FigureShared->Palette, Params, Calibration, FigureAnim.bHasHeadSection))

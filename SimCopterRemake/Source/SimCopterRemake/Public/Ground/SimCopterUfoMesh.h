@@ -4,6 +4,7 @@
 
 namespace SimCopterUfoMesh
 {
-	// User-requested replacement art. Section 0 hull, 1 canopy, 2 drive lights.
-	SIMCOPTERREMAKE_API void Build(float RadiusCm, TArray<FMaxisMeshSection>& OutSections);
+	// Original palette hull. Authored flashing light points are attached separately.
+	SIMCOPTERREMAKE_API void Build(const FMaxisMeshObject& Object, const TArray<FColor>* Palette,
+		float UnitsPerCentimeter, float Scale, TArray<FMaxisMeshSection>& OutSections);
 }

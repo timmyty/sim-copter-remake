@@ -599,6 +599,11 @@ public:
 	// Runtime type index into SimCopterHelicopterRegistry (the executable's heli[0]).
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Model")
 	int32 GetHelicopterTypeIndex() const { return ActiveHelicopterTypeIndex; }
+	bool IsFixedWingAircraft() const { return ActiveHelicopterTypeIndex == SimCopterHelicopterRegistry::PlaneTypeIndex; }
+	static void EnsureTransportPlane(UWorld* World);
+	bool CanAcceptPassenger(ESimCopterMissionPassengerKind Kind, const ASimCopterGroundAgent* Person = nullptr) const;
+	void StepFixedWing(float DeltaSeconds, const FSimCopterFlightInputs& Inputs, const FSimCopterFlightEnvironment& Environment);
+	friend class FSimCopterAircraftRoadUpdateTest;
 
 	const FSimCopterHelicopterDefinition* GetHelicopterDefinition() const;
 
@@ -858,6 +863,8 @@ public:
 
 	// The decompiled flight simulation state (read-only; for HUD and tests).
 	const FSimCopterFlightModel& GetFlightModel() const { return FlightModel; }
+	void RefillFuelForCheat();
+	bool SendOnFootMegaphoneMessage(APawn* Pilot, int32 MessageIndex);
 
 	// The original's easy handling model (FSimCopterFlightModel::bEasyFlightModel). The
 	// executable bound it to the interior camera views; here it is an explicit option so
