@@ -40,12 +40,6 @@ bool SimCopterDriveIn::ResolveVideo(const FString& FileName, FString& OutPath, F
 	return false;
 }
 
-FVector2D SimCopterDriveIn::FitVideo(float VideoAspect, float ScreenAspect)
-{
-	if (VideoAspect <= 0 || ScreenAspect <= 0) return FVector2D(1, 1);
-	return VideoAspect > ScreenAspect ? FVector2D(1, ScreenAspect / VideoAspect) : FVector2D(VideoAspect / ScreenAspect, 1);
-}
-
 void ASimCity2000CityActor::GetDriveInTiles(TArray<FIntPoint>& OutTiles) const
 {
 	OutTiles.Reset();
@@ -145,7 +139,7 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 		Screen->SetupAttachment(RootComponent); Screen->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Screen->SetCastShadow(false); Screen->RegisterComponent();
 		Screen->SetMaterial(0, ScreenMaterial); Screen->SetMaterial(1, ScreenMaterial);
-		Screens.Add(Screen); BuildScreen(Index, 1);
+		Screens.Add(Screen); BuildScreen(Index);
 		auto* Sound = NewObject<UMediaSoundComponent>(this);
 		Sound->SetupAttachment(RootComponent); Sound->bAllowSpatialization = true;
 		Sound->bOverrideAttenuation = true; Sound->AttenuationOverrides.bAttenuate = true;
@@ -160,7 +154,7 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 	return FString::Printf(TEXT("Opening %s at %d drive-in theater(s). Enter Stop video to stop."), *FileName, Screens.Num());
 }
 
-void ASimCopterDriveInPlayer::BuildScreen(int32 Index, float Aspect)
+void ASimCopterDriveInPlayer::BuildScreen(int32 Index)
 {
 	const auto& Corners = Surfaces[Index].Corners;
 	const FVector Centre = (Corners[0] + Corners[2]) * 0.5;
@@ -169,15 +163,15 @@ void ASimCopterDriveInPlayer::BuildScreen(int32 Index, float Aspect)
 	// The authored top-left/right/bottom-left axes face the parking lot in this order.
 	// Reversing them puts the picture behind both the original screen and our black backing.
 	const FVector Normal = FVector::CrossProduct(Right, Down).GetSafeNormal();
-	const FVector2D Fit = SimCopterDriveIn::FitVideo(Aspect, Right.Size() / Down.Size());
 	const TArray<int32> Triangles = {0, 1, 2, 0, 2, 3};
 	const TArray<FVector2D> UV = {{0,0}, {1,0}, {1,1}, {0,1}};
 	TArray<FVector> Normals; Normals.Init(Normal, 4);
 	TArray<FProcMeshTangent> Tangents; Tangents.Init(FProcMeshTangent(Right.GetSafeNormal(), false), 4);
-	// Black backing plus an inset picture: aspect ratios fit without stretching or cropping.
+	// Requested framing: stretch the complete picture across the screen's width and
+	// three quarters of its height, centred vertically. Full UVs preserve every edge.
 	for (int32 Part = 0; Part < 2; ++Part)
 	{
-		const FVector R = Right * (Part ? Fit.X : 1), D = Down * (Part ? Fit.Y : 1);
+		const FVector R = Right, D = Down * (Part ? 0.75f : 1.0f);
 		const FVector C = Centre + Normal * (Part ? 1.5 : 1.0);
 		TArray<FVector> Vertices = {C-R-D, C+R-D, C+R+D, C-R+D};
 		TArray<FLinearColor> Colors; Colors.Init(Part ? FLinearColor::White : FLinearColor::Black, 4);
@@ -188,8 +182,6 @@ void ASimCopterDriveInPlayer::BuildScreen(int32 Index, float Aspect)
 void ASimCopterDriveInPlayer::MediaOpened(FString)
 {
 	if (CurrentFile.IsEmpty()) return;
-	const float Aspect = Player->GetVideoTrackAspectRatio(INDEX_NONE, INDEX_NONE);
-	for (int32 Index = 0; Index < Screens.Num(); ++Index) BuildScreen(Index, Aspect);
 	bWasPaused = UGameplayStatics::IsGamePaused(this);
 	if (!bWasPaused) Player->Play();
 	for (auto Sound : Sounds) Sound->Start();

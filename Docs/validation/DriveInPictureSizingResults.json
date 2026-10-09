@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-09",
+  "editor_build": "Succeeded",
+  "shipping_build": "Succeeded",
+  "picture_width_fraction": 1.0,
+  "picture_height_fraction": 0.75,
+  "vertically_centered": true,
+  "full_source_frame": true,
+  "presentation": "Stretch",
+  "targeted_tests": [
+    {
+      "name": "SimCopter.Cheats.DriveInCommands",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.AllMaps",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.MinimapLogo",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.Playback",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.SafePlacement",
+      "state": "Success"
+    }
+  ],
+  "passed": 5,
+  "failed": 0,
+  "rendered_movies": [
+    {
+      "movie": 0,
+      "visible_pixels": 105595,
+      "scene_pixels": 409600
+    },
+    {
+      "movie": 1,
+      "visible_pixels": 6130,
+      "scene_pixels": 409600
+    }
+  ],
+  "shipping_sha256": "6e55bd4245a6da9ba5cc4ce9f492ac4633c6140f6eddff7cdf8ab02cc31a3a0c",
+  "limitations": [
+    "No manual flight or live listening test.",
+    "Borders encoded in a movie remain part of its source frame."
+  ]
+}

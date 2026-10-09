@@ -301,9 +301,6 @@ bool FSimCopterDriveInCommandsTest::RunTest(const FString&)
 	FString Path, Error;
 	for (const FString& Bad : {TEXT("../HSI.mp4"), TEXT("C:\\HSI.mp4"), TEXT("https://a/HSI.mp4"), TEXT("HSI.exe"), TEXT("")})
 		TestFalse(TEXT("Unsafe or unsupported filename rejected"), SimCopterDriveIn::ResolveVideo(Bad, Path, Error));
-	TestTrue(TEXT("Square original fits square screen"), SimCopterDriveIn::FitVideo(1, 1).Equals(FVector2D(1, 1)));
-	TestTrue(TEXT("Widescreen movie letterboxes"), SimCopterDriveIn::FitVideo(16.0f/9, 1).Equals(FVector2D(1, 9.0f/16)));
-	TestTrue(TEXT("Portrait movie pillarboxes"), SimCopterDriveIn::FitVideo(.5f, 1).Equals(FVector2D(.5f, 1)));
 	int32 Fires = 0;
 	for (int32 Roll = 0; Roll < 32768; ++Roll) Fires += ShouldSpawnPostBlastFire(Roll) ? 1 : 0;
 	TestEqual(TEXT("Original one-in-32 post-blast scatter"), Fires, 1024);
