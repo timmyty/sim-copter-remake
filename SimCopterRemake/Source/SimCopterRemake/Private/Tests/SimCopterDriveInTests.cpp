@@ -57,7 +57,7 @@ public:
 			Test->AddError(TEXT("Timed out waiting for a decoded drive-in frame")); return Finish();
 		}
 		if (!DriveIn->Player || !DriveIn->Player->IsPlaying() || DriveIn->Player->GetTime().GetTotalSeconds() < 1 || DriveIn->Texture->GetSurfaceWidth() < 1) return false;
-		const FIntPoint Expected = Stage == 0 ? FIntPoint(1280, 720) : FIntPoint(1080, 1080);
+		const FIntPoint Expected = Stage == 0 ? FIntPoint(1280, 720) : FIntPoint(1440, 1440);
 		Test->TestEqual(TEXT("Decoded video retains prepared dimensions"), DriveIn->Player->GetVideoTrackDimensions(INDEX_NONE, INDEX_NONE), Expected);
 		Test->TestTrue(TEXT("Movie loops"), DriveIn->Player->IsLooping());
 		Test->TestTrue(TEXT("Movie audio track available"), DriveIn->Player->GetNumTracks(EMediaPlayerTrack::Audio) > 0);
@@ -71,7 +71,17 @@ public:
 		int32 Lit = 0;
 		for (auto Color : Pixels) if (Color.R > 20 || Color.G > 20 || Color.B > 20) ++Lit;
 		Test->TestTrue(TEXT("External media sampler renders non-black decoded video"), Lit > Pixels.Num() / 100);
-		FImageUtils::SaveImageByExtension(*(FPaths::ProjectDir() / FString::Printf(TEXT("../Docs/scratchpad/drive-in-ufo/movie-%d.png"), Stage)), FImageView(Pixels.GetData(), 640, 360));
+		if (Stage == 1)
+		{
+			// The supplied original embedded a 32x32 movie in 128x128 black padding.
+			// Resolution alone cannot fix that: its restored picture must fill the
+			// projection instead of leaving 15/16 of the decoded frame black.
+			Test->TestTrue(TEXT("Restored original fills the projection instead of retaining baked black borders"), Lit > Pixels.Num() / 8);
+			Test->AddInfo(FString::Printf(TEXT("Restored movie lights %.1f%% of the decoded picture"), 100.f * Lit / Pixels.Num()));
+		}
+		const FString MovieEvidence = FPaths::ProjectDir() / TEXT("../Docs/scratchpad/drive-in-upscale");
+		IFileManager::Get().MakeDirectory(*MovieEvidence, true);
+		FImageUtils::SaveImageByExtension(*(MovieEvidence / FString::Printf(TEXT("movie-%d.png"), Stage)), FImageView(Pixels.GetData(), 640, 360));
 		CheckTheaterPicture();
 		if (Stage++ == 0)
 		{
@@ -143,7 +153,7 @@ private:
 		Capture->RegisterComponent();
 		if (GShaderCompilingManager) GShaderCompilingManager->FinishAllCompilation();
 		World->SendAllEndOfFrameUpdates();
-		const FString Evidence = FPaths::ProjectDir() / TEXT("../Docs/scratchpad/drive-in-full-screen");
+		const FString Evidence = FPaths::ProjectDir() / TEXT("../Docs/scratchpad/drive-in-upscale");
 		IFileManager::Get().MakeDirectory(*Evidence, true);
 		auto Read = [&](const TCHAR* Name)
 		{

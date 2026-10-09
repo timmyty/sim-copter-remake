@@ -101,10 +101,10 @@ New profiles start on **KINV**. Once you tune another station, the game remember
 
 | Cheat | Movie |
 | --- | --- |
-| `Lights, Camera, Action!` | Plays `LightsCameraActionSimCopter.mp4`, the supplied original SimCopter movie, upscaled to 1080×1080 while preserving its square picture and original 10 fps. Enter the code again to stop. |
+| `Lights, Camera, Action!` | Plays the restored **1440×1440** `LightsCameraActionSimCopter.mp4` at its original **10 fps**. Removing the supplied clip's fixed black border makes the actual picture **4× wider and taller** on the theater. Enter the code again to stop. |
 | `HSI` | Plays `HSI.mp4`: **FuzeTheory and Invoke the Revoked - Humanist Superintelligence (HSI) - Official Music Video plays**. The supplied 1080p master was compressed to approximately **20 MB**, **1280×720 HD at 24 fps**, retaining the full video and stereo audio. Enter the code again to stop. |
 
-The original movie upscale uses Lanczos scaling and mild sharpening; it cannot recover detail absent from the 128×128 source. User-added HD videos play at their own resolution. The supplied master files are preserved outside the source repository; only the prepared copies are packaged.
+The original movie restoration blends restrained Real-ESRGAN enhancement with the source, followed by light temporal cleanup and high-quality scaling. Its actual picture was only **32×32 pixels** inside a 128×128 padded frame, so this improves presentation rather than recovering native HD detail. The prepared movie is approximately **78 MB**; the source, timing and audio are preserved. See [restoration details and comparison](Docs/DriveInMovieRestoration.md). User-added HD videos play at their own resolution, and HSI retains its approximately 20 MB HD copy.
 
 Developers can prepare files with FFmpeg and Python using `python Tools/PrepareDriveInVideos.py path/to/movie.mp4`. To target about 20 MB at 720p, use `python Tools/PrepareDriveInVideos.py path/to/HSI.mp4 --target-mb 20`. These commands preserve the inputs and write prepared copies into the source content folder. Movie playback is an MP4 extension of the original cheat, inspired by the [original drive-in format research](https://github.com/CahootsMalone/maxis-mesh-stuff/blob/master/Info/Making-Videos-for-SimCopter%27s-Drive-In-Movie-Theatres.md).
 

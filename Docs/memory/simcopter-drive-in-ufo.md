@@ -38,11 +38,13 @@ Player instructions: [README](../../README.md#cheat-codes-and-drive-in-videos) a
   bytes, 1920x1080/24 fps. Its prepared two-pass H.264/AAC copy is **19,774,886 bytes,
   1280x720/24 fps, 206.336 seconds**, with 96 kbps audio. Framewise SSIM against the
   source scaled to 720p is 0.8904; the requested small size loses fine detail.
-- The original movie is 128x128/10 fps. Its Lanczos/mild-sharpen copy is
-  **3,154,014 bytes, 1080x1080/10 fps, 144.661 seconds**. Do not crop the initial
-  small picture: later scenes fill the source frame. Upscaling cannot recover lost
-  detail. `Tools/PrepareDriveInVideos.py --target-mb 20` prepares the compact HD
-  variant; temporary two-pass statistics are cleaned up automatically.
+- The initial original-movie copy was **3,154,014 bytes, 1080x1080/10 fps**.
+  **Corrected by the [movie restoration](../DriveInMovieRestoration.md):** inspecting
+  every source frame showed a fixed 32x32 picture inside the 128x128 frame. The
+  earlier warning that later scenes fill the outer frame was incorrect. The new
+  1440x1440 copy removes that padding and uses restrained neural restoration.
+  `Tools/PrepareDriveInVideos.py --target-mb 20` still prepares HSI's compact HD
+  variant; use `Tools/RestoreOriginalDriveInVideo.py` for the padded original movie.
 
 ## Original assets and aftermath
 
