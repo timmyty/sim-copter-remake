@@ -1,0 +1,414 @@
+{
+  "Date": "2026-10-08",
+  "Succeeded": 79,
+  "SucceededWithWarnings": 2,
+  "Failed": 0,
+  "NotRun": 0,
+  "Tests": [
+    {
+      "Name": "SimCopter.Behavior.VM.ActionDelegation",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Behavior.VM.HospitalMedicRetire",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Behavior.VM.LateOpcodes",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Behavior.VM.Opcode22PlayerTileProbe",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Behavior.VM.PoliceReturnBudget",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Behavior.VM.PoliceReturnInterrupt",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Behavior.VM.Reference",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Behavior.VM.SelectionContact",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Collision.AirframeColliderFit",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Collision.BuildingWalls",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Collision.StepSweepShape",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Collision.WalkProbeIgnoresOverhead",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Collision.WallContainmentStep",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.ArrivalAction",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.EmergencyCrewStates",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.Failures",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.HospitalParamedicRespawn",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.HospitalRoofPost",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.MedevacHandoffGates",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.PoliceRoofBoarding",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.Selection",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.Spiral",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.StationScan",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.TargetSnap",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Dispatch.TileRules",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.ArsonistRenderedBuildingTarget",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.BaseLocationRecord",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.BuildingFireDifficulty",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.BurglarCarStaysOpen",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.CrimeIdentityAndSpawn",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.CrimePlacementNeedsBuilding",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.DispatchLocationVoice",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.FireDouse",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.FireDouseAcrossFootprint",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.FireLifecycle",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.HospitalSites",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.IncrementalUpdateTextAndPenalties",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.MapFocusRules",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.MarkerCoordinates",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.MarkerLabelFits",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.MarkerOverlap",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.MarkerUiAvoidance",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.MedevacCasualtyHasNoDeliveryReward",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.MedevacRecordLayout",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.OriginalMissionAvailability",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.OriginalPickupMessage",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.ParamedicCabinHandoff",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.PassengersAboardNeverFailMission",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.PlaneDeckRescue",
+      "State": "Success",
+      "WarningCount": 11
+    },
+    {
+      "Name": "SimCopter.Missions.PostAnnouncementVoice",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.PRNGParity",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.RiotCountsRewardsAndPenaltyErosion",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.RiotViability",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.RooftopRescueCountsPhasesRewardsAndVoices",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.RuntimeSaveRoundTrip",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.SafePassengerLanding",
+      "State": "Success",
+      "WarningCount": 12
+    },
+    {
+      "Name": "SimCopter.Missions.SaveFocusAndTransportLayout",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.SchedulerParity",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.ServiceFireSuppressionUsesFlameOffset",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.SessionStart",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.TrafficJamCarClearCompletes",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.TransportPassengerSpawnOutsideBuildings",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.TransportSchedulerTimer",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.TypeDisplayNames",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.UserCityDefaultSettings",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.WeightTableParity",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.XbldPropertyTable",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.NpcMedical.BandObstacleRoutes",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Passengers.FaceProgram",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Passengers.FallGravity",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Passengers.HeadImages",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Passengers.PortraitRendering",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.Passengers.VoiceRates",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.ServicePosts.ActualHospitalGeometry",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+      "State": "Success",
+      "WarningCount": 0
+    },
+    {
+      "Name": "SimCopter.ServicePosts.SpacingEntrancesAndImpact",
+      "State": "Success",
+      "WarningCount": 0
+    }
+  ]
+}

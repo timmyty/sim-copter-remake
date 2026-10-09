@@ -21,6 +21,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+	friend class FSimCopterWitnessPhotoRenderingTest;
 	UPROPERTY(Transient) TObjectPtr<USceneCaptureComponent2D> Capture;
 	UPROPERTY(Transient) TObjectPtr<UTextureRenderTarget2D> Photo;
 	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> Pending;
@@ -34,4 +35,5 @@ private:
 	bool bSuspectWearsShades = false;
 	void TakePhoto(ASimCopterGroundAgent& Suspect);
 	void EnsurePanel();
+	TSharedRef<SWidget> CreatePhotoWidget() const;
 };
