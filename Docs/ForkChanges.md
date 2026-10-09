@@ -1,6 +1,6 @@
 # Timmyty SimCopter gameplay fork
 
-Publication snapshot: October 8, 2026. This is a customized Unreal Engine 5.8 fork
+Initial publication snapshot: October 8, 2026. This is a customized Unreal Engine 5.8 fork
 of [JamesIV4/sim-copter-remake](https://github.com/JamesIV4/sim-copter-remake), built
 on [wyozi's version](https://github.com/wyozi/sim-copter-remake/tree/25d81802b065eac5fee1dbd74afb75d1e59004e8).
 Original authorship and commit history are retained.
@@ -9,6 +9,70 @@ Original authorship and commit history are retained.
 particular, controlling a police passenger and firing a taser from a helicopter
 while an AI pilot circles the area is a fictional addition. It is not a claim
 about authentic SimCopter equipment, original mechanics, or real taser range.
+
+## October 9 submission and task coverage
+
+The latest gameplay submission is
+[`1a0be52`](https://github.com/timmyty/sim-copter-remake/commit/1a0be5226790b675fd7341d347cec189a539ee35),
+"Fix witness photos and hospital ground medic behavior." Its previous published
+commit is `e66675d`, "Publish custom gameplay fork with nonlethal police tasers."
+The [complete submitted diff](https://github.com/timmyty/sim-copter-remake/compare/e66675d...1a0be52)
+contains 14 files, 864 insertions and 12 deletions. No new packaged release or
+version number was created by this source submission.
+
+### Changes published since e66675d
+
+- **Witness photographs:** retain one-shot camera rendering state so exposure
+  works in bright daylight, reset metering for each report, and size the camera
+  distance from the visible suspect's bounds. Reuse the production photo widget
+  in an offscreen regression that checks exposure, captions, visibility and
+  snapshot behavior, and reproduces the original defect when the fix is removed.
+- **Hospital ground medics:** extend purposeful approaches to the existing nearby
+  helicopter detection boundary while retaining the compact idle patrol. Preserve
+  hospital identity during the approach, match staffing by assigned post to avoid
+  duplicate medics, restore nearby legacy posts, and keep displaced ground medics
+  assigned. Boarding explicitly releases the post so the medic can travel.
+- **Hospital entrance:** remove the hospital sign text, panel and pole while
+  retaining the entrance service point and patient admission. Police signs remain.
+- **Tests and records:** add medic coverage for idle bounds, displacement,
+  save/restore, staffing, distant/airborne rejection, boarding, seat consumption
+  and travel; add the witness rendering test; include the feature notes, compact
+  medic test-results manifest and memory-index references.
+
+These are the results of the tasks **Fix witness photos showing blank** and
+**Update hospital medic behavior**. See [witness-photo details](WitnessPhotoFix.md)
+and [hospital-medic details](HospitalGroundMedics.md).
+
+The October 8 records show successful Editor and Shipping builds, 81 passing
+medic-related tests and 52 passing witness-related tests. Each gameplay test run
+included two previously documented warning-bearing cases. Publication on October 9
+verified those saved logs and passed `git diff --check`; builds and gameplay tests
+were not rerun. Interactive gameplay was not verified.
+
+### Completed local tasks absent from this submission
+
+The development folder `sim-copter-remake-main` and the Git publication checkout
+`sim-copter-publication` are separate. The scheduled submission committed the
+pending files in the publication checkout; it did not synchronize the development
+folder. The following October 8-9 work was implemented locally after the initial
+publication, but its implementation is **not included in 1a0be52**. These entries
+record outstanding publication work, not features available in this GitHub snapshot.
+
+| Task | Implemented locally, still unpublished here | Local reference in the development folder |
+| --- | --- | --- |
+| Add original cheat code mechanics | Ctrl+Alt+X and the original cheat-entry artwork/controls; original command matching; shields, fuel, turbo/dog, pilot/map/megaphone/car-camera controls, cash and career codes, CEO catalog delivery with keys 1-9, hidden portraits, building-grid export and nuclear demolition. Subsequent work adds scattered blast smoke/flames, HD drive-in playback, HSI/custom-video commands and folder instructions, original UFO geometry/lights, and original Gort artwork/audio. The final Gort follow-up synchronizes 36 subtitle/voice pairs, fades the original still image, uses the requested 10-second bonus pause, supports immediate Esc/B/button return, and finishes automatically at 3:06. | `Docs/CheatCodes.md`; `Docs/memory/simcopter-cheat-codes.md`; `Docs/memory/simcopter-drive-in-ufo.md`; `Docs/memory/simcopter-gort-sequence.md` |
+| Improve vehicles and NPCs | Visible passenger bodies in every helicopter; cows bounce without becoming medical/carryable NPCs; improved emergency vehicle speed, routing and headquarters coverage; flyable airport planes with one passenger and Transport-only missions. | `Docs/memory/aircraft-passengers-road-coverage.md` |
+| Restore level intros and crash event | Skippable city tours with camera/input restoration; first-impact car tipping/fire and the original non-mission accident message/penalty; occupant evacuation and escape; four-second explosion fuse, extinguishing/recovery handling and version-7 save compatibility. | `Docs/CityIntrosAndAccidents.md` |
+
+The local reference paths above are deliberately identified as development-folder
+records; they are not links to files shipped in this public checkout. The task
+completion reports describe local installation and validation, which do not imply
+GitHub publication. Nuclear NPC/mission cleanup remains incomplete, the Gort image
+has no original mouth animation, and the city tours recreate the showcase using
+current scenery rather than reproducing the original movies' authored shots.
+
+This documentation follow-up records the distinction without changing gameplay
+or rewriting the already published commit.
 
 ## Police tasers and arrests
 
