@@ -20,15 +20,17 @@ improved emergency road coverage, city intro tours and first-impact car accident
 - [Current validation results and known limitations](Docs/ForkValidation.md)
 - [Gameplay controls and air operations](Docs/AirOperations.md)
 
-Use Git LFS when cloning: custom music, prepared MP4 videos, textures, Unreal assets and the Windows icon are
-included through LFS. Supply your original game data and the required Unreal/NVIDIA build
-dependencies locally. This source publication is not a new prebuilt Windows release.
+To build from source, use Git LFS when cloning: custom music, prepared MP4 videos, textures, Unreal assets and
+the Windows icon are included through LFS. Supply your original game data and the required Unreal/NVIDIA
+build dependencies locally. To play, use the packaged Windows download below.
 
 ## Launching a Windows build
 
-1. Extract the entire packaged build, open its `Windows` folder, and double-click **`SimCopterRemake.exe`**.
+1. Download **`SimCopterRemake-v1.0.2-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
 2. Keep `Engine`, `SimCopter`, `SimCopterRemake`, and `DriveInVideos` beside the launcher.
 3. Choose **New Career Game** or **New User Game**, then select a city to begin.
+
+If Windows reports a missing Visual C++ runtime, run the included `Engine/Extras/Redist/en-us/vc_redist.x64.exe`, then launch again.
 
 ## Original upstream project overview
 
