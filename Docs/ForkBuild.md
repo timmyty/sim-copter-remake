@@ -2,7 +2,9 @@
 
 This is an Unreal Engine 5.8 source fork. The October 8, 2026 validation uses
 UE 5.8.3 on Windows. It includes all 21 KINV music WAVs, both prepared drive-in MP4 videos, and custom
-artwork/audio through Git LFS. It does not include a newly published Windows executable.
+artwork/audio through Git LFS. To play without building, download the Windows ZIP from
+the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract
+it completely, and run `SimCopterRemake.exe`. The instructions below are for source builds.
 
 ## Checkout and dependencies
 

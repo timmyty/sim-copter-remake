@@ -1,5 +1,22 @@
 # Fork validation
 
+## Drive-in/radio Windows release - October 9, 2026
+
+The v1.0.2 Windows package includes the latest Shipping executable and the existing
+validated cooked content. Editor and Shipping builds succeeded. The full headless
+suite ran 320 tests: 318 passed (9 with warnings), with the same two failures listed
+below and none unrun. Offscreen movie playback on the newly placed Sea Cliff theater
+passed. All 45 bundled city maps have drive-ins; level foundations, minimap symbols,
+and radio preference persistence are covered by automation.
+
+The release staging checks all 872 NonUFS runtime dependencies and hashes every
+copied runtime file, including the 45 maps, 21 KINV tracks and both drive-in movies.
+The Shipping executable's SHA-256 is recorded in
+[DriveInRadioResults.json](validation/DriveInRadioResults.json).
+Personal saves/settings and debug symbols are excluded. No foreground gameplay or
+listening check was performed. See [release notes](Releases/v1.0.2.md) and
+[implementation details](DriveInPlacementAndRadio.md).
+
 ## Combined task publication - October 9, 2026
 
 This run validates the combined cheats/Gort/media, aircraft/road, city-intro/accident,
