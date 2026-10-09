@@ -26,7 +26,7 @@ build dependencies locally. To play, use the packaged Windows download below.
 
 ## Launching a Windows build
 
-1. Download **`SimCopterRemake-v1.0.2-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
+1. Download **`SimCopterRemake-v1.0.3-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
 2. Keep `Engine`, `SimCopter`, `SimCopterRemake`, and `DriveInVideos` beside the launcher.
 3. Choose **New Career Game** or **New User Game**, then select a city to begin.
 

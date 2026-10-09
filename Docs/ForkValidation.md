@@ -1,5 +1,18 @@
 # Fork validation
 
+## Drive-in visibility patch v1.0.3 - October 9, 2026
+
+Fixed the reversed movie-screen offset that let audio play while the theater geometry
+and black backing hid the picture. Editor and Shipping builds succeeded; all five
+targeted tests passed, including actual lowercase `hsi` and original movie cheat
+execution followed by scene captures of the real Sea Cliff theater. Both movie
+pictures were inspected. No manual flight or listening test was performed.
+[Before/after evidence](DriveInVideoVisibility.md) and
+[machine-readable results](validation/DriveInVideoVisibilityResults.json).
+
+The older full-suite results below remain historical; its two known failures were
+not included in this focused rendering/placement/minimap/command run.
+
 ## Drive-in/radio Windows release - October 9, 2026
 
 The v1.0.2 Windows package includes the latest Shipping executable and the existing

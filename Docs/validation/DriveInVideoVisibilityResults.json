@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-09",
+  "editor_build": "Succeeded",
+  "shipping_build": "Succeeded",
+  "targeted_tests": [
+    {
+      "name": "SimCopter.Cheats.DriveInCommands",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.AllMaps",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.MinimapLogo",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.Playback",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.SafePlacement",
+      "state": "Success"
+    }
+  ],
+  "passed": 5,
+  "failed": 0,
+  "baseline_visible_movie_pixels": [
+    0,
+    0
+  ],
+  "fixed_movie_pixels": [
+    {
+      "movie": 0,
+      "visible_pixels": 80222,
+      "scene_pixels": 409600
+    },
+    {
+      "movie": 1,
+      "visible_pixels": 8399,
+      "scene_pixels": 409600
+    }
+  ],
+  "shipping_sha256": "c15a591848572e523df6555f6c343272d271f338ea0b8714a95fe52ef7774cc1",
+  "scope": "Real cheat dispatch and world-space theater rendering, placement, minimap, media commands",
+  "limitations": [
+    "No manual flight or live listening test.",
+    "Earlier full-suite ReferenceCity and FlapLayout failures were outside this targeted run."
+  ]
+}
