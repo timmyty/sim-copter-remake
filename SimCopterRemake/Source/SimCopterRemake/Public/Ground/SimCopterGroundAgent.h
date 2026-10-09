@@ -96,6 +96,7 @@ public:
 private:
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCarAccidentTest;
+	friend class FSimCopterParkedAircraftTrafficTest;
 	bool bVehicleTipped = false;
 	bool bVehicleDriverEvacuated = false;
 	float VehicleTipRoll = 90.0f;
@@ -256,6 +257,9 @@ public:
 	float GetCollisionRadiusCm() const;
 
 	void SetTrafficSpeedScale(float NewSpeedScale);
+	// Derived each traffic tick; remains a hard stop even if dispatch changes the speed scale.
+	void SetAircraftTrafficBlocked(bool bBlocked);
+	bool IsAircraftTrafficBlocked() const { return bAircraftTrafficBlocked; }
 	void LimitTrafficSpeedScale(float MaxSpeedScale);
 	void ApplyTrafficBrake(float MaxSpeedScale, float DeltaSeconds, float BrakeRate);
 	void AddTrafficVelocityImpulse(const FVector& ImpulseCmPerSec);
@@ -1252,6 +1256,7 @@ private:
 	float GuidanceMoveSpeedCmPerSec = 0.0f;
 	bool bHasMoveTarget = false;
 	float TrafficSpeedScale = 1.0f;
+	bool bAircraftTrafficBlocked = false;
 	float AvoidanceMoveTimeRemainingSeconds = 0.0f;
 	float AvoidancePathOffsetTimeRemainingSeconds = 0.0f;
 	float GuidanceMoveTargetTimeRemainingSeconds = 0.0f;

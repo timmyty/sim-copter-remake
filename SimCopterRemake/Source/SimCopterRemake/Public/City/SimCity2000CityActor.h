@@ -214,10 +214,12 @@ public:
 
 	// Conservative spawn guard backed by the rendered instanced-mesh bounds, including model
 	// overhang beyond the SC2 tile footprint. ClearanceCm expands only the horizontal footprint.
-	bool IsInsideStandingBuildingBounds(const FVector& WorldLocation, float ClearanceCm = 0.0f) const;
+	// Horizontal-only also excludes roofs and space below raised building geometry.
+	bool IsInsideStandingBuildingBounds(const FVector& WorldLocation, float ClearanceCm = 0.0f, bool bHorizontalOnly = false) const;
 
 private:
 	friend class FSimCopterCityBuildingDemolitionTest;
+	friend class FSimCopterPatientPlacementTest;
 	friend class FSimCopterSafePassengerLandingTest;
 	friend class FSimCopterWaterSupplyGeometryTest;
 	// Countdown to the next SimCopterCloudTuning::Apply (once a second, from Tick).

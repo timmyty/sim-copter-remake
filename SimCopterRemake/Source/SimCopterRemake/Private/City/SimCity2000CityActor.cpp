@@ -6306,7 +6306,8 @@ void ASimCity2000CityActor::SetWaterTextureFramesPerSecond(float FramesPerSecond
 
 bool ASimCity2000CityActor::IsInsideStandingBuildingBounds(
 	const FVector& WorldLocation,
-	const float ClearanceCm) const
+	const float ClearanceCm,
+	const bool bHorizontalOnly) const
 {
 	if (TileBuildingIds.Num() != FSimCity2000City::TileCount || TileSize <= UE_SMALL_NUMBER)
 	{
@@ -6352,8 +6353,8 @@ bool ASimCity2000CityActor::IsInsideStandingBuildingBounds(
 				WorldLocation.X <= Bounds.Max.X + HorizontalClearance &&
 				WorldLocation.Y >= Bounds.Min.Y - HorizontalClearance &&
 				WorldLocation.Y <= Bounds.Max.Y + HorizontalClearance &&
-				WorldLocation.Z >= Bounds.Min.Z - 10.0f &&
-				WorldLocation.Z <= Bounds.Max.Z + 10.0f)
+				(bHorizontalOnly || (WorldLocation.Z >= Bounds.Min.Z - 10.0f &&
+				WorldLocation.Z <= Bounds.Max.Z + 10.0f)))
 			{
 				return true;
 			}

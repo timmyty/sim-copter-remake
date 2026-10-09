@@ -10,6 +10,19 @@ particular, controlling a police passenger and firing a taser from a helicopter
 while an AI pilot circles the area is a fictional addition. It is not a claim
 about authentic SimCopter equipment, original mechanics, or real taser range.
 
+## October 9 patient and road safety fixes
+
+Medical callouts now place new patients on clear outdoor ground, outside building
+footprints and rooftops. When no safe nearby position exists, spawning fails instead
+of forcing an inaccessible patient into the scene. Parked helicopters stop traffic
+that would intersect them, including after the player gets out; vehicles resume
+when the aircraft clears the road. This applies to both traffic AI modes and to
+emergency vehicles as well as ordinary cars.
+
+These are intentional gameplay safety improvements to the original placement and
+traffic rules. Existing rooftop rescue missions and hospital roof handoffs remain.
+See [validation and scope](ForkValidation.md#outdoor-patients-and-parked-aircraft-traffic---october-9-2026).
+
 ## October 9 combined task publication
 
 The GitHub source now includes the completed work from **Add original cheat code
