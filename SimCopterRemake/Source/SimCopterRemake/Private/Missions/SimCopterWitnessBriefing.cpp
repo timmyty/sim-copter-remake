@@ -2,6 +2,7 @@
 #include "Ground/SimCopterGroundAgent.h"
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/MeshComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
@@ -36,6 +37,9 @@ void USimCopterWitnessBriefing::TakePhoto(ASimCopterGroundAgent& Suspect)
 		Capture = NewObject<USceneCaptureComponent2D>(GetOwner());
 		Capture->bCaptureEveryFrame = false;
 		Capture->bCaptureOnMovement = false;
+		// One-shot captures otherwise have no view state, so auto exposure cannot meter
+		// the city's 120,000-lux sun and the final-color photograph clips to white.
+		Capture->bAlwaysPersistRenderingState = true;
 		Capture->CaptureSource = SCS_FinalColorLDR;
 		Capture->FOVAngle = 48;
 		Capture->TextureTarget = Photo;
@@ -44,13 +48,25 @@ void USimCopterWitnessBriefing::TakePhoto(ASimCopterGroundAgent& Suspect)
 		PhotoBrush.ImageSize = FVector2D(256, 192);
 		PhotoBrush.DrawAs = ESlateBrushDrawType::Image;
 	}
-	const FVector Target = Suspect.GetActorLocation() + FVector(0, 0, 15);
-	FVector Eye = Target + Suspect.GetActorForwardVector() * 320 + FVector(0, 0, 40);
+	// People are about 44 cm tall in this city's scale. A fixed 320 cm camera distance
+	// reduces the identifying figure to a few pixels; frame its rendered mesh instead.
+	FBox Bounds(ForceInit);
+	TInlineComponentArray<UMeshComponent*> Meshes(&Suspect);
+	for (const UMeshComponent* Mesh : Meshes)
+	{
+		if (Mesh->IsVisible() && !Mesh->bHiddenInGame) Bounds += Mesh->Bounds.GetBox();
+	}
+	const FVector Target = Bounds.IsValid ? Bounds.GetCenter() : Suspect.GetActorLocation();
+	const float Radius = Bounds.IsValid ? FMath::Max(10.0f, float(Bounds.GetExtent().Size())) : 30.0f;
+	const float HalfVerticalFov = FMath::Atan(FMath::Tan(FMath::DegreesToRadians(Capture->FOVAngle * 0.5f)) / (512.0f / 384.0f));
+	const float Distance = Radius * 1.15f / FMath::Sin(HalfVerticalFov);
+	const FVector Elevation(0, 0, Radius * 0.2f);
+	FVector Eye = Target + Suspect.GetActorForwardVector() * Distance + Elevation;
 	FCollisionQueryParams Query(SCENE_QUERY_STAT(WitnessPhoto), true, &Suspect);
 	// Search around the person's eye level so a neighbouring building cannot hide the suspect.
 	for (int32 I = 0; I < 8; ++I)
 	{
-		const FVector Candidate = Target + Suspect.GetActorForwardVector().RotateAngleAxis(I * 45.0f, FVector::UpVector) * 320 + FVector(0, 0, 40);
+		const FVector Candidate = Target + Suspect.GetActorForwardVector().RotateAngleAxis(I * 45.0f, FVector::UpVector) * Distance + Elevation;
 		FHitResult Hit;
 		if (!GetWorld()->LineTraceSingleByChannel(Hit, Target, Candidate, ECC_Camera, Query))
 		{ Eye = Candidate; break; }
@@ -58,6 +74,7 @@ void USimCopterWitnessBriefing::TakePhoto(ASimCopterGroundAgent& Suspect)
 		Eye = Target + (Candidate - Target).GetSafeNormal() * FMath::Max(50.0f, Hit.Distance - 25.0f);
 	}
 	Capture->SetWorldLocationAndRotation(Eye, (Target - Eye).Rotation());
+	Capture->bCameraCutThisFrame = true; // Meter this suspect immediately, not the previous report.
 	Capture->CaptureScene();
 	bPhotoPending = true;
 	CaptureDelay = 0.1f;
@@ -67,6 +84,11 @@ void USimCopterWitnessBriefing::TakePhoto(ASimCopterGroundAgent& Suspect)
 	Caption = FText::FromString(FString::Printf(TEXT("WITNESS PHOTO — ROBBER %d\n%s\nLast seen: grid %d, %d"),
 		Suspect.MissionEventId, bSuspectWearsShades ? TEXT("On foot, wearing sunglasses.") : TEXT("Suspect seen leaving on foot."), X, Y));
 	EnsurePanel();
+}
+
+TSharedRef<SWidget> USimCopterWitnessBriefing::CreatePhotoWidget() const
+{
+	return SNew(SImage).Image(&PhotoBrush);
 }
 
 void USimCopterWitnessBriefing::EnsurePanel()
@@ -82,7 +104,7 @@ void USimCopterWitnessBriefing::EnsurePanel()
 				SNew(SVerticalBox)
 				+ SVerticalBox::Slot().AutoHeight()
 				[
-					SNew(SBox).WidthOverride(256).HeightOverride(192)[SNew(SImage).Image(&PhotoBrush)]
+					SNew(SBox).WidthOverride(256).HeightOverride(192)[CreatePhotoWidget()]
 				]
 				+ SVerticalBox::Slot().AutoHeight().Padding(0, 8, 0, 0)
 				[

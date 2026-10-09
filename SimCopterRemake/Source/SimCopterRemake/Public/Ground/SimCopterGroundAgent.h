@@ -325,6 +325,7 @@ public:
 	// separation, traffic impulses) also displace agents without consulting the walked surface at
 	// all, so the containment is applied to the transform rather than to any one of them.
 	void SetHospitalRoofPost(const FVector& RoofCenterWorldLocation, float HalfExtentCm);
+	bool IsServiceWorkerPostedAt(const FVector& PostWorldLocation) const;
 	// Rooftop-rescue survivors need the same physical containment, but they are mission people,
 	// not permanent hospital staff. Boarding clears the post and their ordinary rescue lifecycle
 	// remains in charge of despawn/save ownership.
@@ -347,7 +348,8 @@ public:
 		float BodyRadiusCm,
 		float CapsuleHalfHeightCm,
 		float FallToleranceCm,
-		FVector& OutContainedLocation);
+		FVector& OutContainedLocation,
+		bool bAllowAbandonment = true);
 
 	/**
 	 * Pure form of the step-target half of that containment: may a posted worker standing at
@@ -1214,6 +1216,7 @@ public:
 private:
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterServicePostsTest;
+	friend class FSimCopterGroundMedicTest;
 	friend class FSimCopterSafePassengerLandingTest;
 	friend class FSimCopterGameplayPolishTest;
 	friend class FSimCopterBodyRecoveryTest;
@@ -1380,6 +1383,8 @@ private:
 	float HospitalRoofPostHalfExtentCm = 0.0f;
 	// Keeps the posted worker over its own roof. Returns true when it had to intervene.
 	bool ContainToHospitalRoofPost();
+	// Entrance identity comes from the saved post, not the medic's changing walking position.
+	bool IsHospitalEntrancePost() const;
 	/**
 	 * Whether a step target is still inside the posted roof; unposted people are unconstrained.
 	 *

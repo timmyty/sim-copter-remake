@@ -54,8 +54,10 @@ bool ASimCopterTrafficSystemActor::TryGetBuildingEntrancePost(int32 TileX, int32
 		if (!IsPedestrianSpawnLocationOpen(Candidate) || !IsMissionGroundSpawnValid(Candidate)) continue;
 		OutSurface = Candidate;
 		BuildingEntrancePosts.Add(Key, Candidate);
+		// The hospital service point remains functional without its roadside sign.
+		if (Node.BuildingId == 0xD1) return true;
 		auto* Sign = NewObject<UTextRenderComponent>(this);
-		Sign->SetText(FText::FromString(Node.BuildingId == 0xD1 ? TEXT("HOSPITAL\nFRONT ENTRANCE") : TEXT("POLICE\nPUBLIC ENTRANCE")));
+		Sign->SetText(FText::FromString(TEXT("POLICE\nPUBLIC ENTRANCE")));
 		Sign->SetHorizontalAlignment(EHTA_Center);
 		Sign->SetWorldSize(28);
 		Sign->SetTextRenderColor(FColor(235, 244, 237));
@@ -102,8 +104,12 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::EnsureBuildingEntranceCrew(
 			Person->IsMissionCarried() || Person->GetBehaviorAttribute(EBhavAttr::State) != State ||
 			!Person->IsPersistentHospitalRoofCrew() || Person->MissionEventId != INDEX_NONE) continue;
 		const FVector Feet = Person->GetActorLocation() - FVector(0,0,Person->GetCapsuleHalfHeightCm());
-		if (FMath::Abs(Feet.Z-Entrance.Z) < 100 && FVector::DistSquared2D(Feet,Entrance) < FMath::Square(300.0f))
+		if (Person->IsServiceWorkerPostedAt(Entrance) ||
+			(FMath::Abs(Feet.Z-Entrance.Z) < 100 && FVector::DistSquared2D(Feet,Entrance) < FMath::Square(300.0f)))
 		{
+			// Retain the same worker while it approaches the aircraft, including the corners
+			// beyond the old radial lookup. Also restore nearby legacy crew's missing posts.
+			Person->SetHospitalRoofPost(Entrance, 280);
 			EntranceCrewLastSeenSeconds.Add(FIntPoint(TileX,TileY), GetWorld()->GetTimeSeconds());
 			return Person;
 		}

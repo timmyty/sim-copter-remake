@@ -182,4 +182,95 @@ bool FSimCopterHospitalCityTest::RunTest(const FString& Parameters)
 	}
 	return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterGroundMedicTest, "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterGroundMedicTest::RunTest(const FString& Parameters)
+{
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false).CreateAISystem(false);
+	auto* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+	ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+	auto* Floor = World->SpawnActor<AActor>();
+	auto* Box = NewObject<UBoxComponent>(Floor);
+	Floor->SetRootComponent(Box); Box->SetBoxExtent(FVector(10000,10000,10));
+	Box->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Box->SetCollisionObjectType(ECC_WorldStatic); Box->SetCollisionResponseToAllChannels(ECR_Block);
+	Box->RegisterComponent(); Floor->SetActorLocation(FVector(0,0,-10));
+	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+	Traffic->ActiveTileSize = 400;
+	Traffic->PeopleTileClasses.Init(7,FSimCity2000City::TileCount);
+	Traffic->TileCenterWorldZ.Init(0,FSimCity2000City::TileCount);
+	Traffic->WaterTileFlags.Init(0,FSimCity2000City::TileCount);
+	Traffic->XbldTileIds.Init(0x1d,FSimCity2000City::TileCount);
+	auto& Node = Traffic->PedestrianNodes.AddDefaulted_GetRef();
+	Node.FileX=64; Node.FileY=64; Node.BuildingId=0xD1; Node.PeopleFootprintSize=3; Node.Location=FVector(200,-200,0);
+	Traffic->XbldTileIds[64*128+64]=0xD1;
+	Traffic->PedestrianNodeIndexByTile.Add(FIntPoint(64,64),0);
+	FVector Entrance;
+	if (!TestTrue(TEXT("Ground entrance resolves"),Traffic->TryGetBuildingEntrancePost(64,64,Entrance))) return false;
+	TArray<UActorComponent*> Components; Traffic->GetComponents(Components);
+	TestFalse(TEXT("Hospital has no entrance sign text, panel or pole"),Components.ContainsByPredicate([](const auto* Component)
+		{ return Component->ComponentHasTag(TEXT("ServiceEntranceSign")); }));
+	auto* Medic = Traffic->EnsureBuildingEntranceCrew(64,64);
+	if (!TestNotNull(TEXT("Ground medic posted"),Medic)) return false;
+	auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+	Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
+	const FVector Home = Medic->GetActorLocation();
+	float FurthestIdle = 0;
+	for (int32 Frame=0; Frame<3600; ++Frame)
+	{
+		Medic->Tick(1.0f/60);
+		const FVector Offset = Medic->GetActorLocation()-Home;
+		FurthestIdle=FMath::Max(FurthestIdle,float(FMath::Max(FMath::Abs(Offset.X),FMath::Abs(Offset.Y))));
+	}
+	TestTrue(TEXT("One minute of idle walking stays within 1.3 metres of entrance on each axis"),FurthestIdle<=130);
+	// A crowd/traffic displacement must not turn an entrance worker into an unbounded walker.
+	Medic->SetActorLocation(Home+FVector(1000,0,0));
+	Medic->Tick(0);
+	TestTrue(TEXT("Displaced ground medic retains its post"),Medic->bHasHospitalRoofPost);
+	TestTrue(TEXT("Displaced ground medic stays inside the nearby service area"),FVector::Dist2D(Medic->GetActorLocation(),Home)<570);
+	Medic->SetHospitalRoofPost(Entrance,280); Medic->SetActorLocation(Home);
+	TArray<uint8> SavedPost;
+	TestTrue(TEXT("Ground post saves using the existing runtime format"),Medic->CaptureRuntimeSaveState(SavedPost));
+	Medic->SetHospitalRoofPost(Entrance+FVector(0,0,1200),600);
+	TestTrue(TEXT("Ground post restores"),Medic->RestoreRuntimeSaveState(SavedPost));
+	Medic->SetActorLocation(Home+FVector(350,-350,0));
+	const int32 PostedCount=Traffic->PedestrianAgents.Num();
+	TestTrue(TEXT("Approaching worker still represents hospital ground service"),static_cast<ISimCopterBehaviorWorld*>(Medic)->GetCurrentTileBuildingId()==0xD1 && static_cast<ISimCopterBehaviorWorld*>(Medic)->IsCurrentTileServiceable());
+	TestTrue(TEXT("Staffing retains the worker approaching beyond the old search circle"),Traffic->EnsureBuildingEntranceCrew(64,64)==Medic);
+	TestEqual(TEXT("Approach does not spawn duplicate entrance crew"),Traffic->PedestrianAgents.Num(),PostedCount);
+	Medic->SetActorLocation(Home);
+	auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
+	Heli->SetActorLocation(Entrance+FVector(380,-380,Heli->GetSimpleCollisionHalfHeight()));
+	Heli->GroundClearanceCm=7.5f;
+	ISimCopterBehaviorWorld& Actions=*Medic;
+	TestFalse(TEXT("No medical call keeps ground medic on duty"),Actions.SelectOwningVehicle(Medic->BehaviorContext));
+	auto* Patient=World->SpawnActor<ASimCopterGroundAgent>();
+	Patient->SetOwner(Traffic); Patient->BehaviorModel=Medic->BehaviorModel; Patient->bBehaviorActive=true;
+	Patient->BehaviorContext.ResetToState(0);
+	Patient->SetActorLocation(Home+FVector(2500,0,0)); Traffic->PedestrianAgents.Add(Patient);
+	TestTrue(TEXT("Waiting patient creates a medical call"),Missions->CreateIncidentMedevacForVictim(Patient));
+	TestTrue(TEXT("Ground medic can select nearby helicopter for medical call"),Actions.SelectOwningVehicle(Medic->BehaviorContext));
+	const FVector Landing=Heli->GetActorLocation();
+	Heli->SetActorLocation(Landing+FVector(800,0,0));
+	TestFalse(TEXT("Ground medic does not chase distant helicopter"),Actions.SelectOwningVehicle(Medic->BehaviorContext));
+	Heli->SetActorLocation(Landing+FVector(0,0,1200)); Heli->GroundClearanceCm=1200;
+	TestFalse(TEXT("Ground medic cannot board an airborne helicopter"),Medic->BoardCarrier(Heli,false));
+	Heli->SetActorLocation(Landing); Heli->GroundClearanceCm=7.5f;
+	Medic->BehaviorContext.ResetToState(5);
+	const int32 EmptySeats=Heli->GetAvailablePassengerSeats();
+	for (int32 Frame=0; Frame<7200 && Medic->GetBehaviorCarrier()!=Heli; ++Frame) Medic->Tick(1.0f/60);
+	TestTrue(TEXT("Original medic program walks to nearby helicopter and boards"),Medic->GetBehaviorCarrier()==Heli);
+	TestEqual(TEXT("Ground medic consumes one cabin seat"),Heli->GetAvailablePassengerSeats(),EmptySeats-1);
+	TestFalse(TEXT("Boarding releases entrance confinement"),Medic->bHasHospitalRoofPost);
+	if (Medic->GetBehaviorCarrier()==Heli)
+	{
+		Heli->SetActorLocation(Landing+FVector(2000,0,1200)); Heli->GroundClearanceCm=1200;
+		Medic->Tick(1.0f/60);
+		TestTrue(TEXT("Boarded medic travels with aircraft instead of returning to post"),Medic->GetBehaviorCarrier()==Heli && FVector::Dist2D(Medic->GetActorLocation(),Home)>1500);
+	}
+	AddInfo(FString::Printf(TEXT("Idle extent %.1f cm; final offset %s; carrier %s"),FurthestIdle,
+		*(Medic->GetActorLocation()-Home).ToString(),*GetNameSafe(Medic->GetBehaviorCarrier())));
+	return true;
+}
 #endif

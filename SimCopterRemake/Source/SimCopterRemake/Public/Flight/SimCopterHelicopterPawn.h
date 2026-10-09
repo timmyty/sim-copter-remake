@@ -1625,6 +1625,7 @@ private:
 	friend class FSimCopterApacheShopTest;
 	friend class FSimCopterFleetPaintTest;
 	friend class FSimCopterPoliceRoofBoardingTest;
+	friend class FSimCopterGroundMedicTest;
 	friend class FSimCopterControllerContextsTest;
 	// The decompiled original flight simulation; the pawn feeds it inputs and
 	// city geometry and mirrors its position/attitude onto the actor.

@@ -485,6 +485,7 @@ private:
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterServicePostsTest;
+	friend class FSimCopterGroundMedicTest;
 	friend class FSimCopterApacheShopTest;
 	friend class FSimCopterSafePassengerLandingTest;
 	UPROPERTY(EditInstanceOnly, Category = "SimCopter|Traffic")

@@ -1693,6 +1693,20 @@ void ASimCopterGroundAgent::SetMissionRoofPost(const FVector& RoofCenterWorldLoc
 	bHasHospitalRoofPost = HospitalRoofPostHalfExtentCm > 0.0f;
 }
 
+bool ASimCopterGroundAgent::IsServiceWorkerPostedAt(const FVector& PostWorldLocation) const
+{
+	return bHasHospitalRoofPost && bPersistentHospitalRoofCrew &&
+		HospitalRoofPostWorldLocation.Equals(PostWorldLocation, 1.0f);
+}
+
+bool ASimCopterGroundAgent::IsHospitalEntrancePost() const
+{
+	const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+	return bHasHospitalRoofPost && bPersistentHospitalRoofCrew &&
+		BehaviorContext.GetStateIndex() == 5 && Traffic &&
+		Traffic->IsAtHospitalEntrance(HospitalRoofPostWorldLocation);
+}
+
 bool ASimCopterGroundAgent::IsWithinRoofPostSquare(
 	const FVector& TargetLocation,
 	const FVector& CurrentLocation,
@@ -1739,7 +1753,7 @@ bool ASimCopterGroundAgent::IsWithinHospitalRoofPost(const FVector& WorldLocatio
 		WorldLocation,
 		GetActorLocation(),
 		HospitalRoofPostWorldLocation,
-		HospitalRoofPostHalfExtentCm,
+		HospitalRoofPostHalfExtentCm + (ExtentFraction >= 1.0f && IsHospitalEntrancePost() ? HospitalRoofPostAggroMarginCm : 0.0f),
 		CollisionComponent != nullptr ? CollisionComponent->GetScaledCapsuleRadius() : 0.0f,
 		ExtentFraction);
 }
@@ -1751,7 +1765,8 @@ ASimCopterGroundAgent::ERoofPostContainment ASimCopterGroundAgent::ClampToHospit
 	const float BodyRadiusCm,
 	const float CapsuleHalfHeightCm,
 	const float FallToleranceCm,
-	FVector& OutContainedLocation)
+	FVector& OutContainedLocation,
+	const bool bAllowAbandonment)
 {
 	OutContainedLocation = WorldLocation;
 	if (PostHalfExtentCm <= 0.0f)
@@ -1764,7 +1779,7 @@ ASimCopterGroundAgent::ERoofPostContainment ASimCopterGroundAgent::ClampToHospit
 	// roughly a building's width from the post, treat the post as abandoned and let the mission tick
 	// staff the roof again instead.
 	const float AbandonedDistanceCm = PostHalfExtentCm * 2.0f;
-	if (FVector::DistSquared2D(WorldLocation, PostCenterWorldLocation) > FMath::Square(AbandonedDistanceCm))
+	if (bAllowAbandonment && FVector::DistSquared2D(WorldLocation, PostCenterWorldLocation) > FMath::Square(AbandonedDistanceCm))
 	{
 		return ERoofPostContainment::Abandoned;
 	}
@@ -1802,15 +1817,21 @@ bool ASimCopterGroundAgent::ContainToHospitalRoofPost()
 		return false;
 	}
 
+	// The roof's abandonment escape is inappropriate for ground staff: a shove must not
+	// release their patrol boundary. Boarding explicitly clears the post in BoardCarrier.
+	// Let a purposeful ground approach reach the same nearby area that detects the aircraft;
+	// ordinary MoveStep patrols still use the smaller idle square, and walls still block.
+	const bool bEntrancePost = IsHospitalEntrancePost();
 	FVector Contained = FVector::ZeroVector;
 	const ERoofPostContainment Result = ClampToHospitalRoofPost(
 		GetActorLocation(),
 		HospitalRoofPostWorldLocation,
-		HospitalRoofPostHalfExtentCm,
+		HospitalRoofPostHalfExtentCm + (bEntrancePost ? HospitalRoofPostAggroMarginCm : 0.0f),
 		CollisionComponent != nullptr ? CollisionComponent->GetScaledCapsuleRadius() : 0.0f,
 		CollisionComponent != nullptr ? CollisionComponent->GetScaledCapsuleHalfHeight() : 0.0f,
 		HospitalRoofPostFallToleranceCm,
-		Contained);
+		Contained,
+		!bEntrancePost);
 
 	if (Result == ERoofPostContainment::Abandoned)
 	{
@@ -3666,12 +3687,17 @@ int32 ASimCopterGroundAgent::GetCurrentTileBuildingId() const
 		return INDEX_NONE;
 	}
 	const FVector Feet = GetActorLocation() - FVector(0,0,GetCapsuleHalfHeightCm());
+	// BHAV 801 chooses hospital service via XBLD D1. Keep that identity while the
+	// entrance medic approaches an aircraft outside the patient drop-off circle.
+	if (IsHospitalEntrancePost() && FMath::Abs(Feet.Z - HospitalRoofPostWorldLocation.Z) < 100) return 0xD1;
 	if (TrafficSystem->IsAtHospitalEntrance(Feet)) return 0xD1;
 	return TrafficSystem->GetXbldTileId(FileX, FileY);
 }
 
 bool ASimCopterGroundAgent::IsCurrentTileServiceable() const
 {
+	if (IsHospitalEntrancePost() &&
+		FMath::Abs(GetActorLocation().Z - GetCapsuleHalfHeightCm() - HospitalRoofPostWorldLocation.Z) < 100) return true;
 	// FUN_004ccc40 = FUN_004c9cc0 (is anything on this tile) && FUN_004c9dc0(tile class). The
 	// remake answers the second half only: the walkable classes an on-foot crew member can stand
 	// and work on, which is the part the paramedic program branches on.
