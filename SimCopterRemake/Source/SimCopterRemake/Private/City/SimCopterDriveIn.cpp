@@ -166,9 +166,11 @@ void ASimCopterDriveInPlayer::BuildScreen(int32 Index, float Aspect)
 	const FVector Centre = (Corners[0] + Corners[2]) * 0.5;
 	const FVector Right = (Corners[1] - Corners[0]) * 0.5;
 	const FVector Down = (Corners[3] - Corners[0]) * 0.5;
-	const FVector Normal = FVector::CrossProduct(Down, Right).GetSafeNormal();
+	// The authored top-left/right/bottom-left axes face the parking lot in this order.
+	// Reversing them puts the picture behind both the original screen and our black backing.
+	const FVector Normal = FVector::CrossProduct(Right, Down).GetSafeNormal();
 	const FVector2D Fit = SimCopterDriveIn::FitVideo(Aspect, Right.Size() / Down.Size());
-	const TArray<int32> Triangles = {0, 2, 1, 0, 3, 2};
+	const TArray<int32> Triangles = {0, 1, 2, 0, 2, 3};
 	const TArray<FVector2D> UV = {{0,0}, {1,0}, {1,1}, {0,1}};
 	TArray<FVector> Normals; Normals.Init(Normal, 4);
 	TArray<FProcMeshTangent> Tangents; Tangents.Init(FProcMeshTangent(Right.GetSafeNormal(), false), 4);

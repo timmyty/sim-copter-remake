@@ -5,6 +5,9 @@
 #include "Formats/SimCity2000Reader.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+#include "Game/SimCopterPlayerController.h"
+#include "GameFramework/Pawn.h"
 #include "Engine/World.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "MediaPlayer.h"
@@ -15,6 +18,9 @@
 #include "ImageUtils.h"
 #include "Misc/Paths.h"
 #include "RHI.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "HAL/FileManager.h"
+#include "ShaderCompiler.h"
 
 class FSimCopterDriveInPlaybackCommand : public IAutomationLatentCommand
 {
@@ -24,11 +30,13 @@ public:
 	{
 		if (!World)
 		{
-			const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false).CreateAISystem(false);
-			World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
-			GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+			Instance = NewObject<UGameInstance>(GEngine);
+			Instance->InitializeStandalone();
+			World = Instance->GetWorld();
 			// AActor::ProcessEvent suppresses media delegates before actors initialize.
 			World->InitializeActorsForPlay(FURL());
+			Controller = World->SpawnActor<ASimCopterPlayerController>();
+			Controller->Possess(World->SpawnActor<APawn>());
 			City = World->SpawnActorDeferred<ASimCity2000CityActor>(ASimCity2000CityActor::StaticClass(), FTransform::Identity);
 			City->bLoadOnConstruction = false;
 			City->bRenderProceduralMapExtension = false;
@@ -39,7 +47,7 @@ public:
 			TArray<FIntPoint> Theaters; City->GetDriveInTiles(Theaters);
 			Test->TestEqual(TEXT("Loaded map has a real theater and minimap location"), Theaters.Num(), 1);
 			DriveIn = ASimCopterDriveInPlayer::Get(World);
-			Test->AddInfo(DriveIn->PlayVideo(TEXT("HSI.mp4")));
+			Test->AddInfo(Controller->ExecuteCheatCodes(TEXT("hsi")));
 			Test->TestEqual(TEXT("The authored theater screen is found"), DriveIn->GetScreenCount(), 1);
 			Started = FPlatformTime::Seconds();
 		}
@@ -64,13 +72,14 @@ public:
 		for (auto Color : Pixels) if (Color.R > 20 || Color.G > 20 || Color.B > 20) ++Lit;
 		Test->TestTrue(TEXT("External media sampler renders non-black decoded video"), Lit > Pixels.Num() / 100);
 		FImageUtils::SaveImageByExtension(*(FPaths::ProjectDir() / FString::Printf(TEXT("../Docs/scratchpad/drive-in-ufo/movie-%d.png"), Stage)), FImageView(Pixels.GetData(), 640, 360));
+		CheckTheaterPicture();
 		if (Stage++ == 0)
 		{
-			Test->AddInfo(DriveIn->PlayVideo(TEXT("LightsCameraActionSimCopter.mp4")));
+			Test->AddInfo(Controller->ExecuteCheatCodes(TEXT("Lights, Camera, Action!")));
 			Test->TestEqual(TEXT("Switching replaces screens without duplicates"), DriveIn->GetScreenCount(), 1);
 			Started = FPlatformTime::Seconds(); return false;
 		}
-		DriveIn->PlayVideo(TEXT("LightsCameraActionSimCopter.mp4"), true);
+		Controller->ExecuteCheatCodes(TEXT("Lights, Camera, Action!"));
 		Test->TestFalse(TEXT("Repeating original cheat stops playback"), DriveIn->IsVideoActive());
 		Test->TestEqual(TEXT("Stopping removes screens"), DriveIn->GetScreenCount(), 0);
 		Test->TestEqual(TEXT("Stopping removes sound components"), DriveIn->Sounds.Num(), 0);
@@ -87,11 +96,66 @@ public:
 private:
 	FAutomationTestBase* Test;
 	UWorld* World = nullptr;
+	UGameInstance* Instance = nullptr;
+	ASimCopterPlayerController* Controller = nullptr;
 	ASimCity2000CityActor* City = nullptr;
 	ASimCopterDriveInPlayer* DriveIn = nullptr;
 	double Started = 0;
 	int32 Stage = 0;
-	bool Finish() { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); return true; }
+	void CheckTheaterPicture()
+	{
+		if (DriveIn->Surfaces.IsEmpty()) return;
+		const auto& Corners = DriveIn->Surfaces[0].Corners;
+		const FVector Centre = (Corners[0] + Corners[2]) * .5;
+		const float Width = FVector::Distance(Corners[0], Corners[1]);
+		// CO182's parking lot is on the +X side of its screen after the Maxis-to-city transform.
+		const FVector Eye = Centre + City->GetActorTransform().TransformVectorNoScale(FVector::ForwardVector) * Width;
+		auto* Capture = NewObject<USceneCaptureComponent2D>(DriveIn);
+		Capture->bCaptureEveryFrame = false; Capture->bCaptureOnMovement = false;
+		Capture->bAlwaysPersistRenderingState = true;
+		Capture->CaptureSource = SCS_FinalColorLDR; Capture->FOVAngle = 70;
+		Capture->PostProcessSettings.bOverride_AutoExposureMethod = true;
+		Capture->PostProcessSettings.AutoExposureMethod = AEM_Manual;
+		Capture->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+		Capture->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
+		Capture->ShowFlags.SetEyeAdaptation(false);
+		Capture->ShowFlags.SetTonemapper(false);
+		Capture->ShowFlags.SetBloom(false);
+		auto* Target = NewObject<UTextureRenderTarget2D>(DriveIn);
+		Target->RenderTargetFormat = RTF_RGBA8; Target->InitAutoFormat(640, 640); Target->UpdateResourceImmediate(true);
+		Capture->TextureTarget = Target;
+		Capture->SetWorldLocationAndRotation(Eye, (Centre - Eye).Rotation());
+		Capture->RegisterComponent();
+		if (GShaderCompilingManager) GShaderCompilingManager->FinishAllCompilation();
+		World->SendAllEndOfFrameUpdates();
+		const FString Evidence = FPaths::ProjectDir() / TEXT("../Docs/scratchpad/drive-in-video-fix");
+		IFileManager::Get().MakeDirectory(*Evidence, true);
+		auto Read = [&](const TCHAR* Name)
+		{
+			Capture->CaptureScene(); FlushRenderingCommands();
+			TArray<FColor> Result; Target->GameThread_GetRenderTargetResource()->ReadPixels(Result);
+			for (auto& Pixel : Result) Pixel.A = 255;
+			FImageUtils::SaveImageByExtension(*(Evidence / FString::Printf(TEXT("movie-%d-%s.png"), Stage, Name)), FImageView(Result.GetData(), 640, 640));
+			return Result;
+		};
+		// Keep the black backing visible: only the decoded picture may change these pixels.
+		DriveIn->Screens[0]->SetMeshSectionVisible(1, false);
+		const TArray<FColor> WithoutMovie = Read(TEXT("theater-blank"));
+		DriveIn->Screens[0]->SetMeshSectionVisible(1, true);
+		const TArray<FColor> WithMovie = Read(TEXT("theater-video"));
+		Capture->HiddenActors.Add(City);
+		Read(TEXT("video-without-building"));
+		int32 Changed = 0;
+		for (int32 Index = 0; Index < WithMovie.Num(); ++Index)
+		{
+			const auto A = WithMovie[Index], B = WithoutMovie[Index];
+			if (FMath::Abs(int(A.R) - int(B.R)) + FMath::Abs(int(A.G) - int(B.G)) + FMath::Abs(int(A.B) - int(B.B)) > 32) ++Changed;
+		}
+		Test->AddInfo(FString::Printf(TEXT("Movie %d changes %d of %d scene pixels when the theater is visible"), Stage, Changed, WithMovie.Num()));
+		Test->TestTrue(TEXT("Movie picture is visible from the parking lot with the actual theater geometry present"), Changed > WithMovie.Num() / 100);
+		Capture->DestroyComponent();
+	}
+	bool Finish() { Instance->Shutdown(); GEngine->DestroyWorldContext(World); World->DestroyWorld(false); return true; }
 };
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterDriveInPlaybackTest, "SimCopter.DriveIn.Playback",
