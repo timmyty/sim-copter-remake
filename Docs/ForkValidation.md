@@ -1,5 +1,15 @@
 # Fork validation
 
+## Wind speed indicator removal - October 9, 2026
+
+Removed the compass-adjacent wind readout, its background panel and its unused
+scene interface include. Editor and Shipping builds succeeded. Both existing
+dashboard checks (`SimCopter.UI.SegmentedBar` and `SimCopter.UI.WaterGauge`) passed.
+The compass and wind behavior are unchanged. Installed the Shipping executable
+and symbols with verified SHA-256 hashes and backups of both binaries and their
+manifests. No in-game visual check was run. Local build logs, test results and
+installation receipt: `Docs/scratchpad/remove-wind-indicator/`.
+
 ## Whole-city intro tours - October 9, 2026
 
 Each loaded city now gets a continuous 24-second whole-map orbit, following the

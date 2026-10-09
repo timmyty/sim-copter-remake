@@ -17,9 +17,8 @@ Requested September 30, 2026; completion verification October 5, 2026.
 - A dedicated belly camera follows the spotlight's target. Cycle **C** through
   Chase, Orbit, Rescue, Cockpit, and Spotlight. Existing camera zoom controls adjust
   its field of view. The mode survives saving/loading.
-- The dashboard has a **WIND … KT** readout immediately left of the compass. It
-  samples Unreal world wind sources, and reads calm when none exist. This change
-  does not introduce a separate wind physics simulation.
+- The compass-adjacent **WIND … KT** readout added in this update was removed at
+  the user's request on October 9, 2026. The compass and wind behavior are unchanged.
 - Buckets can draw from authored water polygons (pools/ponds) and rendered water
   beyond the original map bounds. Land elsewhere in the same tile remains dry.
   Supply remains available when animated-water rendering is disabled.
