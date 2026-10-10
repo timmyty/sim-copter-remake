@@ -204,7 +204,7 @@ Details and controls: [Air operations](AirOperations.md), [rescue/pilot fixes](R
   times the most expensive civilian model (61,500), includes its existing weapons,
   prevents duplicate encounter/ownership exploits and persists across saves.
 - Expanded helicopter catalog histories/descriptions, saved **Your helicopter**
-  marker on foot, dashboard wind readout, and dedicated belly spotlight camera.
+  marker on foot and dedicated belly spotlight camera.
   The camera hides its own airframe and restores it on leaving the view.
 - Buckets can refill from authored pools/ponds and rendered water beyond map bounds,
   without making surrounding land a water source.

@@ -25,7 +25,6 @@
 #include "Widgets/SNullWidget.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/SWindow.h"
-#include "SceneInterface.h"
 #include "Widgets/Text/STextBlock.h"
 
 namespace
@@ -1391,21 +1390,6 @@ TSharedRef<SWidget> SSimCopterDashboard::BuildDash4()
 		+ (bUseUpscaledDashboardArt ? UpscaledCompassWindowXOffset : 0.0f);
 	const float CompassY = CompassWindowY
 		+ (bUseUpscaledDashboardArt ? UpscaledCompassWindowYOffset : 0.0f);
-	AddAtPage(*Canvas, CompassX - 66.0f, CompassY - 2.0f, 62.0f, 18.0f,
-		SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-		.BorderBackgroundColor(FLinearColor(0.015f, 0.025f, 0.025f)).Padding(1.0f)
-		[
-			SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Bold", FMath::RoundToInt(7.0f * Scale)))
-			.ColorAndOpacity(FLinearColor(0.65f, 1.0f, 0.72f))
-			.Text_Lambda([this]()
-			{
-				float Speed = 0, MinGust = 0, MaxGust = 0;
-				FVector Direction = FVector::ZeroVector;
-				if (const auto* Heli = GetPawn(); Heli && Heli->GetWorld() && Heli->GetWorld()->Scene)
-					Heli->GetWorld()->Scene->GetWindParameters_GameThread(Heli->GetActorLocation(), Direction, Speed, MinGust, MaxGust);
-				return FText::FromString(FString::Printf(TEXT("WIND %.0f KT"), FMath::Max(0.0f, Speed) * 1.9438445f));
-			})
-		]);
 	AddAtPage(*Canvas, CompassX, CompassY, CompassWindowWidth,
 		static_cast<float>(CompassStripHeight),
 		SNew(SBox)
