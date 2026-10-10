@@ -1,5 +1,31 @@
 # Fork validation
 
+## Outdoor patients and parked aircraft traffic - October 9, 2026
+
+New state-6 medical patients reject occupied building tiles, standing building
+footprints at every height, roof overhangs and water. Placement checks the final
+snapped position and refuses an unsafe fallback. Parked aircraft block approaching
+road vehicles by their actual bounds, including unoccupied aircraft and responders
+outside the ambient vehicle pool. Both traffic AI modes hold cars stationary until
+the aircraft clears the lane; dispatch speed overrides and overlap separation
+cannot push a held car into it.
+
+Editor and Shipping builds succeeded. All 84 selected headless tests passed: 81
+clean and three with fixture warnings (`Missions.PlaneDeckRescue`,
+`Missions.SafePassengerLanding`, `Traffic.TunnelTransit`). Both new safety tests
+passed cleanly. Restoring the original production spawn functions and removing
+the aircraft check made both safety tests fail, reproducing patients under roofs,
+patients inside occupied tiles, forced unsafe placement, and moving traffic at
+unoccupied helicopters. The fixed paths were restored and rebuilt before the final
+84-test run and installation.
+
+Installed the Shipping executable and symbols with SHA-256 verification and backups
+of both binaries and manifests. Source changes are also in the publication checkout.
+Local evidence: `Docs/scratchpad/patient-traffic-safety/`; portable results:
+[PatientTrafficSafetyResults.json](validation/PatientTrafficSafetyResults.json).
+No interactive gameplay check was run. Existing saved patients are not relocated;
+intentional rooftop rescue missions and hospital handoffs retain their behavior.
+
 ## Wind speed indicator removal - October 9, 2026
 
 Removed the compass-adjacent wind readout, its background panel and its unused

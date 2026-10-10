@@ -1819,7 +1819,7 @@ bool ASimCopterTrafficSystemActor::TrySpawnMissionPerson(
 					const float Radius = ActiveTileSize * (Ring == 0 ? (0.12f + 0.05f * float(Sample)) : 0.18f);
 					FVector CandidateLocation = TileCenter + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.0f) * Radius;
 					CandidateLocation.Z += 92.0f;
-					if (IsMissionGroundSpawnValid(CandidateLocation))
+					if (PersonState == 6 ? IsOutdoorPatientSpawnValid(CandidateLocation) : IsMissionGroundSpawnValid(CandidateLocation))
 					{
 						SpawnLocation = CandidateLocation;
 						bFoundSpawnLocation = true;
@@ -1890,6 +1890,13 @@ bool ASimCopterTrafficSystemActor::TrySpawnMissionPerson(
 	Person->SnapToGroundImmediate();
 	if (PersonState == 6)
 	{
+		// Collision adjustment and the final complex ground trace can move the actor after
+		// candidate validation. Never keep a patient whose actual placement is inaccessible.
+		if (!IsOutdoorPatientSpawnValid(Person->GetActorLocation()))
+		{
+			Person->Destroy();
+			return false;
+		}
 		Person->SetMissionInjuredPose();
 	}
 	else if (PersonState == 2)
@@ -2288,6 +2295,7 @@ int32 ASimCopterTrafficSystemActor::SpawnMissionPeopleAtWorldLocation(
 		// Deliberate drop point (beside a landed helicopter / at a hospital); fall back to it if no
 		// scattered candidate validates, but prefer a candidate that isn't buried in a mesh.
 		FVector SpawnLocation = WorldLocation + FVector(0.0f, 0.0f, 92.0f);
+		bool bFoundPatientLocation = false;
 		for (int32 Attempt = 0; Attempt < 16; ++Attempt)
 		{
 			const int32 CandidateIndex = Spawned + Attempt;
@@ -2295,12 +2303,15 @@ int32 ASimCopterTrafficSystemActor::SpawnMissionPeopleAtWorldLocation(
 			const float Radius = FMath::Min(ClampedSpread, 35.0f + 28.0f * float(CandidateIndex));
 			FVector CandidateLocation = WorldLocation + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.0f) * Radius;
 			CandidateLocation.Z += 92.0f;
-			if (IsMissionGroundSpawnValid(CandidateLocation))
+			if (SpawnMode == 6 ? IsOutdoorPatientSpawnValid(CandidateLocation) : IsMissionGroundSpawnValid(CandidateLocation))
 			{
 				SpawnLocation = CandidateLocation;
+				bFoundPatientLocation = true;
 				break;
 			}
 		}
+		// A new medical patient has no unsafe fallback, even when every nearby sample is blocked.
+		if (SpawnMode == 6 && !bFoundPatientLocation) continue;
 
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = this;
@@ -2336,6 +2347,11 @@ int32 ASimCopterTrafficSystemActor::SpawnMissionPeopleAtWorldLocation(
 		Person->SnapToGroundImmediate();
 		if (SpawnMode == 6)
 		{
+			if (!IsOutdoorPatientSpawnValid(Person->GetActorLocation()))
+			{
+				Person->Destroy();
+				continue;
+			}
 			Person->SetMissionInjuredPose();
 		}
 		PedestrianAgents.Add(Person);
@@ -6677,6 +6693,7 @@ void ASimCopterTrafficSystemActor::UpdateTrafficInteractions(float DeltaSeconds)
 	// First, and in both AI modes: a jam owns the cars caught in it for the whole frame. Every pass
 	// after this one only ever lowers a speed scale, so the queue's own braking survives them, and
 	// the passes that would steer a car sideways all check IsVehicleHeldInTrafficJam.
+	ApplyAircraftRoadBlocking(DeltaSeconds);
 	ApplyTrafficJamQueue(DeltaSeconds);
 
 	if (TrafficAiMode == ESimCopterTrafficAiMode::Original)
@@ -6795,7 +6812,7 @@ void ASimCopterTrafficSystemActor::ApplyRioterAvoidance(const float DeltaSeconds
 		}
 		// A jammed car is owned by the queue for the whole frame; it is already stationary and
 		// steering it would fight the jam that put it there.
-		if (IsVehicleHeldInTrafficJam(*Vehicle))
+		if (IsVehicleHeldInTrafficJam(*Vehicle) || Vehicle->IsAircraftTrafficBlocked())
 		{
 			continue;
 		}
@@ -7118,7 +7135,7 @@ void ASimCopterTrafficSystemActor::ApplyTrafficJamQueue(const float DeltaSeconds
 void ASimCopterTrafficSystemActor::ApplyPlayerRoadBlocking()
 {
 	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	if (PlayerPawn == nullptr || PlayerRoadBlockLookAheadCm <= 0.0f)
+	if (PlayerPawn == nullptr || Cast<ASimCopterHelicopterPawn>(PlayerPawn) != nullptr || PlayerRoadBlockLookAheadCm <= 0.0f)
 	{
 		return;
 	}
@@ -7152,6 +7169,54 @@ void ASimCopterTrafficSystemActor::ApplyPlayerRoadBlocking()
 		{
 			Agent->SetTrafficSpeedScale(0.0f);
 		}
+	}
+}
+
+void ASimCopterTrafficSystemActor::ApplyAircraftRoadBlocking(const float DeltaSeconds)
+{
+	// Deliberate gameplay extension to FUN_0049ee30's vehicle blockers: parked aircraft
+	// remain obstacles after possession transfers to the pilot on foot. Measure the visible
+	// aircraft and car, not just their origins; a tail across the lane is still an obstruction.
+	TArray<FBox, TInlineAllocator<8>> AircraftBounds;
+	for (TActorIterator<ASimCopterHelicopterPawn> It(GetWorld()); It; ++It)
+	{
+		if (It->IsActorBeingDestroyed() || It->IsHidden()) continue;
+		const FBox Bounds = It->GetParkingWorldBounds();
+		if (Bounds.IsValid) AircraftBounds.Add(Bounds);
+	}
+	// Responders and criminal cars are intentionally absent from the ambient VehicleAgents
+	// pool. They use the same movement code and must respect the same aircraft obstruction.
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+	{
+		ASimCopterGroundAgent* Vehicle = *It;
+		if (Vehicle->GetOwner() != this || Vehicle->GetAgentKind() != ESimCopterGroundAgentKind::Vehicle) continue;
+		if (Vehicle->IsHidden())
+		{
+			Vehicle->SetAircraftTrafficBlocked(false);
+			continue;
+		}
+		FBox CarBounds(ForceInit);
+		if (!Vehicle->TryGetBodyLocalBoundsCm(CarBounds))
+		{
+			const FVector Extent(Vehicle->GetCollisionRadiusCm(), Vehicle->GetCollisionRadiusCm(), Vehicle->GetCapsuleHalfHeightCm());
+			CarBounds = FBox(-Extent, Extent);
+		}
+		const FTransform WorldToCar = Vehicle->GetActorTransform().Inverse();
+		const float LookAhead = FMath::Max(PlayerRoadBlockLookAheadCm,
+			float(Vehicle->GetCurrentVelocityCmPerSec().Size2D()) * FMath::Max(DeltaSeconds, 0.0f) + 30.0f);
+		bool bBlocked = false;
+		for (const FBox& Bounds : AircraftBounds)
+		{
+			const FBox Obstacle = Bounds.TransformBy(WorldToCar);
+			if (Obstacle.Max.X >= CarBounds.Min.X - 30.0f && Obstacle.Min.X <= CarBounds.Max.X + LookAhead &&
+				Obstacle.Max.Y >= CarBounds.Min.Y - 30.0f && Obstacle.Min.Y <= CarBounds.Max.Y + 30.0f &&
+				Obstacle.Max.Z >= CarBounds.Min.Z && Obstacle.Min.Z <= CarBounds.Max.Z + 10.0f)
+			{
+				bBlocked = true;
+				break;
+			}
+		}
+		Vehicle->SetAircraftTrafficBlocked(bBlocked);
 	}
 }
 
@@ -7667,8 +7732,8 @@ void ASimCopterTrafficSystemActor::ResolveVehicleOverlaps()
 					VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(A));
 				const FSimCopterVehicleTrafficState* BState =
 					VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(B));
-				const bool bAHeldInJam = AState != nullptr && (AState->bMissionJammed || AState->bJamQueued);
-				const bool bBHeldInJam = BState != nullptr && (BState->bMissionJammed || BState->bJamQueued);
+				const bool bAHeldInJam = A->IsAircraftTrafficBlocked() || (AState != nullptr && (AState->bMissionJammed || AState->bJamQueued));
+				const bool bBHeldInJam = B->IsAircraftTrafficBlocked() || (BState != nullptr && (BState->bMissionJammed || BState->bJamQueued));
 				if (AState != nullptr && AState->JamBlocker.Get() == B)
 				{
 					A->MoveByTrafficSeparation(-(Push * 2.0f));
@@ -7734,7 +7799,7 @@ void ASimCopterTrafficSystemActor::UpdateVehicleBlockageRecovery()
 		// a jam mission and does nothing else - there is no back-up, no lateral bypass and no
 		// rejoin anywhere in the original, and running them inside a jam is what had cars steering
 		// around each other and passing the queue instead of holding the line behind it.
-		if (State->bMissionJammed || State->bJamQueued)
+		if (State->bMissionJammed || State->bJamQueued || Vehicle->IsAircraftTrafficBlocked())
 		{
 			continue;
 		}
@@ -8063,7 +8128,7 @@ bool ASimCopterTrafficSystemActor::IsPedestrianSpawnLocationOpen(const FVector& 
 		: 160.0f;
 
 	FHitResult Hit;
-	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterPedSpawnProbe), false);
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterPedSpawnProbe), true);
 	const FVector Start(SpawnLocation.X, SpawnLocation.Y, TerrainZ + 12000.0f);
 	const FVector End(SpawnLocation.X, SpawnLocation.Y, TerrainZ - 500.0f);
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Camera, QueryParams) && Hit.bBlockingHit)
@@ -8072,6 +8137,32 @@ bool ASimCopterTrafficSystemActor::IsPedestrianSpawnLocationOpen(const FVector& 
 	}
 
 	return true;
+}
+
+bool ASimCopterTrafficSystemActor::IsOutdoorPatientSpawnValid(const FVector& SpawnLocation) const
+{
+	int32 TileX = INDEX_NONE;
+	int32 TileY = INDEX_NONE;
+	float TerrainZ = 0.0f;
+	if (!TryGetPeopleTileCoordinateAtWorldLocation(SpawnLocation, TileX, TileY) ||
+		!TryGetTerrainWorldZAtWorldLocation(SpawnLocation, TerrainZ) || IsWaterTile(TileX, TileY)) return false;
+
+	// FUN_004c4190's state-6 arm searches neighboring cells. Medical callouts in this fork
+	// require open ground even when a building's hollow triangle mesh accepts an overlap,
+	// or the capsule center sits below its base/above its roof. Roof rescues use state 2.
+	const int32 TileClass = GetPeopleTileClassAtWorldLocation(SpawnLocation);
+	if (TileClass >= 10 && TileClass <= 13) return false;
+	if (const ASimCity2000CityActor* City = ResolveSourceCityActor())
+	{
+		if (City->HasStandingBuildingAtTile(TileX, TileY) ||
+			City->IsInsideStandingBuildingBounds(SpawnLocation, 32.0f, true)) return false;
+	}
+	// Match the final complex ground probe, without the generic road-tile exception: an
+	// overhang above a road is not a safe patient location. Also reject an elevated drop point.
+	constexpr float MaxSurfaceRiseCm = 160.0f;
+	constexpr float SpawnCapsuleOffsetCm = 92.0f;
+	return SpawnLocation.Z <= TerrainZ + MaxSurfaceRiseCm + SpawnCapsuleOffsetCm &&
+		IsPedestrianSpawnLocationOpen(SpawnLocation) && IsMissionGroundSpawnValid(SpawnLocation);
 }
 
 bool ASimCopterTrafficSystemActor::IsMissionGroundSpawnValid(const FVector& SpawnLocation) const

@@ -1,0 +1,612 @@
+{
+  "Date": "2026-10-09",
+  "EditorBuild": "Succeeded",
+  "ShippingBuild": "Succeeded",
+  "Tests": {
+    "Passed": 84,
+    "Clean": 81,
+    "WithWarnings": 3,
+    "Failed": 0,
+    "NotRun": 0,
+    "Cases": [
+      {
+        "fullTestPath": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Collision.AirframeColliderFit",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Collision.BuildingWalls",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Collision.StepSweepShape",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Collision.WalkProbeIgnoresOverhead",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Collision.WallContainmentStep",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.ArrivalAction",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.EmergencyCrewStates",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.Failures",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.HospitalParamedicRespawn",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.HospitalRoofPost",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.MedevacHandoffGates",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.PoliceRoofBoarding",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.Selection",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.Spiral",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.StationScan",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.TargetSnap",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Dispatch.TileRules",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Interaction.AirframeGap",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Interaction.PassengerDoorOffset",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Interaction.ReactionStack",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Interaction.ReactionTable",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Interaction.SpiralScan",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.ArsonistRenderedBuildingTarget",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.BaseLocationRecord",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.BuildingFireDifficulty",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.BurglarCarStaysOpen",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.CrimeIdentityAndSpawn",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.CrimePlacementNeedsBuilding",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.DispatchLocationVoice",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.FireDouse",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.FireDouseAcrossFootprint",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.FireLifecycle",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.HospitalSites",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.IncrementalUpdateTextAndPenalties",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.MapFocusRules",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.MarkerCoordinates",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.MarkerLabelFits",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.MarkerOverlap",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.MarkerUiAvoidance",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.MedevacCasualtyHasNoDeliveryReward",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.MedevacRecordLayout",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.OriginalMissionAvailability",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.OriginalPickupMessage",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.ParamedicCabinHandoff",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.PassengersAboardNeverFailMission",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.PlaneDeckRescue",
+        "state": "Success",
+        "warnings": 11,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.PostAnnouncementVoice",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.PRNGParity",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.RiotCountsRewardsAndPenaltyErosion",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.RiotViability",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.RooftopRescueCountsPhasesRewardsAndVoices",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.RuntimeSaveRoundTrip",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.SafePassengerLanding",
+        "state": "Success",
+        "warnings": 12,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.SaveFocusAndTransportLayout",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.SchedulerParity",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.ServiceFireSuppressionUsesFlameOffset",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.SessionStart",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.TrafficJamCarClearCompletes",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.TransportPassengerSpawnOutsideBuildings",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.TransportSchedulerTimer",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.TypeDisplayNames",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.UserCityDefaultSettings",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.WeightTableParity",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.XbldPropertyTable",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.NpcMedical.BandObstacleRoutes",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.RescuePilot.PassengerIdentity",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.RescuePilot.RuntimeRegression",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Safety.OutdoorPatients",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Safety.ParkedAircraftTraffic",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.ServicePosts.ActualHospitalGeometry",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.ServicePosts.SpacingEntrancesAndImpact",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Traffic.JamBlockerDirection",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Traffic.JamHornThresholds",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Traffic.JamQueueSpacing",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Traffic.RoadMeshSurfaceRules",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Traffic.TunnelGeometry",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "fullTestPath": "SimCopter.Traffic.TunnelTransit",
+        "state": "Success",
+        "warnings": 4,
+        "errors": 0
+      }
+    ]
+  },
+  "Reversal": {
+    "Failed": 2,
+    "Method": "Restored the two original patient-spawn functions and removed ApplyAircraftRoadBlocking from UpdateTrafficInteractions; rebuilt and ran both new tests.",
+    "Failures": [
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Final patient lies outside roof footprint' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Unsafe world-location spawn has no forced fallback' to be 0, but it was 2."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Patient is outside every occupied child tile' to be 7, but it was 13."
+      },
+      {
+        "Test": "SimCopter.Safety.OutdoorPatients",
+        "Message": "Expected 'Fully blocked neighborhood refuses the callout' to be false."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Unoccupied helicopter stops traffic in both AI modes' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Stopped car cannot coast or be pushed into aircraft' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Stopped car cannot coast or be pushed into aircraft' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Stopped car cannot coast or be pushed into aircraft' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Unoccupied helicopter stops traffic in both AI modes' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Stopped car cannot coast or be pushed into aircraft' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Stopped car cannot coast or be pushed into aircraft' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Stopped car cannot coast or be pushed into aircraft' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Responder outside ambient pool still stops' to be true."
+      },
+      {
+        "Test": "SimCopter.Safety.ParkedAircraftTraffic",
+        "Message": "Expected 'Removing aircraft releases the hold' to be false."
+      }
+    ]
+  },
+  "Installed": true,
+  "InstalledBinarySHA256": "F2AC92C9FC53DE638B48398A3F428C1E9B2348750B798C3931E87175F2E960D5",
+  "InteractivePlaytest": false,
+  "Scope": "New medical spawns; existing saved patients are not relocated. Rooftop rescue and hospital handoff behavior preserved."
+}

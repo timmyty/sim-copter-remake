@@ -805,6 +805,8 @@ protected:
 	int32 ActivePedestrianCount = 0;
 
 private:
+	friend class FSimCopterPatientPlacementTest;
+	friend class FSimCopterParkedAircraftTrafficTest;
 	friend class USimCopterAirOperationsSubsystem;
 	friend class USimCopterAirOperationsComponent;
 	friend class FSimCopterAirOperationsTest;
@@ -1162,6 +1164,7 @@ public:
 	void PruneAgentArray(TArray<TWeakObjectPtr<ASimCopterGroundAgent>>& Agents, const FVector& FocusLocation);
 	void UpdateTrafficInteractions(float DeltaSeconds);
 	void ApplyPlayerRoadBlocking();
+	void ApplyAircraftRoadBlocking(float DeltaSeconds);
 	void SyncVehicleTrafficStates(float DeltaSeconds);
 	void ApplyTrafficLights(float DeltaSeconds);
 	// FUN_0049ee30 / FUN_0049be50, narrowed to the cars a traffic jam has stopped. Walks the chain
@@ -1198,6 +1201,7 @@ public:
 	// A mission victim may stand here only if it is not buried inside a building mesh, unless the
 	// tile is a road (a car-accident victim can legitimately lie on the road surface).
 	bool IsMissionGroundSpawnValid(const FVector& SpawnLocation) const;
+	bool IsOutdoorPatientSpawnValid(const FVector& SpawnLocation) const;
 	bool TryFindPedestrianEscapeTarget(const FVector& PedestrianLocation, const FVector& EscapeDirection, FVector& OutTarget) const;
 	bool TryGetPedestrianAwayFromRoadCenterDirection(const ASimCopterGroundAgent& Pedestrian, FVector& OutAwayDirection) const;
 	bool IsTrafficLightIntersectionNode(int32 NodeIndex) const;

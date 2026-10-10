@@ -6683,6 +6683,17 @@ void ASimCopterGroundAgent::SetTrafficSpeedScale(float NewSpeedScale)
 	TrafficSpeedScale = FMath::Clamp(NewSpeedScale, 0.0f, 1.75f);
 }
 
+void ASimCopterGroundAgent::SetAircraftTrafficBlocked(const bool bBlocked)
+{
+	bAircraftTrafficBlocked = bBlocked;
+	if (bBlocked)
+	{
+		TrafficSpeedScale = 0.0f;
+		CurrentVelocityCmPerSec = FVector::ZeroVector;
+		ExternalVelocityCmPerSec = FVector::ZeroVector;
+	}
+}
+
 void ASimCopterGroundAgent::LimitTrafficSpeedScale(float MaxSpeedScale)
 {
 	TrafficSpeedScale = FMath::Min(TrafficSpeedScale, FMath::Clamp(MaxSpeedScale, 0.0f, 1.75f));
@@ -6798,7 +6809,7 @@ void ASimCopterGroundAgent::AddTrafficVelocityImpulse(const FVector& ImpulseCmPe
 
 void ASimCopterGroundAgent::MoveByTrafficSeparation(const FVector& WorldDelta)
 {
-	if (bVehicleTipped) return;
+	if (bVehicleTipped || bAircraftTrafficBlocked) return;
 	if (!WorldDelta.IsNearlyZero())
 	{
 		AddActorWorldOffset(WorldDelta, false);
@@ -7394,7 +7405,7 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 	{
 		return;
 	}
-	if (bMissionStationary)
+	if (bMissionStationary || bAircraftTrafficBlocked)
 	{
 		CurrentVelocityCmPerSec = FVector::ZeroVector;
 		ExternalVelocityCmPerSec = FVector::ZeroVector;
