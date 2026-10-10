@@ -1,0 +1,49 @@
+{
+  "version": "v1.0.6",
+  "date_local": "2026-10-10",
+  "timezone": "America/Chicago",
+  "gameplay_source_commit": "01e057686f82fe6ce936044618d7df166a611086",
+  "assembly": "Fresh distribution staging from the verified installed Shipping build and cooked runtime containers; no new compilation or recook.",
+  "runtime": {
+    "files": 912,
+    "bytes": 2006762708,
+    "nonufs_verified": 903,
+    "maps": 45,
+    "kinv_tracks": 21,
+    "drive_in_movies": 2,
+    "flyover_soundtracks": 30,
+    "shipping_sha256": "5a52c55ed13218a08a6d96c428e5c000ca7cb0b4678d3743750d231b60213b4a"
+  },
+  "startup": {
+    "passed": true,
+    "seconds": 31.122266,
+    "mode": "NullRHI, unattended, no audio, isolated user directory",
+    "window_handle": 0,
+    "limitation": "Checks bootstrap and startup survival only; no visible rendering or gameplay check."
+  },
+  "content": [
+    "45 original maps",
+    "21 KINV tracks",
+    "2 drive-in movies",
+    "30 original flyover soundtracks",
+    "latest executable and required cooked/runtime content",
+    "expanded README and durable documentation"
+  ],
+  "exclusions": [
+    "personal saves and settings",
+    "logs and crash dumps",
+    "debug symbols",
+    "development scratch files"
+  ],
+  "existing_gameplay_validation": [
+    "NpcAppearanceResults.json",
+    "PublicationIntegration20261010Results.json"
+  ],
+  "archive_gate": "Publication requires every decompressed ZIP entry to match its staged SHA-256 and uploaded assets to match the GitHub SHA-256 digests.",
+  "receipt_location": "Docs/scratchpad/npc-appearance/release-v1.0.6/",
+  "limitations": [
+    "No fresh full-suite run for this packaging-only update.",
+    "Two earlier known full-suite failures remain documented.",
+    "No interactive gameplay or listening check."
+  ]
+}
