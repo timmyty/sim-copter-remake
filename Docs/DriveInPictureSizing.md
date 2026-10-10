@@ -7,7 +7,10 @@ area, leaving 12.5% of the screen height above and below it.
 
 This replaces aspect-ratio fitting. HSI's widescreen picture is one-third taller
 than the previous letterboxed presentation. Square or portrait movies stretch into
-the same area. Borders already encoded in a movie remain part of that movie.
+the same area. Borders already encoded in custom movies remain part of those movies.
+The supplied original movie subsequently received a [restoration](DriveInMovieRestoration.md)
+that removes its fixed outer padding, making its actual picture four times wider
+and taller within this same projection area.
 Playback, spatial audio, looping, pause, cheat toggles and the corrected front-facing
 screen depth order are unchanged. No media conversion or asset recook is needed.
 

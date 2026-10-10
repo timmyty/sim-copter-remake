@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-09",
+  "change": "Restore original drive-in movie and remove fixed padding",
+  "editor_build": "Succeeded",
+  "shipping_build": "Succeeded",
+  "tests_passed": 5,
+  "tests_failed": 0,
+  "tests_with_warnings": 1,
+  "warning_note": "Existing synthetic-city static foliage attachment warnings",
+  "tests": [
+    {
+      "name": "SimCopter.Cheats.DriveInCommands",
+      "result": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.AllMaps",
+      "result": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.MinimapLogo",
+      "result": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.Playback",
+      "result": "Success"
+    },
+    {
+      "name": "SimCopter.DriveIn.SafePlacement",
+      "result": "Success"
+    }
+  ],
+  "restoration": {
+    "source_name": "LightsCameraActionSimCopter.mp4",
+    "source_sha256": "3ee9c793acd033acd47cd3e1657f46b5007a2f1d2f3fa4110f702392540f5ed4",
+    "source_size": [
+      128,
+      128
+    ],
+    "active_picture": [
+      48,
+      48,
+      32,
+      32
+    ],
+    "border_peak": 29,
+    "border_bright_fraction": 1.170614338404795e-06,
+    "output_name": "LightsCameraActionSimCopter.mp4",
+    "output_sha256": "efdd0b6828b7bacd67cd1fb5fbb43006dfdad9b73de8d7eb80824ed6e59e470c",
+    "output_bytes": 78326548,
+    "size": [
+      1440,
+      1440
+    ],
+    "frame_rate": "10/1",
+    "frames": 1446,
+    "duration": "144.661333",
+    "model": "realesrgan-x4plus",
+    "model_sha256": "713ee713b0353afaa27976f0563a64a5043bd70b9bd8936c2e26e25ebcdbcddf",
+    "neural_strength": 0.6,
+    "projection_linear_increase": 4,
+    "note": "Restoration of very low-resolution footage; not native HD detail. Audio copied unchanged."
+  },
+  "audio_packets_identical": true,
+  "full_decode": "Passed",
+  "hsi_sha256": "d559c7ac4d45714c48c892a67e94f71d1870d383a3239001a3ecb3c611c19957",
+  "manual_gameplay_test": false,
+  "asset_only_install": true
+}

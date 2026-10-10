@@ -19,18 +19,27 @@
   {
     "source": "LightsCameraActionSimCopter.mp4",
     "source_bytes": 3871479,
-    "output_bytes": 3154014,
+    "output_bytes": 78326548,
     "source_size": [
       128,
       128
     ],
     "output": "LightsCameraActionSimCopter.mp4",
     "size": [
-      1080,
-      1080
+      1440,
+      1440
     ],
     "frame_rate": "10/1",
-    "duration": "144.661000",
-    "sha256": "04e93fe5ece2382d1a6022090e2f875d995034a78c2ea7138bd27b21ffaf25c8"
+    "duration": "144.661333",
+    "sha256": "efdd0b6828b7bacd67cd1fb5fbb43006dfdad9b73de8d7eb80824ed6e59e470c",
+    "source_sha256": "3ee9c793acd033acd47cd3e1657f46b5007a2f1d2f3fa4110f702392540f5ed4",
+    "active_picture": [
+      48,
+      48,
+      32,
+      32
+    ],
+    "restoration_model": "realesrgan-x4plus",
+    "restoration_strength": 0.6
   }
 ]
