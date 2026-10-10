@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterPlaneParts.h"
 #include "Game/SimCopterCheats.h"
 #include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterPresentation.h"
@@ -80,6 +81,7 @@
 #include "UI/SimCopterHangarArt.h"
 #include "UI/SSimCopterControllerOverlay.h"
 #include "UI/SSimCopterDashboard.h"
+#include "UI/SSimCopterCockpitFrame.h"
 #include "UI/SSimCopterMapPanel.h"
 #include "UI/SSimCopterControllerHelp.h"
 #include "Widgets/SBoxPanel.h"
@@ -126,7 +128,7 @@ constexpr TCHAR CockpitViewConfigSection[] = TEXT("SimCopter.CockpitView");
 constexpr TCHAR FlightModelConfigSection[] = TEXT("SimCopter.FlightModel");
 constexpr TCHAR CameraGroundLiftConfigSection[] = TEXT("SimCopter.CameraGroundLift");
 constexpr uint32 AircraftRuntimeSaveMagic = 0x48454c49; // 'HELI'
-constexpr int32 AircraftRuntimeSaveVersion = 2;
+constexpr int32 AircraftRuntimeSaveVersion = 3;
 
 void SerializeArchiveBool(FArchive& Archive, bool& Value)
 {
@@ -1464,6 +1466,7 @@ void ASimCopterHelicopterPawn::PrepareHelicopterModel(
 		if (const auto* Source = MeshLibrary.FindObjectByObjectId(Definition.BodyObjectId, &Palette))
 		{
 			FMaxisMeshObject Body = *Source;
+			if (TypeIndex == SimCopterHelicopterRegistry::PlaneTypeIndex) USimCopterPlanePartsComponent::RemoveMovingFaces(Body);
 			SimCopterHelicopterPresentation::ApplyCatalogPaintRegions(Body, TypeIndex);
 			for (auto& Face : Body.Faces)
 				if (SimCopterHelicopterPresentation::IsCabinWindow(Body, Face, TypeIndex)) Face.FaceType = 11;
@@ -1678,11 +1681,15 @@ void ASimCopterHelicopterPawn::ApplyPreparedModelMeshes(const FSimCopterPrepared
 	// near the ground contact point the flight probes use.
 	const float CapsuleHalfHeight =
 		CollisionComponent != nullptr ? CollisionComponent->GetScaledCapsuleHalfHeight() : 0.0f;
-	const float VerticalOffset = -CapsuleHalfHeight - Prepared.BodySection.LocalBounds.Min.Z;
+	// Removing the wheels from the body must not change the plane's ground datum.
+	const float BodyBottom = IsFixedWingAircraft() ? -1.48f * 262144 / ModelUnitsPerCentimeter * ModelScale : Prepared.BodySection.LocalBounds.Min.Z;
+	const float VerticalOffset = -CapsuleHalfHeight - BodyBottom;
 	if (HeliBodyMeshComponent != nullptr)
 	{
 		HeliBodyMeshComponent->SetRelativeLocation(FVector(0.0f, 0.0f, VerticalOffset));
 	}
+
+	RebuildPlaneParts();
 
 	// FUN_004883a0 anchors the chain to the body node. Our body is shifted relative to
 	// ModelPivot, so a fixed pivot offset can leave the cable hanging in empty space.
@@ -2301,6 +2308,8 @@ bool ASimCopterHelicopterPawn::CaptureRuntimeSaveState(TArray<uint8>& OutData)
 		Writer << PersonName;
 	}
 	AirOperations->SerializeState(Writer);
+	Writer << PlaneThrottle;
+	SerializeArchiveBool(Writer, bPlaneLandingGearDown);
 	if (Writer.IsError())
 	{
 		OutData.Reset();
@@ -2409,6 +2418,14 @@ bool ASimCopterHelicopterPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data
 		PendingSavedPassengerActorNames.Add(PersonName);
 	}
 	if (Version >= 2) AirOperations->SerializeState(Reader);
+	PlaneThrottle = FlightModel.State == ESimCopterFlightState::Parked ? 0 : .55f;
+	bPlaneLandingGearDown = true;
+	if (Version >= 3)
+	{
+		Reader << PlaneThrottle;
+		SerializeArchiveBool(Reader, bPlaneLandingGearDown);
+		if (!FMath::IsFinite(PlaneThrottle) || PlaneThrottle < 0 || PlaneThrottle > 1) return false;
+	}
 	if (Reader.IsError() || Reader.Tell() != Reader.TotalSize())
 	{
 		return false;
@@ -3378,7 +3395,11 @@ void ASimCopterHelicopterPawn::EnsureDashboardWidget()
 		.HudScale(GetCockpitHudScale());
 	DashboardPanel = Dashboard;
 
-	// Bottom-right, where the original's cockpit puts it.
+	CockpitFrameWidget = SNew(SSimCopterCockpitFrame).Art(FlapArt)
+		.Settings(USimCopterSettings::Get(this)).Scale(GetCockpitScale());
+	GEngine->GameViewport->AddViewportWidgetContent(CockpitFrameWidget.ToSharedRef(), 23);
+
+	// Bottom-right, where the remake keeps its current instruments.
 	DashboardWidget =
 		SNew(SOverlay)
 		+ SOverlay::Slot()
@@ -3393,6 +3414,9 @@ void ASimCopterHelicopterPawn::EnsureDashboardWidget()
 
 void ASimCopterHelicopterPawn::RemoveDashboardWidget()
 {
+	if (GEngine && GEngine->GameViewport && CockpitFrameWidget.IsValid())
+		GEngine->GameViewport->RemoveViewportWidgetContent(CockpitFrameWidget.ToSharedRef());
+	CockpitFrameWidget.Reset();
 	if (GEngine != nullptr && GEngine->GameViewport != nullptr && DashboardWidget.IsValid())
 	{
 		GEngine->GameViewport->RemoveViewportWidgetContent(DashboardWidget.ToSharedRef());
@@ -5046,6 +5070,7 @@ void ASimCopterHelicopterPawn::StopPrimaryToolUse()
 
 void ASimCopterHelicopterPawn::StartBucketDump()
 {
+	if (IsFixedWingAircraft()) { TogglePlaneLandingGear(); return; }
 	if (AirOperations->IsDeployed()) { AirOperations->OpenCargo(); return; }
 	bBucketDumpHeld = true;
 }
@@ -6316,6 +6341,8 @@ void ASimCopterHelicopterPawn::SetHudHiddenForReplay(const bool bHide)
 		return;
 	}
 	bHudHiddenForReplay = bHide;
+	if (CockpitFrameWidget.IsValid())
+		CockpitFrameWidget->SetVisibility(bHide ? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible);
 
 	// Collapsed, not removed: the dashboard and the map keep live state (the tuner needle, the
 	// fire raster, the flap lamps) that rebuilding would reset, and the operator toggles this
@@ -7165,7 +7192,8 @@ void ASimCopterHelicopterPawn::UpdateEngineState(float DeltaSeconds)
 		EngineShutdownHoldElapsed = 0.0f;
 		EngineShutdownHoldAlpha = 0.0f;
 	}
-	else if (bAnyEngineShutdownHeld && bEngineRunning && bIsLanded)
+	else if (bAnyEngineShutdownHeld && bEngineRunning && bIsLanded &&
+		(!IsFixedWingAircraft() || (PlaneThrottle <= 0 && VelocityCmPerSec.Size2D() < 35)))
 	{
 		EngineShutdownHoldElapsed += DeltaSeconds;
 		EngineShutdownHoldAlpha = EngineShutdownHoldSeconds > 0.0f ? FMath::Clamp(EngineShutdownHoldElapsed / EngineShutdownHoldSeconds, 0.0f, 1.0f) : 1.0f;

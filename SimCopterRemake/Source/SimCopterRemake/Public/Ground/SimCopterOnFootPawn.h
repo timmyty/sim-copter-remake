@@ -30,6 +30,7 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 	GENERATED_BODY()
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterShoulderAimTest;
 
 public:
 	ASimCopterOnFootPawn();
@@ -55,6 +56,9 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void Landed(const FHitResult& Hit) override;
+	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
+		bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+	double NextContactSoundTime = 0;
 	void BeginAirborneExit(const FVector& Location, const FVector& Velocity);
 	void TeleportForCheat(const FVector& Location);
 	bool IsTaserAiming() const { return bTaserAiming; }
@@ -252,7 +256,15 @@ private:
 	void StopWalkingSound();
 
 	bool LoadOriginalBodyFigure();
-	bool RebuildPlayerFigureClip(const FString& Mnemonic);
+	bool RebuildPlayerFigureClip(const FString& Mnemonic, bool bPreservePlayback = false);
+	void UpdateTaserPose(float DeltaSeconds);
+	float TaserAimAlpha = 0.0f;
+	float FigureAimAlpha = -1.0f;
+	float FigureAimPitch = 0.0f;
+	int32 FigureAimFrame = INDEX_NONE;
+	bool bFigureUsesAimPose = false;
+	FVector TaserHandLocal = FVector::ZeroVector;
+	FQuat TaserHandRotation = FQuat::Identity;
 
 	// --- standing in water ---
 	// The player gets exactly what the pedestrians get (ASimCopterGroundAgent::UpdateWaterSubmersion):

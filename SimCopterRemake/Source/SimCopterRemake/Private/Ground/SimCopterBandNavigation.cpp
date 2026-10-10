@@ -2,18 +2,58 @@
 
 namespace SimCopterBandNavigation
 {
-bool IsFormationPhase(float Elapsed)
+int32 GetOriginalBandCount(int32 CityIndex)
 {
-	return (FMath::FloorToInt(FMath::Max(0.0f, Elapsed) / PhaseSeconds) % 2) == 0;
+	// SCHOOK: SpawnVictoryBand 0x004c2a20 -> SpawnTubaGroup 0x004c29d0.
+	// DAT_00518d64 is the zero-based career CITY index (FUN_00408210), not the level.
+	const int32 City = FMath::Clamp(CityIndex, 0, 29);
+	return FMath::Max(1, City / 8) * (City / 2 + 5);
 }
 
-FVector FormationOffset(int32 Member, int32 Count, int32 Formation)
+int32 GetFormationIndex(float Elapsed)
 {
-	constexpr float Spacing = 75;
-	if (Formation % 3 == 0) return FVector(0, (Member - (Count - 1) * 0.5f) * Spacing, 0);
-	if (Formation % 3 == 1) return FVector(-(Member / 2) * Spacing, (Member % 2 - 0.5f) * Spacing, 0);
-	return FVector(-FMath::Abs(Member - (Count - 1) * 0.5f) * Spacing,
-		(Member - (Count - 1) * 0.5f) * Spacing, 0);
+	return FMath::FloorToInt(FMath::Max(0.0f, Elapsed) / PhaseSeconds) % 3;
+}
+
+FVector FormationOffset(int32 Member, int32 Count, int32 Formation, float Radius)
+{
+	// Keep the same row/column ordering between shapes, so members don't repeatedly cross
+	// the whole crowd. Larger original-game bands grow outward instead of packing tighter.
+	const int32 Columns = FMath::Max(1, FMath::CeilToInt(FMath::Sqrt(float(FMath::Max(1, Count)))));
+	const int32 Row = Member / Columns;
+	const int32 Column = Member % Columns;
+	const int32 RowCount = FMath::Min(Columns, Count - Row * Columns);
+	const float Lateral = Column - (RowCount - 1) * 0.5f;
+	Radius = FMath::Max(PlayerClearance, Radius);
+	if (Formation % 3 == 1)
+	{
+		const float ArcRadius = FMath::Max(Radius + 80.0f, Columns * 150.0f / 1.4f) + Row * 160.0f;
+		const float Angle = Lateral * 150.0f / ArcRadius;
+		return FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0) * ArcRadius;
+	}
+	if (Formation % 3 == 2)
+	{
+		return FVector(Radius + 60.0f + Row * 160.0f, Lateral * 160.0f + (Row % 2) * 55.0f, 0);
+	}
+	// Stable irregular spacing reads as a loose gathering, without jittering every update.
+	return FVector(Radius + 35.0f + Row * 170.0f + (Member * 37 % 61),
+		Lateral * 165.0f + (Member * 53 % 41) - 20.0f, 0);
+}
+
+bool KeepsDistance(const FVector& From, const FVector& To, const FVector& Center, float Radius)
+{
+	const FVector Start(From.X - Center.X, From.Y - Center.Y, 0);
+	const FVector Delta(To.X - From.X, To.Y - From.Y, 0);
+	const double RadiusSquared = FMath::Square(Radius);
+	if (Start.SizeSquared() < RadiusSquared)
+	{
+		// The player can step into the group. Let musicians back out of that overlap.
+		return FVector::DotProduct(Start, Delta) >= 0 &&
+			(Start + Delta).SizeSquared() > Start.SizeSquared() + UE_SMALL_NUMBER;
+	}
+	const double Alpha = Delta.IsNearlyZero() ? 0.0 :
+		FMath::Clamp(-FVector::DotProduct(Start, Delta) / Delta.SizeSquared(), 0.0, 1.0);
+	return (Start + Delta * Alpha).SizeSquared() >= RadiusSquared;
 }
 
 bool FindPath(const FVector& Start, const FVector& Goal,
@@ -22,7 +62,7 @@ bool FindPath(const FVector& Start, const FVector& Goal,
 	OutPath.Reset();
 	if (CanWalk(Start, Goal)) { OutPath.Add(Goal); return true; }
 	constexpr float CellSize = 75;
-	constexpr int32 Radius = 24;
+	constexpr int32 Radius = 48;
 	struct FNode { FIntPoint Cell; int32 Parent; float Cost; bool bClosed = false; };
 	TArray<FNode> Nodes;
 	TMap<FIntPoint, int32> Indices;
@@ -44,7 +84,10 @@ bool FindPath(const FVector& Start, const FVector& Goal,
 		Nodes[Best].bClosed = true;
 		const FNode Current = Nodes[Best];
 		const FVector Here = Position(Current.Cell);
-		if (FVector::Dist2D(Here, Goal) < CellSize * 1.5f && CanWalk(Here, Goal)) { Last = Best; break; }
+		// Once around a wall, connect to a visible distant goal. Requiring the goal to be
+		// inside the local grid stranded musicians on the far side of the airport.
+		if ((Iteration % 8 == 0 || FVector::Dist2D(Here, Goal) < CellSize * 1.5f) &&
+			CanWalk(Here, Goal)) { Last = Best; break; }
 		for (const auto& Direction : Directions)
 		{
 			const FIntPoint Cell = Current.Cell + Direction;
@@ -61,6 +104,18 @@ bool FindPath(const FVector& Start, const FVector& Goal,
 	if (Last == INDEX_NONE) return false;
 	OutPath.Add(Goal);
 	for (int32 I = Last; I > 0; I = Nodes[I].Parent) OutPath.Insert(Position(Nodes[I].Cell), 0);
+	// Remove grid zigzags only where the physical walk probe accepts the full shortcut.
+	FVector Previous = Start;
+	for (int32 I = 0; I < OutPath.Num(); ++I)
+	{
+		int32 LastVisible = I;
+		for (int32 J = OutPath.Num() - 1; J > I; --J)
+		{
+			if (CanWalk(Previous, OutPath[J])) { LastVisible = J; break; }
+		}
+		if (LastVisible > I) OutPath.RemoveAt(I, LastVisible - I);
+		Previous = OutPath[I];
+	}
 	return true;
 }
 }

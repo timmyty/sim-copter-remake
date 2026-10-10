@@ -468,7 +468,8 @@ bool ASimCopterMissionSystemActor::RestoreRuntimeSaveState(const TArray<uint8>& 
 	MarchingBandTargetUpdateTimer = 2.0f;
 	MarchingBandElapsed = 0;
 	MarchingBandLastPhase = INDEX_NONE;
-	LastMarchingBandPlayerLocation = FVector::ZeroVector;
+	MarchingBandApproachDirection = FVector::ZeroVector;
+	NextMarchingBandSpawnTime = 0;
 	MarchingBandAgents.Reset();
 	ActiveFireworkRockets.Reset();
 	FireworksTimer = 0.0f;
@@ -1464,6 +1465,64 @@ int32 ASimCopterMissionSystemActor::GetFireHeightDelta1616(const FVector& WorldL
 	return Nearest;
 }
 
+void ASimCopterMissionSystemActor::ClearDestroyedBuildingFires(const TArray<FIntPoint>& Tiles)
+{
+	MissionSystem.BurnOutDestroyedTiles(Tiles);
+}
+
+bool ASimCopterMissionSystemActor::DestroyBuildingFromMissile(const FHitResult& Hit)
+{
+	auto* City = Cast<ASimCity2000CityActor>(Hit.GetActor());
+	FIntPoint Origin;
+	if (!City || !City->TryGetBuildingHitOrigin(Hit, Origin)) return false;
+	const int32 Size = GetBuildingFootprintSize(Origin.X, Origin.Y);
+	// Reuse the complete collapse: authored rubble, debris, collision removal and
+	// XBLD cleanup. Unlike nuclear selection, Apache strikes exempt no building class.
+	OnBuildingBurnedDown(Origin.X, Origin.Y, Size);
+	if (City->HasStandingBuildingAtTile(Origin.X, Origin.Y)) return false;
+	TArray<FIntPoint> Tiles;
+	for (int32 Y=0; Y<Size; ++Y) for (int32 X=0; X<Size; ++X) Tiles.Emplace(Origin.X+X,Origin.Y+Y);
+	ClearDestroyedBuildingFires(Tiles);
+	AddPostBlastFire(Hit.ImpactPoint);
+	PostMissionEvent(SimCopterMissions::EVT_CrashPenaltyH, INDEX_NONE, 1, false);
+	return true;
+}
+
+int32 ASimCopterMissionSystemActor::ApplyNuclearPopulationDamage(int32 RandomSeed)
+{
+	// FUN_004515d0 has a separate population pass before FUN_004a6940.
+	// Deliberate remake rule: injure 65% of eligible walkers, keep at least one
+	// survivor, and retain emergency crews so the aftermath remains playable.
+	TArray<ASimCopterGroundAgent*> Candidates;
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+		if (It->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian && !It->IsCow() &&
+			!It->IsMedevacVictim() && !It->IsMissionPatientDead() && !It->IsEmergencyCrewMember() &&
+			!It->GetBehaviorCarrier() && !It->IsMissionCarried() && !It->IsInPoliceCustody() &&
+			It->GetBehaviorAttribute(EBhavAttr::WrittenOff) == 0) Candidates.Add(*It);
+	Candidates.Sort([](const auto& A, const auto& B) { return A.GetName() < B.GetName(); });
+	FRandomStream Random(RandomSeed);
+	for (int32 I=Candidates.Num()-1; I>0; --I) Candidates.Swap(I, Random.RandRange(0,I));
+	const int32 Target = FMath::Min(FMath::RoundToInt(Candidates.Num()*.65f), FMath::Max(0,Candidates.Num()-1));
+	int32 Injured = 0;
+	for (int32 I=0; I<Target; ++I)
+	{
+		auto* Person = Candidates[I];
+		if (CreateIncidentMedevacForVictim(Person))
+		{
+			SuppressMissionRewards(Person->MissionEventId); ++Injured;
+		}
+		else if (auto* Traffic = ResolveTrafficSystem(); Traffic && Traffic->TryPlacePatientOnOutdoorGround(*Person))
+		{
+			// The fixed event pool can fill during a citywide disaster. Unregistered
+			// patients still use the same carry, hospital admission and saved injury state.
+			MissionSystem.ReleaseInjuredMissionPerson(Person->MissionEventId, Person->GetBehaviorAttribute(EBhavAttr::State));
+			Person->MissionEventId = INDEX_NONE; Person->InitialPersonState = 6;
+			Person->ResetMissionActionTracking(); Person->SetMissionInjuredPose(); ++Injured;
+		}
+	}
+	return Injured;
+}
+
 void ASimCopterMissionSystemActor::AddPostBlastFire(const FVector& WorldLocation)
 {
 	if (PostBlastFires.Num() < 100) PostBlastFires.Emplace(WorldLocation, 30.0f);
@@ -1805,9 +1864,15 @@ bool ASimCopterMissionSystemActor::CreateIncidentMedevacForVictim(ASimCopterGrou
 		return false;
 	auto* Traffic = ResolveTrafficSystem();
 	int32 X, Y;
-	if (!Traffic || !Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Victim->GetActorLocation(), X, Y)) return false;
+	const FVector PreviousLocation = Victim->GetActorLocation();
+	if (!Traffic || !Traffic->TryPlacePatientOnOutdoorGround(*Victim) ||
+		!Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Victim->GetActorLocation(), X, Y)) return false;
 	const int32 Event = MissionSystem.CreateIncidentMedevacAt(X, Y);
-	if (Event < 0) return false;
+	if (Event < 0)
+	{
+		Victim->SetActorLocation(PreviousLocation, false, nullptr, ETeleportType::TeleportPhysics);
+		return false;
+	}
 	MissionSystem.ReleaseInjuredMissionPerson(Victim->MissionEventId, Victim->GetBehaviorAttribute(EBhavAttr::State));
 	Victim->SetPersistentHospitalRoofCrew(false);
 	Victim->MissionEventId = Event;
@@ -1871,6 +1936,7 @@ bool ASimCopterMissionSystemActor::ShouldAvoidFireStep(const FVector& FromFeet, 
 
 bool ASimCopterMissionSystemActor::CreatePlayerCausedMedevacForVictim(ASimCopterGroundAgent* Victim)
 {
+	if (Victim && Victim->IsAirSupportPassenger()) return CreateIncidentMedevacForVictim(Victim);
 	if (Victim && Victim->IsCow()) return false;
 	if (Victim == nullptr)
 	{
@@ -1885,7 +1951,9 @@ bool ASimCopterMissionSystemActor::CreatePlayerCausedMedevacForVictim(ASimCopter
 
 	int32 TileX = INDEX_NONE;
 	int32 TileY = INDEX_NONE;
-	if (!TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Victim->GetActorLocation(), TileX, TileY))
+	const FVector PreviousLocation = Victim->GetActorLocation();
+	if (!TrafficSystem->TryPlacePatientOnOutdoorGround(*Victim) ||
+		!TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Victim->GetActorLocation(), TileX, TileY))
 	{
 		return false;
 	}
@@ -1893,6 +1961,7 @@ bool ASimCopterMissionSystemActor::CreatePlayerCausedMedevacForVictim(ASimCopter
 	const int32 EventId = MissionSystem.CreatePlayerCausedMedevacAt(TileX, TileY);
 	if (EventId == INDEX_NONE || EventId < 0)
 	{
+		Victim->SetActorLocation(PreviousLocation, false, nullptr, ETeleportType::TeleportPhysics);
 		return false;
 	}
 
@@ -1949,7 +2018,7 @@ bool ASimCopterMissionSystemActor::ConvertDroppedTransportPassengerToMedevac(
 		return false;
 	}
 
-	if (SourceTransportEventId != INDEX_NONE)
+	if (SourceTransportEventId != INDEX_NONE && !Victim->IsAirSupportPassenger())
 	{
 		MissionSystem.PostEvent(SimCopterMissions::EVT_PassengerLost, SourceTransportEventId, 1);
 	}
@@ -2527,7 +2596,16 @@ bool ASimCopterMissionSystemActor::NotifyMissionPersonDied(ASimCopterGroundAgent
 		return false;
 	}
 
-	MissionSystem.PostEvent(SimCopterMissions::EVT_PersonDied, Person->MissionEventId, 1);
+	if (Person->IsAirSupportPassenger())
+	{
+		// A helper failure retires only its own victim, without a death fine, negative
+		// completion score, or a false delivery award. The player's other victims still count.
+		const int32 State = Kind == ESimCopterMissionPassengerKind::Transport ? 4 :
+			Kind == ESimCopterMissionPassengerKind::Medevac ? 6 : 1;
+		MissionSystem.ReleaseInjuredMissionPerson(Person->MissionEventId, State);
+		if (Person->IsMissionPickupCounted()) MissionSystem.AdjustVictimsPickedUp(Person->MissionEventId, -1);
+	}
+	else MissionSystem.PostEvent(SimCopterMissions::EVT_PersonDied, Person->MissionEventId, 1);
 	Person->SetMissionResolutionReported(true);
 	Person->SetMissionPickupCounted(false);
 	return true;
@@ -4615,8 +4693,8 @@ FString ASimCopterMissionSystemActor::FormatMissionUiMessage(const SimCopterMiss
 
 // SCHOOK: TubaLeader 443 / TubaInit 444 (person states 17 and 18, DAT_0058de80)
 //
-// The band is not a scripted prop - it is eight ordinary people running the shipped programs, and
-// every part of what it does is in BHAV 444:
+// Musicians run the shipped programs for their animation and music. The remake coordinator
+// supplies spaced approach targets and obstacle routes. The original BHAV 444 provides:
 //
 //   rec[2]  bind 'Play'                     the instrument animation (NOT a wave)
 //   rec[24] movespeed := 8                  62.5 cm/s at 15 Hz - a march, not a jog
@@ -4634,7 +4712,7 @@ FString ASimCopterMissionSystemActor::FormatMissionUiMessage(const SimCopterMiss
 // or figure could load, and played march.wav itself from one looping voice slot at the airport.
 void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 {
-	if (bMarchingBandSpawned || GetWorld() == nullptr)
+	if (bMarchingBandSpawned || GetWorld() == nullptr || GetWorld()->GetTimeSeconds() < NextMarchingBandSpawnTime)
 	{
 		return;
 	}
@@ -4650,8 +4728,11 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 	{
 		return;
 	}
-	// People are restored before the mission actor. Reuse the saved band instead of
-	// adding eight more musicians when the celebration coordinator starts again.
+	NextMarchingBandSpawnTime = GetWorld()->GetTimeSeconds() + 1.0;
+	const int32 BandCount = SimCopterBandNavigation::GetOriginalBandCount(GetSessionCareerCityIndex());
+	// People are restored before the mission actor. Adopt them, then reconcile the former
+	// fixed eight-member roster to the original city-dependent count exactly once on load.
+	MarchingBandAgents.Reset();
 	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
 	{
 		const int32 State = It->GetBehaviorAttribute(EBhavAttr::State);
@@ -4661,7 +4742,15 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 			MarchingBandAgents.AddUnique(*It);
 		}
 	}
-	if (!MarchingBandAgents.IsEmpty())
+	MarchingBandAgents.StableSort([](const auto& A, const auto& B)
+	{
+		return A->GetBehaviorAttribute(EBhavAttr::State) < B->GetBehaviorAttribute(EBhavAttr::State);
+	});
+	while (MarchingBandAgents.Num() > BandCount)
+	{
+		if (auto* Extra = MarchingBandAgents.Pop().Get()) Extra->Destroy();
+	}
+	if (MarchingBandAgents.Num() == BandCount)
 	{
 		bMarchingBandSpawned = true;
 		return;
@@ -4670,24 +4759,45 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 	// One leader on state 17 (BHAV 443) and the rest on state 18 (BHAV 444). Behaviour class 18 is
 	// TubaExpert, the band figure, and TrySpawnMissionPerson resolves the original-game root and
 	// finds a spawn point that is not inside a building - both of which the old path skipped.
-	constexpr int32 BandCount = 8;
 	constexpr int32 TubaLeaderPersonState = 17;
 	constexpr int32 TubaMemberPersonState = 18;
 	constexpr int32 TubaBehaviorClass = 18;
+	FVector SpawnCenter;
+	if (!TrafficSystem->TryGetAirportPadWorldLocation(0, SpawnCenter)) return;
+	if (const APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0))
+	{
+		SpawnCenter = GetMarchingBandCenter(Player->GetActorLocation());
+	}
+	const float Radius = GetMarchingBandRadius();
+	if (MarchingBandApproachDirection.IsNearlyZero())
+	{
+		const APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+		MarchingBandApproachDirection = Player ? Player->GetActorForwardVector().GetSafeNormal2D() : FVector::ForwardVector;
+	}
+	const FRotator ApproachRotation = MarchingBandApproachDirection.Rotation();
+	TArray<FVector> Reserved;
+	for (auto Weak : MarchingBandAgents) Reserved.Add(Weak->GetActorLocation());
+	bool bHasLeader = MarchingBandAgents.ContainsByPredicate([](const auto& Weak)
+	{ return Weak->GetBehaviorAttribute(EBhavAttr::State) == TubaLeaderPersonState; });
 
 	// On the pads, where the player lands. The airport is tile class 1 - both stamped ids fall
 	// through GetTileClassForBuildingId to its catch-all `return 1`, 0xde being past 0xD2..0xDC and
 	// 0xf6 past 0xE8..0xF5 - and class 1 is in no behaviour row, so a walker there would refuse
 	// every direction and spin. SetIgnoresTileClassRules waives that one rule for the band; the
 	// climb gate still keeps them out of the terminal.
-	for (int32 Index = 0; Index < BandCount; ++Index)
+	for (int32 Index = MarchingBandAgents.Num(); Index < BandCount; ++Index)
 	{
+		// Start a short march outside the destination cluster, on the listener's visible side.
+		const FVector Desired = SpawnCenter + ApproachRotation.RotateVector(
+			SimCopterBandNavigation::FormationOffset(Index, BandCount, 0, Radius + 250.0f));
+		int32 TileX, TileY;
+		if (!TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Desired, TileX, TileY)) continue;
 		ASimCopterGroundAgent* Agent = nullptr;
 		const bool bSpawned = TrafficSystem->TrySpawnMissionPerson(
-			Index == 0 ? TubaLeaderPersonState : TubaMemberPersonState,
+			!bHasLeader ? TubaLeaderPersonState : TubaMemberPersonState,
 			TubaBehaviorClass,
-			AirportOrigin.X + (Index % 4),
-			AirportOrigin.Y + (Index / 4),
+			TileX,
+			TileY,
 			INDEX_NONE,
 			TEXT("TubaExpert"),
 			&Agent);
@@ -4695,6 +4805,19 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 		if (bSpawned && Agent != nullptr)
 		{
 			Agent->SetIgnoresTileClassRules(true);
+			FVector StandLocation;
+			if (Agent->TryResolveBandStandLocation(Desired, SpawnCenter, StandLocation, Reserved))
+			{
+				Agent->SetActorLocation(StandLocation);
+			}
+			else
+			{
+				Agent->Destroy();
+				continue;
+			}
+			Reserved.Add(StandLocation);
+			bHasLeader = true;
+			Agent->SetActorRotation(FRotator(0, (SpawnCenter - Agent->GetActorLocation()).Rotation().Yaw, 0));
 			// Uniform colours are a remake flourish and stay - the original band is all one figure.
 			// The offset indexes a 14-entry clothes table, so it has to stay inside it: the old
 			// (i % 5) * 8 + 4 ran to 36 and was clamped, giving five members the same outfit.
@@ -4703,7 +4826,8 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 		}
 	}
 
-	bMarchingBandSpawned = MarchingBandAgents.Num() > 0;
+	// Retry missing placements at one-second intervals; never accept a partial band permanently.
+	bMarchingBandSpawned = MarchingBandAgents.Num() == BandCount;
 }
 
 // SCHOOK: FireworksInit 0x004916e0 / FUN_0048e0b0 / FUN_0048ed00
@@ -4869,31 +4993,91 @@ void ASimCopterMissionSystemActor::UpdateFireworksFX(float DeltaSeconds)
 	}
 }
 
-// Alternate parade formations with the original BHAV 443/444 following and instrument playing.
+FVector ASimCopterMissionSystemActor::GetMarchingBandCenter(const FVector& PlayerLocation)
+{
+	ASimCopterTrafficSystemActor* Traffic = ResolveTrafficSystem();
+	if (!Traffic) return PlayerLocation;
+	FVector NearestPad = PlayerLocation;
+	double NearestDistance = TNumericLimits<double>::Max();
+	for (int32 I = 0; I < SimCopterAirport::PadCount; ++I)
+	{
+		FVector Pad;
+		if (!Traffic->TryGetAirportPadWorldLocation(I, Pad)) continue;
+		const double Distance = FVector::DistSquared2D(Pad, PlayerLocation);
+		if (Distance < NearestDistance) { NearestDistance = Distance; NearestPad = Pad; }
+	}
+	// Wait at the airport while the player is across town. Approach their ground position
+	// as they return; the formation offsets keep the crowd outside their personal space.
+	const float ApproachRange = Traffic->GetPeopleWorldCmPerOriginalUnit() * 256.0f;
+	if (NearestDistance <= FMath::Square(ApproachRange))
+	{
+		return FVector(PlayerLocation.X, PlayerLocation.Y, NearestPad.Z);
+	}
+	return NearestPad;
+}
+
+float ASimCopterMissionSystemActor::GetMarchingBandRadius() const
+{
+	float Radius = SimCopterBandNavigation::PlayerClearance;
+	if (const auto* Helicopter = Cast<ASimCopterHelicopterPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0)))
+	{
+		FBox Bounds;
+		if (Helicopter->TryGetAirframeLocalBoundsCm(Bounds))
+		{
+			const FVector Extent = Bounds.Min.GetAbs().ComponentMax(Bounds.Max.GetAbs());
+			Radius = FMath::Max(Radius, float(Extent.Size2D()) + 100.0f);
+		}
+	}
+	return Radius;
+}
+
+// Change loose formations every ten seconds while BHAV 443/444 keeps the music going.
 void ASimCopterMissionSystemActor::UpdateMarchingBandApproach(const FVector& PlayerLocation, float DeltaSeconds)
 {
 	bMarchingBandApproaching = true;
 	MarchingBandAgents.RemoveAll([](const TWeakObjectPtr<ASimCopterGroundAgent>& Agent)
 	{
-		return !Agent.IsValid();
+		if (!Agent.IsValid() || Agent->IsActorBeingDestroyed()) return true;
+		const int32 State = Agent->GetBehaviorAttribute(EBhavAttr::State);
+		if (State != 17 && State != 18)
+		{
+			Agent->SetBandFormationTarget(Agent->GetActorLocation(), 0, false);
+			return true;
+		}
+		return false;
 	});
 	MarchingBandElapsed += DeltaSeconds;
 	const int32 Phase = FMath::FloorToInt(MarchingBandElapsed / SimCopterBandNavigation::PhaseSeconds);
-	const bool bFormation = SimCopterBandNavigation::IsFormationPhase(MarchingBandElapsed);
-	if (Phase != MarchingBandLastPhase)
+	MarchingBandTargetUpdateTimer += DeltaSeconds;
+	if (Phase == MarchingBandLastPhase && MarchingBandTargetUpdateTimer < 1.0f) return;
+	MarchingBandLastPhase = Phase;
+	MarchingBandTargetUpdateTimer = 0;
+	const FVector Center = GetMarchingBandCenter(PlayerLocation);
+	const float Radius = GetMarchingBandRadius();
+	if (MarchingBandApproachDirection.IsNearlyZero())
 	{
-		MarchingBandLastPhase = Phase;
-		// Pick one anchor for the whole phase so moving the player does not drag the line apart.
-		MarchingBandFormationCenter = FVector::ZeroVector;
-		for (auto Weak : MarchingBandAgents) MarchingBandFormationCenter += Weak->GetActorLocation();
-		if (!MarchingBandAgents.IsEmpty()) MarchingBandFormationCenter /= MarchingBandAgents.Num();
-		MarchingBandFormationYaw = (PlayerLocation - MarchingBandFormationCenter).Rotation().Yaw;
+		FVector Centroid = FVector::ZeroVector;
+		for (auto Weak : MarchingBandAgents) Centroid += Weak->GetActorLocation();
+		if (!MarchingBandAgents.IsEmpty()) Centroid /= MarchingBandAgents.Num();
+		MarchingBandApproachDirection = (Centroid - Center).GetSafeNormal2D();
+		if (MarchingBandApproachDirection.IsNearlyZero()) MarchingBandApproachDirection = FVector::ForwardVector;
 	}
+	const FRotator ApproachRotation = MarchingBandApproachDirection.Rotation();
+	TArray<FVector> Reserved;
 	for (int32 I = 0; I < MarchingBandAgents.Num(); ++I)
 	{
-		const FVector Offset = SimCopterBandNavigation::FormationOffset(I, MarchingBandAgents.Num(), Phase / 2);
-		MarchingBandAgents[I]->SetBandFormationTarget(MarchingBandFormationCenter +
-			FRotator(0, MarchingBandFormationYaw, 0).RotateVector(Offset), MarchingBandFormationYaw, bFormation);
+		auto* Agent = MarchingBandAgents[I].Get();
+		Agent->BandListenerCenter = Center;
+		Agent->BandListenerClearance = Radius;
+		Agent->BandNeighbors = MarchingBandAgents;
+		const FVector Desired = Center + ApproachRotation.RotateVector(SimCopterBandNavigation::FormationOffset(
+			I, MarchingBandAgents.Num(), SimCopterBandNavigation::GetFormationIndex(MarchingBandElapsed), Radius));
+		FVector Target;
+		const bool bClear = Agent->TryResolveBandStandLocation(Desired, Center, Target, Reserved);
+		if (!bClear) Target = Agent->GetActorLocation();
+		Reserved.Add(Target);
+		// Hold safely when every candidate is blocked instead of releasing the VM to crowd in.
+		Agent->SetBandFormationTarget(Target, (Center - Target).Rotation().Yaw, true);
 	}
 }
 

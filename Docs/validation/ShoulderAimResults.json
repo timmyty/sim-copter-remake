@@ -1,0 +1,90 @@
+{
+  "Date": "2026-10-10",
+  "EditorBuild": "Succeeded",
+  "ShippingBuild": "Succeeded",
+  "Headless": {
+    "Passed": 14,
+    "WarningTests": 0,
+    "Failed": 0
+  },
+  "Offscreen": {
+    "Passed": 1,
+    "VisibleTaserPixels": 1931,
+    "Resolution": "1280x720",
+    "Failed": 0,
+    "Scope": "Geometry, upper-torso framing and visibility; checker-shaded fixture"
+  },
+  "Tests": [
+    {
+      "fullTestPath": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Controller.Contexts",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Figures.Adjustments",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Figures.CowGeometry",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Formats.PrivAnim.Reference",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.People.LyingPoseClearsGround",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Polish.ControlsAudioAndPeople",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.RescuePilot.PassengerIdentity",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.RescuePilot.RuntimeRegression",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.RescuePilot.ShoulderAim",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.ArchiveRoundTrip",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.Names",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.QuickSavePersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.RestoreState",
+      "state": "Success"
+    }
+  ],
+  "InstalledBinaries": [
+    {
+      "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+      "BeforeSHA256": "202C544BD261727EC48C485046117958D2835D564D6F3C0F63A04EF7A9FAA7A8",
+      "AfterSHA256": "9A6E63F69FA55A92418113E9805B506E4913A523581FE53D4BB2983E9BB530A5"
+    },
+    {
+      "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+      "BeforeSHA256": "A6061BB569B6782458EEC7D321F375392DB0AE7D49DBEA492941F1A18FBED812",
+      "AfterSHA256": "7C099A955D0D5545E14F7B5D2A32830470A893B4A87710DED0ADB9FC1F959B85"
+    }
+  ],
+  "ManualPlaytest": false,
+  "CommitOrPush": false,
+  "Evidence": "Docs/scratchpad/shoulder-aim/"
+}

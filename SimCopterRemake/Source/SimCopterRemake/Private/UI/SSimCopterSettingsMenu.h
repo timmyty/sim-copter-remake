@@ -96,6 +96,7 @@ enum class ESimCopterSettingsItem : uint8
 	SaveGameAs = 5,
 	LeaveCity = 6,
 	Continue = 7,
+	CheatCodes = 8, // Remake guide on the career menu's unused top plate.
 };
 
 DECLARE_DELEGATE_OneParam(FOnSimCopterSettingsItemChosen, ESimCopterSettingsItem);
@@ -124,7 +125,7 @@ public:
 	static const FText& GetItemLabel(ESimCopterSettingsItem Item);
 
 protected:
-	virtual void OnControllerSelectionChanged(int32 Index) override { SetSelectedRow(Index); }
+	virtual void OnControllerSelectionChanged(int32 Index) override { SetSelectedRow(Index < VisibleCount ? Index : -1); }
 
 private:
 	TObjectPtr<USimCopterHangarArt> Art;

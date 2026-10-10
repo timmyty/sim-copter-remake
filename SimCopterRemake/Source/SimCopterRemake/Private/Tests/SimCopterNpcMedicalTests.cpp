@@ -191,13 +191,14 @@ bool FSimCopterNpcMedicalTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Repeated crew readiness does not spawn indefinitely"),Traffic->PedestrianAgents.Num(),Posted);
 
 	auto* Band=Person(17,FVector(800,-200,0));
+	Traffic->AirportOriginTile = FIntPoint(62,62);
 	Missions->MarchingBandAgents.Add(Band);
 	Missions->UpdateMarchingBandApproach(FVector(800,0,0),1);
 	TestTrue(TEXT("Band starts in formation"),Band->bBandFormationActive);
-	Missions->UpdateMarchingBandApproach(FVector(800,0,0),150);
-	TestFalse(TEXT("Band returns to original behavior after 150 seconds"),Band->bBandFormationActive);
-	Missions->UpdateMarchingBandApproach(FVector(800,0,0),150);
-	TestTrue(TEXT("Band returns to next formation after another 150 seconds"),Band->bBandFormationActive);
+	Missions->UpdateMarchingBandApproach(FVector(800,0,0),10);
+	TestTrue(TEXT("Spacing remains active in the next ten-second formation"),Band->bBandFormationActive);
+	Missions->UpdateMarchingBandApproach(FVector(800,0,0),10);
+	TestTrue(TEXT("Band keeps guidance through another ten-second formation"),Band->bBandFormationActive);
 	Missions->CreateIncidentMedevacForVictim(Band);
 	Missions->UpdateMarchingBandApproach(FVector::ZeroVector,0);
 	TestFalse(TEXT("Medical injury cancels parade guidance"),Band->bBandFormationActive);
@@ -238,12 +239,40 @@ bool FSimCopterBandNavigationTest::RunTest(const FString& Parameters)
 	FVector Previous=FVector::ZeroVector;
 	for(const auto& Next:Path){TestTrue(TEXT("Every route segment stays outside obstacle"),CanWalk(Previous,Next));Previous=Next;}
 	TestTrue(TEXT("Route reaches target"),!Path.IsEmpty() && Path.Last().Equals(FVector(600,0,0)));
+	TestTrue(TEXT("A distant listener beyond the local grid is reachable after going around the wall"),
+		SimCopterBandNavigation::FindPath(FVector::ZeroVector,FVector(6000,0,0),CanWalk,Path));
+	Previous = FVector::ZeroVector;
+	for (const FVector& Next : Path)
+	{
+		TestTrue(TEXT("Long approach shortcuts still respect physical obstacles"), CanWalk(Previous, Next));
+		Previous = Next;
+	}
+	TestTrue(TEXT("Long approach reaches the real listener"), Previous.Equals(FVector(6000,0,0)));
 	TestFalse(TEXT("Unreachable formation target never teleports"),SimCopterBandNavigation::FindPath(FVector::ZeroVector,FVector(600,0,0),[](const FVector&,const FVector&){return false;},Path));
-	for(int32 Shape=0;Shape<3;++Shape)
-		for(int32 A=0;A<8;++A) for(int32 B=A+1;B<8;++B)
-			TestTrue(TEXT("Each formation has body-sized spacing"),FVector::Dist(SimCopterBandNavigation::FormationOffset(A,8,Shape),SimCopterBandNavigation::FormationOffset(B,8,Shape))>=70);
-	TestTrue(TEXT("Formation interval starts again at five minutes"),SimCopterBandNavigation::IsFormationPhase(300));
-	TestFalse(TEXT("Original behavior occupies alternate interval"),SimCopterBandNavigation::IsFormationPhase(299));
+	const int32 OriginalCounts[] = {5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,26,26,28,28,30,30,32,32,51,51,54,54,57,57};
+	for (int32 City = 0; City < UE_ARRAY_COUNT(OriginalCounts); ++City)
+		TestEqual(TEXT("Roster matches original city spawn loop"), SimCopterBandNavigation::GetOriginalBandCount(City), OriginalCounts[City]);
+	for (const int32 Count : {5, 8, 26, 57})
+		for (int32 Shape = 0; Shape < 3; ++Shape)
+			for (int32 A = 0; A < Count; ++A)
+			{
+				const FVector Offset = SimCopterBandNavigation::FormationOffset(A, Count, Shape);
+				TestTrue(TEXT("Every shape leaves space for the listener"), Offset.Size2D() >= 250);
+				TestTrue(TEXT("Group clusters on its approach side instead of forming a full ring"), Offset.X > 0);
+				for (int32 B = A + 1; B < Count; ++B)
+					TestTrue(TEXT("Even the largest band has distinct spaced slots"),
+						FVector::Dist2D(Offset, SimCopterBandNavigation::FormationOffset(B, Count, Shape)) >= 120);
+			}
+	TestEqual(TEXT("First shape lasts ten seconds"), SimCopterBandNavigation::GetFormationIndex(9.99f), 0);
+	TestEqual(TEXT("Second shape starts at ten seconds"), SimCopterBandNavigation::GetFormationIndex(10), 1);
+	TestEqual(TEXT("Third shape starts at twenty seconds"), SimCopterBandNavigation::GetFormationIndex(20), 2);
+	TestEqual(TEXT("Shapes repeat at thirty seconds"), SimCopterBandNavigation::GetFormationIndex(30), 0);
+	TestFalse(TEXT("A route cannot cut through personal space with both endpoints outside"),
+		SimCopterBandNavigation::KeepsDistance(FVector(-400,0,0), FVector(400,0,0), FVector::ZeroVector, 250));
+	TestTrue(TEXT("An overlapped musician may retreat"),
+		SimCopterBandNavigation::KeepsDistance(FVector(100,0,0), FVector(150,0,0), FVector::ZeroVector, 250));
+	TestFalse(TEXT("An overlapped musician cannot move closer"),
+		SimCopterBandNavigation::KeepsDistance(FVector(100,0,0), FVector(50,0,0), FVector::ZeroVector, 250));
 	TArray<FColor> Original; Original.Init(FColor(15,15,15),256); Original[60]=FColor(195,195,195); Original[188]=FColor(174,164,169);
 	TArray<FColor> Paint; SimCopterHelicopterPresentation::MakePaintPalette(Original,Paint);
 	TestTrue(TEXT("Dark Agusta body swatch is corrected"),Paint[48].R>Original[48].R && Paint[176].R>Original[176].R);
@@ -254,6 +283,147 @@ bool FSimCopterBandNavigationTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Catalog has expanded specialties"),FCString::Strlen(SimCopterHangarShop::GetCatalogSpecialties(Row))>220);
 		TestTrue(TEXT("Catalog retains specifications and adds description"),FCString::Strlen(SimCopterHangarShop::GetCatalogDescription(Row))>350);
 	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterBandCelebrationTest,"SimCopter.NpcMedical.BandClusterAndSpacing",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterBandCelebrationTest::RunTest(const FString& Parameters)
+{
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true).CreateNavigation(false).CreateAISystem(false);
+	auto* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+	Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
+	Traffic->TileCenterWorldZ.Init(0, FSimCity2000City::TileCount);
+	Traffic->WaterTileFlags.Init(0, FSimCity2000City::TileCount);
+	Traffic->XbldTileIds.Init(0x1d, FSimCity2000City::TileCount);
+	Traffic->ActiveTileSize = 400;
+	Traffic->AirportOriginTile = FIntPoint(62,62);
+	auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+	Missions->MissionSystem.Initialize(nullptr, 1);
+	FVector Center;
+	TestTrue(TEXT("Airport pad is available"), Traffic->TryGetAirportPadWorldLocation(0, Center));
+	for (int32 I = 0; I < 8; ++I)
+	{
+		auto* Agent = World->SpawnActor<ASimCopterGroundAgent>();
+		Agent->SetOwner(Traffic);
+		Agent->BehaviorContext.ResetToState(I == 0 ? 17 : 18);
+		Agent->SetActorLocation(Center + FVector(-900, I * 60, Agent->GetCapsuleHalfHeightCm() + 1));
+		Missions->MarchingBandAgents.Add(Agent);
+	}
+	Missions->SpawnMarchingBandAtAirport();
+	TestEqual(TEXT("An old eight-person first-city save restores the original five"), Missions->MarchingBandAgents.Num(), 5);
+	Missions->SpawnMarchingBandAtAirport();
+	TestEqual(TEXT("Repeated initialization does not duplicate musicians"), Missions->MarchingBandAgents.Num(), 5);
+	const FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Reference/SimCopterOriginalGame"));
+	TestTrue(TEXT("Original career data loads"), Missions->MissionSystem.LoadCareerData(Root / TEXT("tweak/career.twk")));
+	TestTrue(TEXT("Last city can be selected"), Missions->MissionSystem.SelectCareerCity(29));
+	Missions->bMarchingBandSpawned = false;
+	Missions->NextMarchingBandSpawnTime = 0;
+	Missions->SpawnMarchingBandAtAirport();
+	TestEqual(TEXT("Last city restores all 57 original musicians"), Missions->MarchingBandAgents.Num(), 57);
+	int32 Leaders = 0;
+	for (auto Weak : Missions->MarchingBandAgents) Leaders += Weak->GetBehaviorAttribute(EBhavAttr::State) == 17;
+	TestEqual(TEXT("Restoring the roster preserves one music leader"), Leaders, 1);
+	Missions->UpdateMarchingBandApproach(Center, 0);
+	TArray<FVector> Targets;
+	for (auto Weak : Missions->MarchingBandAgents)
+	{
+		auto* Agent = Weak.Get();
+		TestTrue(TEXT("Every musician keeps a buffer around the player"), FVector::Dist2D(Center, Agent->BandFormationTarget) >= 250);
+		for (const FVector& Other : Targets)
+			TestTrue(TEXT("Resolved slots never overlap another reservation"), FVector::Dist2D(Other, Agent->BandFormationTarget) >= 120);
+		Targets.Add(Agent->BandFormationTarget);
+		const FVector TowardPlayer = (Center - Agent->BandFormationTarget).GetSafeNormal2D();
+		TestTrue(TEXT("Musicians face the player when they arrive"), FVector::DotProduct(TowardPlayer, FRotator(0,Agent->BandFormationYaw,0).Vector()) > 0.99);
+		TestTrue(TEXT("All members use obstacle-aware approach guidance"), Agent->bBandFormationActive);
+	}
+	const FVector MovedCenter = Center + FVector(350, 0, 0);
+	Missions->UpdateMarchingBandApproach(MovedCenter, 1);
+	TestTrue(TEXT("Cluster follows a moving listener before the next formation change"),
+		(Missions->MarchingBandAgents[0]->BandFormationTarget - Targets[0]).Equals(FVector(350,0,0), 1));
+	const FVector FirstTarget = Missions->MarchingBandAgents[0]->BandFormationTarget;
+	Missions->UpdateMarchingBandApproach(MovedCenter, 8.99f);
+	TestTrue(TEXT("Shape is stable just before ten seconds"), Missions->MarchingBandAgents[0]->BandFormationTarget.Equals(FirstTarget, 1));
+	Missions->UpdateMarchingBandApproach(MovedCenter, 0.02f);
+	const FVector SecondTarget = Missions->MarchingBandAgents[0]->BandFormationTarget;
+	TestTrue(TEXT("Formation actually changes at ten seconds"), FVector::Dist2D(SecondTarget, FirstTarget) > 40);
+	Missions->UpdateMarchingBandApproach(MovedCenter, 10);
+	TestTrue(TEXT("Another distinct shape appears after ten more seconds"), FVector::Dist2D(Missions->MarchingBandAgents[0]->BandFormationTarget, SecondTarget) > 40);
+	auto* Musician = Missions->MarchingBandAgents[0].Get();
+	auto* Listener = World->SpawnActor<ASimCopterGroundAgent>();
+	Listener->SetActorLocation(MovedCenter);
+	Musician->SetActorLocation(Musician->BandFormationTarget);
+	Musician->BehaviorContext.bHasSelection = true;
+	Musician->BehaviorContext.SelectedObject = Listener;
+	TestTrue(TEXT("Original BHAV approach completes at its spaced target, allowing instrument routines to run"),
+		Musician->StepTowardSelectedObject(Musician->BehaviorContext) == ESimCopterBehaviorStepResult::Arrived);
+	const FVector MarchStart = Musician->BandFormationTarget + Missions->MarchingBandApproachDirection * 300;
+	Musician->SetActorLocation(MarchStart);
+	Musician->BandNeighbors.Reset();
+	Musician->BandPath.Reset(); Musician->bBandPathAttempted = false;
+	for (int32 Tick = 0; Tick < 100; ++Tick) Musician->UpdateMovement(0.1f);
+	TestTrue(TEXT("Musician marches into the cluster at the original walking speed"), FVector::Dist2D(Musician->GetActorLocation(), Musician->BandFormationTarget) <= 40);
+	TestTrue(TEXT("Arrival leaves the listener's personal space clear"), FVector::Dist2D(Musician->GetActorLocation(), MovedCenter) >= 250);
+	auto* Neighbor = Missions->MarchingBandAgents[1].Get();
+	Neighbor->SetActorLocation(Musician->GetActorLocation() + FVector(120,0,0));
+	Musician->BandNeighbors.Add(Neighbor);
+	TestFalse(TEXT("Marching musicians yield before overcrowding a neighbor"), Musician->CanTakeBandStep(Musician->GetActorLocation() + FVector(30,0,0)));
+	Musician->BandNeighbors.Reset();
+	Musician->BandListenerClearance = 0; // The following fixtures isolate wall and aircraft routing.
+	Musician->BandPath.Reset(); Musician->bBandPathAttempted = false;
+	Musician->SetActorLocation(MovedCenter + FVector(-900, 0, Musician->GetCapsuleHalfHeightCm() + 1));
+	FVector Waypoint;
+	const FVector FirstGoal = MovedCenter + FVector(250, 0, 0);
+	TestTrue(TEXT("Initial approach builds a usable path"), Musician->GetBandWaypoint(FirstGoal, Waypoint));
+	TestFalse(TEXT("Moving listener cannot leave the musician walking toward an obsolete endpoint"),
+		Musician->GetBandWaypoint(FirstGoal + FVector(350,0,0), Waypoint));
+	// An actual world collision at a cluster slot should choose a nearby open position in that sector.
+	auto* Wall = World->SpawnActor<AActor>();
+	auto* Box = NewObject<UBoxComponent>(Wall);
+	Wall->SetRootComponent(Box);
+	Box->SetBoxExtent(FVector(45,45,100));
+	Box->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Box->SetCollisionResponseToAllChannels(ECR_Block);
+	Box->RegisterComponent();
+	const FVector Desired = MovedCenter + FVector(250,0,0);
+	Wall->SetActorLocation(Desired + FVector(0,0,100));
+	FVector Resolved;
+	TestTrue(TEXT("Blocked cluster slot finds a safe nearby alternative"), Musician->TryResolveBandStandLocation(Desired, MovedCenter, Resolved));
+	TestTrue(TEXT("Alternative stays outside the obstacle"), FVector::Dist2D(Resolved, Desired) > 50);
+	Wall->Destroy();
+	auto* Helicopter = World->SpawnActor<ASimCopterHelicopterPawn>();
+	Helicopter->SetActorLocation(MovedCenter + FVector(0,0,100));
+	Helicopter->AddActorWorldOffset(FVector(0,0,-Helicopter->GetParkingWorldBounds().Min.Z));
+	const FBox Aircraft = Helicopter->GetParkingWorldBounds();
+	const float BodyZ = Musician->GetCapsuleHalfHeightCm() + 1;
+	const FVector RouteStart(Aircraft.Min.X - 150, Aircraft.GetCenter().Y, BodyZ);
+	const FVector RouteEnd(Aircraft.Max.X + 150, Aircraft.GetCenter().Y, BodyZ);
+	TestFalse(TEXT("Band does not march through an aircraft that ignores the Camera collision channel"),
+		Musician->CanWalkBandSegment(RouteStart, RouteEnd));
+	TArray<FVector> AircraftPath;
+	TestTrue(TEXT("Band can route around the parked aircraft"), SimCopterBandNavigation::FindPath(RouteStart, RouteEnd,
+		[Musician](const FVector& A, const FVector& B) { return Musician->CanWalkBandSegment(A, B); }, AircraftPath));
+	FVector Last = RouteStart;
+	for (const FVector& Next : AircraftPath)
+	{
+		TestTrue(TEXT("All aircraft detour segments remain clear"), Musician->CanWalkBandSegment(Last, Next));
+		Last = Next;
+	}
+	TestTrue(TEXT("A slot blocked by an aircraft is replaced with a nearby clear slot"),
+		Musician->TryResolveBandStandLocation(FVector(Aircraft.GetCenter().X,Aircraft.GetCenter().Y,BodyZ),
+			MovedCenter - FVector(100,0,0), Resolved));
+	TestTrue(TEXT("Resolved slot also clears aircraft collision"), Musician->CanWalkBandSegment(Resolved, Resolved));
+	Helicopter->AddActorWorldOffset(FVector(0,0,1000));
+	TestTrue(TEXT("An aircraft overhead does not obstruct the ground route"), Musician->CanWalkBandSegment(RouteStart, RouteEnd));
+	Helicopter->Destroy();
+	Musician->SetBandFormationTarget(Resolved, 180, true);
+	Musician->BehaviorContext.ResetToState(6);
+	Musician->UpdateMovement(0);
+	TestFalse(TEXT("An injury immediately releases formation control"), Musician->bBandFormationActive);
+	TestFalse(TEXT("Patient no longer has a celebration target"), Musician->bHasBandCelebrationTarget);
+	GEngine->DestroyWorldContext(World); World->DestroyWorld(false);
 	return true;
 }
 #endif

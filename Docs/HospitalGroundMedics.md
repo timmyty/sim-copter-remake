@@ -3,7 +3,8 @@
 October 8, 2026.
 
 The hospital entrance no longer creates the text sign, panel, or pole. Its service
-point and patient admission remain available. Police entrance signs remain in use.
+point and patient admission remain available. As of October 10, 2026, police
+entrance text, panels, and poles are also removed; entrance staffing remains available.
 
 Ground medics retain their compact idle patrol (280 cm post half-extent multiplied
 by the existing 0.45 idle fraction, inset by the body radius). Purposeful approaches
@@ -67,3 +68,12 @@ No interactive city gameplay check was performed. To check visually, visit the
 hospital front entrance, observe the small idle patrol, then approach in a landed
 helicopter with a free seat while a medical patient awaits pickup. The medic should
 walk into the cabin. Return with a patient to check the ordinary hospital handoff.
+
+## Police entrance sign removal — October 10, 2026
+
+Removed the police entrance text, panel, and pole from the shared entrance
+creation path. The entrance locations and responder staffing are unchanged.
+Editor and Shipping builds passed, along with all three existing
+`SimCopter.ServicePosts` tests (no warnings or failures). No interactive visual
+check was performed. Build, test, and installation evidence is retained in
+`Docs/scratchpad/remove-police-entrance-sign/`.

@@ -1,35 +1,27 @@
 # City tours and car accidents
 
-Each city load starts a skippable, continuous 24-second revolution around the
-whole city after scenery, airport placement and any saved game finish restoring.
-The camera maintains a 38-degree downward view and a fixed distance through the
-orbit, with fades only at the beginning and end. Framing includes the outside
-map edges and tallest roofs, adjusts to the window's aspect ratio, and reserves
-space for the city title and skip prompt. There are no intermediate landmark cuts.
+Each city load starts a skippable **30.06366-second** flyover after scenery,
+airport placement and any saved game finish restoring. The 30 career cities use
+individual camera routes adapted from the original full `CITY<n>_B.SMK` movies:
+overview, descent, building/terrain passes and local landmark endings. This
+supersedes the earlier shared 24-second orbit based on selection previews.
 
-Two airliners using the original PLANE1 geometry move above the city throughout
-the tour. Their presentation scale gives them an approximately 21 m span so
-they remain readable from the whole-map camera. These temporary, non-colliding aircraft use the presentation clock;
-the normal ambient fleet's visibility and saved state are restored afterward.
-A world-scoped render-time override also advances shader-driven water and clouds.
-Gameplay remains paused, so the showcase cannot consume mission time or alter
-saved traffic. Switching applications stops the presentation clock as well.
+City16 keeps its original wide opening and includes the near-camera plane pass
+at about 20-21 seconds. Myrtle Dam ends with its wind farm visible against the
+city. Pale three-blade rotors replace the original circular turbine faces at the
+user's request, and rotate during gameplay as well as the flyover. Moving
+original aircraft meshes and shader presentation time run without advancing
+mission timers or saved traffic.
 
 Any key, controller button or mouse click skips after the initial input guard.
-Finishing restores the possessed pawn, HUD and gameplay input and releases only
-the tour's own pause. The route comes from the loaded city, including imported
-cities and maps without landmarks. No per-level setup or new movie assets are
-needed. Headless worlds skip the presentation.
+Completion and skip restore the possessed pawn, HUD, input and normal aircraft
+visibility, releasing only the intro's pause.
+Imported cities receive a geometry-based route of the same duration. Headless
+worlds skip presentation. Switching applications pauses the flyover.
 
-Original evidence: `FUN_0044ce50` selects a city movie against `cityride.bmp`;
-movie constructor `FUN_00448170` uses a vtable whose open function `FUN_00448400`
-calls `SmackOpen`. The bundled converted career previews
-`Content/Generated/Movies/Career/CITY0_S.mp4` through `CITY29_S.mp4` are 200x108,
-about 5.3 seconds long. Inspected city 0 and 29 frames show the whole square map
-rotating steadily, including moving clouds/aircraft. These are career-selection
-previews, not the full cityride movies. This revision follows their composition
-with a slower orbit of the remake's actual scenery; it does not claim an exact
-reconstruction of the unavailable full movie camera paths.
+See [original movie evidence, route adaptation and validation](OriginalCityIntroRoutes.md).
+These are hand-authored routes against the remake's geometry, not recovered
+numeric camera tracks or playback of the old movies.
 
 A helicopter's first moving contact with a car now tips the body 90 degrees,
 stops the car and immediately starts its fire. It posts the original event
@@ -69,7 +61,7 @@ dispatch, saves, career transitions, replay, knockdown, water and winch behavior
 Exact report: `Docs/scratchpad/city-intros-accidents/tests-final/index.json`.
 Build hashes and the installation/backup receipt are retained alongside it.
 
-## Whole-city tour revision validation
+## Historical whole-city orbit validation (superseded)
 
 The revised orbit passed all 105 selected tests with the D3D12 offscreen renderer:
 100 clean and five with synthetic-world attachment/cleanup warning groups, zero

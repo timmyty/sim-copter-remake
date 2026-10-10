@@ -1,0 +1,554 @@
+{
+  "date": "2026-10-10",
+  "feature": "Original cityride soundtracks",
+  "builds": {
+    "build-editor-final.log": {
+      "result": "Succeeded"
+    },
+    "build-shipping.log": {
+      "result": "Succeeded"
+    }
+  },
+  "tests": {
+    "tests-headless-final": {
+      "succeeded": 17,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "tests": [
+        "SimCopter.CityIntro.OriginalAudioAndCleanup",
+        "SimCopter.CityIntro.RouteAndControlRestoration",
+        "SimCopter.Radio.DashboardVolume",
+        "SimCopter.Radio.Dial",
+        "SimCopter.Radio.PossessionGate",
+        "SimCopter.Radio.Random",
+        "SimCopter.Radio.Schedule",
+        "SimCopter.Radio.SequentialResume",
+        "SimCopter.Radio.ShuffleBag",
+        "SimCopter.Radio.StationPreference",
+        "SimCopter.Sound.Attenuation",
+        "SimCopter.Sound.GameplayMappings",
+        "SimCopter.Sound.IndependentPlayback",
+        "SimCopter.Sound.RadioLiveVolume",
+        "SimCopter.Sound.RotorLaw",
+        "SimCopter.Sound.Table",
+        "SimCopter.Sound.VoiceEvents"
+      ]
+    },
+    "tests-mixer": {
+      "succeeded": 1,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "tests": [
+        "SimCopter.CityIntro.OriginalAudioMixer"
+      ]
+    }
+  },
+  "windows_mixer_output_peaks": {
+    "city16_playing": 0.2045,
+    "focus_paused": 0.0,
+    "focus_resumed": 0.121224,
+    "skipped": 0.0,
+    "myrtle_restarted": 0.352074,
+    "natural_finish": 0.0,
+    "restarted_again": 0.352074,
+    "level_teardown": 0.0
+  },
+  "audio": [
+    {
+      "city": 0,
+      "source": "CITY0_B.SMK",
+      "file": "city0.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "9cc58d99673bf929d06a13f7b2fca581a6baecfd90f299af531c6ac919ccf083"
+    },
+    {
+      "city": 1,
+      "source": "CITY1_B.SMK",
+      "file": "city1.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "e2f0ffac81e02fe3ad9c30b942bfc11df76aa68bcd2d34d218901f3e04b92f54"
+    },
+    {
+      "city": 2,
+      "source": "CITY2_B.SMK",
+      "file": "city2.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "454b346574d25cd3dd4b09a2997058ce62596fb52418f00885cd02c2dade6116"
+    },
+    {
+      "city": 3,
+      "source": "CITY3_B.SMK",
+      "file": "city3.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "e7709e7192d12076beec37bb707afacd03461878df05b781b5213b4d3dca033f"
+    },
+    {
+      "city": 4,
+      "source": "CITY4_B.SMK",
+      "file": "city4.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "d905119a4ee7317e0313e4fafdc1b68ef35028d35e37a20f8b53a8f3e31b399a"
+    },
+    {
+      "city": 5,
+      "source": "CITY5_B.SMK",
+      "file": "city5.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "fae2c7bdcbf3cf7adc912306bc8e9fdd9227b17bd8dcb4cb90286282b80b002a"
+    },
+    {
+      "city": 6,
+      "source": "CITY6_B.SMK",
+      "file": "city6.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "6e97ce206ffc85b526a6039465ff538118ce1dd3ed9333f105dcc00017018acf"
+    },
+    {
+      "city": 7,
+      "source": "CITY7_B.SMK",
+      "file": "city7.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "e7709e7192d12076beec37bb707afacd03461878df05b781b5213b4d3dca033f"
+    },
+    {
+      "city": 8,
+      "source": "CITY8_B.SMK",
+      "file": "city8.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "1a98f215b1d49f1cf7e591136ae3b89a1fdefa4720babb60c3fdec99bcdef618"
+    },
+    {
+      "city": 9,
+      "source": "CITY9_B.SMK",
+      "file": "city9.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "d905119a4ee7317e0313e4fafdc1b68ef35028d35e37a20f8b53a8f3e31b399a"
+    },
+    {
+      "city": 10,
+      "source": "CITY10_B.SMK",
+      "file": "city10.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "996a1261adb80e063b792ae428f4ae827bd88aa6fbd444c76aa8ceb6d45e8282"
+    },
+    {
+      "city": 11,
+      "source": "CITY11_B.SMK",
+      "file": "city11.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "fae2c7bdcbf3cf7adc912306bc8e9fdd9227b17bd8dcb4cb90286282b80b002a"
+    },
+    {
+      "city": 12,
+      "source": "CITY12_B.SMK",
+      "file": "city12.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "539032188f90f06f7291c6d972bacc09aa04826db290341fadcdf490bbc5d521"
+    },
+    {
+      "city": 13,
+      "source": "CITY13_B.SMK",
+      "file": "city13.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "539032188f90f06f7291c6d972bacc09aa04826db290341fadcdf490bbc5d521"
+    },
+    {
+      "city": 14,
+      "source": "CITY14_B.SMK",
+      "file": "city14.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "fae2c7bdcbf3cf7adc912306bc8e9fdd9227b17bd8dcb4cb90286282b80b002a"
+    },
+    {
+      "city": 15,
+      "source": "CITY15_B.SMK",
+      "file": "city15.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "454b346574d25cd3dd4b09a2997058ce62596fb52418f00885cd02c2dade6116"
+    },
+    {
+      "city": 16,
+      "source": "CITY16_B.SMK",
+      "file": "city16.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "539032188f90f06f7291c6d972bacc09aa04826db290341fadcdf490bbc5d521"
+    },
+    {
+      "city": 17,
+      "source": "CITY17_B.SMK",
+      "file": "city17.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "090117eeff447fb02787819464e1fbcd9ff80875e931e48f151e7cb7f626086e"
+    },
+    {
+      "city": 18,
+      "source": "CITY18_B.SMK",
+      "file": "city18.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "d905119a4ee7317e0313e4fafdc1b68ef35028d35e37a20f8b53a8f3e31b399a"
+    },
+    {
+      "city": 19,
+      "source": "CITY19_B.SMK",
+      "file": "city19.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "996a1261adb80e063b792ae428f4ae827bd88aa6fbd444c76aa8ceb6d45e8282"
+    },
+    {
+      "city": 20,
+      "source": "CITY20_B.SMK",
+      "file": "city20.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "9cc58d99673bf929d06a13f7b2fca581a6baecfd90f299af531c6ac919ccf083"
+    },
+    {
+      "city": 21,
+      "source": "CITY21_B.SMK",
+      "file": "city21.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "d581e602aea99104955efc07a0da92c08c78b902c693dfff2aff07d478040baf"
+    },
+    {
+      "city": 22,
+      "source": "CITY22_B.SMK",
+      "file": "city22.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "996a1261adb80e063b792ae428f4ae827bd88aa6fbd444c76aa8ceb6d45e8282"
+    },
+    {
+      "city": 23,
+      "source": "CITY23_B.SMK",
+      "file": "city23.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "d581e602aea99104955efc07a0da92c08c78b902c693dfff2aff07d478040baf"
+    },
+    {
+      "city": 24,
+      "source": "CITY24_B.SMK",
+      "file": "city24.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "e7709e7192d12076beec37bb707afacd03461878df05b781b5213b4d3dca033f"
+    },
+    {
+      "city": 25,
+      "source": "CITY25_B.SMK",
+      "file": "city25.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "6e97ce206ffc85b526a6039465ff538118ce1dd3ed9333f105dcc00017018acf"
+    },
+    {
+      "city": 26,
+      "source": "CITY26_B.SMK",
+      "file": "city26.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "1a98f215b1d49f1cf7e591136ae3b89a1fdefa4720babb60c3fdec99bcdef618"
+    },
+    {
+      "city": 27,
+      "source": "CITY27_B.SMK",
+      "file": "city27.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "9cc58d99673bf929d06a13f7b2fca581a6baecfd90f299af531c6ac919ccf083"
+    },
+    {
+      "city": 28,
+      "source": "CITY28_B.SMK",
+      "file": "city28.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "e2f0ffac81e02fe3ad9c30b942bfc11df76aa68bcd2d34d218901f3e04b92f54"
+    },
+    {
+      "city": 29,
+      "source": "CITY29_B.SMK",
+      "file": "city29.wav",
+      "sample_rate": 11025,
+      "channels": 2,
+      "frames": 331450,
+      "pcm_sha256": "6e97ce206ffc85b526a6039465ff538118ce1dd3ed9333f105dcc00017018acf"
+    }
+  ],
+  "stage": {
+    "result": "BUILD SUCCESSFUL",
+    "method": "Unreal BuildCookRun -skipbuild -skipcook -stage -pak -iostore -package; existing cooked content reused",
+    "non_ufs_soundtracks": 30
+  },
+  "installation": {
+    "InstalledAt": "2026-10-10T16:12:09.2113365-05:00",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\city-intro-audio\\before-install-20261010-161202",
+    "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\SimCopterRemake\\Saved\\StagedBuilds\\Windows",
+    "Files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Existed": true,
+        "BeforeSHA256": "A7662DE687B77E0305F75AB7A6D4D294499343313032B7E341E99927A1C51FD9",
+        "AfterSHA256": "AA26CED9815BEE6D422FA250078B66512E0CA45AC7F8BE4AAB83D1FD866F638D"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Existed": true,
+        "BeforeSHA256": "91A771084CC1FD30009A3DC234444EDB59D1406389FC123B62346C345B4DDF61",
+        "AfterSHA256": "FE8EDCCDC06BBFCE43AB69B8E4A78AB57B8741D91DA2AE8F381C1E1398ADD58E"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city0.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "FFC3151D7DA6EEC458B712C3E5B0EF4215F14E5785C98364C738534016F4BECB"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city1.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "39F184F556328AF8E4B4085979F5A731BBB6F559B45FEACA8A8155CC9D1AD2D8"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city2.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "4A05ECD4A739E6D9686DA0F96605BAB9B9584CA5D2401EC9FDEB69FF9B75EBE0"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city3.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "2819F0AFDA828A079F04080A3A8708119469BAB610993100EFB42CF23DD9227D"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city4.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "57252E0E4B17536674283AE98614A8094E2C7CBC98AAB187C96253634D7FFA39"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city5.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "46FB11E77BD89903738385581F7A2988B952D5CC3C9642C11F3494F350151E4A"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city6.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "2CA661AA7AD024DA22055D6C1BE34928C310D5875DE6DA5E4DDB8BA302C7F5B4"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city7.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "2819F0AFDA828A079F04080A3A8708119469BAB610993100EFB42CF23DD9227D"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city8.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "A13447B824D8CCEC6BCDF3C7C1FA7CA9ACB3021755E000DE07CCB8403F05DA76"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city9.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "57252E0E4B17536674283AE98614A8094E2C7CBC98AAB187C96253634D7FFA39"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city10.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "6D3D651D2FB39073AE99F3C77127DF27A6507E6F34F4E0D0F140D86B38CA6C2C"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city11.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "46FB11E77BD89903738385581F7A2988B952D5CC3C9642C11F3494F350151E4A"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city12.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "97AE55E52BBE3CF648B60FA0FA8B318977B9B4F06EE613EF452BF4359FD025AC"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city13.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "97AE55E52BBE3CF648B60FA0FA8B318977B9B4F06EE613EF452BF4359FD025AC"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city14.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "46FB11E77BD89903738385581F7A2988B952D5CC3C9642C11F3494F350151E4A"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city15.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "4A05ECD4A739E6D9686DA0F96605BAB9B9584CA5D2401EC9FDEB69FF9B75EBE0"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city16.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "97AE55E52BBE3CF648B60FA0FA8B318977B9B4F06EE613EF452BF4359FD025AC"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city17.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "A5F14135F2450F788A545399B21BEAE9CE0767E9301FD37B900FF600A8D878C2"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city18.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "57252E0E4B17536674283AE98614A8094E2C7CBC98AAB187C96253634D7FFA39"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city19.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "6D3D651D2FB39073AE99F3C77127DF27A6507E6F34F4E0D0F140D86B38CA6C2C"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city20.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "FFC3151D7DA6EEC458B712C3E5B0EF4215F14E5785C98364C738534016F4BECB"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city21.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "6A4957CAFE91F5834D7E45F233062D0AE17F7ED53D6FA19F5CC52D47B9B6E4C9"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city22.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "6D3D651D2FB39073AE99F3C77127DF27A6507E6F34F4E0D0F140D86B38CA6C2C"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city23.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "6A4957CAFE91F5834D7E45F233062D0AE17F7ED53D6FA19F5CC52D47B9B6E4C9"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city24.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "2819F0AFDA828A079F04080A3A8708119469BAB610993100EFB42CF23DD9227D"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city25.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "2CA661AA7AD024DA22055D6C1BE34928C310D5875DE6DA5E4DDB8BA302C7F5B4"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city26.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "A13447B824D8CCEC6BCDF3C7C1FA7CA9ACB3021755E000DE07CCB8403F05DA76"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city27.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "FFC3151D7DA6EEC458B712C3E5B0EF4215F14E5785C98364C738534016F4BECB"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city28.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "39F184F556328AF8E4B4085979F5A731BBB6F559B45FEACA8A8155CC9D1AD2D8"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/city29.wav",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "2CA661AA7AD024DA22055D6C1BE34928C310D5875DE6DA5E4DDB8BA302C7F5B4"
+      },
+      {
+        "Relative": "SimCopter/sound/cityride/manifest.json",
+        "Existed": false,
+        "BeforeSHA256": null,
+        "AfterSHA256": "613BCAC531B9CE2F0AE64C02B581D72583F7ADF05392605C3942DCF92A959A34"
+      },
+      {
+        "Relative": "Manifest_NonUFSFiles_Win64.txt",
+        "Existed": true,
+        "BeforeSHA256": "3894BD1AF5E404574C3D42B028ECA39E2E2F04C33249F1DED67DE49853FF2229",
+        "AfterSHA256": "E2103D2F0512BA2D20F6CE3F88FAE43A09D99EA1CEEAB6BF345A2929B76B375D"
+      },
+      {
+        "Relative": "Manifest_DebugFiles_Win64.txt",
+        "Existed": true,
+        "BeforeSHA256": "377F1F7C2A54F774CB417BFCF313979DFE33C293E15E7FBF028D38B8D17E20C6",
+        "AfterSHA256": "5D825C242B5278E59E62C3FE38305F629A574651C0DEA9B3C0E999B025D68DA5"
+      }
+    ]
+  },
+  "limitations": [
+    "No interactive playtest or listening check; actual Windows mixer output measured and silenced before hardware."
+  ],
+  "publication": "Synchronized locally; no commit/push before October 10 at 8 PM CDT."
+}

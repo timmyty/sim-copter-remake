@@ -225,6 +225,9 @@ public:
 	 */
 	bool PlayMusicFile2D(const FString& WavName, SimCopterSound::ESoundDir Dir, float VolumeMultiplier = 1.0f);
 	void StopMusic();
+
+	/** Creates an unplayed, uncached CITY<n>_B soundtrack. Caller owns pause/stop/destruction. */
+	UAudioComponent* CreateCityIntroMusic(int32 CityIndex, UObject* Outer);
 	bool IsMusicPlaying() const;
 
 	// --- mixer state ---
@@ -306,6 +309,8 @@ public:
 
 private:
 	friend class FSimCopterGortAssetsTest;
+	friend class FSimCopterCityIntroAudioTest;
+	friend class FSimCopterDriveInPlaybackCommand;
 	friend class FSimCopterGortReturnTest;
 	friend class FSimCopterRadioSequentialTest;
 	friend class FSimCopterAudioOverlapTest;

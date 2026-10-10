@@ -140,6 +140,7 @@ public:
 	void SerializeState(FArchive& Ar);
 	FString GetSupportStatus() const;
 	bool IsSupportUnlocked() const;
+	bool IsRescuingPerson(const ASimCopterGroundAgent* Person) const;
 	ASimCopterHelicopterPawn* GetSupportHelicopter() const { return SupportHelicopter.Get(); }
 	ASimCopterMissionSystemActor* Missions() const;
 	ASimCopterTrafficSystemActor* Traffic() const;

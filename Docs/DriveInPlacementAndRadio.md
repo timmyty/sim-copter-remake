@@ -24,12 +24,14 @@ zoom level, independently of the mission and emergency-vehicle marker toggles.
 Demolished theaters disappear from the overlay. Existing movie commands and
 spatial audio use the added theaters through the original building registry.
 
-KINV is the default when a profile has no saved station. Every tuning path saves
+As of October 10, Rock (KROC) is the default when a profile has no saved station. Every tuning path saves
 the selected call sign through the profile settings, and the next city or session
 restores it. Legacy saved station indices remain supported; new selections use
 call signs so station-list reordering does not change the choice. If that station
-is unavailable, KINV is preferred, then KMIX, then the first available station.
-Volume/mute and KINV track-progress behavior remain independent of tuning.
+is unavailable, KROC is preferred, then KMIX, then the first available station.
+Each level powers the radio on, retaining a nonzero saved volume or restoring an
+audible default from the zero-volume OFF setting. KINV track progress remains
+independent of tuning. See [the October 10 update](CockpitAndSupportSafety.md).
 
 Validation evidence is recorded in `Docs/scratchpad/drive-in-radio/`.
 
@@ -45,7 +47,8 @@ Validation evidence is recorded in `Docs/scratchpad/drive-in-radio/`.
   fixture warnings: loads Sea Cliff, builds its new theater, finds the minimap
   marker, decodes both movies with audio tracks, checks looping/switching/stopping,
   then demolishes the theater and verifies removal of its marker and movie surface.
-- Save/reload tests cover KINV as the fresh default, legacy station indices,
+- The original validation covered KINV as the then-current fresh default (superseded
+  by Rock on October 10), legacy station indices,
   persisted call signs, reordered/missing stations and unchanged volume. Existing
   station-switch, mute, track-progress and sound-dialog regressions also pass.
 - The minimap logo was inspected from real palette raster outputs at all zoom

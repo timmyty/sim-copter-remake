@@ -101,12 +101,16 @@ bool FSimCopterMissionSystem::LoadCareerData(const FString& TweakFilePath)
 
 void FSimCopterMissionSystem::BeginSession()
 {
+	FireAnnouncementsInBurst = 0;
+	FireAnnouncementQuietTimeRemaining = 0;
 	Score = 0;
 	Cash = SessionStartingCash;
 }
 
 void FSimCopterMissionSystem::ContinueSession(const int32 InCash)
 {
+	FireAnnouncementsInBurst = 0;
+	FireAnnouncementQuietTimeRemaining = 0;
 	Score = 0;
 	Cash = FMath::Max(0, InCash);
 }
@@ -219,6 +223,8 @@ void FSimCopterMissionSystem::Initialize(ISimCopterMissionWorld* InWorld, uint32
 	FocusRecordIndex = INDEX_NONE;
 	ActiveFlameCount = 0;
 	SpreadAccumulator = 0;
+	FireAnnouncementsInBurst = 0;
+	FireAnnouncementQuietTimeRemaining = 0;
 	for (int32 i = 0; i < 16; ++i)
 	{
 		TypeSerials[i] = 0;
@@ -253,6 +259,9 @@ FSimCopterCareerCity FSimCopterMissionSystem::MakeUserCityDefaults(const FSimCop
 
 void FSimCopterMissionSystem::Tick(float DeltaSeconds)
 {
+	FireAnnouncementQuietTimeRemaining = FMath::Max(0.0f,
+		FireAnnouncementQuietTimeRemaining - FMath::Max(0.0f, DeltaSeconds));
+	if (FireAnnouncementQuietTimeRemaining == 0) FireAnnouncementsInBurst = 0;
 	int32 Delta1616 = FMath::Clamp(static_cast<int32>(DeltaSeconds * 65536.0f), 0, 0x7fffffff);
 	FrameDeltaEma = (FrameDeltaEma * 7 + Delta1616) >> 3;
 
@@ -827,6 +836,20 @@ void FSimCopterMissionSystem::AnnounceCreated(const FSimCopterMissionRecord& Rec
 
 	ActiveCount++;
 	SpawnCountdown = EasyIntervalCache;
+	PostMissionAnnouncement(Record);
+}
+
+void FSimCopterMissionSystem::PostMissionAnnouncement(const FSimCopterMissionRecord& Record)
+{
+	// Requested departure from FUN_004a7a10/004ab480: admit whole reports, not individual
+	// audio clips, so the location/closing cannot outlive a suppressed fire headline.
+	// Unannounced incidents remain active and selectable. Never defer them into a backlog.
+	if ((Record.TypeMask & (TYPE_BuildingFire | TYPE_CarFire)) != 0)
+	{
+		if (FireAnnouncementsInBurst >= 2) return;
+		++FireAnnouncementsInBurst;
+		FireAnnouncementQuietTimeRemaining = 30.0f;
+	}
 	PostTypedUiMessage(5, &Record, Record.EventId, GetTypeTextId(Record.TypeMask), 0, 0, false);
 	PostAnnouncementVoice(Record);
 }
@@ -1527,7 +1550,8 @@ void FSimCopterMissionSystem::ReleaseInjuredMissionPerson(int32 EventId, int32 P
 	if (!Records.IsValidIndex(Index) || !Records[Index].bActive) return;
 	auto& Rec = Records[Index];
 	// Transfer a living person to medical care without reporting a death or stranding the old job.
-	if (PersonState == 4) Rec.TransportPassengers = FMath::Max(0, Rec.TransportPassengers - 1);
+	if (PersonState == 6) Rec.MedevacVictims = FMath::Max(0, Rec.MedevacVictims - 1);
+	else if (PersonState == 4) Rec.TransportPassengers = FMath::Max(0, Rec.TransportPassengers - 1);
 	else if (PersonState == 1 || PersonState == 2) Rec.RescueVictims = FMath::Max(0, Rec.RescueVictims - 1);
 	else if (PersonState == 3) Rec.RiotSize = FMath::Max(0, Rec.RiotSize - 1);
 	else if (PersonState >= 10 && PersonState <= 13) Rec.TargetCount = FMath::Max(0, Rec.TargetCount - 1);
@@ -2405,6 +2429,14 @@ void FSimCopterMissionSystem::RetireFlame(int32 FlameIndex, int32 EmptyEventCode
 	}
 }
 
+void FSimCopterMissionSystem::BurnOutDestroyedTiles(const TArray<FIntPoint>& Tiles)
+{
+	TSet<FIntPoint> Destroyed(Tiles);
+	for (int32 Index = 0; Index < Flames.Num(); ++Index)
+		if (Flames[Index].bActive && Destroyed.Contains(FIntPoint(Flames[Index].TileX, Flames[Index].TileY)))
+			RemoveFlame(Index, false); // burned out, never a firefighting reward
+}
+
 void FSimCopterMissionSystem::RemoveFlame(int32 FlameIndex, bool bDoused)
 {
 	if (FlameIndex < 0 || FlameIndex >= MaxFlames) return;
@@ -2811,8 +2843,7 @@ void FSimCopterMissionSystem::PostEvent(const FSimCopterMissionEvent& Event)
 			Rec.TimeAccum = 0;
 			BackgroundCount = FMath::Max(0, BackgroundCount - 1);
 			ActiveCount++;
-			PostTypedUiMessage(5, &Rec, Rec.EventId, GetTypeTextId(Rec.TypeMask), 0, 0, false);
-			PostAnnouncementVoice(Rec);
+			PostMissionAnnouncement(Rec);
 		}
 		break;
 	case EVT_CarDoused:
@@ -3384,6 +3415,9 @@ bool FSimCopterMissionSystem::SerializeRuntimeState(FArchive& Archive)
 	if (Archive.IsLoading())
 	{
 		CurrentCityIndex = FMath::Clamp(CurrentCityIndex, 0, FMath::Max(0, CareerCities.Num() - 1));
+		// Notification queues are transient; retain the existing save layout.
+		FireAnnouncementsInBurst = 0;
+		FireAnnouncementQuietTimeRemaining = 0;
 		DifficultyTier = FMath::Clamp(DifficultyTier, 1, 4);
 		ActiveCount = FMath::Clamp(ActiveCount, 0, MaxRecords);
 		BackgroundCount = FMath::Clamp(BackgroundCount, 0, MaxRecords);

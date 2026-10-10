@@ -191,6 +191,10 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterTrafficSystemActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 
 public:
@@ -806,6 +810,7 @@ protected:
 
 private:
 	friend class FSimCopterPatientPlacementTest;
+	friend class FSimCopterPatientCityPlacementTest;
 	friend class FSimCopterParkedAircraftTrafficTest;
 	friend class USimCopterAirOperationsSubsystem;
 	friend class USimCopterAirOperationsComponent;
@@ -814,6 +819,7 @@ private:
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterCityTourRenderTest;
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterBandCelebrationTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;
 	friend class FSimCopterApacheShopTest;
@@ -990,6 +996,9 @@ public:
 		int32 EventId,
 		const FString& FigureName = FString(),
 		ASimCopterGroundAgent** OutSpawned = nullptr);
+	// Existing pedestrians injured by fire, crime or collisions need the same outdoor-ground
+	// guarantee as newly spawned callout patients. Failure leaves the person in place.
+	bool TryPlacePatientOnOutdoorGround(ASimCopterGroundAgent& Patient) const;
 	// Rendered-building adaptation for state-2 rooftop survivors. The original building cells give
 	// them a flat support point; imported GEO roofs may contain pitches, ridges and decorations.
 	// A rejected trace stays inside TrySpawnMissionPerson's candidate loop, so another point is tried.

@@ -97,6 +97,10 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public SimCopterMissions::ISimCopterMissionWorld
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 	
 public:	
@@ -453,6 +457,9 @@ public:
 	// Requested aftermath: short-lived visible flames on already demolished plots.
 	// These are cosmetic rubble fires, separate from building-fire mission accounting.
 	void AddPostBlastFire(const FVector& WorldLocation);
+	bool DestroyBuildingFromMissile(const FHitResult& Hit);
+	int32 ApplyNuclearPopulationDamage(int32 RandomSeed);
+	void ClearDestroyedBuildingFires(const TArray<FIntPoint>& Tiles);
 
 	// How many burning-debris slots are alight. Exposed for the automation tests.
 	int32 GetBurningDebrisCount() const { return BurningDebris.Num(); }
@@ -488,6 +495,8 @@ private:
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterBandCelebrationTest;
+	friend class FSimCopterPatientCityPlacementTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;
 	friend class FSimCopterApacheShopTest;
@@ -741,6 +750,8 @@ private:
 	void SpawnMarchingBandAtAirport();
 	void UpdateFireworksFX(float DeltaSeconds);
 	void UpdateMarchingBandApproach(const FVector& PlayerLocation, float DeltaSeconds);
+	FVector GetMarchingBandCenter(const FVector& PlayerLocation);
+	float GetMarchingBandRadius() const;
 
 	TArray<TWeakObjectPtr<class ASimCopterGroundAgent>> MarchingBandAgents;
 	bool bMarchingBandSpawned = false;
@@ -750,9 +761,8 @@ private:
 	float MarchingBandTargetUpdateTimer = 2.0f;
 	float MarchingBandElapsed = 0;
 	int32 MarchingBandLastPhase = INDEX_NONE;
-	FVector MarchingBandFormationCenter = FVector::ZeroVector;
-	float MarchingBandFormationYaw = 0;
-	FVector LastMarchingBandPlayerLocation = FVector::ZeroVector;
+	FVector MarchingBandApproachDirection = FVector::ZeroVector;
+	double NextMarchingBandSpawnTime = 0;
 	float FireworksTimer = 0.0f;
 	float NextFireworksInterval = 0.5f;
 	TArray<FSimCopterActiveFireworkRocket> ActiveFireworkRockets;

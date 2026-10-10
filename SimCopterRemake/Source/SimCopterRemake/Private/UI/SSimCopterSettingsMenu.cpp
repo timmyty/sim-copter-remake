@@ -23,6 +23,7 @@ const TCHAR* const SelectionSound = TEXT("menu");
 ESimCopterSettingsItem SSimCopterSettingsMenu::GetItemForRow(const int32 Row, const bool bHasCitySettings)
 {
 	// Remake menu order: resume is always first; preserve the original command IDs.
+	if (Row == -1 && !bHasCitySettings) return ESimCopterSettingsItem::CheatCodes;
 	if (Row <= 0) return ESimCopterSettingsItem::Continue;
 	return static_cast<ESimCopterSettingsItem>(
 		FMath::Clamp(Row - (bHasCitySettings ? 1 : 0), 0, FullItemCount - 2));
@@ -30,6 +31,8 @@ ESimCopterSettingsItem SSimCopterSettingsMenu::GetItemForRow(const int32 Row, co
 
 const FText& SSimCopterSettingsMenu::GetItemLabel(const ESimCopterSettingsItem Item)
 {
+	static const FText CheatLabel = LOCTEXT("CheatCodes", "Cheat Codes");
+	if (Item == ESimCopterSettingsItem::CheatCodes) return CheatLabel;
 	// STRINGTABLE 60..67, English.
 	static const FText Labels[FullItemCount] = {
 		LOCTEXT("CitySettings", "City Settings"), // 60
@@ -61,15 +64,21 @@ void SSimCopterSettingsMenu::Construct(const FArguments& InArgs)
 		MakePageImage(ArtObject, SettingsPage));
 
 	// Labels first, hit rows after, so the transparent rows sit on top and get the pointer.
-	for (int32 Row = 0; Row < VisibleCount; ++Row)
+	// Append the hidden plate after the normal controls so Continue keeps initial focus.
+	const int32 ControlCount = VisibleCount + (bHasCitySettings ? 0 : 1);
+	for (int32 Index = 0; Index < ControlCount; ++Index)
 	{
+		const int32 Row = Index < VisibleCount ? Index : -1;
 		const FRect Text = GetRowTextRect(Row, bHasCitySettings);
 		AddAt(
 			Canvas,
 			FRect{ PageX + Text.Left, PageY + Text.Top, PageX + Text.Right, PageY + Text.Bottom },
 			SNew(STextBlock)
 			.Text(GetItemLabel(GetItemForRow(Row, bHasCitySettings)))
-			.Visibility(EVisibility::HitTestInvisible)
+			.Visibility_Lambda([this, Row]()
+			{
+				return Row != -1 || SelectedRow == Row ? EVisibility::HitTestInvisible : EVisibility::Hidden;
+			})
 			.Font(PageFont(ItemFontHeight, /*bBold=*/true))
 			.ColorAndOpacity_Lambda([this, Row]()
 			{
@@ -77,8 +86,9 @@ void SSimCopterSettingsMenu::Construct(const FArguments& InArgs)
 			}));
 	}
 
-	for (int32 Row = 0; Row < VisibleCount; ++Row)
+	for (int32 Index = 0; Index < ControlCount; ++Index)
 	{
+		const int32 Row = Index < VisibleCount ? Index : -1;
 		const FRect Hit = GetRowHitRect(Row, bHasCitySettings);
 		AddAt(
 			Canvas,
@@ -102,7 +112,7 @@ void SSimCopterSettingsMenu::Construct(const FArguments& InArgs)
 
 void SSimCopterSettingsMenu::SetSelectedRow(const int32 Row)
 {
-	if (Row < 0 || Row >= VisibleCount || Row == SelectedRow)
+	if (Row < (bHasCitySettings ? 0 : -1) || Row >= VisibleCount || Row == SelectedRow)
 	{
 		return;
 	}
@@ -139,10 +149,11 @@ FReply SSimCopterSettingsMenu::OnKeyDown(const FGeometry& MyGeometry, const FKey
 
 	if (const ENavigation Navigation = GetNavigationForKey(Key); Navigation != ENavigation::None)
 	{
-		const int32 Target = GetNavigationTarget(Navigation, SelectedRow, VisibleCount);
+		const int32 Offset = bHasCitySettings ? 0 : 1;
+		const int32 Target = GetNavigationTarget(Navigation, SelectedRow + Offset, VisibleCount + Offset);
 		if (Target != INDEX_NONE)
 		{
-			SetSelectedRow(Target);
+			SetSelectedRow(Target - Offset);
 		}
 		return FReply::Handled();
 	}

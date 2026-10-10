@@ -89,6 +89,8 @@ public:
 	// --- controls ---
 
 	void SetPowered(bool bInPowered);
+	/** Each city starts powered on, retaining tuning and any audible saved volume. */
+	void StartLevelPlayback();
 	bool IsPowered() const { return bPowered; }
 
 	/**
@@ -97,6 +99,9 @@ public:
 	 */
 	void SetPlayerInHelicopter(bool bInPlayerHelicopter);
 	bool IsPlayerInHelicopter() const { return bPlayerInHelicopter; }
+
+	/** Hold the station behind a cityride without changing power, tuning or saved progress. */
+	void SetCityIntroSuspended(bool bSuspended);
 
 	/** Dial order, ascending. Empty when no station folder was found. */
 	const TArray<FSimCopterRadioStation>& GetStations() const { return Stations; }
@@ -177,6 +182,8 @@ public:
 
 private:
 	friend class FSimCopterRadioSequentialTest;
+	friend class FSimCopterCityIntroAudioTest;
+	bool bCityIntroSuspended = false;
 	bool IsSequentialStation() const;
 	void SaveSequentialProgress();
 	void SuspendSequentialPlayback();

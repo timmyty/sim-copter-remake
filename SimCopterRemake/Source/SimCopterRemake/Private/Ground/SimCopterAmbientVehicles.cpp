@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterAmbientVehicles.h"
+#include "Flight/SimCopterPlaneParts.h"
 #include "Ground/SimCopterRescueDeck.h"
 #include "Ground/SimCopterUfoMesh.h"
 #include "Ground/SimCopterFlashingLights.h"
@@ -8,6 +9,7 @@
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "City/SimCity2000CityActor.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterHelicopterPresentation.h"
 #include "Formats/MaxisMeshLibrary.h"
 #include "Formats/MaxisProceduralMeshBuilder.h"
 #include "Formats/SimCity2000Reader.h"
@@ -207,6 +209,9 @@ ASimCopterAmbientVehiclesActor::ASimCopterAmbientVehiclesActor()
 	{
 		VertexColorMaterial = ModelMaterialFinder.Object;
 	}
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> DiscMaterialFinder(
+		TEXT("/Game/Materials/M_SimCopterRotorDisc.M_SimCopterRotorDisc"));
+	CityTourDiscMaterial = DiscMaterialFinder.Object;
 
 }
 
@@ -394,7 +399,7 @@ bool ASimCopterAmbientVehiclesActor::RestoreRuntimeSaveState(const TArray<uint8>
 	{
 		if (Plane.Mesh != nullptr)
 		{
-			Plane.Mesh->SetVisibility(Plane.bVisible);
+			Plane.Mesh->SetVisibility(Plane.bVisible, true);
 			if (Plane.bVisible) SetMeshTransform(Plane.Mesh, Plane.World, Plane.Direction);
 		}
 	}
@@ -869,7 +874,7 @@ int32 ASimCopterAmbientVehiclesActor::GetDifficultyTier() const
 // Mesh plumbing
 // ---------------------------------------------------------------------------------------------
 
-UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(const int32 ObjectId, const TCHAR* Name)
+UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(const int32 ObjectId, const TCHAR* Name, bool bPresentationAircraft)
 {
 	const FString RootPath = ResolveOriginalGameRoot();
 	if (RootPath.IsEmpty())
@@ -931,15 +936,27 @@ UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(cons
 		return Mesh;
 	}
 
-	FMaxisMeshSection Section;
-	FMaxisProceduralMeshBuilder::BuildPaletteColoredSection(
-		*Object,
+	// The close cityride view exposes GEO's shade-ramp selectors: PLANE1's 48 is
+	// silver paint, not the nearly black first stop. Reuse the flyable aircraft's
+	// palette conversion and keep type-11 propeller blur out of the opaque body.
+	TArray<FColor> Paint;
+	if (bPresentationAircraft && ColorMap)
+	{
+		SimCopterHelicopterPresentation::MakePaintPalette(*ColorMap, Paint, ObjectId == 0x124 ? 3 : INDEX_NONE);
+		ColorMap = &Paint;
+	}
+	FMaxisMeshObject Body = *Object;
+	const bool bPlane = ObjectId == SimCopterAmbientVehicles::PlaneObjectId;
+	if (bPlane) USimCopterPlanePartsComponent::RemoveMovingFaces(Body);
+	FMaxisMeshSection Section, Disc;
+	FMaxisProceduralMeshBuilder::BuildPaletteColoredSections(
+		Body,
 		ColorMap,
 		AmbientModelUnitsPerCentimeter,
 		GetTileSizeCm() / AmbientModelSourceTileSize,
 		bAmbientRenderBackfaces,
 		FLinearColor(0.72f, 0.72f, 0.75f),
-		Section);
+		Section, bPresentationAircraft ? &Disc : nullptr, ObjectId == 0x126);
 	if (Section.IsEmpty())
 	{
 		return nullptr;
@@ -972,7 +989,23 @@ UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(cons
 	{
 		Mesh->SetMaterial(0, VertexColorMaterial);
 	}
-	Mesh->SetVisibility(false);
+	if (!Disc.IsEmpty() && CityTourDiscMaterial)
+	{
+		Mesh->CreateMeshSection_LinearColor(1, Disc.Vertices, Disc.Triangles, Disc.Normals,
+			Disc.UVs, Disc.VertexColors, Disc.Tangents, false);
+		auto* Blur = UMaterialInstanceDynamic::Create(CityTourDiscMaterial, Mesh);
+		Blur->SetScalarParameterValue(TEXT("DiscOpacity"), .1f);
+		Blur->SetVectorParameterValue(TEXT("DiscColor"), FLinearColor(.12f, .12f, .12f));
+		Mesh->SetMaterial(1, Blur);
+	}
+	if (bPlane)
+	{
+		auto* Parts = NewObject<USimCopterPlanePartsComponent>(this);
+		Parts->SetupAttachment(Mesh); AddInstanceComponent(Parts); Parts->RegisterComponent();
+		Parts->Build(*Object, ColorMap, AmbientModelUnitsPerCentimeter,
+			GetTileSizeCm() / AmbientModelSourceTileSize, VertexColorMaterial, CityTourDiscMaterial);
+	}
+	Mesh->SetVisibility(false, true);
 
 	OwnedMeshes.Add(Mesh);
 	return Mesh;
@@ -1275,24 +1308,28 @@ FTransform ASimCopterAmbientVehiclesActor::EvaluateCityTourPlane(const FBox& Bou
 	return FTransform(Heading,Position,FVector(8));
 }
 
-void ASimCopterAmbientVehiclesActor::BeginCityTour(const FBox& Bounds)
+void ASimCopterAmbientVehiclesActor::BeginCityTour(const FBox& Bounds, const FSimCopterCityIntroRoute* Route)
 {
 	EndCityTour();
 	if (!Bounds.IsValid || !bEnablePlanes) return;
 	EnsurePools();
 	if (!bPoolsInitialized) return;
 	CityTourBounds = Bounds;
+	if (Route) CityTourRoute = *Route;
 	bCityTourActive = true;
 	for (int32 Index=0;Index<SimCopterAmbientVehicles::PlaneSlots;++Index)
 	{
 		CityTourPreviousVisibility[Index] = Planes[Index].Mesh && Planes[Index].Mesh->IsVisible();
 		if (Planes[Index].Mesh) Planes[Index].Mesh->SetVisibility(false,true);
 	}
-	for (int32 Index=0;Index<2;++Index)
+	const int32 AircraftCount=Route && Route->CityIndex==23 ? 1 : 2;
+	for (int32 Index=0;Index<AircraftCount;++Index)
 	{
-		if (auto* Mesh=CreateVehicleMesh(SimCopterAmbientVehicles::PlaneObjectId,
-			*FString::Printf(TEXT("CityTourPlane%d"),Index))) CityTourPlanes.Add(Mesh);
+		const int32 ObjectId=Index==0 && Route && Route->bHelicopterSubject ? 0x124 : SimCopterAmbientVehicles::PlaneObjectId;
+		if (auto* Mesh=CreateVehicleMesh(ObjectId,
+			*FString::Printf(TEXT("CityTourPlane%d"),Index),true)) CityTourPlanes.Add(Mesh);
 	}
+	if (Route && Route->bHelicopterSubject) CityTourRotor=CreateVehicleMesh(0x126,TEXT("CityTourRotor"),true);
 	UpdateCityTour(0);
 }
 
@@ -1301,8 +1338,18 @@ void ASimCopterAmbientVehiclesActor::UpdateCityTour(float ElapsedSeconds)
 	if (!bCityTourActive) return;
 	for (int32 Index=0;Index<CityTourPlanes.Num();++Index)
 	{
-		CityTourPlanes[Index]->SetWorldTransform(EvaluateCityTourPlane(CityTourBounds,ElapsedSeconds,Index));
-		CityTourPlanes[Index]->SetVisibility(true);
+		CityTourPlanes[Index]->SetWorldTransform(CityTourRoute.IsSet() ? CityTourRoute->EvaluateAircraft(ElapsedSeconds,Index)
+			: EvaluateCityTourPlane(CityTourBounds,ElapsedSeconds,Index));
+		CityTourPlanes[Index]->SetVisibility(true, true);
+		for (USceneComponent* Child : CityTourPlanes[Index]->GetAttachChildren())
+			if (auto* Parts = Cast<USimCopterPlanePartsComponent>(Child))
+				Parts->SetPresentationTime(ElapsedSeconds, true, false);
+	}
+	if (CityTourRotor && CityTourRoute.IsSet())
+	{
+		FTransform Rotor=CityTourRoute->EvaluateAircraft(ElapsedSeconds,0);
+		Rotor.SetRotation(Rotor.GetRotation()*FQuat(FVector::UpVector,ElapsedSeconds*35));
+		CityTourRotor->SetWorldTransform(Rotor);
 	}
 }
 
@@ -1313,9 +1360,13 @@ void ASimCopterAmbientVehiclesActor::EndCityTour()
 	for (auto& Mesh:CityTourPlanes)
 	{
 		OwnedMeshes.Remove(Mesh);
+		const auto AttachedParts = Mesh->GetAttachChildren();
+		for (USceneComponent* Child : AttachedParts) if (auto* Parts = Cast<USimCopterPlanePartsComponent>(Child)) Parts->DestroyComponent();
 		Mesh->DestroyComponent();
 	}
 	CityTourPlanes.Reset();
+	if (CityTourRotor) { OwnedMeshes.Remove(CityTourRotor); CityTourRotor->DestroyComponent(); CityTourRotor=nullptr; }
+	CityTourRoute.Reset();
 	for (int32 Index=0;Index<SimCopterAmbientVehicles::PlaneSlots;++Index)
 		if (Planes[Index].Mesh) Planes[Index].Mesh->SetVisibility(CityTourPreviousVisibility[Index],true);
 }
@@ -1784,7 +1835,7 @@ void ASimCopterAmbientVehiclesActor::HidePlane(FSimCopterAmbientPlane& Plane)
 	Plane.bVisible = false;
 	if (Plane.Mesh != nullptr)
 	{
-		Plane.Mesh->SetVisibility(false);
+		Plane.Mesh->SetVisibility(false, true);
 	}
 }
 

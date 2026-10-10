@@ -342,7 +342,7 @@ void USimCopterAirOperationsComponent::Update(float DeltaSeconds)
 	FinishPoliceHandoffs(DeltaSeconds);
 	// A contact counts once until the helicopter separates, even if it rests on the car.
 	TSet<TWeakObjectPtr<ASimCopterGroundAgent>> Contacts;
-	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); !IsAIPiloted() && It; ++It)
 	{
 		if (It->GetAgentKind()!=ESimCopterGroundAgentKind::Vehicle || It->IsHidden() || It->IsVehicleTowed()) continue;
 		const float Gap=Helicopter()->GetDistanceToAirframeCm(It->GetActorLocation(),false);
@@ -466,16 +466,44 @@ bool USimCopterAirOperationsComponent::AdvanceAutopilot(const FVector& Goal,floa
 	FVector Target=Goal;
 	const FVector From=Heli->GetActorLocation();
 	FCollisionQueryParams Query(SCENE_QUERY_STAT(AirSupportNavigation),true,Heli);
-	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It) Query.AddIgnoredActor(*It);
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It)
+		if (It->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian || It->IsVehicleTowed()) Query.AddIgnoredActor(*It);
 	FHitResult Hit;
+	// The former 80 cm sphere let the fuselage, tail and rotors clip buildings and cars.
+	// Use a yaw-independent footprint so turning cannot swing a tail through an obstacle.
+	const FBox Bounds = Heli->GetParkingWorldBounds();
+	const FVector Offset = Bounds.IsValid ? Bounds.GetCenter()-From : FVector::ZeroVector;
+	const FVector Half = Bounds.IsValid ? Bounds.GetExtent() : FVector(190);
+	const float Radius = FMath::Max(Half.X + FMath::Abs(Offset.X), Half.Y + FMath::Abs(Offset.Y));
+	const FVector CenterOffset(0,0,Offset.Z);
+	const FCollisionShape Shape = FCollisionShape::MakeBox(FVector(Radius+12,Radius+12,Half.Z+8));
+	const auto Blocked = [&](const FVector& A, const FVector& B)
+	{
+		if (GetWorld()->SweepSingleByChannel(Hit,A+CenterOffset,B+CenterOffset,FQuat::Identity,ECC_Visibility,Shape,Query)) return true;
+		// Aircraft meshes are not world-static blockers. Keep the same clearance from
+		// the player's helicopter even when its root collision ignores visibility queries.
+		for (TActorIterator<ASimCopterHelicopterPawn> It(GetWorld()); It; ++It)
+		{
+			if (*It == Heli || It->IsHidden() || It->IsActorBeingDestroyed()) continue;
+			const FBox Other = It->GetParkingWorldBounds();
+			if (Other.IsValid && FMath::LineBoxIntersection(Other.ExpandBy(Shape.GetExtent()),
+				A+CenterOffset,B+CenterOffset,B-A)) return true;
+		}
+		return false;
+	};
 	const FVector Horizontal=(Goal-From).GetSafeNormal2D();
 	// Follow a clear altitude corridor; never fly straight through a facade on the way to a job.
-	if (GetWorld()->SweepSingleByChannel(Hit,From,From+Horizontal*FMath::Min(1000.0f,float(FVector::Dist2D(From,Goal))),FQuat::Identity,ECC_WorldStatic,FCollisionShape::MakeSphere(100),Query))
+	const float Distance = FVector::Dist2D(From,Goal);
+	if (Distance > 10 && Blocked(From,From+Horizontal*FMath::Min(1000.0f,Distance)))
 		Target=From+FVector(0,0,600);
-	else if (FVector::Dist2D(From,Goal)>500) Target.Z=FMath::Max(From.Z,Goal.Z);
-	const FVector Next=FMath::VInterpConstantTo(From,Target,DeltaSeconds,Speed);
-	if (GetWorld()->SweepSingleByChannel(Hit,From,Next,FQuat::Identity,ECC_WorldStatic,FCollisionShape::MakeSphere(80),Query))
+	else if (Distance > 10) Target.Z=FMath::Max(From.Z,Goal.Z);
+	// Finish the horizontal approach before descending, instead of cutting into the roof edge.
+	const FVector Next=FMath::VInterpConstantTo(From,Target,FMath::Min(DeltaSeconds,0.1f),Speed);
+	if (!From.Equals(Next,0.01) && Blocked(From,Next))
+	{
+		Heli->SetAutopilotTransform(From,Heli->GetActorRotation(),DeltaSeconds);
 		return false;
+	}
 	FRotator Facing=Heli->GetActorRotation();
 	if (!Horizontal.IsNearlyZero()) Facing.Yaw=FMath::FInterpTo(Facing.Yaw,Horizontal.Rotation().Yaw,DeltaSeconds,2.0f);
 	Heli->SetAutopilotTransform(Next,Facing,DeltaSeconds);

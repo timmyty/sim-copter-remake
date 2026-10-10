@@ -5,10 +5,95 @@ of [JamesIV4/sim-copter-remake](https://github.com/JamesIV4/sim-copter-remake), 
 on [wyozi's version](https://github.com/wyozi/sim-copter-remake/tree/25d81802b065eac5fee1dbd74afb75d1e59004e8).
 Original authorship and commit history are retained.
 
+## October 10 scheduled combined publication
+
+This update includes the completed work since `754b434` (the restored drive-in
+movie), gathered for the requested 8 PM CDT publication. All 391 source,
+configuration, project and build-wrapper files match the development copy and
+the installed Shipping executable has the same SHA-256 as the validated build.
+Earlier October 9 commits remain in history; their features are not counted as
+new changes here.
+
+- **City flyovers and turbines:** thirty city-specific routes based on the full
+  original CITY*_B movies, with their 30.06366-second timing, close aircraft
+  passes, Myrtle Dam wind-farm finale and Calebopolis helicopter tracking.
+  Three-blade wind turbines animate in gameplay and paused flyovers. Original
+  soundtracks play with focus pause, skip/completion cleanup and radio suspension.
+  The source includes the audio extraction/staging workflow; original reference
+  movies and decoded soundtrack files remain locally supplied and ignored.
+  [Route and soundtrack details](OriginalCityIntroRoutes.md).
+- **Shoulder camera and taser:** permanent right-shoulder walking view, closer
+  aiming view, and an animated right arm with the taser attached to the hand and
+  following aim pitch. [Behavior and checks](ShoulderAim.md).
+- **Fire reports and victory band:** at most two full HUD/radio fire reports per
+  burst, with a 30-second reset. The original city-dependent band count is
+  restored (5–57 requested musicians), with loose clusters, arcs and rows changing
+  every ten seconds, personal space, aircraft clearance and obstacle routes.
+  [Band and fire details](NpcMedicalAndHelicopterUpdate.md).
+- **Medical and rescue safety:** injury-generated medical calls relocate the
+  same patient to reachable outdoor ground before publishing the marker. Helper
+  aircraft use full-body clearance and safer pickup/delivery; helper-rescue
+  failures do not charge the player. Cars check their swept bodies immediately
+  before moving around helicopters. Ground-agent save v8 reads v1–7.
+  [Placement evidence](ForkValidation.md#medical-incident-placement-follow-up---october-10-2026)
+  and [helper safety](CockpitAndSupportSafety.md).
+- **Cockpit, aircraft identity and radio:** retractable original wiring panel
+  at half its original screen-area share, continuous cockpit trim with existing
+  control anchors, career warps retaining the selected helicopter, and level
+  starts restoring the chosen station with Rock/KROC as the first-time default.
+  [Cockpit details](CockpitAndSupportSafety.md).
+- **Airplane controls, sounds and damage:** independently spinning propellers,
+  W/S climb/descent, Space/Ctrl throttle, G/GEAR knob and SPEED slider; aircraft
+  save v3 retains gear/throttle and reads v1–2. Restore obstacle spring sounds
+  and NPC contact conversations. Radioactivity injures 65% of eligible walkers
+  while retaining survivors. Apache weapons damage cars and pedestrians;
+  missiles collapse full building footprints and settle their fires.
+  [Controls and damage rules](AircraftAndDestruction.md).
+- **Cheat guide and service signs:** reveal a 20-code guide on the career pause
+  menu's unused top plate; accepted movie toggles play the shared cheat feedback,
+  including case-insensitive HSI. Remove the police entrance sign while retaining
+  its functional service post. [Cheat guide](CheatCodes.md) and
+  [service posts](HospitalAndResponderPosts.md).
+
+Fresh combined checks and earlier per-task evidence are separated in
+[the validation report](ForkValidation.md#october-10-scheduled-publication-integration).
+This source publication does not create a new downloadable Windows release;
+release ZIPs remain tied to their tagged snapshots.
+
+## October 10 airplane controls and Apache destruction
+
+Airplane propellers now animate during flight and city flyovers. W/S controls
+climb and descent, Space/Ctrl adjusts speed, and G or the dashboard's labeled
+GEAR knob raises/lowers landing gear. The matching SPEED slider shows the retained
+throttle setting. Gear and throttle survive saves.
+
+Walking into solid obstacles restores the original spring sound; bumping people
+starts their original Simlish conversation reaction. Radioactivity injures many
+healthy walkers while leaving survivors. Apache missiles explode cars and collapse
+complete buildings, including service buildings; machine-gun hits can also destroy
+cars. Both weapons injure pedestrians through the medical system.
+See [behavior, controls, and original references](AircraftAndDestruction.md).
+
 **This version deliberately departs from the original 1996 gameplay.** In
 particular, controlling a police passenger and firing a taser from a helicopter
 while an AI pilot circles the area is a fictional addition. It is not a claim
 about authentic SimCopter equipment, original mechanics, or real taser range.
+
+## October 9 pause-menu cheat guide and sound feedback
+
+Hover over the career pause menu's blank top plate to reveal **Cheat Codes** in
+the menu's existing style. It opens a scrollable guide to all 20 supported codes.
+Continue remains the initial selection; Back/Esc/controller B returns to the pause
+menu. HSI/hsi and the other movie starts/toggles now use the shared cheat on/off
+sounds after an accepted request. See [the player guide and validation](CheatCodes.md#pause-menu-guide-and-movie-feedback--october-9-2026).
+
+## October 10 medical incident placement correction
+
+New medical calls caused by fire, crime or player collisions now apply the same
+outdoor placement checks as scheduled medical spawns. An injured pedestrian inside
+a building or on a roof is moved to nearby clear ground before the call is created;
+the marker follows the actual patient. Old roof confinement cannot pull them back.
+See [the 45-map regression results](ForkValidation.md#medical-incident-placement-follow-up---october-10-2026).
 
 ## October 9 patient and road safety fixes
 
@@ -93,8 +178,9 @@ must include source/asset synchronization and Git publication, not only installa
 of a local executable. Original game data and required external build dependencies
 remain user-supplied as described in [the build guide](ForkBuild.md).
 
-Nuclear NPC/mission cleanup remains unported. City tours recreate the showcase with
-current scenery rather than the original movies' authored shots. Known test failures
+The October 10 update adds survivor-preserving nuclear injuries and destroyed-fire
+cleanup. City tours now follow hand-authored reconstructions of the original full
+movies, adapted to the rebuilt scenery; their camera values are not recovered originals. Known test failures
 and the lack of an interactive gameplay/listening check remain explicitly documented
 in the validation report; this integration does not claim to complete unimplemented
 parts of the original game.
@@ -164,15 +250,15 @@ Details: [Playable build](PlayableBuild.md), [gameplay polish](GameplayPolish.md
 - Trauma staffing scales to nearby medical demand, with reservations preventing
   multiple medics from claiming one patient. Roof staff use supported, separated
   positions and retry instead of stacking. Hospital and police ground entrances
-  have separate persistent responders and signs.
+  have separate persistent responders; their entrance signs have been removed.
 - Ground hospital medics admit patients from landed helicopters, the pilot's arms
   or a nearby ground drop, with height, visibility and once-only accounting checks.
 - Ambulances recover real deceased NPCs, including crew, and transport their bodies
   to hospitals. Claims, retries and saves preserve recovery progress.
 - Pedestrians physically collide with building walls even when the legacy behavior
   asks to move through them; swept movement also handles pushes and overlap escape.
-- Marching bands alternate 150-second formations with original celebration behavior,
-  using obstacle-aware local routes. Dogs are smaller. The cow is a replacement
+- Marching bands use the original city-dependent count and switch loose formations
+  every ten seconds, with spacing and obstacle-aware routes. Dogs are smaller. The cow is a replacement
   procedural black-and-white model with a new gait.
 - Doused train wrecks now earn completion credit without double-counting cars.
 
@@ -285,3 +371,21 @@ Earlier feature documents retain historical build/install results and local
 scratchpad references. Those references may not exist in a clean public clone;
 they are not claims that this publication was manually played through. The
 publication validation report is the current verification record.
+
+## Fire reports and victory band — October 10, 2026
+
+Fire callouts are limited to two reports per burst with a 30-second quiet period;
+all incidents remain available on the map. Victory musicians surround and face the
+player, keep their original music and free celebration, and navigate around walls
+and parked aircraft. Details and verification are in
+[NPC medical and band notes](NpcMedicalAndHelicopterUpdate.md#fire-announcements-and-victory-band-follow-up--october-10-2026).
+
+## Loose victory-band formations — October 10, 2026
+
+Supersedes the fixed circle and 150-second remake choreography. Musicians approach
+in loose clusters, shallow arcs and staggered rows, changing every ten seconds.
+They leave room around the player/aircraft, reserve separate destinations and
+yield to one another. Original music and obstacle routing remain. The original
+city-dependent spawn target is restored: five musicians in City0 through 57 in City29,
+with the same original spawn-count formula and one leader.
+See [behavior and validation](NpcMedicalAndHelicopterUpdate.md#loose-victory-band-and-original-roster--october-10-2026).

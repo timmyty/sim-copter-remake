@@ -104,9 +104,15 @@ void ASimCopterDriveInPlayer::ClearScreens()
 	Sounds.Reset(); Screens.Reset(); Cities.Reset(); Surfaces.Reset();
 }
 
-FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle)
+FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle, bool* OutApplied)
 {
-	if (bToggle && CurrentFile == FileName) { StopVideo(); return TEXT("Drive-in movie stopped."); }
+	if (OutApplied) *OutApplied = false;
+	if (bToggle && CurrentFile == FileName)
+	{
+		StopVideo();
+		if (OutApplied) *OutApplied = true;
+		return TEXT("Drive-in movie stopped.");
+	}
 	FString Path, Error;
 	if (!SimCopterDriveIn::ResolveVideo(FileName, Path, Error)) return Error;
 	if (!ScreenParent) return TEXT("Drive-in screen material is unavailable.");
@@ -173,6 +179,7 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 	}
 	CurrentFile = FileName;
 	if (!Player->OpenFile(Path)) { StopVideo(); return TEXT("Could not open this movie. Use H.264 video and AAC audio in an MP4 file."); }
+	if (OutApplied) *OutApplied = true;
 	return FString::Printf(TEXT("Opening %s at %d drive-in theater(s). Enter Stop video to stop."), *FileName, Screens.Num());
 }
 

@@ -140,6 +140,51 @@ void ASimCopterGroundAgent::ApplyHelicopterVehicleImpact(const FVector& WorldImp
 	TowMissionId = INDEX_NONE;
 }
 
+bool ASimCopterGroundAgent::ApplyWeaponVehicleHit(bool bMissile, const FVector& WorldImpact)
+{
+	if (AgentKind != ESimCopterGroundAgentKind::Vehicle || bVehicleExploded || IsActorBeingDestroyed()) return false;
+	// FUN_0049f680 mode 3/7 dispatches the vehicle's fire/destruction path.
+	// In this fork a missile destroys immediately; a gun strike starts a short
+	// fuse and another strike finishes it. Mission allocation cannot make a car invulnerable.
+	const bool bAlreadyBurning = VehicleExplosionSeconds > 0;
+	if (!bAlreadyBurning)
+	{
+		if (auto* Missions = MissionActor(this))
+		{
+			Missions->CreatePlayerCausedCarFireForVehicle(this);
+			if (TowMissionId != INDEX_NONE)
+				Missions->PostMissionEvent(SimCopterMissions::EVT_SetCategory, TowMissionId, SimCopterMissions::CAT_ExpireSilently, true);
+		}
+		TowMissionId = INDEX_NONE;
+		bVehicleStalled = bVehicleTipped = true;
+		VehicleTipRoll = 20;
+		CurrentVelocityCmPerSec = ExternalVelocityCmPerSec = FVector::ZeroVector;
+		ClearMoveTarget();
+		VehicleExplosionSeconds = 2;
+		ApplyVehicleTipVisual();
+		EvacuateVehicleOccupants();
+	}
+	if (bMissile || bAlreadyBurning) ExplodeVehicle();
+	return true;
+}
+
+void ASimCopterGroundAgent::ExplodeVehicle()
+{
+	if (AgentKind != ESimCopterGroundAgentKind::Vehicle || bVehicleExploded) return;
+	if (auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner())) Traffic->NotifyVehicleAccidentExploded(*this);
+	bVehicleExploded = true;
+	VehicleExplosionSeconds = 0;
+	if (auto* Audio = USimCopterAudioSubsystem::Get(this)) Audio->Play3D(SimCopterSound::SND_BLDEXPL, GetActorLocation());
+	if (auto* Missions = MissionActor(this))
+	{
+		Missions->SpawnCrashBurningDebris(GetActorLocation(), MissionEventId);
+		if (auto* FX = Missions->FindComponentByClass<USimCopterParticleFXComponent>()) FX->SpawnHardLanding(GetActorLocation(), false);
+	}
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	SetLifeSpan(.2f);
+}
+
 void ASimCopterGroundAgent::ApplyVehicleTipVisual()
 {
 	if (!bVehicleTipped || !VisualRoot) return;
@@ -323,19 +368,7 @@ bool ASimCopterGroundAgent::TickAirOperations(float DeltaSeconds)
 		VehicleExplosionSeconds -= DeltaSeconds;
 		if (VehicleExplosionSeconds <= 0 && !bVehicleExploded)
 		{
-			if (auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner())) Traffic->NotifyVehicleAccidentExploded(*this);
-			bVehicleExploded = true;
-			VehicleExplosionSeconds = 0;
-			if (auto* Audio = USimCopterAudioSubsystem::Get(this)) Audio->Play3D(4,GetActorLocation()); // FUN_0049ff00
-			if (auto* Missions = MissionActor(this))
-			{
-				Missions->SpawnCrashBurningDebris(GetActorLocation(), MissionEventId);
-				if (auto* FX = Missions->FindComponentByClass<USimCopterParticleFXComponent>())
-					FX->SpawnHardLanding(GetActorLocation(), false);
-			}
-			SetActorHiddenInGame(true);
-			SetActorEnableCollision(false);
-			SetLifeSpan(0.2f);
+			ExplodeVehicle();
 		}
 	}
 	if (bVehicleStalled || bVehicleTowed)

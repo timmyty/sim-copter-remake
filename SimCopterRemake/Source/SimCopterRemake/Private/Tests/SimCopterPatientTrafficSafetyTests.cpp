@@ -1,6 +1,9 @@
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
 #include "Misc/ScopeExit.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
+#include "UObject/GarbageCollection.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Engine/StaticMesh.h"
@@ -11,6 +14,7 @@
 #include "Formats/SimCity2000Reader.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Missions/SimCopterMissionSystemActor.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterPatientPlacementTest,
 	"SimCopter.Safety.OutdoorPatients", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -107,6 +111,187 @@ bool FSimCopterPatientPlacementTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_COMPLEX_AUTOMATION_TEST(FSimCopterPatientCityPlacementTest,
+	"SimCopter.Safety.CityPatients", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+void FSimCopterPatientCityPlacementTest::GetTests(TArray<FString>& Names, TArray<FString>& Commands) const
+{
+	const FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Reference/SimCopterOriginalGame/cities"));
+	TArray<FString> Files;
+	IFileManager::Get().FindFilesRecursive(Files, *Root, TEXT("*.sc2"), true, false);
+	Files.Sort();
+	for (const FString& File : Files)
+	{
+		FString Relative = File;
+		FPaths::MakePathRelativeTo(Relative, *(Root + TEXT("/")));
+		Names.Add(FPaths::ChangeExtension(Relative, TEXT("")).Replace(TEXT("/"), TEXT(".")).Replace(TEXT(" "), TEXT("_")));
+		Commands.Add(File);
+	}
+}
+
+bool FSimCopterPatientCityPlacementTest::RunTest(const FString& Parameters)
+{
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
+		.CreateNavigation(false).CreateAISystem(false);
+	auto* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+	ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); CollectGarbage(RF_NoFlags); };
+	auto* City = World->SpawnActorDeferred<ASimCity2000CityActor>(ASimCity2000CityActor::StaticClass(), FTransform::Identity);
+	City->bLoadOnConstruction = false;
+	City->bLoadOnBeginPlay = false;
+	City->bRenderProceduralMapExtension = false;
+	City->bRenderStreetLightSpotLights = false;
+	City->GetRootComponent()->SetMobility(EComponentMobility::Static);
+	City->CityFile.FilePath = Parameters;
+	City->FinishSpawning(FTransform::Identity);
+	City->RebuildCity();
+	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+	if (!TestTrue(TEXT("Real city spawn data loads"), Traffic->RebuildSpawnData())) return false;
+	TArray<FBox> AllBounds;
+	for (const auto& Building : City->Buildings)
+	{
+		FBox Bounds(ForceInit);
+		if (City->TryGetBuildingBoundsAtTile(Building.OriginTile.X, Building.OriginTile.Y, Bounds)) AllBounds.Add(Bounds);
+	}
+	TestTrue(TEXT("Real buildings are present"), AllBounds.Num() > 0);
+	int32 MissedCorners = 0, Spawned = 0, Embedded = 0;
+	for (const FBox& Bounds : AllBounds)
+	{
+		for (int32 Corner = 0; Corner < 4; ++Corner)
+		{
+			FVector Point(Corner & 1 ? Bounds.Min.X + 1 : Bounds.Max.X - 1,
+				Corner & 2 ? Bounds.Min.Y + 1 : Bounds.Max.Y - 1, 0);
+			float TerrainZ;
+			if (!Traffic->TryGetTerrainWorldZAtWorldLocation(Point, TerrainZ)) continue;
+			Point.Z = TerrainZ + 92;
+			if (Traffic->IsOutdoorPatientSpawnValid(Point))
+			{
+				if (++MissedCorners <= 10) AddInfo(FString::Printf(TEXT("Accepted building corner %s bounds %s"), *Point.ToString(), *Bounds.ToString()));
+			}
+		}
+	}
+	for (const auto& Building : City->Buildings)
+	{
+		ASimCopterGroundAgent* Patient = nullptr;
+		if (!Traffic->TrySpawnMissionPerson(6, -1, Building.OriginTile.X, Building.OriginTile.Y, 9900, FString(), &Patient)) continue;
+		++Spawned;
+		auto Check = [&](const TCHAR* Phase)
+		{
+			const FVector At = Patient->GetActorLocation();
+			for (const FBox& Bounds : AllBounds)
+				if (At.X >= Bounds.Min.X && At.X <= Bounds.Max.X && At.Y >= Bounds.Min.Y && At.Y <= Bounds.Max.Y)
+				{
+					if (++Embedded <= 10) AddInfo(FString::Printf(TEXT("Embedded %s patient from %s at %s, bounds %s"), Phase, *Building.OriginTile.ToString(), *At.ToString(), *Bounds.ToString()));
+					break;
+				}
+		};
+		Check(TEXT("spawn"));
+		for (int32 Tick = 0; Tick < 30; ++Tick) Patient->Tick(1.0f / 30.0f);
+		Check(TEXT("after behavior"));
+		Patient->Destroy();
+		Traffic->PedestrianAgents.Reset();
+	}
+	AddInfo(FString::Printf(TEXT("%s: %d building bounds, %d corner misses, %d patients spawned, %d embedded checks"), *FPaths::GetBaseFilename(Parameters), AllBounds.Num(), MissedCorners, Spawned, Embedded));
+	TestEqual(TEXT("All actual building corners are excluded"), MissedCorners, 0);
+	TestTrue(TEXT("Medical calls still spawn patients"), Spawned > 0);
+	TestEqual(TEXT("Patients remain outside every actual building footprint"), Embedded, 0);
+	auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+	Missions->MissionSystem.Initialize(nullptr, 1);
+	Missions->MissionSystem.BeginSession();
+	int32 UnsafeIncidents = 0, IncidentCount = 0, AmbientInside = 0;
+	auto CheckIncident = [&](ASimCopterGroundAgent* Victim)
+	{
+		const FVector Placed = Victim->GetActorLocation();
+		for (int32 Tick = 0; Tick < 30; ++Tick) Victim->Tick(1.0f / 30.0f);
+		const FVector At = Victim->GetActorLocation();
+		bool Unsafe = !Traffic->IsOutdoorPatientSpawnValid(At);
+		for (const FBox& Bounds : AllBounds)
+			Unsafe |= At.X >= Bounds.Min.X - 32 && At.X <= Bounds.Max.X + 32 && At.Y >= Bounds.Min.Y - 32 && At.Y <= Bounds.Max.Y + 32;
+		if (Unsafe) ++UnsafeIncidents;
+		TestTrue(TEXT("Injury behavior does not restore old building position"), FVector::DistSquared2D(Placed, At) < 1);
+		int32 X, Y;
+		Traffic->TryGetPeopleTileCoordinateAtWorldLocation(At, X, Y);
+		if (const auto* Record = Missions->MissionSystem.FindRecord(Victim->MissionEventId))
+		{
+			TestEqual(TEXT("Medical marker X follows actual placement"), int32(Record->TileX), X);
+			TestEqual(TEXT("Medical marker Y follows actual placement"), int32(Record->TileY), Y);
+		}
+	};
+	for (const auto& Building : City->Buildings)
+	{
+		if (IncidentCount >= 12) break;
+		if (!Traffic->TrySpawnOriginalPersonAtTile(Building.OriginTile.X, Building.OriginTile.Y, 0, 0, INDEX_NONE, nullptr, INDEX_NONE)) continue;
+		auto* Victim = Traffic->PedestrianAgents.Last().Get();
+		if (City->IsInsideStandingBuildingBounds(Victim->GetActorLocation(), 0, true))
+		{
+			++AmbientInside;
+			if (Missions->CreateIncidentMedevacForVictim(Victim))
+			{
+				++IncidentCount;
+				CheckIncident(Victim);
+			}
+		}
+		Victim->Destroy();
+		Traffic->PedestrianAgents.Reset();
+	}
+	// Injury can also happen after movement or on a roof: medical conversion must validate
+	// the existing person, not just actors created by the scheduled-callout spawner.
+	int32 CornerCases = 0;
+	for (int32 Index = 0; CornerCases < 4 && Index < AllBounds.Num(); ++Index)
+	{
+		const FBox& Bounds = AllBounds[Index];
+		FVector Corner(Bounds.Min.X + 5, Bounds.Min.Y + 5, 0);
+		float TerrainZ;
+		int32 TileX, TileY;
+		// Several cities begin with docks/waterfront pieces; another has an overhang beyond
+		// the map boundary. Those are not ground/roof pedestrian injury fixtures.
+		if (!Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Corner, TileX, TileY) ||
+			!Traffic->TryGetTerrainWorldZAtWorldLocation(Corner, TerrainZ) ||
+			Traffic->IsWaterTile(TileX, TileY) || Bounds.GetSize().Z < 80) continue;
+		const int32 Case = CornerCases++;
+		Corner.Z = Case & 1 ? Bounds.Max.Z : TerrainZ;
+		auto* Victim = Traffic->SpawnScriptedMissionAgent(Corner, INDEX_NONE, FString(), false, 1);
+		if (!TestNotNull(TEXT("Existing victim fixture"), Victim)) continue;
+		if (Case & 1) Victim->SetMissionRoofPost(Corner, 50);
+		Victim->Tick(0); // Establish the pre-injury movement anchor.
+		const bool Created = Case < 2 ? Missions->CreateIncidentMedevacForVictim(Victim) : Missions->CreatePlayerCausedMedevacForVictim(Victim);
+		if (!Created)
+		{
+			int32 X, Y;
+			const bool InMap = Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Corner, X, Y);
+			AddInfo(FString::Printf(TEXT("Refused incident %d at %s, inside map=%d, tile=(%d,%d), bounds=%s"), Index, *Corner.ToString(), InMap, X, Y, *Bounds.ToString()));
+		}
+		TestTrue(TEXT("Existing victim creates a medical call"), Created);
+		if (Created)
+		{
+			++IncidentCount;
+			CheckIncident(Victim);
+		}
+		Victim->Destroy();
+	}
+	TestEqual(TEXT("Ground and roof injuries tested for incidental and player-caused calls"), CornerCases, 4);
+	AddInfo(FString::Printf(TEXT("Incidents: %d ambient people inside bounds, %d new calls, %d inaccessible patients"), AmbientInside, IncidentCount, UnsafeIncidents));
+	TestEqual(TEXT("New incident patients are outdoors at ground level"), UnsafeIncidents, 0);
+	if (!AllBounds.IsEmpty())
+	{
+		const FVector Original = AllBounds[0].GetCenter();
+		auto* Victim = Traffic->SpawnScriptedMissionAgent(Original, INDEX_NONE, FString(), false, 1);
+		if (TestNotNull(TEXT("Blocked neighborhood victim fixture"), Victim))
+		{
+			const FVector Before = Victim->GetActorLocation();
+			const int32 EventsBefore = Missions->GetActiveMissionCount();
+			const int32 CashBefore = Missions->GetSessionCash();
+			Traffic->WaterTileFlags.Init(1, FSimCity2000City::TileCount);
+			TestFalse(TEXT("No inaccessible incident when no safe ground exists"), Missions->CreateIncidentMedevacForVictim(Victim));
+			TestFalse(TEXT("Player-caused incident also requires safe ground"), Missions->CreatePlayerCausedMedevacForVictim(Victim));
+			TestTrue(TEXT("Failed placement preserves position"), Victim->GetActorLocation().Equals(Before));
+			TestEqual(TEXT("Failed placement allocates no medical record"), Missions->GetActiveMissionCount(), EventsBefore);
+			TestEqual(TEXT("Failed placement does not charge an injury fine"), Missions->GetSessionCash(), CashBefore);
+		}
+	}
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterParkedAircraftTrafficTest,
 	"SimCopter.Safety.ParkedAircraftTraffic", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
@@ -167,6 +352,15 @@ bool FSimCopterParkedAircraftTrafficTest::RunTest(const FString& Parameters)
 	Car->SetActorLocation(Start);
 	Traffic->ApplyAircraftRoadBlocking(0.1f);
 	TestTrue(TEXT("Landing blocks the road again"), Car->IsAircraftTrafficBlocked());
+	// A helicopter can land after the coordinator probe, or the car can turn across its
+	// old forward axis. The movement commit must remain safe with a stale clear flag.
+	Car->SetAircraftTrafficBlocked(false);
+	Car->SetActorLocation(Start);
+	Car->SetActorRotation(FRotator(0,90,0));
+	Car->MoveAgainstCityGeometry(FVector(1500,0,0),FQuat::Identity);
+	TestTrue(TEXT("Turning movement cannot tunnel into a newly landed helicopter"),Car->GetActorLocation().Equals(Start,0.01));
+	Car->MoveByTrafficSeparation(FVector(1500,0,0));
+	TestTrue(TEXT("Separation cannot push a car through a newly landed helicopter"),Car->GetActorLocation().Equals(Start,0.01));
 	Aircraft->Destroy();
 	Traffic->UpdateTrafficInteractions(0.1f);
 	TestFalse(TEXT("Removing aircraft releases the hold"), Car->IsAircraftTrafficBlocked());

@@ -479,7 +479,9 @@ bool FSimCopterPopulationFigure::BuildClipSections(
 		? Params.HeightCm * FMath::Max(Params.PainterBiasFraction, 0.0f) / float(Clip.PartCount)
 		: 0.0f;
 
-	for (int32 Frame = 0; Frame < Clip.FrameCount; ++Frame)
+	const int32 FirstFrame = Params.FrameIndex == INDEX_NONE ? 0 : FMath::Clamp(Params.FrameIndex, 0, Clip.FrameCount - 1);
+	const int32 EndFrame = Params.FrameIndex == INDEX_NONE ? Clip.FrameCount : FirstFrame + 1;
+	for (int32 Frame = FirstFrame; Frame < EndFrame; ++Frame)
 	{
 		FMeshArrays Body;
 		FMeshArrays Head;
@@ -587,15 +589,25 @@ bool FSimCopterPopulationFigure::BuildClipSections(
 					Apply(Head, HeadStart);
 				}
 			}
+			if (const FTransform* Pose = Params.PartTransforms.Find(PartIndex))
+			{
+				for (int32 I = BodyStart; I < Body.Vertices.Num(); ++I)
+				{
+					Body.Vertices[I] = Pose->TransformPosition(Body.Vertices[I]);
+					Body.Normals[I] = Pose->TransformVectorNoScale(Body.Normals[I]);
+					Body.Tangents[I].TangentX = Pose->TransformVectorNoScale(Body.Tangents[I].TangentX);
+				}
+			}
 		}
 
-		const bool bVisible = Frame == 0;
+		const int32 OutputFrame = Frame - FirstFrame;
+		const bool bVisible = OutputFrame == 0;
 		MeshComponent->CreateMeshSection_LinearColor(
-			Frame * 2, Body.Vertices, Body.Triangles, Body.Normals, Body.UVs, Body.VertexColors, Body.Tangents, false);
-		MeshComponent->SetMeshSectionVisible(Frame * 2, bVisible);
+			OutputFrame * 2, Body.Vertices, Body.Triangles, Body.Normals, Body.UVs, Body.VertexColors, Body.Tangents, false);
+		MeshComponent->SetMeshSectionVisible(OutputFrame * 2, bVisible);
 		MeshComponent->CreateMeshSection_LinearColor(
-			Frame * 2 + 1, Head.Vertices, Head.Triangles, Head.Normals, Head.UVs, Head.VertexColors, Head.Tangents, false);
-		MeshComponent->SetMeshSectionVisible(Frame * 2 + 1, bVisible);
+			OutputFrame * 2 + 1, Head.Vertices, Head.Triangles, Head.Normals, Head.UVs, Head.VertexColors, Head.Tangents, false);
+		MeshComponent->SetMeshSectionVisible(OutputFrame * 2 + 1, bVisible);
 	}
 
 	return true;

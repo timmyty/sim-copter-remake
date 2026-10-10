@@ -1433,6 +1433,32 @@ bool USimCopterAudioSubsystem::PlayMusicFile2D(
 	return true;
 }
 
+UAudioComponent* USimCopterAudioSubsystem::CreateCityIntroMusic(int32 CityIndex, UObject* Outer)
+{
+	// SCHOOK: CityRide 0x0044ce50 opens CITY<n>_B.SMK, then applies DAT_00519cc0
+	// (master effects volume) to its embedded audio. These WAVs are lossless decodes
+	// of that stream, not radio tracks or the silent CITY*_S selection previews.
+	// Imported cities have no CD movie: reuse the city0 soundtrack with their adapted tour.
+	const int32 Index = CityIndex >= 0 && CityIndex < 30 ? CityIndex : 0;
+	const FString Path = SimCopterOriginalGame::ResolveFile(
+		*FString::Printf(TEXT("sound/cityride/city%d.wav"), Index));
+	FSimCopterPcmClip Clip;
+	if (!GetWorld() || !Outer || !bSoundsAvailable || !DecodeWav(Path, Clip))
+	{
+		UE_LOG(LogSimCopterAudio, Warning, TEXT("[CityIntro] Missing soundtrack for city%d; run Tools/Unreal/BakeCityIntroAudio.py."), Index);
+		return nullptr;
+	}
+	auto* Component = NewObject<UAudioComponent>(Outer);
+	Component->bAutoActivate = false;
+	Component->bAutoDestroy = false;
+	Component->bAllowSpatialization = false;
+	Component->bIsUISound = true; // The flyover deliberately holds the gameplay world paused.
+	Component->SetSound(MakeWave(Clip, false, Component));
+	Component->SetVolumeMultiplier(VolumeIndexToGain(MasterVolume));
+	Component->RegisterComponentWithWorld(GetWorld());
+	return Component;
+}
+
 void USimCopterAudioSubsystem::StopMusic()
 {
 	if (MusicComponent != nullptr)

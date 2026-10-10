@@ -3,11 +3,7 @@
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Missions/SimCopterMissionSystemActor.h"
-#include "Components/TextRenderComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
-#include "Materials/MaterialInterface.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
@@ -54,30 +50,6 @@ bool ASimCopterTrafficSystemActor::TryGetBuildingEntrancePost(int32 TileX, int32
 		if (!IsPedestrianSpawnLocationOpen(Candidate) || !IsMissionGroundSpawnValid(Candidate)) continue;
 		OutSurface = Candidate;
 		BuildingEntrancePosts.Add(Key, Candidate);
-		// The hospital service point remains functional without its roadside sign.
-		if (Node.BuildingId == 0xD1) return true;
-		auto* Sign = NewObject<UTextRenderComponent>(this);
-		Sign->SetText(FText::FromString(TEXT("POLICE\nPUBLIC ENTRANCE")));
-		Sign->SetHorizontalAlignment(EHTA_Center);
-		Sign->SetWorldSize(28);
-		Sign->SetTextRenderColor(FColor(235, 244, 237));
-		Sign->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Sign->ComponentTags.Add(TEXT("ServiceEntranceSign"));
-		Sign->RegisterComponent();
-		Sign->SetWorldLocationAndRotation(Candidate - Side * 46 + FVector(0,0,237), Side.Rotation());
-		AddInstanceComponent(Sign);
-		// A physical roadside plaque, with no added collision on the landing or walking surfaces.
-		for (bool bPanel : {false, true})
-		{
-			auto* Part = NewObject<UStaticMeshComponent>(this);
-			Part->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube")));
-			Part->SetMaterial(0,LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Generated/CityAtlas/M_HospitalRoof.M_HospitalRoof")));
-			Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Part->ComponentTags.Add(TEXT("ServiceEntranceSign"));
-			Part->RegisterComponent(); AddInstanceComponent(Part);
-			Part->SetWorldLocationAndRotation(Candidate - Side*50 + FVector(0,0,bPanel ? 215 : 100),Side.Rotation());
-			Part->SetWorldScale3D(bPanel ? FVector(.06,2.7,.8) : FVector(.07,.07,2));
-		}
 		return true;
 	}
 	return false;

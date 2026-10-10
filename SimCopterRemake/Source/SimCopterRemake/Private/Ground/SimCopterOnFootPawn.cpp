@@ -7,6 +7,7 @@
 
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Audio/SimCopterSoundTable.h"
+#include "Ground/SimCopterInteraction.h"
 #include "Camera/CameraComponent.h"
 #include "City/SimCity2000CityActor.h"
 #include "Components/AudioComponent.h"
@@ -142,7 +143,9 @@ ASimCopterOnFootPawn::ASimCopterOnFootPawn()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(Capsule);
 	CameraBoom->TargetArmLength = 520.0f * PopulationWorldScale;
-	CameraBoom->TargetOffset = FVector(0.0f, 0.0f, 82.0f * PopulationWorldScale);
+	CameraBoom->TargetOffset = FVector(0.0f, 0.0f, 10.0f);
+	// SocketOffset participates in the spring arm sweep and rotates with the pilot's right side.
+	CameraBoom->SocketOffset = FVector(0.0f, 18.0f, 0.0f);
 	CameraBoom->bDoCollisionTest = true;
 	CameraBoom->ProbeChannel = ECC_Camera;
 	CameraBoom->ProbeSize = 16.0f * PopulationWorldScale;
@@ -278,6 +281,7 @@ void ASimCopterOnFootPawn::PossessedBy(AController* NewController)
 
 void ASimCopterOnFootPawn::UnPossessed()
 {
+	StopTaserAim();
 	StopWalkingSound();
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
@@ -333,6 +337,7 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 	UpdateBodySprite(DeltaSeconds);
 	UpdateWalkingSound();
 	UpdateCamera(DeltaSeconds);
+	UpdateTaserPose(DeltaSeconds);
 
 	// The listener has to follow whoever the player is. Every distance in the mixer is measured
 	// against it (DAT_0061a748 in the original), so leaving it parked at the helicopter would
@@ -349,6 +354,37 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 }
 
 // SCHOOK: PersonPostMove 0x004c6970 + PersonPlayVoice 0x004c5210.
+void ASimCopterOnFootPawn::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
+	bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
+{
+	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
+	if (!IsLocallyControlled() || !GetWorld() || !bSelfMoved || HitNormal.Z > .5f ||
+		GetWorld()->GetTimeSeconds() < NextContactSoundTime ||
+		(FVector::DotProduct(GetLastMovementInputVector(), HitNormal) >= -.1f &&
+		 FVector::DotProduct(GetVelocity(), HitNormal) >= -10)) return;
+	NextContactSoundTime = GetWorld()->GetTimeSeconds() + .9;
+	if (auto* Person = Cast<ASimCopterGroundAgent>(Other);
+		Person && Person->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian)
+	{
+		// FUN_004c9470 -> mode 13 / BHAV 914; FUN_004c6970 case 5 supplies
+		// both the original conversation gesture and the randomized Simlish line.
+		FSimCopterInteractionEvent Event;
+		Event.Mode = ESimCopterInteractionMode::PersonNeutral; Event.Source = this;
+		Event.TargetWorldLocation = Person->GetActorLocation(); Event.MessageIndex = 0;
+		if (Person->ApplyInteraction(Event))
+			if (auto* Audio = USimCopterAudioSubsystem::Get(this))
+			{
+				static constexpr int32 Replies[] = {10,1,4,11,2,18,6,7,3};
+				Audio->PlayVoiceEvent(INDEX_NONE, Replies[FMath::RandHelper(UE_ARRAY_COUNT(Replies))], GetActorLocation(), 0, true);
+			}
+		return;
+	}
+	// Restore the shipped cartoon spring cue (voice event 34, bowang.wav).
+	if (OtherComp && (OtherComp->Mobility == EComponentMobility::Static || !OtherComp->IsSimulatingPhysics()))
+		if (auto* Audio = USimCopterAudioSubsystem::Get(this))
+			Audio->PlayVoiceEvent(INDEX_NONE, 34, GetActorLocation(), 0, true);
+}
+
 void ASimCopterOnFootPawn::UpdateWalkingSound()
 {
 	USimCopterAudioSubsystem* Audio = USimCopterAudioSubsystem::Get(this);
@@ -964,7 +1000,12 @@ void ASimCopterOnFootPawn::UpdateCamera(float DeltaSeconds)
 	const USimCopterSettings* Settings = USimCopterSettings::Get(this);
 	const float MouseSensitivity = Settings != nullptr ? Settings->GetMouseSensitivityY() : 1.0f;
 	const float ControllerSensitivity = Settings != nullptr ? Settings->GetControllerSensitivityY() : 1.0f;
-	CameraComponent->SetFieldOfView(bTaserAiming ? 55.0f : (Settings != nullptr ? Settings->GetOnFootFov() : USimCopterSettings::DefaultFov));
+	const float Blend = 1.0f - FMath::Exp(-12.0f * FMath::Max(DeltaSeconds, 0.0f));
+	const float DesiredFov = bTaserAiming ? 55.0f : (Settings != nullptr ? Settings->GetOnFootFov() : USimCopterSettings::DefaultFov);
+	CameraComponent->SetFieldOfView(FMath::Lerp(CameraComponent->FieldOfView, DesiredFov, Blend));
+	CameraBoom->TargetArmLength = FMath::Lerp(CameraBoom->TargetArmLength, bParachuteDeployed ? 235.0f : (bTaserAiming ? 60.0f : 130.0f), Blend);
+	CameraBoom->TargetOffset = FMath::Lerp(CameraBoom->TargetOffset, FVector(0, 0, bParachuteDeployed ? 50.0f : (bTaserAiming ? 12.0f : 10.0f)), Blend);
+	CameraBoom->SocketOffset = FMath::Lerp(CameraBoom->SocketOffset, FVector(0, 18.0f, 0), Blend);
 
 	CameraPitchDeg = FMath::Clamp(
 		CameraPitchDeg -
@@ -1068,7 +1109,8 @@ void ASimCopterOnFootPawn::UpdateBodySprite(float DeltaSeconds)
 			if (DesiredFrame != FigureAnim.CurrentFrame)
 			{
 				FigureAnim.CurrentFrame = DesiredFrame;
-				FSimCopterPopulationFigure::ShowFrame(OriginalBodySpriteComponent, FigureAnim.FrameCount, FigureAnim.CurrentFrame, FigureAnim.bHasHeadSection);
+				if (!bFigureUsesAimPose)
+					FSimCopterPopulationFigure::ShowFrame(OriginalBodySpriteComponent, FigureAnim.FrameCount, FigureAnim.CurrentFrame, FigureAnim.bHasHeadSection);
 			}
 		}
 		return;
@@ -1185,7 +1227,7 @@ bool ASimCopterOnFootPawn::LoadOriginalBodyFigure()
 	return true;
 }
 
-bool ASimCopterOnFootPawn::RebuildPlayerFigureClip(const FString& Mnemonic)
+bool ASimCopterOnFootPawn::RebuildPlayerFigureClip(const FString& Mnemonic, bool bPreservePlayback)
 {
 	if (!bUsingOriginalFigure || !FigureShared.IsValid() || !FigureShared->Model.Figures.IsValidIndex(FigureAnim.FigureIndex))
 	{
@@ -1214,13 +1256,61 @@ bool ASimCopterOnFootPawn::RebuildPlayerFigureClip(const FString& Mnemonic)
 	Params.HeightCm = HeightCm;
 	Params.ClothesOffset = 0;
 	Params.bTexturedHead = !bDog && FigureHeadMaterialInstance != nullptr;
+	if (!bPreservePlayback)
+	{
+		FigureAnim.CurrentFrame = 0;
+		FigureAnim.FrameTime = 0.0f;
+	}
+
+	// Remake aiming overlay. The decoded pilot's +Y arm is Ne13/14/15 with Ne42/44
+	// for the hand/thumb (privanim ARCP/ARPP). Keep every other part on its walk/idle frame.
+	FPrivAnimClip PosedClip;
+	bFigureUsesAimPose = TaserAimAlpha > 0.0f && Figure.Name == TEXT("pilot");
+	if (bFigureUsesAimPose)
+	{
+		PosedClip = *Clip;
+		Params.FrameIndex = FMath::Clamp(FigureAnim.CurrentFrame, 0, Clip->FrameCount - 1);
+		const FPrivAnimClip* Idle = FigureShared->Model.FindClip(Figure, TEXT("NoMo"));
+		auto Local = [&](const FPrivAnimEndpoint& P) { return FVector(P.X, P.Y, -float(P.Z)) * Calibration.ScaleCmPerUnit + FVector(0, 0, Calibration.FeetOffsetCm); };
+		const int32 Upper = Figure.Parts.IndexOfByPredicate([](const FPrivAnimPart& P) { return P.Name == TEXT("Ne13"); });
+		const int32 Hand = Figure.Parts.IndexOfByPredicate([](const FPrivAnimPart& P) { return P.Name == TEXT("Ne42"); });
+		if (Idle && Upper != INDEX_NONE && Hand != INDEX_NONE)
+		{
+			const FVector Shoulder = Local(Idle->Segment(0, Upper).A);
+			const FVector Palm = (Local(Idle->Segment(0, Hand).A) + Local(Idle->Segment(0, Hand).B)) * 0.5;
+			// Hold the palm just above the sight line; the wrist angles the barrel down to
+			// the camera direction. This keeps the receiver above the sleeve in shoulder view.
+			const FQuat Raise = FQuat::FindBetweenNormals((Palm - Shoulder).GetSafeNormal(), FRotator(CameraPitchDeg + 12.0f, 0, 0).Vector());
+			const FQuat Rotation = FQuat::Slerp(FQuat::Identity, Raise, TaserAimAlpha);
+			const FTransform ArmPose(Rotation, Shoulder - Rotation.RotateVector(Shoulder));
+			for (int32 Part = 0; Part < Figure.Parts.Num(); ++Part)
+			{
+				const FString& Name = Figure.Parts[Part].Name;
+				if (Name != TEXT("Ne13") && Name != TEXT("Ne14") && Name != TEXT("Ne15") && Name != TEXT("Ne42") && Name != TEXT("Ne44")) continue;
+				auto& Segment = PosedClip.Segments[Params.FrameIndex * Clip->PartCount + Part];
+				auto BlendEndpoint = [&](FPrivAnimEndpoint& P, const FPrivAnimEndpoint& Rest)
+				{
+					P.X = FMath::RoundToInt(FMath::Lerp(float(P.X), float(Rest.X), TaserAimAlpha));
+					P.Y = FMath::RoundToInt(FMath::Lerp(float(P.Y), float(Rest.Y), TaserAimAlpha));
+					P.Z = FMath::RoundToInt(FMath::Lerp(float(P.Z), float(Rest.Z), TaserAimAlpha));
+				};
+				BlendEndpoint(Segment.A, Idle->Segment(0, Part).A);
+				BlendEndpoint(Segment.B, Idle->Segment(0, Part).B);
+				Params.PartTransforms.Add(Part, ArmPose);
+			}
+			const auto& Grip = PosedClip.Segment(Params.FrameIndex, Hand);
+			TaserHandLocal = ArmPose.TransformPosition((Local(Grip.A) + Local(Grip.B)) * 0.5);
+			TaserHandRotation = FQuat::Slerp(FRotator(-80, 0, 0).Quaternion(), FRotator(CameraPitchDeg, 0, 0).Quaternion(), TaserAimAlpha);
+		}
+		Clip = &PosedClip;
+	}
 
 	if (!FSimCopterPopulationFigure::BuildClipSections(
 			OriginalBodySpriteComponent, Figure, *Clip, FigureShared->Palette, Params, Calibration, FigureAnim.bHasHeadSection))
 	{
 		return false;
 	}
-	for (int32 Frame = 0; Frame < Clip->FrameCount; ++Frame)
+	for (int32 Frame = 0; Frame < (bFigureUsesAimPose ? 1 : Clip->FrameCount); ++Frame)
 	{
 		if (BodyVertexColorMaterial != nullptr)
 		{
@@ -1233,10 +1323,30 @@ bool ASimCopterOnFootPawn::RebuildPlayerFigureClip(const FString& Mnemonic)
 
 	FigureAnim.Mnemonic = Mnemonic;
 	FigureAnim.FrameCount = Clip->FrameCount;
-	FigureAnim.CurrentFrame = 0;
-	FigureAnim.FrameTime = 0.0f;
-	FSimCopterPopulationFigure::ShowFrame(OriginalBodySpriteComponent, FigureAnim.FrameCount, 0, FigureAnim.bHasHeadSection);
+	FigureAimAlpha = TaserAimAlpha;
+	FigureAimPitch = CameraPitchDeg;
+	FigureAimFrame = FigureAnim.CurrentFrame;
+	FSimCopterPopulationFigure::ShowFrame(OriginalBodySpriteComponent, bFigureUsesAimPose ? 1 : FigureAnim.FrameCount, bFigureUsesAimPose ? 0 : FigureAnim.CurrentFrame, FigureAnim.bHasHeadSection);
 	return true;
+}
+
+void ASimCopterOnFootPawn::UpdateTaserPose(float DeltaSeconds)
+{
+	if (bTaserAiming && (PilotHealth <= 0 || IsCarryingMissionPerson() || bParachuteDeployed)) StopTaserAim();
+	TaserAimAlpha = FMath::FInterpConstantTo(TaserAimAlpha, bTaserAiming ? 1.0f : 0.0f, DeltaSeconds, 6.0f);
+	if (bUsingOriginalFigure && (TaserAimAlpha > 0.0f || bFigureUsesAimPose) &&
+		(FigureAimAlpha != TaserAimAlpha || FigureAimPitch != CameraPitchDeg || FigureAimFrame != FigureAnim.CurrentFrame))
+	{
+		RebuildPlayerFigureClip(FigureAnim.Mnemonic, true);
+	}
+	if (TaserMesh && bTaserAiming)
+	{
+		// The grip is authored at (-4,0,-5), not the receiver origin. Keep that point in
+		// the animated palm, including the figure's waist-deep water displacement.
+		const FVector Hand = bFigureUsesAimPose ? OriginalBodySpriteComponent->GetRelativeTransform().TransformPosition(TaserHandLocal) : FVector(12, 7, 10);
+		const FQuat Rotation = bFigureUsesAimPose ? TaserHandRotation : FRotator(CameraPitchDeg, 0, 0).Quaternion();
+		TaserMesh->SetRelativeLocationAndRotation(Hand - Rotation.RotateVector(FVector(-4, 0, -5) * 0.25f), Rotation);
+	}
 }
 
 void ASimCopterOnFootPawn::SnapToGround()

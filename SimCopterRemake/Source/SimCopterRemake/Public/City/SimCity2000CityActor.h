@@ -72,6 +72,10 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCarAccidentTest;
@@ -185,6 +189,7 @@ public:
 	// reads as a bug rather than as history.
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|City")
 	bool DemolishBuildingAtTile(int32 FileX, int32 FileY, TArray<FIntPoint>& OutClearedTiles, bool bLeaveRubble = true);
+	bool TryGetBuildingHitOrigin(const FHitResult& Hit, FIntPoint& OutOrigin) const;
 	void GetDemolishedBuildingOrigins(TArray<FIntPoint>& OutOrigins) const;
 	void ShowCheatPortraits();
 	void GetDriveInSurfaces(TArray<struct FSimCopterDriveInSurface>& OutSurfaces) const;
@@ -211,6 +216,10 @@ public:
 	// World-space bounds of the standing building covering this tile, for the demolition's
 	// debris and damage sweep. Returns false when there is nothing there.
 	bool TryGetBuildingBoundsAtTile(int32 FileX, int32 FileY, FBox& OutWorldBounds) const;
+	// Read-only lookup of all model parts for a building type.
+	void GetBuildingModelComponents(uint8 XbldId, TArray<UInstancedStaticMeshComponent*>& OutComponents) const;
+	// Visual rotor animation; also called by the intro while the simulation is paused.
+	void AdvanceWindTurbines(float DeltaSeconds);
 
 	// Conservative spawn guard backed by the rendered instanced-mesh bounds, including model
 	// overhang beyond the SC2 tile footprint. ClearanceCm expands only the horizontal footprint.
@@ -220,6 +229,7 @@ public:
 private:
 	friend class FSimCopterCityBuildingDemolitionTest;
 	friend class FSimCopterPatientPlacementTest;
+	friend class FSimCopterPatientCityPlacementTest;
 	friend class FSimCopterSafePassengerLandingTest;
 	friend class FSimCopterWaterSupplyGeometryTest;
 	// Countdown to the next SimCopterCloudTuning::Apply (once a second, from Tick).
@@ -619,6 +629,11 @@ private:
 	// front so a collapse costs only an AddInstance.
 	int32 RubbleComponentIndices[4] = { INDEX_NONE, INDEX_NONE, INDEX_NONE, INDEX_NONE };
 
+	void BuildWindTurbines(const struct FMaxisMeshObject& OriginalModel);
+	int32 WindTurbineComponentIndex = INDEX_NONE;
+	float WindTurbineSeconds = 0;
+	FVector WindTurbineHub = FVector::ZeroVector;
+	friend class FSimCopterWindTurbineTest;
 	void ResetBuildingInstances();
 	void ResetNaturalObjectInstances();
 	// The part of this building held in the given component, or null. At most one exists: a

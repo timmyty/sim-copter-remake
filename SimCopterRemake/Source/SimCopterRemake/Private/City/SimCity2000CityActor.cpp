@@ -3141,7 +3141,7 @@ int32 AppendMaxisMeshObject(
 	const FPlacedObjectRoadFaceFilter& RoadFaceFilter,
 	TMap<int32, FOriginalMeshSectionData>& Sections,
 	int32& OutTexturedTriangleCount,
-	bool bPortraitOnly = false)
+	bool bPortraitOnly = false, bool bAnimatedWindTurbine = false)
 {
 	int32 AddedTriangleCount = 0;
 
@@ -3187,11 +3187,11 @@ int32 AppendMaxisMeshObject(
 		const bool bRuntimeTexturedFace = bUseOriginalTextures && !bBakedAtlasTexturedFace && !bBakedDirectTexturedFace && IsTexturedMaxisFace(Face.FaceType) && AvailableRuntimeTextureKeys.Contains(TextureKey);
 		const bool bTexturedFace = bBakedAtlasTexturedFace || bBakedDirectTexturedFace || bRuntimeTexturedFace;
 
-		// Face type 11 is the alpha-blended disc (FMaxisProceduralMeshBuilder::IsTranslucentFaceType):
-		// the helicopter's rotor blur, and on city objects the wind power plant's fan wheel (PP200),
-		// AR254's glow panels and the TLNS/TLEW signal cards. It carries a palette colour and no
-		// texture, so left alone it falls into the opaque INDEX_NONE section and draws as a solid
-		// plate - which is what made a windmill a flat teal disc with the tower hidden behind it.
+		// Face type 11 also serves unrelated effects: helicopter blur, AR254 glow
+		// panels and TLNS/TLEW signal cards. Keep their translucent path separate.
+		// PP200 is a wind-power plant. Its old type-11 fan disc is replaced by
+		// a separate animated blade mesh, retaining this original tower/nacelle.
+		if (bAnimatedWindTurbine && MeshObject.Header.Id == 0x0db && Face.FaceType == 11) continue;
 		const bool bTranslucentDiscFace = !bTexturedFace && FMaxisProceduralMeshBuilder::IsTranslucentFaceType(Face.FaceType);
 		// HO209-only presentation override; no vertex, triangulation or collision changes.
 		const bool bHospital = MeshObject.Header.Id == 0x016;
@@ -3353,6 +3353,16 @@ int32 AppendMaxisMeshObject(
 }
 }
 
+void ASimCity2000CityActor::GetBuildingModelComponents(uint8 XbldId, TArray<UInstancedStaticMeshComponent*>& OutComponents) const
+{
+	OutComponents.Reset();
+	for (const auto& Building:Buildings)
+		if (Building.XbldId==XbldId && !Building.bDemolished)
+			for (const auto& Part:Building.Parts)
+				if (BuildingInstanceComponents.IsValidIndex(Part.ComponentIndex))
+					OutComponents.AddUnique(BuildingInstanceComponents[Part.ComponentIndex]);
+}
+
 ASimCity2000CityActor::ASimCity2000CityActor()
 {
 	// The water surface undulates entirely in its material's vertex shader (World Position Offset),
@@ -3424,8 +3434,8 @@ ASimCity2000CityActor::ASimCity2000CityActor()
 		TexturedMaterial = TexturedMaterialFinder.Object;
 	}
 
-	// Shared with the helicopter's rotor blur on purpose: it is the same face type drawn the same
-	// way, and one tuned haze keeps a windmill wheel and a rotor disc reading alike.
+	// Other translucent city effects share the rotor haze. PP200 wind turbines
+	// instead have separate opaque, animated blades.
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BlurDiscMaterialFinder(
 		TEXT("/Game/Materials/M_SimCopterRotorDisc.M_SimCopterRotorDisc"));
 	if (BlurDiscMaterialFinder.Succeeded())
@@ -4240,7 +4250,7 @@ void ASimCity2000CityActor::RebuildCity()
 			bBuildVectorLines,
 			NoRoadFaceFilter,
 			ModelSections,
-			ModelTexturedTriangles);
+			ModelTexturedTriangles, false, true);
 
 		if (Key.SecondaryObjectId != INDEX_NONE)
 		{
@@ -5666,6 +5676,7 @@ void ASimCity2000CityActor::RebuildCity()
 		++MeshSectionIndex;
 	}
 	LastOriginalMeshTriangleCount = OriginalMeshTriangleCount;
+	if (const auto* Turbine = MeshLibrary.FindObjectByObjectId(0x0db)) BuildWindTurbines(*Turbine);
 	LastBuildingModelCount = BuildingInstanceComponents.Num();
 	LastNaturalObjectModelCount = NaturalObjectInstanceComponents.Num();
 
@@ -5753,6 +5764,7 @@ void ASimCity2000CityActor::RebuildCity()
 void ASimCity2000CityActor::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	AdvanceWindTurbines(DeltaSeconds);
 
 	CloudTuningCheckSeconds -= DeltaSeconds;
 	if (CloudTuningCheckSeconds <= 0.0f)
@@ -6111,6 +6123,8 @@ void ASimCity2000CityActor::ResetBuildingInstances()
 			Component->DestroyComponent();
 		}
 	}
+	WindTurbineComponentIndex = INDEX_NONE;
+	WindTurbineSeconds = 0;
 	BuildingInstanceComponents.Reset();
 	CheatPortraitComponents.Reset();
 	BuildingModelMeshes.Reset();
@@ -6413,6 +6427,23 @@ bool ASimCity2000CityActor::DemolishBuildingAtTile(int32 FileX, int32 FileY, TAr
 	}
 
 	return true;
+}
+
+bool ASimCity2000CityActor::TryGetBuildingHitOrigin(const FHitResult& Hit, FIntPoint& OutOrigin) const
+{
+	// Resolve the exact instance, not the tile below an overhanging wall. Instance
+	// indices are kept in lockstep by RemoveBuildingInstance, including swap removal.
+	for (int32 Component = 0; Component < BuildingInstanceComponents.Num(); ++Component)
+	{
+		if (BuildingInstanceComponents[Component] != Hit.GetComponent() ||
+			!ComponentInstanceBuildings.IsValidIndex(Component) ||
+			!ComponentInstanceBuildings[Component].IsValidIndex(Hit.Item)) continue;
+		const int32 Id = ComponentInstanceBuildings[Component][Hit.Item];
+		if (!Buildings.IsValidIndex(Id) || Buildings[Id].bDemolished) return false;
+		OutOrigin = Buildings[Id].OriginTile;
+		return true;
+	}
+	return false;
 }
 
 void ASimCity2000CityActor::GetDemolishedBuildingOrigins(TArray<FIntPoint>& OutOrigins) const

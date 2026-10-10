@@ -1,4 +1,7 @@
 #include "Game/SimCopterCityIntro.h"
+#include "Audio/SimCopterAudioSubsystem.h"
+#include "Audio/SimCopterRadio.h"
+#include "Components/AudioComponent.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
@@ -91,59 +94,6 @@ void SetTourHud(UWorld* World, bool bHide)
 }
 }
 
-FTransform FSimCopterCityIntroRoute::Evaluate(float Alpha) const
-{
-	// SCHOOK: CityRide 0x0044ce50 plays a city-specific Smacker movie (open: 0x00448400).
-	// CITY*_S career previews establish the whole-map circular composition; this
-	// slower live route recreates that view for any city, rather than landmark cuts.
-	const FRotator Rotation(-Elevation, -45 + 360 * FMath::Clamp(Alpha,0.0f,1.0f), 0);
-	return FTransform(Rotation, Bounds.GetCenter() - Rotation.Vector() * Distance);
-}
-
-void FSimCopterCityIntroRoute::Fit(float AspectRatio)
-{
-	Distance = 0;
-	if (!Bounds.IsValid) return;
-	const float TanX = FMath::Tan(FMath::DegreesToRadians(FieldOfView * 0.5f)) * 0.90f;
-	const float TanY = TanX / FMath::Clamp(AspectRatio,0.35f,4.0f) * 0.84f;
-	// A single distance for every bearing prevents zoom pumping at the diagonals.
-	// Sample densely and retain a 10% margin, also covering between-sample extrema.
-	for (int32 Bearing=0; Bearing<360; Bearing+=2)
-	{
-		const FRotationMatrix Axes(FRotator(-Elevation,float(Bearing),0));
-		for (int32 Corner=0;Corner<8;++Corner)
-		{
-			const FVector Offset = Bounds.GetExtent() * FVector(Corner&1 ? 1 : -1,Corner&2 ? 1 : -1,Corner&4 ? 1 : -1);
-			const double Depth = FVector::DotProduct(Offset,Axes.GetUnitAxis(EAxis::X));
-			Distance = FMath::Max(Distance,float(FMath::Max(
-				FMath::Abs(FVector::DotProduct(Offset,Axes.GetUnitAxis(EAxis::Y))) / TanX,
-				FMath::Abs(FVector::DotProduct(Offset,Axes.GetUnitAxis(EAxis::Z))) / TanY) - Depth));
-		}
-	}
-	Distance = FMath::Max(Distance,float(Bounds.GetExtent().Z + 2000) / FMath::Sin(FMath::DegreesToRadians(Elevation)));
-}
-
-FSimCopterCityIntroRoute USimCopterCityIntro::BuildRoute(const ASimCopterTrafficSystemActor& Traffic)
-{
-	FSimCopterCityIntroRoute Result;
-	const ASimCity2000CityActor* City = Traffic.GetCityActor();
-	if (!City) return Result;
-	const float HalfTile = City->GetTileSize() * 0.5f;
-	for (int32 Y=0;Y<128;++Y)
-	for (int32 X=0;X<128;++X)
-	{
-		FVector Point;
-		if (!Traffic.TryGetTileCenterWorldLocation(X,Y,Point)) continue;
-		// Include the outside edges, not just tile centres, and all rendered roofs.
-		Result.Bounds += Point - FVector(HalfTile,HalfTile,0);
-		Result.Bounds += Point + FVector(HalfTile,HalfTile,0);
-		FBox Building;
-		if (City->TryGetBuildingBoundsAtTile(X,Y,Building)) Result.Bounds += Building;
-	}
-	Result.Fit(16.0f/9);
-	return Result;
-}
-
 USimCopterCityIntro::USimCopterCityIntro()
 {
 	PrimaryComponentTick.bCanEverTick=true;
@@ -176,7 +126,7 @@ bool USimCopterCityIntro::Start()
 	PC->SetIgnoreMoveInput(true); PC->SetIgnoreLookInput(true);
 	PresentationClock=FSceneViewExtensions::NewExtension<FSimCopterTourViewExtension>(World);
 	for (TActorIterator<ASimCopterAmbientVehiclesActor> It(World); It; ++It)
-	{ Ambient=*It; It->BeginCityTour(Route.Bounds); break; }
+	{ Ambient=*It; It->BeginCityTour(Route.Bounds,&Route); break; }
 	SetTourHud(World,true);
 	auto Widget=SNew(SSimCopterCityTour).OnSkip(FSimpleDelegate::CreateUObject(this,&USimCopterCityIntro::RequestSkip));
 	Widget->CityName=Traffic->GetCityActor()->GetCityName();
@@ -187,10 +137,46 @@ bool USimCopterCityIntro::Start()
 	Input.SetWidgetToFocus(Widget); Input.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	PC->SetInputMode(Input); PC->bShowMouseCursor=false;
 	PC->SetViewTarget(Camera);
-	LastTickSeconds=FPlatformTime::Seconds();
 	UpdateCamera();
+	StartMusic();
+	LastTickSeconds=FPlatformTime::Seconds();
 	SetComponentTickEnabled(true);
 	return true;
+}
+
+void USimCopterCityIntro::StartMusic()
+{
+	StopMusic();
+	if (auto* Radio = USimCopterRadioSubsystem::Get(this))
+	{
+		Radio->SetCityIntroSuspended(true);
+		bRadioSuspended = true;
+	}
+	if (auto* Audio = USimCopterAudioSubsystem::Get(this))
+		Music = Audio->CreateCityIntroMusic(Route.CityIndex, this);
+	if (Music)
+	{
+		UpdateMusic(FSlateApplication::IsInitialized() && FSlateApplication::Get().IsActive());
+		Music->Play();
+	}
+}
+
+void USimCopterCityIntro::UpdateMusic(bool bActive)
+{
+	if (!Music) return;
+	Music->SetPaused(!bActive);
+	if (auto* Audio = USimCopterAudioSubsystem::Get(this))
+		Music->SetVolumeMultiplier(Audio->VolumeIndexToGain(Audio->GetMasterVolume()));
+}
+
+void USimCopterCityIntro::StopMusic()
+{
+	if (Music) { Music->Stop(); Music->DestroyComponent(); Music = nullptr; }
+	if (bRadioSuspended)
+	{
+		if (auto* Radio = USimCopterRadioSubsystem::Get(this)) Radio->SetCityIntroSuspended(false);
+		bRadioSuspended = false;
+	}
 }
 
 void USimCopterCityIntro::UpdateCamera()
@@ -206,7 +192,8 @@ void USimCopterCityIntro::UpdateCamera()
 	if (Overlay.IsValid())
 	{
 		auto Widget=StaticCastSharedPtr<SSimCopterCityTour>(Overlay);
-		Widget->Fade=1-FMath::Clamp(FMath::Min(Elapsed,FSimCopterCityIntroRoute::Duration-Elapsed)/0.6f,0.0f,1.0f);
+		// Keep the original final composition visible through the last source frame.
+		Widget->Fade=1-FMath::Clamp(Elapsed/0.3f,0.0f,1.0f);
 	}
 }
 
@@ -216,9 +203,11 @@ void USimCopterCityIntro::TickComponent(float DeltaTime,ELevelTick TickType,FAct
 	if (!bPlaying) return;
 	const double Now=FPlatformTime::Seconds();
 	// Pause the tour as well when the player switches applications.
-	const float Step = FSlateApplication::IsInitialized() && FSlateApplication::Get().IsActive()
-		? FMath::Clamp(float(Now-LastTickSeconds),0.0f,0.1f) : 0;
+	const bool bActive = FSlateApplication::IsInitialized() && FSlateApplication::Get().IsActive();
+	const float Step = bActive ? FMath::Max(float(Now-LastTickSeconds),0.0f) : 0;
+	UpdateMusic(bActive);
 	Elapsed+=Step;
+	for (TActorIterator<ASimCity2000CityActor> It(GetWorld()); It; ++It) It->AdvanceWindTurbines(Step);
 	if (PresentationClock) { PresentationClock->Elapsed=Elapsed; PresentationClock->Delta=Step; }
 	LastTickSeconds=Now;
 	if (bSkipRequested || Elapsed>=FSimCopterCityIntroRoute::Duration || !Controller.IsValid() || !IsValid(Camera)) Finish();
@@ -227,6 +216,7 @@ void USimCopterCityIntro::TickComponent(float DeltaTime,ELevelTick TickType,FAct
 
 void USimCopterCityIntro::Finish()
 {
+	StopMusic();
 	if (!bPlaying) return;
 	bPlaying=false;
 	SetComponentTickEnabled(false);

@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterDashboard.h"
+#include "SSimCopterPlaneControls.h"
 
 #include "Audio/SimCopterRadio.h"
 #include "EngineUtils.h"
@@ -940,6 +941,12 @@ void SSimCopterDashboard::Construct(const FArguments& InArgs)
 		SNew(SHorizontalBox)
 
 		// The seat window sits to the left of the instruments, sharing their bottom edge.
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Bottom)
+		[
+			SNew(SSimCopterPlaneControls).Scale(Scale).GetPlane([this]() { return GetPawn(); })
+			.Visibility_Lambda([this]() { return GetPawn() && GetPawn()->IsFixedWingAircraft() ? EVisibility::Visible : EVisibility::Collapsed; })
+		]
+
 		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Bottom)
 		[
 			BuildSeatWindow()

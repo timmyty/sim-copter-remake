@@ -16,6 +16,10 @@
 #include "Missions/SimCopterMissionSystemActor.h"
 #include "UI/SimCopterHangarShop.h"
 #include "UI/SSimCopterCheatDialog.h"
+#include "UI/SSimCopterCheatGuide.h"
+#include "UI/SSimCopterSettingsMenu.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Text/STextBlock.h"
 #include "UI/SSimCopterGortSequence.h"
 #include "UI/SimCopterGortSequence.h"
 #include "Engine/Engine.h"
@@ -43,6 +47,12 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterCheatParserTest, "SimCopter.Cheats.Or
 bool FSimCopterCheatParserTest::RunTest(const FString&)
 {
 	using namespace SimCopterCheats;
+	for (const TCHAR* Text : {TEXT("HSI"), TEXT("hsi"), TEXT(" hSi ")})
+	{
+		const auto Parsed = Parse(Text);
+		TestTrue(TEXT("HSI is case-insensitive and consumes the whole line"), Parsed.Num() == 1 && Parsed[0].Code == ECode::HSI);
+	}
+	TestTrue(TEXT("HSI cannot match inside unrelated text"), Parse(TEXT("xhsi")).IsEmpty());
 	const auto Codes = Parse(TEXT("superpowermultiply Shields up Gas does grow on trees I'm the CEO of McDonnell Douglas There's no place like home I love my helicopter Been there, done that The map, please Warp me to career: 30 Give me bucks or give me death: 1000 Radioactivity PAMCAREYGOLDMAN A megaphone in the hand is worth two in the bush Out on a Sunday drive Stop and ask for directions Gort Lights, Camera, Action!"));
 	TestEqual(TEXT("All original phrases recognized independently"), Codes.Num(), 17);
 	TestTrue(TEXT("Case-sensitive, no invented aliases"), Parse(TEXT("shields up godmode money")).IsEmpty());
@@ -59,6 +69,95 @@ bool FSimCopterCheatParserTest::RunTest(const FString&)
 	TestEqual(TEXT("3 maps to Apache runtime type"), AircraftTypeForKey(EKeys::Three), 2);
 	TestEqual(TEXT("9 maps to MD520 runtime type"), AircraftTypeForKey(EKeys::Nine), 8);
 	TestEqual(TEXT("Zero is not an aircraft shortcut"), AircraftTypeForKey(EKeys::Zero), INDEX_NONE);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterCheatGuideTest, "SimCopter.Cheats.PauseMenuGuide",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterCheatGuideTest::RunTest(const FString&)
+{
+	using namespace SimCopterCheats;
+	TSet<ECode> Covered;
+	for (const auto& Entry : SSimCopterCheatGuide::GetEntries())
+	{
+		const auto Parsed = Parse(Entry.Code);
+		if (TestEqual(Entry.Code, Parsed.Num(), 1)) Covered.Add(Parsed[0].Code);
+		TestTrue(TEXT("Each code explains its effect"), FCString::Strlen(Entry.Effect) > 0);
+	}
+	TestEqual(TEXT("Guide covers every supported command"), Covered.Num(), static_cast<int32>(ECode::StopVideo) + 1);
+	TestEqual(TEXT("Unused top plate opens the guide"), SSimCopterSettingsMenu::GetItemForRow(-1, false), ESimCopterSettingsItem::CheatCodes);
+	TestEqual(TEXT("Guide uses the original blank plate"), SimCopterSettingsMenuLayout::GetRowTop(-1, false), SimCopterSettingsMenuLayout::FirstItemYWithCitySettings);
+
+	TStrongObjectPtr<USimCopterHangarArt> Art(NewObject<USimCopterHangarArt>());
+	Art->SetOriginalGameRoot(SimCopterOriginalGame::ResolveRoot());
+	ESimCopterSettingsItem Chosen = ESimCopterSettingsItem::Continue;
+	auto Menu = SNew(SSimCopterSettingsMenu).Art(Art.Get()).AllowCitySettings(false)
+		.OnItemChosen(FOnSimCopterSettingsItemChosen::CreateLambda([&](ESimCopterSettingsItem Item) { Chosen = Item; }));
+	TSharedPtr<STextBlock> Label;
+	TArray<TSharedRef<SButton>> Buttons;
+	TFunction<void(TSharedRef<SWidget>)> Visit = [&](TSharedRef<SWidget> Widget)
+	{
+		if (Widget->GetTypeAsString() == TEXT("STextBlock"))
+		{
+			auto Text = StaticCastSharedRef<STextBlock>(Widget);
+			if (Text->GetText().ToString() == TEXT("Cheat Codes")) Label = Text;
+		}
+		if (Widget->GetTypeAsString() == TEXT("SButton")) Buttons.Add(StaticCastSharedRef<SButton>(Widget));
+		FChildren* Children = Widget->GetChildren();
+		for (int32 Index = 0; Index < Children->Num(); ++Index) Visit(Children->GetChildAt(Index));
+	};
+	Visit(Menu);
+	if (!TestTrue(TEXT("Hidden label and hit plate exist"), Label.IsValid() && Buttons.Num() == 8)) return false;
+	// A headless input test has no Slate frame to refresh cached visibility attributes.
+	Label->UpdateAllAttributes();
+	TestEqual(TEXT("Continue remains selected by default"), Menu->GetSelectedRow(), 0);
+	TestFalse(TEXT("Cheat plate is blank before hover"), Label->GetVisibility().IsVisible());
+	TestTrue(TEXT("Cheat label uses the menu font"), Label->GetFont() == SimCopterFrontEnd::PageFont(SimCopterSettingsMenuLayout::ItemFontHeight, true));
+	const auto Key = [](FKey K) { return FKeyEvent(K, FModifierKeysState(), 0, false, 0, 0); };
+	const auto Capture = [&](TSharedRef<SWidget> Widget, const TCHAR* Name)
+	{
+		if (!FParse::Param(FCommandLine::Get(), TEXT("SimCheatMenuPreview"))) return;
+		FWidgetRenderer Renderer(true);
+		const FVector2D Size(1280, 960);
+		Renderer.DrawWidget(Widget, Size);
+		auto* Target = Renderer.DrawWidget(Widget, Size);
+		if (!TestNotNull(TEXT("Cheat menu preview rendered"), Target)) return;
+		TArray<FColor> Pixels;
+		FReadSurfaceDataFlags Flags; Flags.SetLinearToGamma(false);
+		Target->GameThread_GetRenderTargetResource()->ReadPixels(Pixels, Flags);
+		TestTrue(TEXT("Cheat menu preview saved"), FImageUtils::SaveImageByExtension(
+			*(FPaths::ProjectDir() / TEXT("../Docs/scratchpad/cheat-menu") / (FString(Name) + TEXT(".png"))),
+			FImageView(Pixels.GetData(), 1280, 960)));
+	};
+	Capture(Menu, TEXT("menu-blank"));
+	Buttons.Last()->OnMouseEnter(FGeometry(), FPointerEvent());
+	Label->UpdateAllAttributes();
+	TestTrue(TEXT("Mouse hover reveals Cheat Codes"), Label->GetVisibility().IsVisible());
+	Capture(Menu, TEXT("menu-hover"));
+	Buttons.Last()->OnKeyDown(FGeometry(), Key(EKeys::SpaceBar));
+	Buttons.Last()->OnKeyUp(FGeometry(), Key(EKeys::SpaceBar));
+	TestEqual(TEXT("Activating the hidden plate requests guide"), Chosen, ESimCopterSettingsItem::CheatCodes);
+	Menu->OnKeyDown(FGeometry(), Key(EKeys::Down));
+	Label->UpdateAllAttributes();
+	TestEqual(TEXT("Down from cheat plate reaches Continue"), Menu->GetSelectedRow(), 0);
+	TestFalse(TEXT("Selecting another row hides the cheat label"), Label->GetVisibility().IsVisible());
+	Menu->OnKeyDown(FGeometry(), Key(EKeys::Up));
+	Label->UpdateAllAttributes();
+	TestTrue(TEXT("Keyboard navigation reveals Cheat Codes"), Label->GetVisibility().IsVisible());
+	Menu->OnKeyDown(FGeometry(), Key(EKeys::Escape));
+	TestEqual(TEXT("Escape still resumes from hidden plate"), Chosen, ESimCopterSettingsItem::Continue);
+
+	int32 Closed = 0;
+	auto Guide = SNew(SSimCopterCheatGuide).Art(Art.Get()).OnClosed(FSimpleDelegate::CreateLambda([&]() { ++Closed; }));
+	Capture(Guide, TEXT("guide-top"));
+	TestTrue(TEXT("D-pad scroll is handled"), Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::Gamepad_DPad_Down)).IsEventHandled());
+	Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::End));
+	Capture(Guide, TEXT("guide-bottom"));
+	TestEqual(TEXT("Scrolling does not close guide"), Closed, 0);
+	Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::Escape));
+	TestEqual(TEXT("Escape returns to menu"), Closed, 1);
+	Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::Gamepad_FaceButton_Right));
+	TestEqual(TEXT("Controller B returns to menu"), Closed, 2);
 	return true;
 }
 

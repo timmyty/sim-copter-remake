@@ -1,6 +1,7 @@
 #include "Flight/SimCopterHelicopterParking.h"
 
 #include "City/SimCopterAirport.h"
+#include "Ground/SimCopterOnFootPawn.h"
 #include "City/SimCopterHangar.h"
 #include "Engine/World.h"
 #include "Game/SimCopterCareerSubsystem.h"
@@ -16,6 +17,8 @@ ASimCopterHelicopterPawn* ResolveCurrentAircraft(const UObject* WorldContext)
 {
 	APawn* Player = UGameplayStatics::GetPlayerPawn(WorldContext, 0);
 	if (ASimCopterHelicopterPawn* Possessed = Cast<ASimCopterHelicopterPawn>(Player)) return Possessed;
+	if (const auto* Pilot = Cast<ASimCopterOnFootPawn>(Player))
+		if (auto* Parked = Pilot->GetParkedHelicopter(); IsValid(Parked) && !Parked->IsSupportAircraft()) return Parked;
 	// ExitHelicopter makes the on-foot pawn owned by the aircraft just exited.
 	if (Player != nullptr)
 	{
@@ -24,7 +27,14 @@ ASimCopterHelicopterPawn* ResolveCurrentAircraft(const UObject* WorldContext)
 	TArray<AActor*> Aircraft;
 	UGameplayStatics::GetAllActorsOfClass(WorldContext, ASimCopterHelicopterPawn::StaticClass(), Aircraft);
 	Aircraft.RemoveAll([](AActor* Actor) { return CastChecked<ASimCopterHelicopterPawn>(Actor)->IsSupportAircraft(); });
-	Aircraft.Sort([](const AActor& A, const AActor& B) { return A.GetName() < B.GetName(); });
+	Aircraft.Sort([](const AActor& A, const AActor& B)
+	{
+		// A newly spawned airport plane sorts before the map's BP helicopter by name.
+		// With no possessed/parked aircraft, prefer the helicopter the career starts beside.
+		const bool APlane = CastChecked<ASimCopterHelicopterPawn>(&A)->IsFixedWingAircraft();
+		const bool BPlane = CastChecked<ASimCopterHelicopterPawn>(&B)->IsFixedWingAircraft();
+		return APlane != BPlane ? !APlane : A.GetName() < B.GetName();
+	});
 	return Aircraft.IsEmpty() ? nullptr : CastChecked<ASimCopterHelicopterPawn>(Aircraft[0]);
 }
 

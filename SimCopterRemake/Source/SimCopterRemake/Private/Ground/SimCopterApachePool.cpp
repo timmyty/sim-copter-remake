@@ -659,7 +659,11 @@ bool USimCopterApachePoolComponent::ResolveImpact(
 			return true;
 		}
 
-		Detonate(Slot, Hit.ImpactPoint, Hit.ImpactNormal, /*bHitTerrain=*/true);
+		bool bCollapsed = false;
+		if (Slot.Kind == EKind::Missile)
+			if (auto* Missions = Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(World, ASimCopterMissionSystemActor::StaticClass())))
+				bCollapsed = Missions->DestroyBuildingFromMissile(Hit);
+		Detonate(Slot, Hit.ImpactPoint, Hit.ImpactNormal, /*bHitTerrain=*/!bCollapsed);
 		return true;
 	}
 
@@ -676,7 +680,7 @@ bool USimCopterApachePoolComponent::ApplyPlayerCausedMissionBlast(
 		? Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(
 			World, ASimCopterMissionSystemActor::StaticClass()))
 		: nullptr;
-	if (World == nullptr || Missions == nullptr)
+	if (World == nullptr)
 	{
 		return false;
 	}
@@ -738,7 +742,7 @@ bool USimCopterApachePoolComponent::ApplyPlayerCausedMissionBlast(
 		bool bConvertedToMission = false;
 		if (Agent->GetAgentKind() == ESimCopterGroundAgentKind::Vehicle)
 		{
-			bConvertedToMission = Missions->CreatePlayerCausedCarFireForVehicle(Agent);
+			bConvertedToMission = Agent->ApplyWeaponVehicleHit(bMissile, ImpactWorld);
 		}
 		else if (Agent->IsMedevacVictim())
 		{
@@ -746,9 +750,16 @@ bool USimCopterApachePoolComponent::ApplyPlayerCausedMissionBlast(
 			// person of a medevac record, so consume the impact without creating a duplicate.
 			bConvertedToMission = true;
 		}
-		else if (Agent->PrepareForPlayerCausedMedevac())
+		else if (Missions && !Agent->IsMissionPatientDead() && Agent->PrepareForPlayerCausedMedevac())
 		{
 			bConvertedToMission = Missions->CreatePlayerCausedMedevacForVictim(Agent);
+			if (!bConvertedToMission)
+			{
+				// A full mission pool must not turn a direct weapon strike into immunity.
+				Agent->MissionEventId = INDEX_NONE;
+				Agent->SetMissionInjuredPose();
+				bConvertedToMission = true;
+			}
 		}
 
 		if (Agent == DirectHitAgent)

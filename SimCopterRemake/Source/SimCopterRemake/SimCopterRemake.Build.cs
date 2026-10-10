@@ -76,6 +76,13 @@ public class SimCopterRemake : ModuleRules
 			string OriginalGameRoot = Path.GetFullPath(Path.Combine(
 				ModuleDirectory, "..", "..", "..", "Reference", "SimCopterOriginalGame"));
 			string StagingRoot = Path.Combine("$(ProjectDir)", "Intermediate", "OriginalGameStaging");
+			for (int CityIndex = 0; CityIndex < 30; ++CityIndex)
+			{
+				if (!File.Exists(Path.Combine(OriginalGameRoot, "sound", "cityride", $"city{CityIndex}.wav")))
+				{
+					throw new BuildException("Missing original cityride audio. Run python Tools/Unreal/BakeCityIntroAudio.py before packaging.");
+				}
+			}
 			string[] RequiredDirectories = { "bmp", "cities", "geo", "sound", "tweak", "x" };
 			string[] RequiredFiles =
 			{

@@ -683,6 +683,7 @@ public:
 	// Whole-cell douse: a full-strength hit centred on the cell, used where the caller
 	// has no sub-cell impact point. Returns flames in range.
 	int32 DouseAtTile(int32 TileX, int32 TileY);
+	void BurnOutDestroyedTiles(const TArray<FIntPoint>& Tiles);
 
 	// Megaphone: clears an active traffic-jam mission - releases the jammed cars, scores it and
 	// completes it. Returns false when the event isn't an active jam.
@@ -805,6 +806,9 @@ private:
 	int32 FocusRecordIndex = INDEX_NONE; // DAT_0057f9d8 (the map's selected record; see SetMapFocusRecordIndex)
 
 	// Fire globals.
+	// Presentation-only burst cap: keep every incident/marker, but never queue a chorus of fires.
+	int32 FireAnnouncementsInBurst = 0;
+	float FireAnnouncementQuietTimeRemaining = 0;
 	int32 ActiveFlameCount = 0;       // DAT_00505f58
 	int32 SpreadAccumulator = 0;      // DAT_00505f80
 
@@ -827,6 +831,7 @@ private:
 	void ReleaseFailedRecord(int32 RecordIndex);
 	int32 FindRecordIndex(int32 EventId) const;   // FUN_004a8890 walk
 	void AnnounceCreated(const FSimCopterMissionRecord& Record); // trailer of FUN_004a7a10
+	void PostMissionAnnouncement(const FSimCopterMissionRecord& Record);
 	void PostAnnouncementVoice(const FSimCopterMissionRecord& Record); // FUN_004ab480
 	static int32 GetTypeTextId(int32 TypeMask);   // shared 0x23b..0x24b switch
 

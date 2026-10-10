@@ -1,0 +1,610 @@
+{
+  "Date": "2026-10-10",
+  "EditorBuild": "Succeeded",
+  "ShippingBuild": "Succeeded",
+  "Headless": {
+    "Passed": 123,
+    "WarningTests": 6,
+    "Failed": 0
+  },
+  "Offscreen": {
+    "Passed": 1,
+    "Failed": 0,
+    "Variants": [
+      "Gear down",
+      "Gear up"
+    ],
+    "ImageSize": "376x500"
+  },
+  "CityDestruction": {
+    "City": "cities/career/city1.sc2",
+    "DestroyedBuildings": 286,
+    "DestroyedEssentialServices": 6,
+    "RemainingBuildings": 0,
+    "RealMissileTrace": true,
+    "DemolitionSaveListVerified": true
+  },
+  "Coverage": [
+    "Missile and machine-gun car explosions",
+    "Both weapons injure NPCs",
+    "Radioactivity injuries and healthy survivors",
+    "Player contact dispatches BHAV 914",
+    "Independent moving propellers during paused flyovers",
+    "W/S altitude and separate retained throttle",
+    "Landing gear and aircraft save v3 / v2 migration",
+    "Full city demolition and mission regressions"
+  ],
+  "Warnings": [
+    {
+      "Test": "SimCopter.Cheats.CityEffects",
+      "Count": 17,
+      "Examples": [
+        "PIE: AttachTo: '/Temp/Untitled_11.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_11.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_11.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_11.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_6' which is static to it. Aborting."
+      ]
+    },
+    {
+      "Test": "SimCopter.Cheats.GortOriginalAssets",
+      "Count": 1,
+      "Examples": [
+        "LogStreaming: Failed to read file 'C:/SimCopterRemake/sim-copter-remake-main/Reference/SimCopterOriginalGame/sound/missing/al01.wav' error."
+      ]
+    },
+    {
+      "Test": "SimCopter.City.BuildingDemolition",
+      "Count": 34,
+      "Examples": [
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_6' which is static to it. Aborting."
+      ]
+    },
+    {
+      "Test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+      "Count": 2,
+      "Examples": [
+        "LogSimCopterTearGas: Tear gas canister mesh unavailable, firing without one: No original game root is configured.",
+        "LogSimCopterTearGas: Tear gas canister mesh unavailable, firing without one: No original game root is configured."
+      ]
+    },
+    {
+      "Test": "SimCopter.Missions.PlaneDeckRescue",
+      "Count": 11,
+      "Examples": [
+        "PIE: AttachTo: '/Temp/Untitled_21.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_21.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_21.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_21.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_5' which is static to it. Aborting."
+      ]
+    },
+    {
+      "Test": "SimCopter.Missions.SafePassengerLanding",
+      "Count": 12,
+      "Examples": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_22.Untitled:PersistentLevel.SimCopterHelicopterPawn_0",
+        "PIE: AttachTo: '/Temp/Untitled_22.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_22.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting."
+      ]
+    }
+  ],
+  "Tests": [
+    {
+      "Test": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.AircraftDestruction.PilotConversation",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.AircraftDestruction.PlaneControlsAndPropeller",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.AircraftDestruction.ProjectilesAndPopulation",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.AircraftDestruction.WholeCity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.AircraftRoadUpdate.AllCitiesAndAircraft",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Apache.AllNinePaintModels",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Apache.MysteryPurchaseAndWeapons",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Apache.OriginalCityMarker",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.CEOFreeDeliveryAndLifetime",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.CityEffects",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.DialogEscape",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.DriveInCommands",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.FuelShieldsAndTurbo",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.GortOriginalAssets",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.GortPlayback",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.GortRender",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.GortReturnToGame",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.GortTimeline",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.NuclearPreservesServices",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.OriginalDialogArt",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.OriginalDogAssets",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.OriginalParser",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Cheats.PauseMenuGuide",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.PeopleRules.ClassMap",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.PeopleRules.SymmetricHeightStep",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.AirportBlockFootprintQuirk",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.AirportBlockStamp",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.AirportFreePad",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.AirportPadTable",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.AirportSearch",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.BuildingDemolition",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.BuildingFootprintClaim",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.DayNightFog",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.DayNightLength",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.EffectExposure",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.HangarPlacement",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.IslandBuildingFootprints",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.IslandHospitalFootprints",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.PowerLineHeight",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.RoadDecorationDispatch",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.RoadDecorationMeshes",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.RuntimeMeshDuplication",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.SmokeStackMarkers",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.SurfaceShadingDefaults",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.City.TreeGrounding",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.CityIntro.OriginalAudioAndCleanup",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.CityIntro.RouteAndControlRestoration",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.CityIntro.WindTurbineLifecycle",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Effects.ApacheMissionBlastDefaults",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Effects.FireMarkerAssets",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Effects.OriginalRasterizerParity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Effects.PoolParity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Effects.PrimitiveParity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Effects.RotorWashParity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Interaction.AirframeGap",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Interaction.PassengerDoorOffset",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Interaction.ReactionStack",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Interaction.ReactionTable",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Interaction.SpiralScan",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.ArsonistRenderedBuildingTarget",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.BaseLocationRecord",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.BuildingFireDifficulty",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.BurglarCarStaysOpen",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.CrimeIdentityAndSpawn",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.CrimePlacementNeedsBuilding",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.DispatchLocationVoice",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.FireAnnouncementBurst",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.FireDouse",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.FireDouseAcrossFootprint",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.FireLifecycle",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.HospitalSites",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.IncrementalUpdateTextAndPenalties",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.MapFocusRules",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.MarkerCoordinates",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.MarkerLabelFits",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.MarkerOverlap",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.MarkerUiAvoidance",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.MedevacCasualtyHasNoDeliveryReward",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.MedevacRecordLayout",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.OriginalMissionAvailability",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.OriginalPickupMessage",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.ParamedicCabinHandoff",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.PassengersAboardNeverFailMission",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.PlaneDeckRescue",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.PostAnnouncementVoice",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.PRNGParity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.RiotCountsRewardsAndPenaltyErosion",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.RiotViability",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.RooftopRescueCountsPhasesRewardsAndVoices",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.RuntimeSaveRoundTrip",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.SafePassengerLanding",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.SaveFocusAndTransportLayout",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.SchedulerParity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.ServiceFireSuppressionUsesFlameOffset",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.SessionStart",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.TrafficJamCarClearCompletes",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.TransportPassengerSpawnOutsideBuildings",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.TransportSchedulerTimer",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.TypeDisplayNames",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.UserCityDefaultSettings",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.WeightTableParity",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.XbldPropertyTable",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.NpcMedical.BandClusterAndSpacing",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.NpcMedical.BandObstacleRoutes",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.SaveGame.ArchiveRoundTrip",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.SaveGame.Names",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.SaveGame.QuickSavePersistence",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.SaveGame.RestoreState",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Sound.Attenuation",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Sound.GameplayMappings",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Sound.IndependentPlayback",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Sound.RadioLiveVolume",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Sound.RotorLaw",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Sound.Table",
+      "State": "Success"
+    },
+    {
+      "Test": "SimCopter.Sound.VoiceEvents",
+      "State": "Success"
+    }
+  ],
+  "Installation": {
+    "InstalledAt": "2026-10-10T18:16:30.5290793-05:00",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\aircraft-destruction\\before-install-20261010-181626",
+    "Files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "BeforeSHA256": "FC1ECA23502EEFACB890D19585F090944A96B58B88FC55A8B5577E6D7CC49890",
+        "AfterSHA256": "55F70529C8F6BAA49B1E0C688C04C9AE86E7F45D5813A7129C965EF802B31278"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "BeforeSHA256": "74D41A3D47786967DE33A5878EBE82D67C481F82722DEA22FA46EA142ECB22C4",
+        "AfterSHA256": "476D10B2B1034BBFFF2DBFEF313128C9F740DDCABBE05771A41A47182AC092F6"
+      },
+      {
+        "Relative": "Manifest_NonUFSFiles_Win64.txt",
+        "BeforeSHA256": "2434EB1B8D2881B9991346E6B40C8271A4027C4BF86A3B82BCEF05B580D70BB8",
+        "AfterSHA256": "F6DAE7D5CAE5CD630AC4E5EB99DFBC5D7DCB6E84E0CFB65A16060FFF72E2B720"
+      },
+      {
+        "Relative": "Manifest_DebugFiles_Win64.txt",
+        "BeforeSHA256": "C905AAC3E733AFAD739DD9A780F72BD9FDA559164ECA2F01731FCD0BD79A893D",
+        "AfterSHA256": "C00549F39536FE5E00D268EAC7A93F7D42F79663B0AD90DBBE4AC0E12C3756E4"
+      }
+    ],
+    "PassedTests": 123
+  },
+  "InteractiveGameplayVerified": false,
+  "LiveAudioVerified": false,
+  "Publication": "Source and documentation synchronized locally for the scheduled publication; no commit or push in this task."
+}

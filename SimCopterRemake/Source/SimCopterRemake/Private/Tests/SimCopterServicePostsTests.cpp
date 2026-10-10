@@ -120,7 +120,10 @@ bool FSimCopterServicePostsTest::RunTest(const FString& Parameters)
 	auto* Dropped=PatientAt(Entrance+FVector(-90,0,0));
 	Traffic->UpdateServiceEntrances(1.1f);
 	TestTrue(TEXT("Entrance also accepts dropped patient"),Dropped->HasMissionResolutionReported());
-	auto* Above=PatientAt(Entrance+FVector(0,0,500));
+	// New incidents now move unsafe airborne/roof positions to outdoor ground. Move this
+	// already-created patient upward afterward to test the admission height guard itself.
+	auto* Above=PatientAt(Entrance);
+	Above->SetActorLocation(Entrance+FVector(0,0,500+Above->GetCapsuleHalfHeightCm()));
 	Traffic->UpdateServiceEntrances(1.1f);
 	TestFalse(TEXT("Patient above entrance is not admitted remotely"),Above->HasMissionResolutionReported());
 	auto* FX=Missions->FindComponentByClass<USimCopterParticleFXComponent>();

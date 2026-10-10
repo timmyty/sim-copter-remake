@@ -36,7 +36,7 @@ void ASimCopterOnFootPawn::SetParachuteDeployed(bool bDeployed)
 	if (CameraBoom)
 	{
 		CameraBoom->TargetArmLength = bDeployed ? 235.0f : 130.0f;
-		CameraBoom->TargetOffset.Z = bDeployed ? 50.0f : 20.5f;
+		CameraBoom->TargetOffset.Z = bDeployed ? 50.0f : 10.0f;
 	}
 }
 
@@ -50,7 +50,6 @@ void ASimCopterOnFootPawn::StartTaserAim()
 {
 	if (PilotHealth <= 0 || IsCarryingMissionPerson() || bParachuteDeployed) return;
 	bTaserAiming=true;
-	if(CameraComponent) CameraComponent->SetFieldOfView(55);
 	if(!TaserMesh && CameraComponent)
 	{
 		TaserMesh=NewObject<UProceduralMeshComponent>(this,TEXT("Taser"));
@@ -63,6 +62,7 @@ void ASimCopterOnFootPawn::StartTaserAim()
 		TaserMesh->SetRelativeScale3D(FVector(0.25));
 	}
 	if(TaserMesh) TaserMesh->SetVisibility(true);
+	UpdateTaserPose(0.0f);
 }
 void ASimCopterOnFootPawn::StopTaserAim()
 {

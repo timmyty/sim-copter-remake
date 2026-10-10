@@ -33,7 +33,8 @@ class SIMCOPTERREMAKE_API ASimCopterDriveInPlayer : public AActor
 public:
 	ASimCopterDriveInPlayer();
 	static ASimCopterDriveInPlayer* Get(UWorld* World);
-	FString PlayVideo(const FString& FileName, bool bToggle = false);
+	// Applied means the open request was accepted or the current movie was toggled off.
+	FString PlayVideo(const FString& FileName, bool bToggle = false, bool* OutApplied = nullptr);
 	void StopVideo();
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
