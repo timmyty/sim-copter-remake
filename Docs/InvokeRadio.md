@@ -17,24 +17,6 @@ Master game volume continues to control the whole mix. The October 5 follow-up
 preserves volume when tuning and saves sound settings on OK, Back, Escape, or
 controller B. See [radio volume and stalled vehicles](RadioVolumeAndStalledVehicles.md).
 
-## Song sources
-
-Measured all 372 audio files under `D:/AICreating/MusicCreation`. Selected the most
-recent complete mix within 0.75 seconds of each screenshot duration; excluded
-stems and consolidated instrument recordings. All 21 imports meet that tolerance.
-Converted to stereo 44.1 kHz signed 16-bit PCM because the game's loose WAV decoder
-requires PCM. No trimming, padding, or time stretching was used.
-
-Source filenames, modification times, measured durations, playback order, and imported
-SHA-256 hashes are recorded in [InvokeRadioTracks.json](InvokeRadioTracks.json).
-
-Two source choices deserve review: “Disconnect the Net” uses the 176.293-second
-export rather than the newer 177.21-second master, to match 2:56. “I Didn't Build
-This Life Alone” uses `PreviousNotUsing/Growth Struggle (Remix).wav`, the only
-available complete audio mix matching 4:01 (240.840 seconds). Other Growth Struggle
-mixes are 3:48. “Dive to Hell” is available only as a complete WAV named
-`Dive to Hell for Super Earth (previous).wav`, matching 3:40.
-
 ## Implementation and validation
 
 Authored music resides at `SimCopterRemake/Content/Radio/InvokeTheRevoked`, staged
