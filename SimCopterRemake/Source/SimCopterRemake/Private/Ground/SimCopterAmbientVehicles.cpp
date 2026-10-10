@@ -1261,6 +1261,65 @@ void ASimCopterAmbientVehiclesActor::SetBoatMeshTransform(
 // Tick
 // ---------------------------------------------------------------------------------------------
 
+FTransform ASimCopterAmbientVehiclesActor::EvaluateCityTourPlane(const FBox& Bounds, float Seconds, int32 Index)
+{
+	const double Angle = Seconds * 0.07 + Index * UE_PI;
+	const FVector Radius(Bounds.GetSize().X * 0.32, Bounds.GetSize().Y * 0.23, 0);
+	const FVector Direction(-Radius.X * FMath::Sin(Angle), Radius.Y * FMath::Cos(Angle), 0);
+	FVector Position = Bounds.GetCenter() + FVector(Radius.X*FMath::Cos(Angle),Radius.Y*FMath::Sin(Angle),0);
+	Position.Z = Bounds.Max.Z + 1200 + Index * 600;
+	FRotator Heading = Direction.Rotation();
+	Heading.Roll = -10;
+	// The gameplay LOD is only 2.6 m wide. At whole-city distance it falls below
+	// a few pixels; give the showcase airliner a readable ~21 m wingspan.
+	return FTransform(Heading,Position,FVector(8));
+}
+
+void ASimCopterAmbientVehiclesActor::BeginCityTour(const FBox& Bounds)
+{
+	EndCityTour();
+	if (!Bounds.IsValid || !bEnablePlanes) return;
+	EnsurePools();
+	if (!bPoolsInitialized) return;
+	CityTourBounds = Bounds;
+	bCityTourActive = true;
+	for (int32 Index=0;Index<SimCopterAmbientVehicles::PlaneSlots;++Index)
+	{
+		CityTourPreviousVisibility[Index] = Planes[Index].Mesh && Planes[Index].Mesh->IsVisible();
+		if (Planes[Index].Mesh) Planes[Index].Mesh->SetVisibility(false,true);
+	}
+	for (int32 Index=0;Index<2;++Index)
+	{
+		if (auto* Mesh=CreateVehicleMesh(SimCopterAmbientVehicles::PlaneObjectId,
+			*FString::Printf(TEXT("CityTourPlane%d"),Index))) CityTourPlanes.Add(Mesh);
+	}
+	UpdateCityTour(0);
+}
+
+void ASimCopterAmbientVehiclesActor::UpdateCityTour(float ElapsedSeconds)
+{
+	if (!bCityTourActive) return;
+	for (int32 Index=0;Index<CityTourPlanes.Num();++Index)
+	{
+		CityTourPlanes[Index]->SetWorldTransform(EvaluateCityTourPlane(CityTourBounds,ElapsedSeconds,Index));
+		CityTourPlanes[Index]->SetVisibility(true);
+	}
+}
+
+void ASimCopterAmbientVehiclesActor::EndCityTour()
+{
+	if (!bCityTourActive) return;
+	bCityTourActive = false;
+	for (auto& Mesh:CityTourPlanes)
+	{
+		OwnedMeshes.Remove(Mesh);
+		Mesh->DestroyComponent();
+	}
+	CityTourPlanes.Reset();
+	for (int32 Index=0;Index<SimCopterAmbientVehicles::PlaneSlots;++Index)
+		if (Planes[Index].Mesh) Planes[Index].Mesh->SetVisibility(CityTourPreviousVisibility[Index],true);
+}
+
 void ASimCopterAmbientVehiclesActor::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
