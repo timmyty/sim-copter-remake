@@ -313,7 +313,11 @@ public:
 	const FString& GetFigureMnemonic() const { return FigureMnemonic; }
 	int32 GetFigureCurrentFrame() const { return FigureCurrentFrame; }
 	int32 GetPedestrianFigureClothesOffset() const { return FigureClothesOffset; }
-	const FString& GetPedestrianFigureName() const { return PedestrianFigureName; }
+	const FString& GetPedestrianFigureName() const
+	{
+		return FigureShared.IsValid() && FigureShared->Model.Figures.IsValidIndex(FigureIndex)
+			? FigureShared->Model.Figures[FigureIndex].Name : PedestrianFigureName;
+	}
 	// Farm animals bounce after impacts; they never enter the human medical/carry pipeline.
 	bool IsCow() const { return PedestrianFigureName.Equals(TEXT("Coww"), ESearchCase::IgnoreCase) || InitialBehaviorClass == 17; }
 	const FString& GetMeshTableName() const { return MeshTableName; }
@@ -1251,6 +1255,7 @@ public:
 
 private:
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterBandCelebrationTest;
 	friend class FSimCopterAircraftRoadUpdateTest;
 	friend class FSimCopterServicePostsTest;

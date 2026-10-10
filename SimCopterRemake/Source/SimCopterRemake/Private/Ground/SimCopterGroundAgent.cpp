@@ -5758,7 +5758,10 @@ bool ASimCopterGroundAgent::CaptureRuntimeSaveState(TArray<uint8>& OutData)
 	Writer << Magic << Version;
 	uint8 Kind = static_cast<uint8>(AgentKind);
 	Writer << Kind << MeshTableName << OriginalGameRoot.Path << MovementSpeedCmPerSec;
-	Writer << PedestrianFigureName << InitialPersonState << InitialBehaviorClass;
+	// Pool-selected figures may leave the configured name empty. Save the resolved body so
+	// recreating the actor cannot pick a different person from its new object name/hash.
+	FString SavedFigureName = GetPedestrianFigureName();
+	Writer << SavedFigureName << InitialPersonState << InitialBehaviorClass;
 	Writer << InitialBehaviorAgitation << InitialBehaviorProgramId << MissionEventId;
 	FTransform Transform = GetActorTransform();
 	Writer << Transform;
@@ -6072,6 +6075,9 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 	BehaviorBeamTarget.Reset();
 	// The fixed ambient UFO component is relinked in ResolveRuntimeSaveReferences after every
 	// traffic actor exists. It is not a behavior selection and therefore has no actor-name field.
+	// ConfigureAgent built a texture before the saved VM attributes were restored. The saved
+	// selector alone cannot prove that texture matches (especially for bandaged patients).
+	FigureHeadIndex = INDEX_NONE;
 	RefreshHeadImageIndex();
 	if (!ForcedFigureMnemonic.IsEmpty())
 	{

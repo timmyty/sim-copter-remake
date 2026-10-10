@@ -5,6 +5,23 @@ of [JamesIV4/sim-copter-remake](https://github.com/JamesIV4/sim-copter-remake), 
 on [wyozi's version](https://github.com/wyozi/sim-copter-remake/tree/25d81802b065eac5fee1dbd74afb75d1e59004e8).
 Original authorship and commit history are retained.
 
+## October 10 matching NPC identities and medic care
+
+Walking people, helicopter occupants and passenger portraits now use the same
+resolved figure, head and clothing colors. The seated pilot uses the original
+pilot appearance in every flyable aircraft. Save/load retains each person's
+identity, and hair/helmet colors remain consistent with the portrait.
+
+Medics aboard with a living patient show animated gloved hands providing care in
+their portrait until the patient leaves or dies. Existing flight reactions,
+impact flinches, patient expressions and the original medic survival benefit
+remain unchanged. [Behavior and original-game evidence](NpcAppearance.md).
+
+The publication audit also checked the other recent tasks: their completed work
+is already present in `29085c5` or its ancestors. All 393 source/configuration,
+project and build-wrapper files match the development copy; tracked assets match
+their Git LFS object hashes. [Validation details](ForkValidation.md#october-10-npc-appearance-publication).
+
 ## October 10 scheduled combined publication
 
 This update includes the completed work since `754b434` (the restored drive-in

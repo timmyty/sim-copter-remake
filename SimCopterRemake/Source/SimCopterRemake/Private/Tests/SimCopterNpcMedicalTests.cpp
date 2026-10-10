@@ -46,6 +46,8 @@ bool FSimCopterNpcMedicalTest::RunTest(const FString& Parameters)
 	{
 		auto* Agent = World->SpawnActor<ASimCopterGroundAgent>();
 		Agent->SetOwner(Traffic); Agent->InitialPersonState = State;
+		Agent->SetInitialBehaviorClass(State == 5 ? 12 : 0);
+		Agent->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian, TEXT(""), Root, 85);
 		Agent->BehaviorModel = Model; Agent->bBehaviorActive = true;
 		Agent->BehaviorContext.ResetToState(State);
 		Agent->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 100;
@@ -129,7 +131,9 @@ bool FSimCopterNpcMedicalTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Burn patient boards real Agusta"), BurnVictim->BoardCarrier(Heli,false));
 	Heli->RefreshCabinOccupants();
 	Cabin = Heli->CabinOccupantsMesh->GetProcMeshSection(0);
-	TestEqual(TEXT("Visible cabin tracks two additional people"), Cabin ? Cabin->ProcVertexBuffer.Num() : 0, PilotVertices*3);
+	TestTrue(TEXT("Visible cabin tracks two additional people"), Cabin && Cabin->ProcVertexBuffer.Num() > PilotVertices);
+	TestNotNull(TEXT("First patient's own head is in the cabin"), Heli->CabinOccupantsMesh->GetProcMeshSection(2));
+	TestNotNull(TEXT("Second patient's own head is in the cabin"), Heli->CabinOccupantsMesh->GetProcMeshSection(3));
 	// Export the actual prepared meshes for an offline cabin visibility inspection.
 	FString Obj; int32 VertexBase=1;
 	auto ExportPart=[&](const TCHAR* Name,const FProcMeshSection* Part)

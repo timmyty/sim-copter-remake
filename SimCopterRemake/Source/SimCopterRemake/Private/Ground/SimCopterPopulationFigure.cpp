@@ -502,9 +502,43 @@ bool FSimCopterPopulationFigure::BuildClipSections(
 			}
 
 			const FPrivAnimSegment& Segment = Clip.Segment(Frame, PartIndex);
-			const FVector A = ToLocal(Segment.A, Calibration);
-			const FVector B = ToLocal(Segment.B, Calibration);
-			const FLinearColor Color = ResolvePartColor(Palette, Part, Params.ClothesOffset);
+			auto PosePoint = [&](const FPrivAnimEndpoint& Endpoint)
+			{
+				FVector Point = ToLocal(Endpoint, Calibration);
+				if (Params.bSeatedPose)
+				{
+					// Remake cabin pose: preserve the authored upper body, hair and accessories.
+					// Bend the upper legs forward and leave the lower legs hanging from the knee.
+					const float Hip = Params.HeightCm * 0.5f;
+					const float Knee = Params.HeightCm * 0.25f;
+					if (Point.Z < Hip)
+					{
+						Point.X += FMath::Min(Hip - Point.Z, Hip - Knee);
+						Point.Z = Hip - FMath::Max(Knee - Point.Z, 0.0);
+					}
+					Point.Z -= Hip;
+				}
+				return Point;
+			};
+			const FVector A = PosePoint(Segment.A);
+			const FVector B = PosePoint(Segment.B);
+			FPrivAnimPart AppearancePart = Part;
+			// PEOPLE1 and SIM3D supply the face identity, but these separate ARCP hair/helmet
+			// pieces used contradictory colors (including clothes-shifted blonde hair on the
+			// black-haired head 6). Harmonize their measured part names in every world view.
+			int32 AccessoryColor = INDEX_NONE;
+			if (Figure.Name == TEXT("Blonde") && (Part.Name == TEXT("Ne40") || Part.Name == TEXT("Ne42"))) AccessoryColor = 11;
+			if (Figure.Name == TEXT("2woman") && (Part.Name == TEXT("Ne40") || Part.Name == TEXT("Ne49") || Part.Name == TEXT("Ne50"))) AccessoryColor = 6;
+			if (Figure.Name == TEXT("2blonde") && (Part.Name == TEXT("Ne40") || Part.Name == TEXT("Ne48"))) AccessoryColor = 12;
+			if (Figure.Name == TEXT("Fireman") && (Part.Name == TEXT("Ne56") || Part.Name == TEXT("Ne57") ||
+				Part.Name == TEXT("Ne58") || Part.Name == TEXT("Ne59") || Part.Name == TEXT("Ne68") ||
+				Part.Name == TEXT("Ne78") || Part.Name == TEXT("Ne79"))) AccessoryColor = 4;
+			if (AccessoryColor != INDEX_NONE)
+			{
+				AppearancePart.ColorIndex = AccessoryColor;
+				AppearancePart.FixedColor = 1;
+			}
+			const FLinearColor Color = ResolvePartColor(Palette, AppearancePart, Params.ClothesOffset);
 
 			// Dims.X sizes the round primitives (disc, head), Dims.Y the strokes, Dims.Z is the
 			// thin stroke's taper. The dot primitives only ever use endpoint A: the original

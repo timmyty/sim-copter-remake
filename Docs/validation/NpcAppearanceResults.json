@@ -1,0 +1,124 @@
+{
+  "date": "2026-10-10",
+  "feature": "NPC identity across walking, cabin and passenger portraits; active medic care portrait",
+  "builds": {
+    "Editor": "Succeeded",
+    "Shipping": "Succeeded",
+    "wrapper": "RebuildUnrealCpp.bat"
+  },
+  "headless": {
+    "succeeded": 18,
+    "warnings": 0,
+    "failed": 0,
+    "tests": [
+      "SimCopter.AircraftRoadUpdate.AllCitiesAndAircraft",
+      "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "SimCopter.Appearance.IdentityAcrossViews",
+      "SimCopter.NpcMedical.BandClusterAndSpacing",
+      "SimCopter.NpcMedical.BandObstacleRoutes",
+      "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+      "SimCopter.Passengers.FaceProgram",
+      "SimCopter.Passengers.FallGravity",
+      "SimCopter.Passengers.HeadImages",
+      "SimCopter.Passengers.PortraitRendering",
+      "SimCopter.Passengers.VoiceRates",
+      "SimCopter.RescuePilot.PassengerIdentity",
+      "SimCopter.RescuePilot.RuntimeRegression",
+      "SimCopter.RescuePilot.ShoulderAim",
+      "SimCopter.SaveGame.ArchiveRoundTrip",
+      "SimCopter.SaveGame.Names",
+      "SimCopter.SaveGame.QuickSavePersistence",
+      "SimCopter.SaveGame.RestoreState"
+    ]
+  },
+  "offscreen": {
+    "succeeded": 1,
+    "failed": 0,
+    "test": "SimCopter.Appearance.RenderedCharacters",
+    "comparisonCharacters": 10,
+    "coloredMaterialAssertion": "Passed for every comparison",
+    "visibleCabinOccupantPixels": 4638,
+    "reviewed": [
+      "walking/seated figure comparisons",
+      "portrait colors",
+      "medic care frames",
+      "actual Agusta cabin"
+    ]
+  },
+  "regressionEvidence": [
+    "Initial identity run detected unchanged blonde shirt pixels; corrected GEO-to-PEOPLE1 VGA quantization and verified red/blue variants.",
+    "Original face/health/voice tests pass, as do live impact/recovery checks during appearance updates.",
+    "Save/recreation retains the resolved figure, clothing and bandaged head texture.",
+    "Medic care stops for zero/negative health, written-off patients and unloading, and preserves all original face rows.",
+    "First-draw shader warmup resolves gray checker fallback in synthetic render worlds."
+  ],
+  "originalMedicBenefit": "BHAV 281: 1-in-20 deterioration roll with a qualifying hidden state-5 medic, otherwise 1-in-10 aboard the player; unchanged.",
+  "installed": {
+    "InstalledAt": "2026-10-10T21:13:48.5021525-05:00",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\npc-appearance\\before-install-20261010-211344",
+    "Files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "BeforeSHA256": "55F70529C8F6BAA49B1E0C688C04C9AE86E7F45D5813A7129C965EF802B31278",
+        "AfterSHA256": "5A52C55ED13218A08A6D96C428E5C000CA7CB0B4678D3743750D231B60213B4A"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "BeforeSHA256": "476D10B2B1034BBFFF2DBFEF313128C9F740DDCABBE05771A41A47182AC092F6",
+        "AfterSHA256": "3A221B28F68175D00FE59BF20DE2C3658CFC742D7DD759A9BD636774229042BA"
+      },
+      {
+        "Relative": "Manifest_NonUFSFiles_Win64.txt",
+        "BeforeSHA256": "F6DAE7D5CAE5CD630AC4E5EB99DFBC5D7DCB6E84E0CFB65A16060FFF72E2B720",
+        "AfterSHA256": "62E52B8CB7CA2B86963609A387B2355B1FBC25CAC8BB90DA2E52B342922FDECF"
+      },
+      {
+        "Relative": "Manifest_DebugFiles_Win64.txt",
+        "BeforeSHA256": "C00549F39536FE5E00D268EAC7A93F7D42F79663B0AD90DBBE4AC0E12C3756E4",
+        "AfterSHA256": "ED2F2A527A33F7A4A3B90A0E02FB80D830EE8FCD4D73D2288F44898EA4026E72"
+      }
+    ],
+    "PassedTests": 18
+  },
+  "publication": {
+    "checkout": "sim-copter-publication",
+    "destination": "https://github.com/timmyty/sim-copter-remake",
+    "branch": "main",
+    "authorization": "User explicitly authorized publishing all recent completed changes, including other tasks.",
+    "previouslyPublishedCommit": "29085c5fd62e91898c6bfc99a6667a884c91332b",
+    "allRecentWorkAudit": {
+      "comparedFiles": 4619,
+      "eligibleDevelopmentFiles": 3623,
+      "sourceFileCount": 393,
+      "sourcePublicationMatch": true,
+      "normalizedSourceSHA256": "0d46a850c8b38fca5904f3ad88a0b563e28dbabd07de0bbf5f3889c9e59666a4",
+      "assetComparison": "Tracked binary assets compared against their Git LFS SHA-256 object IDs; all match.",
+      "onlyCopyDifference": ".gitattributes in the publication checkout additionally routes MP4 through Git LFS.",
+      "missingPublicationFiles": [],
+      "otherRecentTasks": "Completed changes are already included in 29085c5 or its ancestors; no additional unpublished implementation found.",
+      "validatedNpcSourceMatch": true,
+      "installedExecutableAndSymbolsMatch": true
+    },
+    "validationReuse": "Existing successful Editor/Shipping builds, 18 focused tests and one offscreen test apply to the unchanged implementation; this publication audit does not claim a fresh full-suite run."
+  },
+  "sourceSHA256": {
+    "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp": "b91f22772e42ce844c23634c90e0bf71e5b114b1d639e65049d556f59419c853",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp": "5b8a206c141ba471ab7cd603f06bb9fc13aa2448dc4d1ac7d6b02e88b88942c5",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterPopulationFigure.cpp": "944c306ed5d6f59bd3714b71f0dbccac98f71f0e9b593d19b50c770ef0f9a1f6",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcAppearanceRenderTests.cpp": "45aa95e6d37b88f61aedb21bf3a9f81c6f3d1f6fa3dd3f0577188a88625cc46f",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcAppearanceTests.cpp": "4e523a38b502d63f7beb5b93d2370a5326b9aba4dbab9b873ab7d5cd1be04533",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcMedicalTests.cpp": "25dc4f69ae02d9472cabd995cf639d5734adbaf547a48b8813dbb125c4c9bbbd",
+    "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterHangarArt.cpp": "064390c4a042e932e017f77865be09b676928740a5c5e4895a7e962e51d794c8",
+    "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterDashboard.cpp": "4368dd92d6af6accb420d72da2d9c1541b4cb7f3bc2c0df7733619e7fe351157",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h": "3c2437c1ef2a8d9b6fe011d44440144af9316b8a66fdef8449b0ac213fe8d0c3",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h": "386ce5862440f3fe340d595ca8397b22aa0f26690a48f093c34ea991153a92ec",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterOnFootPawn.h": "80300932a795f9fa626b4ca20213abfaa6cbdbfa315b95c9e8212ee7e545a758",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterPopulationFigure.h": "d51b4ad1c07b94235a265e82f45763ae42a6e557e66e7aa2776dc817d4b1a9e4",
+    "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterHangarArt.h": "e2650d7c159a339a551af57436efc1978e94ccd02fdf3552c67218eb5c81e81f"
+  },
+  "limitations": [
+    "No interactive gameplay or listening test.",
+    "No new release archive; executable and symbols installed into the existing game."
+  ],
+  "evidenceDirectory": "Docs/scratchpad/npc-appearance/"
+}

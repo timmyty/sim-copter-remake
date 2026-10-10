@@ -589,6 +589,8 @@ public:
 	const TArray<FSimCopterMissionPassengerSlot>& GetMissionPassengerSlots() const { return MissionPassengerSlots; }
 	bool DropPassengerAtSlot(int32 SlotIndex);
 	void ReactPassengersToDamagingImpact();
+	// Presentation only: a seated, living medic has at least one living patient to tend.
+	bool IsPassengerProvidingMedicalCare(int32 SlotIndex) const;
 	void WriteOffPassengersInDestroyedHelicopter();
 
 	/**
@@ -996,6 +998,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")
 	TObjectPtr<UProceduralMeshComponent> HeliBodyMeshComponent;
 	UPROPERTY(Transient) TObjectPtr<UProceduralMeshComponent> CabinOccupantsMesh;
+	UPROPERTY(Transient) TMap<int32, TObjectPtr<UMaterialInstanceDynamic>> CabinHeadMaterials;
 	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> CabinGlassMaterial;
 	uint32 CabinOccupantsKey = MAX_uint32;
 	void RefreshCabinOccupants();
@@ -1661,6 +1664,8 @@ protected:
 private:
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterNpcAppearanceTest;
+	friend class FSimCopterNpcAppearanceRenderTest;
 	friend class FSimCopterApacheShopTest;
 	friend class FSimCopterFleetPaintTest;
 	friend class FSimCopterPoliceRoofBoardingTest;
