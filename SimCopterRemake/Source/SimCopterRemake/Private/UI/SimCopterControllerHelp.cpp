@@ -23,7 +23,7 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			Add(TEXT("rs"), TEXT("Zoom camera"));
 			Add(TEXT("x"), TEXT("Toggle spotlight"));
 			if (State.bCanExit) Add(TEXT("b"), TEXT("Exit helicopter"));
-			Add(TEXT("y"), TEXT("Police taser"));
+			Add(TEXT("y"), TEXT("Remote taser / auto orbit"));
 			Add(TEXT("r3"), TEXT("Release to return to tools"));
 			break;
 		case EContext::ToolWheel:
@@ -68,7 +68,7 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			}
 			Add(TEXT("y"), TEXT("Open Tools / switch Dispatch"));
 			Add(TEXT("lb"), TEXT("LB / RB: turn left / right"));
-			Add(TEXT("y"), TEXT("R3 + Y: police taser"));
+			Add(TEXT("y"), TEXT("R3 + Y: remote taser / orbit"));
 			if (State.bCanExit) Add(TEXT("b"), TEXT("R3 + B: exit helicopter"));
 			break;
 		}

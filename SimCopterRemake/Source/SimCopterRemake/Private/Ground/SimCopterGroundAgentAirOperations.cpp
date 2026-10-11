@@ -91,6 +91,17 @@ void ASimCopterGroundAgent::SetVehicleStalled(bool bPlayerCaused)
 	EnsureTowMission(bPlayerCaused);
 }
 
+bool ASimCopterGroundAgent::DisableVehicleWithTaser()
+{
+	if (AgentKind != ESimCopterGroundAgentKind::Vehicle || bVehicleStalled || bVehicleTowed ||
+		bVehicleTipped || bVehicleExploded || bMissionResolutionReported || IsHidden() || IsActorBeingDestroyed()) return false;
+	// Remake-only electrical stop: preserve the route and traffic state for recovery.
+	// A fresh hit refreshes the duration without creating damage or a towing mission.
+	VehicleTaserSeconds = SimCopterAirOperations::VehicleTaserDisableSeconds;
+	CurrentVelocityCmPerSec = ExternalVelocityCmPerSec = BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
+	return true;
+}
+
 void ASimCopterGroundAgent::ApplyHelicopterVehicleImpact(const FVector& WorldImpact)
 {
 	if (AgentKind != ESimCopterGroundAgentKind::Vehicle || bVehicleTowed ||
@@ -356,6 +367,8 @@ void ASimCopterGroundAgent::CompleteVehicleTow(bool bScrap)
 
 bool ASimCopterGroundAgent::TickAirOperations(float DeltaSeconds)
 {
+	const bool bTaserHeldThisFrame = IsVehicleTaserDisabled();
+	VehicleTaserSeconds = FMath::Max(0.0f, VehicleTaserSeconds - FMath::Max(0.0f, DeltaSeconds));
 	if (TickVehicleEscape(DeltaSeconds)) return true;
 	VehicleImpactCooldown = FMath::Max(0.0f, VehicleImpactCooldown - DeltaSeconds);
 	if (bVehicleTipped && !bVehicleExploded && !bVehicleDriverEvacuated)
@@ -371,7 +384,7 @@ bool ASimCopterGroundAgent::TickAirOperations(float DeltaSeconds)
 			ExplodeVehicle();
 		}
 	}
-	if (bVehicleStalled || bVehicleTowed)
+	if (bVehicleStalled || bVehicleTowed || bTaserHeldThisFrame)
 	{
 		CurrentVelocityCmPerSec = ExternalVelocityCmPerSec = FVector::ZeroVector;
 		if (!bVehicleTowed && !bVehicleExploded) UpdateGroundSnap(DeltaSeconds);

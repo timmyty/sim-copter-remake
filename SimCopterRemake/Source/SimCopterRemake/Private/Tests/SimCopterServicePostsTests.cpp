@@ -247,13 +247,7 @@ bool FSimCopterGroundMedicTest::RunTest(const FString& Parameters)
 	Heli->SetActorLocation(Entrance+FVector(380,-380,Heli->GetSimpleCollisionHalfHeight()));
 	Heli->GroundClearanceCm=7.5f;
 	ISimCopterBehaviorWorld& Actions=*Medic;
-	TestFalse(TEXT("No medical call keeps ground medic on duty"),Actions.SelectOwningVehicle(Medic->BehaviorContext));
-	auto* Patient=World->SpawnActor<ASimCopterGroundAgent>();
-	Patient->SetOwner(Traffic); Patient->BehaviorModel=Medic->BehaviorModel; Patient->bBehaviorActive=true;
-	Patient->BehaviorContext.ResetToState(0);
-	Patient->SetActorLocation(Home+FVector(2500,0,0)); Traffic->PedestrianAgents.Add(Patient);
-	TestTrue(TEXT("Waiting patient creates a medical call"),Missions->CreateIncidentMedevacForVictim(Patient));
-	TestTrue(TEXT("Ground medic can select nearby helicopter for medical call"),Actions.SelectOwningVehicle(Medic->BehaviorContext));
+	TestTrue(TEXT("One standby medic selects a nearby helicopter without a medical call"),Actions.SelectOwningVehicle(Medic->BehaviorContext));
 	const FVector Landing=Heli->GetActorLocation();
 	Heli->SetActorLocation(Landing+FVector(800,0,0));
 	TestFalse(TEXT("Ground medic does not chase distant helicopter"),Actions.SelectOwningVehicle(Medic->BehaviorContext));
@@ -266,6 +260,19 @@ bool FSimCopterGroundMedicTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Original medic program walks to nearby helicopter and boards"),Medic->GetBehaviorCarrier()==Heli);
 	TestEqual(TEXT("Ground medic consumes one cabin seat"),Heli->GetAvailablePassengerSeats(),EmptySeats-1);
 	TestFalse(TEXT("Boarding releases entrance confinement"),Medic->bHasHospitalRoofPost);
+	TestFalse(TEXT("No event does not recruit a second standby medic"),Missions->CanHospitalParamedicBoardPlayerHelicopter(Heli));
+	auto* SecondMedic=World->SpawnActor<ASimCopterGroundAgent>(); SecondMedic->SetOwner(Traffic);
+	SecondMedic->BehaviorContext.ResetToState(5); SecondMedic->SetPersistentHospitalRoofCrew(true);
+	SecondMedic->SetHospitalRoofPost(Entrance,280); SecondMedic->SetActorLocation(Home);
+	TestFalse(TEXT("Another posted medic cannot bypass the standby limit"),SecondMedic->BoardCarrier(Heli,false));
+	for (int32 Frame=0; Frame<600; ++Frame) Medic->Tick(1.0f/60);
+	TestTrue(TEXT("Standby medic stays aboard while waiting to depart"),Medic->GetBehaviorCarrier()==Heli);
+	auto* Patient=World->SpawnActor<ASimCopterGroundAgent>();
+	Patient->SetOwner(Traffic); Patient->BehaviorModel=Medic->BehaviorModel; Patient->bBehaviorActive=true;
+	Patient->BehaviorContext.ResetToState(0);
+	Patient->SetActorLocation(Home+FVector(2500,0,0)); Traffic->PedestrianAgents.Add(Patient);
+	TestTrue(TEXT("Waiting patient creates a medical call"),Missions->CreateIncidentMedevacForVictim(Patient));
+	TestTrue(TEXT("Active waiting patient retains additional medical recruitment"),Missions->CanHospitalParamedicBoardPlayerHelicopter(Heli));
 	if (Medic->GetBehaviorCarrier()==Heli)
 	{
 		Heli->SetActorLocation(Landing+FVector(2000,0,1200)); Heli->GroundClearanceCm=1200;

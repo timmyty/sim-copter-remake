@@ -8,8 +8,9 @@ police tasers, an AI helper pilot, capture equipment, expanded medical response,
 parachuting and revised airplane controls are deliberate additions. Airborne
 police tasers are fictional gameplay, not authentic 1996 SimCopter equipment.
 
-The **v1.0.6 Windows download** includes the completed updates described below,
-including matching NPC appearances and animated medic-care portraits.
+The **v1.0.7 Windows download** includes smarter intersection traffic, current-city
+helper unlocks, normal Shift flight boost, remote tasers, automatic landing,
+capture cage controls, improved medic routing and all earlier updates.
 
 ## What this fork adds
 
@@ -29,23 +30,27 @@ including matching NPC appearances and animated medic-care portraits.
   move to reachable outdoor ground, and ambulances recover deceased NPCs.
   [Medical operations](Docs/NpcMedicalAndHelicopterUpdate.md).
 - **Police tools, cargo recovery and helper aircraft.** Use a nonlethal taser
-  from the shoulder aiming view or an officer's passenger seat, then handcuff
-  and deliver living suspects for arrest credit. An AI pilot holds the aircraft
-  while you use the passenger view. Towing clamps, a four-person capture cage,
+  from the shoulder aiming view or a helicopter's nose-mounted remote weapon, then
+  handcuff and deliver living suspects for arrest credit. The cockpit's AIM TASER
+  button starts automatic pursuit without an officer aboard. Towing clamps, a four-person capture cage,
   repair/junkyard/harbor destinations and an unlockable helper pilot expand
-  recovery work. Helpers transport actual cargo and people and respect safer
+  recovery work. Helpers unlock after graduating the current city, fly at a reduced
+  cruise speed, transport actual cargo and people, and respect safer
   pickup, landing and delivery clearances. [Controls and air operations](Docs/AirOperations.md).
 - **More aircraft and revised flight presentation.** Fly Transport airplanes
   with independent pitch and throttle, spinning propellers, retractable landing
   gear and dashboard speed/gear controls. Helicopters have catalog-matched paint,
   cabin glazing, corrected equipment views and the hidden Apache encounter.
-  Exiting in flight leaves the helicopter descending; the pilot has fall damage
+  Normal Shift adds 30% horizontal speed with steeper tilt, while cheat turbo keeps
+  its existing speed. Exiting in flight lets the helicopter find a nearby safe landing
+  or use a purchased rescue harness; the pilot has fall damage
   and a visible deployable parachute. The retractable cockpit wiring panel is
   restored, and career warps retain the selected aircraft.
   [Airplane controls](Docs/AircraftAndDestruction.md) and [pilot equipment](Docs/RescuePilotFixes.md).
 - **City flyovers and a more active city.** Thirty city-specific introductions
   adapt the original full-length tours, with their soundtracks, close aircraft
-  passes, animated wind turbines and skippable playback. Traffic avoids parked
+  passes, animated wind turbines and skippable playback. Traffic chooses less
+  congested intersection exits and can briefly phase through other stuck cars. It avoids parked
   helicopters; helicopter/car impacts can start accidents with escaping occupants
   and a short explosion fuse. Fire announcements are limited during bursts, and
   victory bands use larger, spaced formations. Apache weapons damage vehicles,
@@ -66,7 +71,7 @@ including matching NPC appearances and animated medic-care portraits.
 The flyovers are authored adaptations of the original footage, not recovered
 camera tracks. This remains an evolving remake: the [validation report](Docs/ForkValidation.md)
 records automated coverage, known failures and limits; no manual flight or
-listening test is claimed for v1.0.6.
+listening test is claimed for v1.0.7.
 
 - [All changes, departures from the original, and credits](Docs/ForkChanges.md)
 - [Complete file inventory and inherited commits](Docs/ForkFileInventory.md)
@@ -80,7 +85,7 @@ build dependencies locally. To play, use the packaged Windows download below.
 
 ## Launching a Windows build
 
-1. Download **`SimCopterRemake-v1.0.6-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
+1. Download **`SimCopterRemake-v1.0.7-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
 2. Keep `Engine`, `SimCopter`, `SimCopterRemake`, and `DriveInVideos` beside the launcher.
 3. Choose **New Career Game** or **New User Game**, then select a city to begin.
 

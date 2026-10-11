@@ -277,6 +277,8 @@ class SIMCOPTERREMAKE_API ASimCopterHelicopterPawn
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class USimCopterAirOperationsComponent;
+	friend class FSimCopterRemoteRecoveryTest;
 	friend class FSimCopterPlaneControlsTest;
 	friend class FSimCopterWeaponDamageTest;
 	friend class FSimCopterCityWeaponTest;
@@ -287,8 +289,10 @@ public:
 	class USimCopterAirOperationsComponent* GetAirOperations() const { return AirOperations; }
 	void SetAutopilotTransform(const FVector& Location, const FRotator& Rotation, float DeltaSeconds);
 	void RequestAirSupport(bool bAutomatic = false);
-	void TogglePoliceTaser();
+	void ToggleRemoteTaser();
 	FVector GetCargoAnchorWorldLocation() const { return GetRopeAnchorWorldLocation(); }
+	// Skid frame follows the visible airframe's bank, bottom and width across model changes.
+	FTransform GetCaptureCageMountTransform() const;
 	void SelectTowClamp() { SetSelectedTool(ESimCopterHelicopterTool::TowClamp); }
 	void SelectCaptureCage() { SetSelectedTool(ESimCopterHelicopterTool::CaptureCage); }
 	bool IsSupportAircraft() const;

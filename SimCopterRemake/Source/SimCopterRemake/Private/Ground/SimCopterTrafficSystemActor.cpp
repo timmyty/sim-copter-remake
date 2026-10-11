@@ -664,6 +664,11 @@ FVector GetAgentTravelDirection(const ASimCopterGroundAgent& Agent)
 	{
 		return VelocityDirection;
 	}
+	if (Agent.HasMoveTarget())
+	{
+		const FVector TargetDirection = GetFlatSafeNormal(Agent.GetMoveTargetLocation() - Agent.GetActorLocation());
+		if (!TargetDirection.IsNearlyZero()) return TargetDirection;
+	}
 	return GetFlatSafeNormal(Agent.GetActorForwardVector());
 }
 }
@@ -2521,6 +2526,34 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindNearestBehaviorPerson(
 	}
 
 	return Best;
+}
+
+ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(ASimCopterGroundAgent& Medic) const
+{
+	TArray<ASimCopterGroundAgent*> Candidates;
+	for (const auto& Weak : PedestrianAgents)
+	{
+		auto* Patient = Weak.Get();
+		if (!Patient || Patient == &Medic || Patient->IsActorBeingDestroyed() ||
+			!Patient->IsBehaviorActive() || !Patient->IsMedevacVictim() ||
+			Patient->HasMissionResolutionReported() || Patient->IsMissionPatientDead() ||
+			Patient->GetBehaviorCarrier() || Patient->GetBehaviorAttribute(EBhavAttr::Visible) == 0) continue;
+		if (Medic.bMedicPathAttempted && Medic.MedicPathTarget.Get() == Patient && Medic.MedicPath.IsEmpty() &&
+			GetWorld()->GetTimeSeconds() < Medic.NextMedicPathTime) continue;
+		Candidates.Add(Patient);
+	}
+	const FVector Origin = Medic.GetActorLocation();
+	for (auto* Patient : Candidates)
+		if (Patient->HospitalPatientClaim.Get() == &Medic && Patient->TryClaimHospitalPatient(&Medic)) return Patient;
+	// Keep FUN_004ca350's nearest-first Manhattan metric; reserve only the selected patient.
+	Candidates.Sort([Origin](const ASimCopterGroundAgent& A, const ASimCopterGroundAgent& B)
+	{
+		return FVector::DotProduct((A.GetActorLocation() - Origin).GetAbs(), FVector::OneVector) <
+			FVector::DotProduct((B.GetActorLocation() - Origin).GetAbs(), FVector::OneVector);
+	});
+	for (auto* Patient : Candidates)
+		if (Patient->TryClaimHospitalPatient(&Medic)) return Patient;
+	return nullptr;
 }
 
 // SCHOOK: MeasureCrowdAroundPerson 0x004c9f10
@@ -6156,6 +6189,92 @@ bool ASimCopterTrafficSystemActor::IsWaterTile(int32 FileX, int32 FileY) const
 	return WaterTileFlags[FileY * FSimCity2000City::MapSize + FileX] != 0;
 }
 
+bool ASimCopterTrafficSystemActor::IsTransportClearing(const FVector& Surface, float RadiusCm) const
+{
+	if (!GetWorld() || RadiusCm <= 0) return false;
+	const auto* City = ResolveSourceCityActor();
+	// Sample the whole skid/rotor footprint, not just its centre. Roads are usable only
+	// at ground level; a bridge, water edge, steep slope or occupied building cell is not.
+	for (int32 Y = -1; Y <= 1; ++Y) for (int32 X = -1; X <= 1; ++X)
+	{
+		const FVector Point = Surface + FVector(X * RadiusCm, Y * RadiusCm, 0);
+		int32 TX, TY; float Z;
+		if (!TryGetPeopleTileCoordinateAtWorldLocation(Point, TX, TY) || IsWaterTile(TX, TY) ||
+			!TryGetTerrainWorldZAtWorldLocation(Point, Z)) return false;
+		uint8 TerrainClass;
+		if (City) City->TryGetWaterGameplaySurface(Point, Z, TerrainClass);
+		const int32 TileClass = GetPeopleTileClassAtWorldLocation(Point);
+		if (FMath::Abs(Z - Surface.Z) > 25 || (TileClass >= 10 && TileClass <= 13) ||
+			(City && City->HasStandingBuildingAtTile(TX, TY))) return false;
+	}
+	if (City && City->IsInsideStandingBuildingBounds(Surface, RadiusCm, true)) return false;
+	FCollisionObjectQueryParams Objects;
+	Objects.AddObjectTypesToQuery(ECC_WorldStatic);
+	Objects.AddObjectTypesToQuery(ECC_WorldDynamic);
+	Objects.AddObjectTypesToQuery(ECC_GameTraceChannel1); // helicopter-collidable trees
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(TransportClearing), true);
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It) Query.AddIgnoredActor(*It);
+	for (TActorIterator<ASimCopterHelicopterPawn> It(GetWorld()); It; ++It) Query.AddIgnoredActor(*It);
+	FHitResult Hit;
+	// A vertical volume rejects overhangs, roof furniture and narrow gaps that a
+	// pedestrian-sized ground ray accepts. Traffic/pedestrians do not move mission markers.
+	return !GetWorld()->SweepSingleByObjectType(Hit, Surface + FVector(0,0,20000),
+		Surface + FVector(0,0,240), FQuat::Identity, Objects,
+		FCollisionShape::MakeBox(FVector(RadiusCm, RadiusCm, 200)), Query);
+}
+
+bool ASimCopterTrafficSystemActor::TryFindTransportClearing(const FVector& Origin,
+	FVector& OutSurface, float RadiusCm, float MaxDistanceCm, const FVector* WalkFrom) const
+{
+	int32 TX, TY;
+	if (!TryGetPeopleTileCoordinateAtWorldLocation(Origin, TX, TY)) return false;
+	TArray<FVector> Candidates;
+	const int32 Rings = FMath::CeilToInt(MaxDistanceCm / FMath::Max(1.0f, ActiveTileSize));
+	for (int32 Y = -Rings; Y <= Rings; ++Y) for (int32 X = -Rings; X <= Rings; ++X)
+	{
+		FVector Point;
+		if (TryGetTileCenterWorldLocation(TX+X, TY+Y, Point) &&
+			FVector::DistSquared2D(Origin, Point) <= FMath::Square(MaxDistanceCm)) Candidates.Add(Point);
+	}
+	Candidates.Sort([&](const FVector& A, const FVector& B)
+	{
+		return FVector::DistSquared2D(A, Origin) < FVector::DistSquared2D(B, Origin);
+	});
+	for (FVector Point : Candidates)
+	{
+		uint8 TerrainClass;
+		float Z = Point.Z;
+		if (const auto* City = ResolveSourceCityActor()) City->TryGetWaterGameplaySurface(Point, Z, TerrainClass);
+		Point.Z = Z;
+		if (!IsTransportClearing(Point, RadiusCm)) continue;
+		if (WalkFrom)
+		{
+			if (FMath::Abs(WalkFrom->Z - Point.Z) > 40) continue;
+			FCollisionObjectQueryParams Objects(ECC_WorldStatic);
+			Objects.AddObjectTypesToQuery(ECC_WorldDynamic);
+			FCollisionQueryParams Query(SCENE_QUERY_STAT(TransportWalkToClearing), true);
+			for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It) Query.AddIgnoredActor(*It);
+			for (TActorIterator<ASimCopterHelicopterPawn> It(GetWorld()); It; ++It) Query.AddIgnoredActor(*It);
+			FHitResult Hit;
+			if (GetWorld()->SweepSingleByObjectType(Hit, *WalkFrom+FVector(0,0,50), Point+FVector(0,0,50),
+				FQuat::Identity, Objects, FCollisionShape::MakeSphere(24), Query)) continue;
+			bool bDryRoute = true;
+			for (int32 Step = 0; Step <= 16; ++Step)
+			{
+				const FVector Along = FMath::Lerp(*WalkFrom, Point, Step / 16.0f);
+				int32 X, Y; float GroundZ;
+				if (!TryGetPeopleTileCoordinateAtWorldLocation(Along,X,Y) || IsWaterTile(X,Y) ||
+					!TryGetTerrainWorldZAtWorldLocation(Along,GroundZ) || FMath::Abs(GroundZ-Along.Z)>40)
+					{ bDryRoute = false; break; }
+			}
+			if (!bDryRoute) continue;
+		}
+		OutSurface = Point;
+		return true;
+	}
+	return false;
+}
+
 bool ASimCopterTrafficSystemActor::TryFindNearestTransportLandTile(
 	int32 OriginX,
 	int32 OriginY,
@@ -6698,9 +6817,9 @@ void ASimCopterTrafficSystemActor::UpdateTrafficInteractions(float DeltaSeconds)
 
 	if (TrafficAiMode == ESimCopterTrafficAiMode::Original)
 	{
-		// Decoded original behavior: no traffic lights and no blockage recovery. Cars queue
-		// behind whatever blocks the road (including the player), so jams form and clear the
-		// way the original's traffic-jam events expect.
+		// No stoplights in retail mode. The requested car-only escape also runs here;
+		// otherwise the default mode never recovers from an accidental intersection deadlock.
+		UpdateVehicleBlockageRecovery();
 		ApplyVehicleFollowing(VehicleFollowLookAheadCm, VehicleStopDistanceCm, VehicleSlowDistanceCm, false, DeltaSeconds);
 		ApplyPlayerRoadBlocking();
 		ApplyIntersectionApproachSlowdown(DeltaSeconds);
@@ -6718,19 +6837,17 @@ void ASimCopterTrafficSystemActor::UpdateTrafficInteractions(float DeltaSeconds)
 	if (TrafficFlowMode == ESimCopterTrafficFlowMode::Normal)
 	{
 		ApplyTrafficLights(DeltaSeconds);
+		UpdateVehicleBlockageRecovery();
 		ApplyVehicleFollowing(NormalVehicleFollowLookAheadCm, NormalVehicleStopDistanceCm, NormalVehicleSlowDistanceCm, true, DeltaSeconds);
 	}
 	else
 	{
+		UpdateVehicleBlockageRecovery();
 		ApplyVehicleFollowing(VehicleFollowLookAheadCm, VehicleStopDistanceCm, VehicleSlowDistanceCm, false, DeltaSeconds);
 	}
 
 	ApplyIntersectionApproachSlowdown(DeltaSeconds);
 	ResolveVehicleOverlaps();
-	if (TrafficFlowMode == ESimCopterTrafficFlowMode::Normal)
-	{
-		UpdateVehicleBlockageRecovery();
-	}
 	ApplyVehicleLaneGuidance(DeltaSeconds);
 	// After lane guidance, so a car edging around a crowd is not immediately pulled back into its
 	// lane, and before the pedestrian pass so the two do not fight over the same frame.
@@ -6812,7 +6929,7 @@ void ASimCopterTrafficSystemActor::ApplyRioterAvoidance(const float DeltaSeconds
 		}
 		// A jammed car is owned by the queue for the whole frame; it is already stationary and
 		// steering it would fight the jam that put it there.
-		if (IsVehicleHeldInTrafficJam(*Vehicle) || Vehicle->IsAircraftTrafficBlocked())
+		if (IsVehicleHeldInTrafficJam(*Vehicle) || Vehicle->IsAircraftTrafficBlocked() || Vehicle->IsVehicleTaserDisabled())
 		{
 			continue;
 		}
@@ -7237,6 +7354,7 @@ void ASimCopterTrafficSystemActor::SyncVehicleTrafficStates(float DeltaSeconds)
 		State.bInTrafficLightLine = false;
 		State.RecentCollisionSeconds = FMath::Max(0.0f, State.RecentCollisionSeconds - DeltaSeconds);
 		State.RecoveryCooldownSeconds = FMath::Max(0.0f, State.RecoveryCooldownSeconds - DeltaSeconds);
+		State.CarPhaseSeconds = FMath::Max(0.0f, State.CarPhaseSeconds - DeltaSeconds);
 		State.TrafficLightLineGraceSeconds = FMath::Max(0.0f, State.TrafficLightLineGraceSeconds - DeltaSeconds);
 		const float PreviousRecoveryBypassSeconds = State.RecoveryBypassSeconds;
 		State.RecoveryBypassSeconds = FMath::Max(0.0f, State.RecoveryBypassSeconds - DeltaSeconds);
@@ -7251,14 +7369,30 @@ void ASimCopterTrafficSystemActor::SyncVehicleTrafficStates(float DeltaSeconds)
 		if (!State.bInitialized)
 		{
 			State.LastLocation = CurrentLocation;
+			State.ProgressLocation = CurrentLocation;
 			State.bInitialized = true;
 			continue;
 		}
 
+		// Separation can move a trapped car faster than the old speed threshold each frame.
+		// Require meaningful displacement over time so that jitter is not mistaken for travel.
+		if (!CanVehicleRecoverFromTraffic(*Vehicle) || State.CarPhaseSeconds > 0.0f ||
+			FVector::DistSquared2D(CurrentLocation, State.ProgressLocation) >= FMath::Square(ActiveTileSize * 0.35f))
+		{
+			State.ProgressLocation = CurrentLocation;
+			State.NoProgressSeconds = 0.0f;
+		}
+		else State.NoProgressSeconds += FMath::Max(0.0f, DeltaSeconds);
+
 		const float ActualSpeedCmPerSec = DeltaSeconds > KINDA_SMALL_NUMBER
 			? FVector::Dist2D(CurrentLocation, State.LastLocation) / DeltaSeconds
 			: Vehicle->GetCurrentVelocityCmPerSec().Size2D();
-		if (Vehicle->HasMoveTarget() && ActualSpeedCmPerSec <= VehicleBlockedSpeedThresholdCmPerSec)
+		if (Vehicle->IsVehicleTaserDisabled())
+		{
+			// An intentional electrical stop must not become a blocked-road recovery/jam roll.
+			State.BlockedSeconds = 0.0f;
+		}
+		else if (Vehicle->HasMoveTarget() && ActualSpeedCmPerSec <= VehicleBlockedSpeedThresholdCmPerSec)
 		{
 			State.BlockedSeconds += DeltaSeconds;
 		}
@@ -7468,14 +7602,6 @@ void ASimCopterTrafficSystemActor::ApplyVehicleFollowing(
 			continue;
 		}
 
-		if (bUseNormalBraking)
-		{
-			if (State != nullptr && (State->RecoveryBypassSeconds > 0.0f || State->IntersectionCommitSeconds > 0.0f))
-			{
-				continue;
-			}
-		}
-
 		const FVector VehicleLocation = Vehicle->GetActorLocation();
 		const FVector Forward = GetAgentTravelDirection(*Vehicle);
 		if (Forward.IsNearlyZero())
@@ -7497,6 +7623,14 @@ void ASimCopterTrafficSystemActor::ApplyVehicleFollowing(
 			}
 
 			const FVector ToOther = Other->GetActorLocation() - VehicleLocation;
+			// FUN_0049ee30: only same-direction cars are leaders. A bridge, oncoming
+			// lane or perpendicular approach must not create a mutual following dependency.
+			if (FMath::Abs(ToOther.Z) > ActiveTileSize * TrafficJamQueueHeightToleranceTileFraction ||
+				ShouldPhaseVehiclePair(*Vehicle, *Other) ||
+				!SimCopterTrafficJam::IsSameDirectionBlocker(FVector::DotProduct(Forward, GetAgentTravelDirection(*Other)), 0))
+			{
+				continue;
+			}
 			const float ForwardDistance = FVector::DotProduct(FVector(ToOther.X, ToOther.Y, 0.0f), Forward);
 			if (ForwardDistance <= 0.0f || ForwardDistance > LookAhead)
 			{
@@ -7565,17 +7699,20 @@ void ASimCopterTrafficSystemActor::ApplyVehicleFollowing(
 		}
 
 		float SpeedScale = 1.0f;
+		// A full stop at body clearance prevents the old creep from compressing a queue
+		// until overlap separation continually shoves its cars sideways into the junction.
+		EffectiveStopDistance = FMath::Max(EffectiveStopDistance,
+			Vehicle->GetCollisionRadiusCm() + ClosestVehicleAhead->GetCollisionRadiusCm() + VehicleOverlapPaddingCm + 10.0f);
+		EffectiveSlowDistance = FMath::Max(EffectiveSlowDistance, EffectiveStopDistance + 1.0f);
 		if (ClosestForwardDistance <= EffectiveStopDistance)
 		{
-			SpeedScale = bFollowingTrafficLightQueue ? 0.0f : 0.18f;
+			SpeedScale = 0.0f;
 		}
 		else if (ClosestForwardDistance < EffectiveSlowDistance)
 		{
 			const float Alpha = (ClosestForwardDistance - EffectiveStopDistance) / FMath::Max(1.0f, EffectiveSlowDistance - EffectiveStopDistance);
 			const float ClampedAlpha = FMath::Clamp(Alpha, 0.0f, 1.0f);
-			SpeedScale = bUseNormalBraking
-				? FMath::Max(bFollowingTrafficLightQueue ? 0.0f : 0.22f, FMath::Pow(ClampedAlpha, bFollowingTrafficLightQueue ? 2.0f : 0.72f))
-				: FMath::Lerp(0.12f, 1.0f, ClampedAlpha);
+			SpeedScale = FMath::Pow(ClampedAlpha, bFollowingTrafficLightQueue ? 2.0f : 1.2f);
 		}
 
 		if (bUseNormalBraking)
@@ -7587,7 +7724,7 @@ void ASimCopterTrafficSystemActor::ApplyVehicleFollowing(
 		}
 		else
 		{
-			Vehicle->LimitTrafficSpeedScale(SpeedScale);
+			Vehicle->ApplyTrafficBrake(SpeedScale, DeltaSeconds, NormalTrafficBrakeRate);
 		}
 		if (TrafficFlowMode == ESimCopterTrafficFlowMode::Normal && ClosestVehicleAhead != nullptr)
 		{
@@ -7704,6 +7841,8 @@ void ASimCopterTrafficSystemActor::ResolveVehicleOverlaps()
 				}
 
 				const FVector Delta = B->GetActorLocation() - A->GetActorLocation();
+				if (FMath::Abs(Delta.Z) > ActiveTileSize * TrafficJamQueueHeightToleranceTileFraction ||
+					ShouldPhaseVehiclePair(*A, *B)) continue;
 				const FVector FlatDelta(Delta.X, Delta.Y, 0.0f);
 				const float DistanceSq = FlatDelta.SizeSquared();
 				const float MinimumDistance = A->GetCollisionRadiusCm() + B->GetCollisionRadiusCm() + VehicleOverlapPaddingCm;
@@ -7795,28 +7934,21 @@ void ASimCopterTrafficSystemActor::UpdateVehicleBlockageRecovery()
 			continue;
 		}
 
-		// A car in a jam waits it out, full stop. FUN_0049be50's blocked branch reroutes or raises
-		// a jam mission and does nothing else - there is no back-up, no lateral bypass and no
-		// rejoin anywhere in the original, and running them inside a jam is what had cars steering
-		// around each other and passing the queue instead of holding the line behind it.
-		if (State->bMissionJammed || State->bJamQueued || Vehicle->IsAircraftTrafficBlocked())
+		// Mission and deliberate stops retain ownership, including stops applied this frame.
+		if (!CanVehicleRecoverFromTraffic(*Vehicle))
+		{
+			State->CarPhaseSeconds = 0.0f;
+			State->NoProgressSeconds = 0.0f;
+			State->ProgressLocation = Vehicle->GetActorLocation();
+			continue;
+		}
+
+		if (State->RecoveryCooldownSeconds > 0.0f || State->CarPhaseSeconds > 0.0f)
 		{
 			continue;
 		}
 
-		const bool bCommittedToIntersection = State->IntersectionCommitSeconds > 0.0f;
-		if (State->RecoveryCooldownSeconds > 0.0f ||
-			(!bCommittedToIntersection && (State->bInTrafficLightLine || State->TrafficLightLineGraceSeconds > 0.0f)))
-		{
-			continue;
-		}
-
-		const bool bCommittedBlocked = bCommittedToIntersection &&
-			State->BlockedSeconds >= FMath::Min(0.45f, VehicleBlockedSecondsBeforeRecovery * 0.5f);
-		const bool bBlockedAfterCollision = State->RecentCollisionSeconds > 0.0f &&
-			State->BlockedSeconds >= VehicleBlockedSecondsBeforeRecovery;
-		const bool bLongBlockedInJam = State->BlockedSeconds >= VehicleBlockedSecondsBeforeRecovery * 2.0f;
-		if (!bCommittedBlocked && !bBlockedAfterCollision && !bLongBlockedInJam)
+		if (State->NoProgressSeconds < FMath::Max(2.0f, VehicleBlockedSecondsBeforeRecovery * 2.0f))
 		{
 			continue;
 		}
@@ -8504,45 +8636,43 @@ void ASimCopterTrafficSystemActor::MarkVehicleCollision(ASimCopterGroundAgent& V
 
 bool ASimCopterTrafficSystemActor::TryStartVehicleRecovery(ASimCopterGroundAgent& Vehicle, FSimCopterVehicleTrafficState& State)
 {
-	FVector ForwardDirection = GetFlatSafeNormal(Vehicle.GetMoveTargetLocation() - Vehicle.GetActorLocation());
-	if (ForwardDirection.IsNearlyZero())
-	{
-		ForwardDirection = GetAgentTravelDirection(Vehicle);
-	}
-	if (ForwardDirection.IsNearlyZero())
-	{
-		return false;
-	}
+	if (!CanVehicleRecoverFromTraffic(Vehicle)) return false;
+	const ASimCopterGroundAgent* Blocker = FindClosestBlockingVehicle(Vehicle, GetAgentTravelDirection(Vehicle));
+	if (Blocker == nullptr || !CanVehicleRecoverFromTraffic(*Blocker)) return false;
 
-	ASimCopterGroundAgent* BlockingVehicle = FindClosestBlockingVehicle(Vehicle, ForwardDirection);
-	const FVector BypassDirection = ChooseVehicleBypassDirection(Vehicle, BlockingVehicle, ForwardDirection);
-	if (BypassDirection.IsNearlyZero())
-	{
-		return false;
-	}
-
-	const FVector ReverseDirection = -ForwardDirection;
-	const float BackUpDistance = FMath::Max(0.0f, VehicleRecoveryBackUpDistanceCm);
-	if (BackUpDistance > 0.0f)
-	{
-		Vehicle.MoveByTrafficSeparation(ReverseDirection * BackUpDistance);
-	}
-
-	Vehicle.AddTrafficVelocityImpulse(ReverseDirection * VehicleRecoveryReverseImpulseCmPerSec);
-	const FVector DesiredBypassOffset = BypassDirection * VehicleRecoveryBypassOffsetCm;
-	const FVector SafeBypassOffset = IsVehicleTraversingDiagonalRoadTile(Vehicle)
-		? DesiredBypassOffset
-		: MakeVehicleRoadSafePathOffset(Vehicle.GetMoveTargetLocation(), DesiredBypassOffset);
-	Vehicle.SetAvoidancePathOffset(
-		SafeBypassOffset,
-		VehicleRecoveryBypassDurationSeconds,
-		VehicleRecoveryBypassSpeedMultiplier);
+	// Requested divergence: briefly ignore ordinary car pairs, keeping the actual road route.
+	// Reversing/sideways teleports stirred the queue and could leave a car facing its old node.
+	// No collision channels are disabled: aircraft, people and world geometry keep their rules.
+	Vehicle.SetAvoidancePathOffset(FVector::ZeroVector, 0.0f);
+	State.CarPhaseSeconds = FMath::Clamp(VehicleRecoveryBypassDurationSeconds, 1.0f, 4.0f);
+	State.NoProgressSeconds = 0.0f;
+	State.ProgressLocation = Vehicle.GetActorLocation();
 	State.BlockedSeconds = 0.0f;
 	State.RecentCollisionSeconds = 0.0f;
-	State.RecoveryCooldownSeconds = VehicleRecoveryCooldownSeconds;
-	State.RecoveryBypassSeconds = VehicleRecoveryBypassDurationSeconds;
+	State.RecoveryCooldownSeconds = State.CarPhaseSeconds + FMath::Max(2.0f, VehicleRecoveryCooldownSeconds);
+	State.RecoveryBypassSeconds = 0.0f;
 	State.RecoveryRejoinSeconds = 0.0f;
 	return true;
+}
+
+bool ASimCopterTrafficSystemActor::CanVehicleRecoverFromTraffic(const ASimCopterGroundAgent& Vehicle) const
+{
+	if (!Vehicle.HasMoveTarget() || Vehicle.IsHidden() || Vehicle.IsActorBeingDestroyed() ||
+		Vehicle.IsVehicleImmobilized() || Vehicle.IsVehicleTipped() || Vehicle.HasVehicleExploded() ||
+		Vehicle.IsAircraftTrafficBlocked() || Vehicle.IsStopOrdered() || Vehicle.IsStopped() ||
+		Vehicle.MissionEventId != INDEX_NONE || IsVehicleHeldInTrafficJam(Vehicle)) return false;
+	const auto* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(&Vehicle));
+	return State == nullptr || (!State->bMissionOnFire && !State->bInTrafficLightLine &&
+		(State->TrafficLightLineGraceSeconds <= 0.0f || State->IntersectionCommitSeconds > 0.0f));
+}
+
+bool ASimCopterTrafficSystemActor::ShouldPhaseVehiclePair(const ASimCopterGroundAgent& A, const ASimCopterGroundAgent& B) const
+{
+	const auto* AState = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(&A));
+	const auto* BState = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(&B));
+	return ((AState != nullptr && AState->CarPhaseSeconds > 0.0f) ||
+		(BState != nullptr && BState->CarPhaseSeconds > 0.0f)) &&
+		CanVehicleRecoverFromTraffic(A) && CanVehicleRecoverFromTraffic(B);
 }
 
 ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindClosestBlockingVehicle(
@@ -8571,6 +8701,7 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindClosestBlockingVehicle(
 
 		const FVector ToOther = Other->GetActorLocation() - VehicleLocation;
 		const FVector FlatToOther(ToOther.X, ToOther.Y, 0.0f);
+		if (FMath::Abs(ToOther.Z) > ActiveTileSize * TrafficJamQueueHeightToleranceTileFraction) continue;
 		const float ForwardDistance = FVector::DotProduct(FlatToOther, Forward);
 		if (ForwardDistance < -Vehicle.GetCollisionRadiusCm() || ForwardDistance > LookAhead)
 		{
@@ -8808,6 +8939,41 @@ FVector ASimCopterTrafficSystemActor::MakeVehicleRoadSafePathOffset(const FVecto
 	return FVector(SafeOffset.X, SafeOffset.Y, 0.0f);
 }
 
+int32 ASimCopterTrafficSystemActor::ChooseUncongestedVehicleExit(
+	const ASimCopterGroundAgent& Vehicle, int32 FromIndex, int32 PreviousIndex, int32 PreferredIndex) const
+{
+	if (!RoadNodes.IsValidIndex(FromIndex) || RoadNodes[FromIndex].Neighbors.Num() < 3 ||
+		Vehicle.MissionEventId != INDEX_NONE) return PreferredIndex;
+
+	// Evaluate only at a junction decision, not every frame. Count the directed exit and
+	// its next segment, including cars already committed to it; the opposite lane is free.
+	float BestCost = TNumericLimits<float>::Max();
+	int32 BestIndex = PreferredIndex;
+	for (const int32 Exit : RoadNodes[FromIndex].Neighbors)
+	{
+		if (Exit == PreviousIndex || !RoadNodes.IsValidIndex(Exit)) continue;
+		float Cost = Exit == PreferredIndex ? -0.25f : 0.0f;
+		if (RoadNodes[Exit].Neighbors.Num() == 1 && !SimCopterTunnel::IsPortal(RoadNodes[Exit].BuildingId)) Cost += 2.0f;
+		for (const auto& OtherPtr : VehicleAgents)
+		{
+			const auto* Other = OtherPtr.Get();
+			if (Other == nullptr || Other == &Vehicle || Other->IsHidden() || Other->IsActorBeingDestroyed()) continue;
+			const int32 Prev = Other->GetRoutePrevNode();
+			const int32 Target = Other->GetRouteTargetNode();
+			const bool bOnExit = Prev == FromIndex && Target == Exit;
+			const bool bBeyondExit = Prev == Exit && Target != FromIndex;
+			const bool bEnteringExit = Target == FromIndex && Other->GetRoutePlannedNextNode() == Exit;
+			if (!bOnExit && !bBeyondExit && !bEnteringExit) continue;
+			const auto* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(Other));
+			const bool bHeld = Other->IsVehicleImmobilized() || Other->IsAircraftTrafficBlocked() ||
+				(State != nullptr && (State->bMissionJammed || State->bJamQueued || State->NoProgressSeconds >= 1.0f));
+			Cost += (bHeld ? 4.0f : 1.0f) * (bBeyondExit ? 0.5f : 1.0f);
+		}
+		if (Cost < BestCost) { BestCost = Cost; BestIndex = Exit; }
+	}
+	return BestIndex;
+}
+
 void ASimCopterTrafficSystemActor::AssignNextTarget(ASimCopterGroundAgent& Agent, const TArray<FSimCopterGroundRouteNode>& Nodes)
 {
 	if (Nodes.Num() == 0)
@@ -8834,8 +9000,9 @@ void ASimCopterTrafficSystemActor::AssignNextTarget(ASimCopterGroundAgent& Agent
 	int32 NextIndex = Agent.GetRoutePlannedNextNode();
 	if (!Nodes.IsValidIndex(NextIndex) || !Nodes[FromIndex].Neighbors.Contains(NextIndex))
 	{
-		NextIndex = ChooseNextRouteNode(Nodes, FromIndex, ApproachIndex, RandomStream, TrafficAiMode == ESimCopterTrafficAiMode::Modernized);
+		NextIndex = ChooseNextRouteNode(Nodes, FromIndex, ApproachIndex, RandomStream, bVehicle || TrafficAiMode == ESimCopterTrafficAiMode::Modernized);
 	}
+	if (bVehicle) NextIndex = ChooseUncongestedVehicleExit(Agent, FromIndex, ApproachIndex, NextIndex);
 	if (NextIndex == INDEX_NONE)
 	{
 		// Isolated node with no neighbours: re-seed from the nearest node so the agent isn't stuck.
@@ -8854,7 +9021,8 @@ void ASimCopterTrafficSystemActor::AssignNextTarget(ASimCopterGroundAgent& Agent
 		return;
 	}
 
-	const int32 PlannedNextIndex = bVehicle ? ChooseNextRouteNode(Nodes, NextIndex, FromIndex, RandomStream, TrafficAiMode == ESimCopterTrafficAiMode::Modernized) : INDEX_NONE;
+	const int32 PlannedNextIndex = bVehicle ? ChooseUncongestedVehicleExit(Agent, NextIndex, FromIndex,
+		ChooseNextRouteNode(Nodes, NextIndex, FromIndex, RandomStream, true)) : INDEX_NONE;
 
 	// Drive to the chosen adjacent graph node; record where we came from for the next hop.
 	Agent.SetRouteState(NextIndex, FromIndex, PlannedNextIndex);

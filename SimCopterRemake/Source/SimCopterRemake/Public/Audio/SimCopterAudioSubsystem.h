@@ -83,6 +83,9 @@ class SIMCOPTERREMAKE_API USimCopterAudioSubsystem : public UTickableWorldSubsys
 public:
 	/** Convenience accessor; null when there is no world (tests, cook, CDO construction). */
 	static USimCopterAudioSubsystem* Get(const UObject* WorldContextObject);
+	// Remake pilot impact cues, independent of NPC voices and obeying the shared master volume.
+	void PlayPilotFallInjury(bool bSevere, const FVector& Location);
+	static FSimCopterPcmClip BuildBoneCrack();
 
 	// --- UWorldSubsystem ---
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;

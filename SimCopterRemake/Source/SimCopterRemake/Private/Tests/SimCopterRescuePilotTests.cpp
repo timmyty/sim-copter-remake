@@ -6,6 +6,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterAirOperations.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
@@ -186,24 +187,22 @@ bool FSimCopterRescuePilotRuntimeTest::RunTest(const FString& Parameters)
 	Heli->ExitHelicopter();
 	auto* Pilot=Cast<ASimCopterOnFootPawn>(PC->GetPawn());
 	if (!TestNotNull(TEXT("Airborne exit gives control to pilot"),Pilot)) return false;
-	TestTrue(TEXT("Abandoned aircraft enters crash descent"),Heli->FlightModel.State==ESimCopterFlightState::Dying);
-	TestFalse(TEXT("Abandoned engine shuts down"),Heli->bEngineRunning);
-	const double HeliZ=Heli->GetActorLocation().Z; Heli->SimulateFlightStep(0.05f);
-	TestTrue(TEXT("Unpiloted helicopter loses altitude"),Heli->GetActorLocation().Z<HeliZ);
+	TestTrue(TEXT("Pilot exit hands flight to recovery autopilot"),Heli->GetAirOperations()->IsRecoveringPilot());
+	TestTrue(TEXT("Recovery keeps the engine running"),Heli->bEngineRunning);
+	const double HeliZ=Heli->GetActorLocation().Z; Heli->GetAirOperations()->Update(0.05f);
+	TestEqual(TEXT("Unpiloted helicopter initially holds altitude"),Heli->GetActorLocation().Z,HeliZ);
 
 	Pilot->bFindOrSpawnParkedHelicopterOnBeginPlay=false;
-	Pilot->ParkedHelicopter=nullptr;
 	auto* Floor=World->SpawnActor<AActor>(); auto* FloorBox=NewObject<UBoxComponent>(Floor);
 	Floor->SetRootComponent(FloorBox); FloorBox->SetBoxExtent(FVector(10000,10000,20));
 	FloorBox->SetCollisionResponseToAllChannels(ECR_Block); FloorBox->RegisterComponent(); Floor->SetActorLocation(FVector(0,0,-20));
 	City->WaterGameplayTerrainClasses.Init(10,128*128);
-	bool bCrashObserved=false;
-	for (int32 Step=0;Step<1000 && !bCrashObserved;++Step)
+	for (int32 Step=0;Step<1000 && Heli->GetAirOperations()->IsRecoveringPilot();++Step)
 	{
-		Heli->SimulateFlightStep(0.05f);
-		bCrashObserved=Heli->LastFlightEvents.bCrashed;
+		Heli->GetAirOperations()->Update(0.05f);
 	}
-	TestTrue(TEXT("Unpiloted descent reaches the crash landing path"),bCrashObserved);
+	TestTrue(TEXT("Recovery lands on clear ground without destroying aircraft"),Heli->bIsLanded && Heli->FlightModel.HitPoints>0);
+	Pilot->ParkedHelicopter=nullptr;
 	auto* Move=Pilot->GetCharacterMovement(); Move->bRunPhysicsWithNoController=true;
 	auto Fall = [&](bool bChute, bool bLate)
 	{

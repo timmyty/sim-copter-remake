@@ -197,6 +197,7 @@ bool FSimCopterMissionSystem::CheckLevelCompletion()
 void FSimCopterMissionSystem::Initialize(ISimCopterMissionWorld* InWorld, uint32 RandSeed)
 {
 	World = InWorld;
+	bCaptureCageOwned = false;
 	Rand.Seed(RandSeed);
 	Records.SetNum(MaxRecords);
 	Flames.SetNum(MaxFlames);
@@ -342,6 +343,14 @@ void FSimCopterMissionSystem::UpdateSchedulerCadence()
 	}
 }
 
+void FSimCopterMissionSystem::SetCaptureCageOwned(bool bOwned)
+{
+	if (bCaptureCageOwned == bOwned) return;
+	bCaptureCageOwned = bOwned;
+	bRerollRequested = 1;
+	RebuildCumulativeWeights();
+}
+
 void FSimCopterMissionSystem::RebuildCumulativeWeights()
 {
 	DifficultyTier = CareerCity.Difficulty + 1;
@@ -355,9 +364,15 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 		return;
 	}
 
+	// User-requested departure: owning a capture cage makes the crime family three times
+	// as likely relative to other enabled jobs. Its existing difficulty mix includes robbers,
+	// muggers, arsonists and speeders. Even early cities gain crime, but all-zero/free roam
+	// settings above remain silent. Base weights are never mutated, so selling reverses it.
+	const float CrimeWeight = bCaptureCageOwned ? FMath::Max(CareerCity.Weights[1], Sum / 7.0f) * 3.0f : CareerCity.Weights[1];
+	Sum += CrimeWeight - CareerCity.Weights[1];
 	for (int i = 0; i < 7; ++i)
 	{
-		CumulativeWeights[i + 1] = static_cast<int32>((CareerCity.Weights[i] * 100.0f) / Sum);
+		CumulativeWeights[i + 1] = static_cast<int32>(((i == 1 ? CrimeWeight : CareerCity.Weights[i]) * 100.0f) / Sum);
 	}
 
 	for (int i = 2; i <= 7; ++i)
@@ -1179,9 +1194,20 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 			ReleaseFailedRecord(RecIndex);
 			return -1;
 		}
-		// REMAKE ADAPTATION: a building tile is never water, but the remake's people need a dry
-		// standing spot, so the pickup still goes through the land-tile resolver.
+		// User-requested adaptation: keep FUN_004a7a10's choice of neighbourhood, but
+		// move both ends into nearby helicopter clearings instead of building centres.
+		if (World && !World->TryResolveTransportSpawnTile(TX, TY, Rec.TileX, Rec.TileY))
+		{
+			ReleaseFailedRecord(RecIndex);
+			return -1;
+		}
 		if (World && !World->TryResolveTransportSpawnTile(PickupX, PickupY, PickupX, PickupY))
+		{
+			ReleaseFailedRecord(RecIndex);
+			return -1;
+		}
+		// Do not create a fare that can finish at its own pickup after the local adjustment.
+		if (PickupX == Rec.TileX && PickupY == Rec.TileY)
 		{
 			ReleaseFailedRecord(RecIndex);
 			return -1;
@@ -3310,6 +3336,26 @@ void FSimCopterMissionSystem::DeactivateRecord(int32 RecordIndex)
 		{
 			ActiveCount = FMath::Max(0, ActiveCount - 1);
 		}
+	}
+}
+
+void FSimCopterMissionSystem::ResolveTransportDestinationClearings()
+{
+	if (!World) return;
+	// Existing saves keep their people, progress and mission neighbourhood. Only the
+	// destination changes; map markers, BHAV 292 and the helper all read these same fields.
+	for (auto& Record : Records)
+	{
+		if (!Record.bActive || !(Record.TypeMask & TYPE_Transport) || Record.SecondaryX < 0) continue;
+		int32 X, Y;
+		if (!World->TryResolveTransportSpawnTile(Record.SecondaryX, Record.SecondaryY, X, Y)) continue;
+		if (Record.TileX == Record.SecondaryX && Record.TileY == Record.SecondaryY)
+		{
+			Record.TileX = X;
+			Record.TileY = Y;
+		}
+		Record.SecondaryX = X;
+		Record.SecondaryY = Y;
 	}
 }
 

@@ -75,6 +75,9 @@ public:
 	void SetParkedHelicopter(ASimCopterHelicopterPawn* Helicopter) { ParkedHelicopter = Helicopter; }
 	bool CanBoardNearbyHelicopter() const { return FindHelicopterWithinReach(HelicopterInteractionReachCm) != nullptr; }
 	bool IsCarryingMissionPerson() const { return CarriedMissionPerson.IsValid(); }
+	ASimCopterGroundAgent* GetCarriedMissionPerson() const { return CarriedMissionPerson.Get(); }
+	void SetAutoRescueAttached(bool bAttached);
+	bool IsAutoRescueAttached() const { return bAutoRescueAttached; }
 	int32 GetCarriedMissionEventId() const { return CarriedMissionEventId; }
 	bool PickUpMissionPerson(ASimCopterGroundAgent* MissionPerson);
 	ASimCopterGroundAgent* ConsumeCarriedMissionPerson();
@@ -235,6 +238,8 @@ private:
 	float BodySpriteTimeSeconds = 0.0f;
 	bool bUsingOriginalBodySprite = false;
 	TWeakObjectPtr<ASimCopterGroundAgent> CarriedMissionPerson;
+	TWeakObjectPtr<ASimCopterGroundAgent> LastPutDownPerson;
+	bool bAutoRescueAttached = false;
 	int32 CarriedMissionEventId = INDEX_NONE;
 	float MissionPickupCooldownSeconds = 0.0f;
 	TSharedPtr<SWidget> ControllerOverlayWidget;

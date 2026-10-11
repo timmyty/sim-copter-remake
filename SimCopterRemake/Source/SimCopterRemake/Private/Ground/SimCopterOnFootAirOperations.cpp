@@ -14,6 +14,17 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
+#include "Audio/SimCopterAudioSubsystem.h"
+
+void ASimCopterOnFootPawn::SetAutoRescueAttached(bool bAttached)
+{
+	if (bAutoRescueAttached==bAttached) return;
+	bAutoRescueAttached=bAttached;
+	SetParachuteDeployed(false); StopTaserAim(); StopJumping();
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->SetMovementMode(bAttached?MOVE_None:MOVE_Falling);
+	FallPeakZ=GetActorLocation().Z;
+}
 
 void ASimCopterOnFootPawn::SetParachuteDeployed(bool bDeployed)
 {
@@ -42,13 +53,13 @@ void ASimCopterOnFootPawn::SetParachuteDeployed(bool bDeployed)
 
 void ASimCopterOnFootPawn::ToggleParachute()
 {
-	if (PilotHealth <= 0 || !GetCharacterMovement()->IsFalling()) return;
+	if (bAutoRescueAttached || PilotHealth <= 0 || !GetCharacterMovement()->IsFalling()) return;
 	SetParachuteDeployed(!bParachuteDeployed);
 }
 
 void ASimCopterOnFootPawn::StartTaserAim()
 {
-	if (PilotHealth <= 0 || IsCarryingMissionPerson() || bParachuteDeployed) return;
+	if (bAutoRescueAttached || PilotHealth <= 0 || IsCarryingMissionPerson() || bParachuteDeployed) return;
 	bTaserAiming=true;
 	if(!TaserMesh && CameraComponent)
 	{
@@ -89,13 +100,17 @@ void ASimCopterOnFootPawn::FireTaser()
 }
 bool ASimCopterOnFootPawn::TryCarryDownedPerson()
 {
-	if(IsCarryingMissionPerson() || !CanPickUpMissionPersonNow() || PilotHealth<=0 || GetCharacterMovement()->IsFalling()) return false;
+	// Putting someone down is deliberate. Require walking away and returning before the
+	// proximity pickup can grab that same person, even after the short drop cooldown ends.
+	if (LastPutDownPerson.IsValid() && FVector::Dist2D(GetActorLocation(),LastPutDownPerson->GetActorLocation())>140)
+		LastPutDownPerson.Reset();
+	if(bAutoRescueAttached || IsCarryingMissionPerson() || !CanPickUpMissionPersonNow() || PilotHealth<=0 || GetCharacterMovement()->IsFalling()) return false;
 	ASimCopterGroundAgent* Best=nullptr; float Distance=90;
 	for(TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It)
 	{
 		const bool bDowned=It->IsInPoliceCustody() || It->IsMedevacVictim() || It->IsMissionPatientDead();
 		const float D=FVector::Dist2D(GetActorLocation(),It->GetActorLocation());
-		if(It->GetAgentKind()==ESimCopterGroundAgentKind::Pedestrian && bDowned &&
+		if(*It!=LastPutDownPerson.Get() && It->GetAgentKind()==ESimCopterGroundAgentKind::Pedestrian && bDowned &&
 			!It->IsActorBeingDestroyed() && !It->IsHidden() &&
 			(!It->HasMissionResolutionReported() || It->IsMissionPatientDead()) &&
 			!It->IsMissionCarried() && !It->GetBehaviorCarrier() && D<Distance &&
@@ -138,6 +153,7 @@ void ASimCopterOnFootPawn::Landed(const FHitResult& Hit)
 	const bool bSoftParachuteLanding = bParachuteDeployed && GetCharacterMovement()->Velocity.Z >= -250.0f;
 	if(!bSoftParachuteLanding && SimCopterAirOperations::FallCausesInjury(Distance,Water))
 	{
+		if (PilotHealth>0) if (auto* Audio=USimCopterAudioSubsystem::Get(this)) Audio->PlayPilotFallInjury(Distance>=1800.f,GetActorLocation());
 		PilotHealth=FMath::Max(0.0f,PilotHealth-FMath::Clamp((Distance-SimCopterAirOperations::SafeFallCm)*0.08f+15.0f,15.0f,100.0f));
 		InjurySeconds=PilotHealth<=0?5.0f:2.0f;
 		if(auto* Missions=Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(GetWorld(),ASimCopterMissionSystemActor::StaticClass())))
@@ -149,6 +165,7 @@ void ASimCopterOnFootPawn::Landed(const FHitResult& Hit)
 }
 void ASimCopterOnFootPawn::UpdateAirOperations(float DeltaSeconds)
 {
+	if (bAutoRescueAttached) { FallPeakZ=GetActorLocation().Z; return; }
 	TaserCooldown=FMath::Max(0.0f,TaserCooldown-DeltaSeconds);
 	if (bParachuteDeployed)
 	{

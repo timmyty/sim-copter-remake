@@ -93,6 +93,8 @@ struct SIMCOPTERREMAKE_API FSimCopterFlightInputs
 
 	// DAT_0051ac58 debug turbo (speed/climb x10). Off in normal play.
 	bool bTurbo = false;
+	// Requested normal Shift travel boost. Turbo takes precedence and keeps retail x10.
+	bool bTravelBoost = false;
 };
 
 // What the simulation needs to know about the city under the helicopter.
@@ -377,8 +379,16 @@ struct SIMCOPTERREMAKE_API FSimCopterFlightModel
 
 	// Display attitude for the scene node (FUN_00486a30 tail: matrix built from
 	// heading, pitch *target* and the smoothed bank after the slide quirk).
-	int32 DisplayPitchTenthDeg() const { return PitchTarget; }
+	int32 DisplayPitchTenthDeg() const
+	{
+		return bTravelBoostActive && HorizontalSpeed > 0
+			? PitchTarget + SimCopterFixed::Mul(bEasyFlightModel ? ForwardSpeed / 2 : ForwardSpeed,
+				TravelBoostScale - SimCopterFixed::One) : PitchTarget;
+	}
 	int32 DisplayBankTenthDeg() const { return BankSmoothed; }
+	static constexpr int32 TravelBoostScale = SimCopterFixed::One * 13 / 10;
+	// Derived each simulation step, deliberately not saved as a held input.
+	bool bTravelBoostActive = false;
 
 	bool IsRotorLifting() const { return RotorSpeed >= RotorLiftGate; }
 

@@ -45,9 +45,10 @@ void USimCopterAirOperationsSubsystem::Deinitialize()
 }
 bool USimCopterAirOperationsSubsystem::IsSupportUnlocked() const
 {
-	auto* GI=GetWorld()?GetWorld()->GetGameInstance():nullptr;
-	auto* Career=GI?GI->GetSubsystem<USimCopterCareerSubsystem>():nullptr;
-	return Career && Career->IsAirSupportUnlocked();
+	// The helper is a reward for finishing THIS city. A carried career flag (including
+	// one in an older save or a cheat warp transfer) cannot authorize work in a new city.
+	const auto* Mission = GetWorld() ? Missions() : nullptr;
+	return Mission && Mission->IsLevelComplete();
 }
 void USimCopterAirOperationsSubsystem::Tick(float DeltaSeconds)
 {
@@ -224,6 +225,7 @@ bool USimCopterAirOperationsSubsystem::OrderSupport(int32 EventId,bool bEnableAu
 		[&](const auto& Record){return Record.EventId==EventId && CanAssignAirSupport(Record);}))) return false;
 	this->bAutomatic=bEnableAutomatic; AssignedEvent=bEnableAutomatic?INDEX_NONE:EventId;
 	WorkSeconds=0; MissionAttemptSeconds=0; bReturning=false;
+	bHasLandingSurface=false;
 	return true;
 }
 void USimCopterAirOperationsSubsystem::RecallSupport()
@@ -233,7 +235,7 @@ void USimCopterAirOperationsSubsystem::RecallSupport()
 }
 FString USimCopterAirOperationsSubsystem::GetSupportStatus() const
 {
-	if(!IsSupportUnlocked()) return TEXT("Air Support unlocks after passing a level.");
+	if(!IsSupportUnlocked()) return TEXT("Air Support unlocks after passing this level.");
 	if(!SupportHelicopter.IsValid()) return TEXT("Air Support preparing at base.");
 	return SupportHelicopter->GetAirOperations()->GetStatus();
 }
@@ -257,6 +259,24 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		const float BodyOffset = Bounds.IsValid ? Here.Z - Bounds.Min.Z + 16.0f : DoorOffset;
 		return Surface + FVector(0,0,FMath::Max(DoorOffset+DoorClearance,BodyOffset));
 	};
+	const auto FindLanding = [&](const FVector& Origin, int32 Event, ASimCopterGroundAgent* Person, FVector& Surface)
+	{
+		const FBox Bounds = Heli->GetParkingWorldBounds();
+		const FVector Offset = Bounds.GetCenter()-Heli->GetActorLocation();
+		const FVector Half = Bounds.GetExtent();
+		const float Radius = FMath::Max(275.0f, float(FMath::Max(Half.X+FMath::Abs(Offset.X), Half.Y+FMath::Abs(Offset.Y)))+24);
+		// Hold one reachable clearing while the passenger walks to it; chasing the moving
+		// person's feet continually changed the descent point beside walls.
+		if (!bHasLandingSurface || LandingEvent != Event || LandingPerson.Get() != Person ||
+			FVector::Dist2D(Origin,LandingSurface)>3200 || (Person && FMath::Abs(Origin.Z-LandingSurface.Z)>40) ||
+			!Road->IsTransportClearing(LandingSurface,Radius))
+		{
+			LandingEvent=Event; LandingPerson=Person;
+			bHasLandingSurface=Road->TryFindTransportClearing(Origin,LandingSurface,Radius,3200,Person?&Origin:nullptr);
+		}
+		Surface=LandingSurface;
+		return bHasLandingSurface;
+	};
 	const auto& Records=Mission->GetMissionRecords();
 	const auto* Record=Records.FindByPredicate([&](const auto& R){return CanAssignAirSupport(R) && R.EventId==AssignedEvent;});
 	// Loaded people and slung cargo are always delivered before accepting another job or recall.
@@ -277,14 +297,15 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		{
 			if(!FindServiceRoof(Police?0xD2:0xD1,Heli->GetActorLocation(),Destination)) { Ops->SetStatus(TEXT("AIR SUPPORT: awaiting a service roof")); return; }
 		}
-		else if(Record && (Record->TypeMask & SimCopterMissions::TYPE_Transport))
+		else if (!Slots.IsEmpty() && Slots[0].Person.IsValid() &&
+			Slots[0].Person->GetMissionPassengerKind()==ESimCopterMissionPassengerKind::Transport)
 		{
 			int32 X=0,Y=0;
-			if(Mission->TryGetMissionDestinationTile(Record->EventId,X,Y))
-			{
-				float RoofExtent = 0;
-				if (!Road->TryGetBuildingRoofPost(X,Y,Destination,RoofExtent)) Road->TryGetTileCenterWorldLocation(X,Y,Destination);
-			}
+			const int32 Event = Slots[0].Person->MissionEventId;
+			FVector Origin;
+			if (!Mission->TryGetMissionDestinationTile(Event,X,Y) ||
+				!Road->TryGetTileCenterWorldLocation(X,Y,Origin) || !FindLanding(Origin,Event,nullptr,Destination))
+			{ Ops->SetSupportGoal(Heli->GetActorLocation()); Ops->SetStatus(TEXT("AIR SUPPORT: awaiting a clear drop-off")); return; }
 		}
 		Ops->SetSupportGoal(HoverOver(Destination,25));
 		Ops->SetStatus(Police?TEXT("AIR SUPPORT: transporting prisoners"):Medical?TEXT("AIR SUPPORT: transporting patients"):TEXT("AIR SUPPORT: transporting passengers"));
@@ -297,7 +318,12 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 				if (!Heli->FindClearPassengerExit(P,Exit) || (P->MissionEventId != INDEX_NONE &&
 					!Mission->IsPassengerDeliveryLocationAllowed(P->GetMissionPassengerKind(), Exit-FVector(0,0,P->GetCapsuleHalfHeightCm()), P->MissionEventId))) break;
 				if (!P->AlightFromCarrier()) break;
-				if(Mission->NotifyMissionPersonDelivered(P)) { P->SetMissionRetiredAlivePose(); P->SetLifeSpan(8); }
+				if (Mission->NotifyMissionPersonDelivered(P))
+				{
+					if (P->IsMedevacVictim()) P->ResumeDeliveredPatientBehavior();
+					else if (P->GetMissionPassengerKind()==ESimCopterMissionPassengerKind::Transport) P->BecomeAmbientPedestrian();
+					else { P->SetMissionRetiredAlivePose(); P->SetLifeSpan(8); }
+				}
 			}
 			WorkSeconds=0;
 		}
@@ -353,10 +379,36 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 	if(TargetCar) Target=TargetCar->GetActorLocation();
 	else if(TargetPerson) Target=TargetPerson->GetActorLocation()-FVector(0,0,TargetPerson->GetCapsuleHalfHeightCm());
 	else if(!Road->TryGetTileCenterWorldLocation(Record->TileX,Record->TileY,Target)) { AssignedEvent=INDEX_NONE; return; }
+	const bool bTransportPickup = TargetPerson && TargetPerson->GetMissionPassengerKind()==ESimCopterMissionPassengerKind::Transport;
+	if (bTransportPickup)
+	{
+		FVector Clearing;
+		if (!FindLanding(Target,AssignedEvent,TargetPerson,Clearing))
+		{ Ops->SetSupportGoal(Heli->GetActorLocation()); Ops->SetStatus(TEXT("AIR SUPPORT: awaiting a clear pickup")); return; }
+		Target=Clearing;
+	}
 	const FVector Goal = TargetCar ? Target+FVector(0,0,float(Heli->GetActorLocation().Z-Heli->GetCargoAnchorWorldLocation().Z)+180) : HoverOver(Target,45);
 	const float Height = Goal.Z-Target.Z;
 	Ops->SetSupportGoal(Goal);
 	if(FVector::Dist2D(Heli->GetActorLocation(),Target)>170 || FMath::Abs(Heli->GetActorLocation().Z-Target.Z-Height)>100) return;
+	if (bTransportPickup)
+	{
+		FHitResult Hit;
+		FCollisionQueryParams Query(SCENE_QUERY_STAT(SupportPassengerApproach),true,Heli);
+		for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It) Query.AddIgnoredActor(*It);
+		FCollisionObjectQueryParams Objects(ECC_WorldStatic);
+		Objects.AddObjectTypesToQuery(ECC_WorldDynamic);
+		const FVector Feet=TargetPerson->GetActorLocation()-FVector(0,0,TargetPerson->GetCapsuleHalfHeightCm());
+		if (GetWorld()->SweepSingleByObjectType(Hit,Feet+FVector(0,0,50),Target+FVector(0,0,50),
+			FQuat::Identity,Objects,FCollisionShape::MakeSphere(24),Query))
+		{ bHasLandingSurface=false; WorkSeconds=0; return; }
+		// Walk the original person to the settled helper. The player's BHAV 291 target
+		// remains player-owned; this guidance only exists during an assigned helper pickup.
+		TargetPerson->SetGuidanceMoveTarget(Target+FVector(0,0,TargetPerson->GetCapsuleHalfHeightCm()),
+			0.5f,ASimCopterGroundAgent::ShippedPassengerWalkSpeedCmPerSec);
+		if (FVector::Dist2D(TargetPerson->GetActorLocation(),Heli->GetActorLocation())>170 ||
+			Heli->GetVelocityCmPerSec().Size()>100) { WorkSeconds=0; return; }
+	}
 	WorkSeconds+=DeltaSeconds;
 	if(TargetCar)
 	{
@@ -390,5 +442,5 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 void USimCopterAirOperationsSubsystem::SerializeState(FArchive& Ar)
 {
 	Ar << bAutomatic << bReturning << AssignedEvent << WorkSeconds << MissionAttemptSeconds << StalledCarSeconds << SupportHome;
-	if(Ar.IsLoading()) { SupportHelicopter.Reset(); ThinkSeconds=0; }
+	if(Ar.IsLoading()) { SupportHelicopter.Reset(); ThinkSeconds=0; bHasLandingSurface=false; LandingPerson.Reset(); }
 }

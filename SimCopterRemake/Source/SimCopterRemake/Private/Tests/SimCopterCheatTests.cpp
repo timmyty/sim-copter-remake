@@ -63,12 +63,35 @@ bool FSimCopterCheatParserTest::RunTest(const FString&)
 	TestTrue(TEXT("Original two-character atoi bound"), Warp.Num() == 1 && Warp[0].Value == 12);
 	const auto Money = Parse(TEXT("Give me bucks or give me death: 123456"));
 	TestTrue(TEXT("Original five-character atoi bound"), Money.Num() == 1 && Money[0].Value == 12345);
-	TestFalse(TEXT("Gamble below threshold loses"), WinsMoneyGamble(1000, 25499));
-	TestTrue(TEXT("Gamble at threshold wins"), WinsMoneyGamble(1000, 25500));
+	TestFalse(TEXT("Gamble below threshold loses"), WinsMoneyGamble(1000, 999));
+	TestTrue(TEXT("Gamble at threshold wins"), WinsMoneyGamble(1000, 1000));
 	TestFalse(TEXT("Invalid amount cannot win"), WinsMoneyGamble(50000, 49999));
 	TestEqual(TEXT("3 maps to Apache runtime type"), AircraftTypeForKey(EKeys::Three), 2);
 	TestEqual(TEXT("9 maps to MD520 runtime type"), AircraftTypeForKey(EKeys::Nine), 8);
 	TestEqual(TEXT("Zero is not an aircraft shortcut"), AircraftTypeForKey(EKeys::Zero), INDEX_NONE);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMoneyCheatOddsTest, "SimCopter.Cheats.MoneySuccessRate",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterMoneyCheatOddsTest::RunTest(const FString&)
+{
+	using namespace SimCopterCheats;
+	const TPair<int32, int32> Cases[] = {
+		{1, 49000}, {16666, 49000}, {16667, 48000}, {30000, 48000},
+		{33333, 48000}, {33334, 46500}, {49999, 46500}
+	};
+	for (const auto& Case : Cases)
+	{
+		int32 Wins = 0;
+		for (int32 Roll = 0; Roll < 50000; ++Roll)
+			if (WinsMoneyGamble(Case.Key, Roll)) ++Wins;
+		TestEqual(*FString::Printf(TEXT("Amount %d has its exact tier success rate"), Case.Key), Wins, Case.Value);
+	}
+	TestFalse(TEXT("Zero amount cannot win"), WinsMoneyGamble(0, 49999));
+	TestFalse(TEXT("Oversized amount cannot win"), WinsMoneyGamble(50000, 49999));
+	TestFalse(TEXT("Negative roll is rejected"), WinsMoneyGamble(30000, -1));
+	TestFalse(TEXT("Out-of-range roll is rejected"), WinsMoneyGamble(30000, 50000));
 	return true;
 }
 
@@ -151,6 +174,9 @@ bool FSimCopterCheatGuideTest::RunTest(const FString&)
 	auto Guide = SNew(SSimCopterCheatGuide).Art(Art.Get()).OnClosed(FSimpleDelegate::CreateLambda([&]() { ++Closed; }));
 	Capture(Guide, TEXT("guide-top"));
 	TestTrue(TEXT("D-pad scroll is handled"), Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::Gamepad_DPad_Down)).IsEventHandled());
+	Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::PageDown));
+	Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::PageDown));
+	Capture(Guide, TEXT("guide-money"));
 	Guide->OnPreviewKeyDown(FGeometry(), Key(EKeys::End));
 	Capture(Guide, TEXT("guide-bottom"));
 	TestEqual(TEXT("Scrolling does not close guide"), Closed, 0);

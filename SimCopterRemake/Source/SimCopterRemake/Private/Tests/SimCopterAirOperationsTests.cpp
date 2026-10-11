@@ -25,6 +25,7 @@
 #include "Missions/SimCopterMissionSystemActor.h"
 #include "Formats/SimCity2000Reader.h"
 #include "Formats/SimCopterPeopleReader.h"
+#include "ProceduralMeshComponent.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterAirOperationsTest,"SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
  EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -127,6 +128,9 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
 
  Heli->SetDebugToolGrant(ESimCopterHelicopterTool::CaptureCage,true);
  Heli->SetSelectedTool(ESimCopterHelicopterTool::CaptureCage); Ops->UseCargoTool();
+ Ops->Update(0.4f);
+ TestTrue(TEXT("Purchased cage has visible skid fittings"),Ops->CageMountMesh && Ops->CageMountMesh->IsVisible());
+ TestEqual(TEXT("Cage finishes forming from the skids"),Ops->CageFormation,1.0f);
  Heli->CargoKeyboardCableInput=1; Heli->bControllerDPadUpHeld=true;
  Heli->ControllerMode=ESimCopterControllerMode::ToolWheel; Heli->UpdateControllerInput(0.01f);
  TestEqual(TEXT("Menu navigation cannot reel a deployed cage"),Ops->CableInput,0.0f);
@@ -135,10 +139,19 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Heli->SetSelectedTool(ESimCopterHelicopterTool::WaterBucket); Heli->UpdateControllerInput(0.01f);
  TestEqual(TEXT("Changing away from cargo stops the cable"),Ops->CableInput,0.0f);
  Heli->bControllerDPadUpHeld=false; Heli->SetSelectedTool(ESimCopterHelicopterTool::CaptureCage);
+ Ops->SetCagePanelInput(-1); Heli->UpdateControllerInput(0.01f);
+ TestEqual(TEXT("Cockpit LOWER survives the controller's per-frame input refresh"),Ops->CableInput,-1.0f);
+ Heli->ControllerMode=ESimCopterControllerMode::ToolWheel; Heli->UpdateControllerInput(0.01f);
+ TestEqual(TEXT("Menus also suspend cockpit cage holds"),Ops->CableInput,0.0f);
+ Heli->ControllerMode=ESimCopterControllerMode::None; Ops->SetCagePanelInput(0); Heli->UpdateControllerInput(0.01f);
+ TestEqual(TEXT("Releasing the cockpit button stops the cable"),Ops->CableInput,0.0f);
  Ops->CargoLocation=FVector(1000,1000,50);
+ Ops->CableLength=1600; Ops->CargoVelocity=FVector::ZeroVector; Ops->SetCableInput(0);
  TArray<ASimCopterGroundAgent*> Captives;
  for(int32 K=0;K<4;++K) Captives.Add(Person(K==0?10:0,Ops->CargoLocation+FVector(K*8,0,0)));
- TestTrue(TEXT("Cage captures actual people"),Ops->TryGrabCargo());
+ Ops->Update(0.001f);
+ TestFalse(TEXT("Cage automatically closes around people without a second use"),Ops->bCageOpen);
+ TestTrue(TEXT("Floor starts open and animates after capture"),Ops->CageSeal<1);
  TestEqual(TEXT("Cage holds four"),Ops->GetCageCount(),4);
  TestTrue(TEXT("Captured suspect cannot escape via its behavior VM"),Captives[0]->IsInPoliceCustody());
  TArray<uint8> CargoSave; { FMemoryWriter W(CargoSave,true); Ops->SerializeState(W); }
@@ -152,6 +165,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestEqual(TEXT("Full cabin leaves excess in cage"),Ops->GetCageCount(),4-FMath::Min(4,Capacity));
  Ops->OpenCargo();
  TestEqual(TEXT("Opening cage releases remaining captives"),Ops->GetCageCount(),0);
+ TestTrue(TEXT("Release gives people time to clear the capture volume"),Ops->CageCaptureDelay>0);
  for(const auto& Slot:TArray<FSimCopterMissionPassengerSlot>(Heli->GetMissionPassengerSlots())) if(Slot.Person.IsValid()) Slot.Person->AlightFromCarrier(false);
 
  auto* Car=World->SpawnActor<ASimCopterGroundAgent>(); Car->AgentKind=ESimCopterGroundAgentKind::Vehicle; Car->SetOwner(Traffic); Car->SetActorLocation(FVector(2000,2000,25));
@@ -229,19 +243,17 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Ops->SetSupportAircraft(false); Ops->bDeployed=false;
  PC->Possess(Heli);
  Heli->SetActorLocation(FVector(10000,10000,1500)); Heli->GroundClearanceCm=1400; Heli->bIsLanded=false;
- auto* Police=Person(7,FVector(10000,10000,1450));
- TestTrue(TEXT("Living officer occupies taser seat"),Police->BoardCarrier(Heli,false,true));
  auto* TaserTarget=Person(10,FVector(11000,10000,300));
  Heli->bPrimaryToolUseHeld=true; Heli->bPrimaryToolUsePressed=true;
- Heli->TogglePoliceTaser();
- TestTrue(TEXT("Police passenger enters taser camera with AI piloting"),Ops->IsPoliceTaserActive() && Ops->IsAIPiloted());
+ Heli->ToggleRemoteTaser();
+ TestTrue(TEXT("Remote taser works without an officer and enables autopilot"),Ops->IsRemoteTaserActive() && Ops->IsAIPiloted());
  TestFalse(TEXT("Entering taser mode clears held and queued aircraft weapon input"),Heli->bPrimaryToolUseHeld || Heli->bPrimaryToolUsePressed);
- if(Ops->PoliceTaserCamera)
+ if(Ops->RemoteTaserCamera)
  {
-  Ops->PoliceTaserCamera->SetActorLocation(FVector(10000,10000,1500));
+  TestTrue(TEXT("Remote camera originates at the nose weapon"),Ops->RemoteTaserCamera->GetActorLocation().Equals(Ops->GetRemoteTaserMuzzle(),.1));
   TaserTarget->CurrentVelocityCmPerSec=FVector(120,80,0);
   TaserTarget->ExternalVelocityCmPerSec=FVector(90,30,0);
-  Ops->PoliceTaserAim=(TaserTarget->GetActorLocation()-Ops->PoliceTaserCamera->GetActorLocation()).Rotation(); Ops->FirePoliceTaser();
+  Ops->RemoteTaserAim=(TaserTarget->GetActorLocation()-Ops->RemoteTaserCamera->GetActorLocation()).Rotation(); Ops->FireRemoteTaser();
   TestTrue(TEXT("Aimed taser hit incapacitates suspect"),TaserTarget->IsTaserStunned());
   TestFalse(TEXT("Taser leaves suspect alive"),TaserTarget->IsMissionPatientDead());
   TestEqual(TEXT("Taser does not subtract health"),TaserTarget->GetBehaviorAttribute(EBhavAttr::MedevacHealth),100);
@@ -262,7 +274,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
   ArmedHeli->SetDebugToolGrant(ESimCopterHelicopterTool::ApacheMissile,true);
   ArmedHeli->SetSelectedTool(ESimCopterHelicopterTool::ApacheMachineGun);
   TestTrue(TEXT("Fixture has a selectable armed machine gun"),ArmedHeli->GetActiveTool()==ESimCopterHelicopterTool::ApacheMachineGun && ArmedHeli->IsToolAvailable(ESimCopterHelicopterTool::ApacheMachineGun));
-  ArmedHeli->GetAirOperations()->bPoliceTaserActive=true;
+  ArmedHeli->GetAirOperations()->bRemoteTaserActive=true;
   ArmedHeli->bPrimaryToolUseHeld=true;
   ArmedHeli->EmitApacheMachineGunFrame();
   TestFalse(TEXT("Passenger mode refuses a direct machine-gun command"),ArmedHeli->TryBeginToolUse(ESimCopterHelicopterTool::ApacheMachineGun));
@@ -274,9 +286,10 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
   ArmedHeli->Destroy();
 
   // A civilian in the sightline must block the shot without injury or arrest.
-  auto* Bystander=Person(0,FVector(10600,10400,600));
-  auto* ShieldedSuspect=Person(11,FVector(11200,10800,-300));
-  Ops->PoliceTaserAim=(ShieldedSuspect->GetActorLocation()-Ops->PoliceTaserCamera->GetActorLocation()).Rotation();
+  const FVector SightOrigin=Ops->RemoteTaserMount->GetComponentLocation();
+  auto* Bystander=Person(0,SightOrigin+FVector(600,400,-900));
+  auto* ShieldedSuspect=Person(11,SightOrigin+FVector(1200,800,-1800));
+  Ops->RemoteTaserAim=(ShieldedSuspect->GetActorLocation()-SightOrigin).Rotation();
   Ops->ShotCooldown=0; Heli->StartPrimaryToolUse();
   TestFalse(TEXT("Civilian is not arrested"),Bystander->IsInPoliceCustody());
   TestFalse(TEXT("Civilian remains alive"),Bystander->IsMissionPatientDead());
@@ -298,8 +311,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
   TestEqual(TEXT("Arrest preserves suspect health"),TaserTarget->GetBehaviorAttribute(EBhavAttr::MedevacHealth),100);
   TestTrue(TEXT("Delivery keeps handcuffed custody"),TaserTarget->IsHandcuffed());
  }
- Ops->TogglePoliceTaser(); TestFalse(TEXT("Leaving taser restores manual piloting"),Ops->IsAIPiloted());
- Police->AlightFromCarrier(false);
+ Ops->ToggleRemoteTaser(); TestFalse(TEXT("Leaving taser restores manual piloting"),Ops->IsAIPiloted());
  auto* ArrestTarget=Person(12,FVector(6000,6000,24));
  auto* Pilot=World->SpawnActor<ASimCopterOnFootPawn>();
  Pilot->CameraComponent->SetWorldLocationAndRotation(FVector(5500,6000,24),FRotator::ZeroRotator);
@@ -324,11 +336,21 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestTrue(TEXT("Walking up automatically carries the actual stunned suspect"),Pilot->CarriedMissionPerson.Get()==ArrestTarget);
  Pilot->DropCarriedMissionPerson();
  TestTrue(TEXT("Putting suspect down preserves arrest identity"),ArrestTarget->IsInPoliceCustody());
+ TestNull(TEXT("Putting suspect down detaches their root from the pilot"),ArrestTarget->GetAttachParentActor());
+ TestFalse(TEXT("Dropped suspect is no longer marked carried"),ArrestTarget->IsMissionCarried());
+ TestTrue(TEXT("Dropped suspect restores collision and visible behavior"),ArrestTarget->GetActorEnableCollision() && ArrestTarget->GetBehaviorAttribute(EBhavAttr::Visible)==1);
+ TestTrue(TEXT("Dropped suspect clears the shoulder-carry tilt"),FMath::Abs(ArrestTarget->GetActorRotation().Roll)<.1f);
  Pilot->UpdateAirOperations(0.1f);
  TestFalse(TEXT("Putting a person down does not instantly pick them up again"),Pilot->IsCarryingMissionPerson());
  Pilot->MissionPickupCooldownSeconds=0;
  ArrestTarget->FinishPassengerFall(0); Pilot->UpdateAirOperations(0.01f);
- TestTrue(TEXT("Pickup resumes when drop cooldown expires"),Pilot->CarriedMissionPerson.Get()==ArrestTarget);
+ TestFalse(TEXT("Standing next to a dropped suspect does not pick them up again after cooldown"),Pilot->IsCarryingMissionPerson());
+ const FVector DroppedPosition=ArrestTarget->GetActorLocation();
+ Pilot->SetActorLocation(FVector(5700,6000,24)); Pilot->SetActorRotation(FRotator(0,90,0));
+ Pilot->UpdateAirOperations(.01f);
+ TestTrue(TEXT("Moving and turning the pilot leaves the dropped suspect in place"),ArrestTarget->GetActorLocation().Equals(DroppedPosition));
+ Pilot->SetActorLocation(DroppedPosition-FVector(60,0,0)); Pilot->UpdateAirOperations(.01f);
+ TestTrue(TEXT("Walking away and returning can pick up the same suspect"),Pilot->CarriedMissionPerson.Get()==ArrestTarget);
  Pilot->DropCarriedMissionPerson(); Pilot->MissionPickupCooldownSeconds=0;
  Pilot->SetActorLocation(FVector(14000,14000,24));
  auto* WalkingCivilian=Person(0,FVector(14030,14000,24)); Pilot->UpdateAirOperations(0.01f);
@@ -345,7 +367,23 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  auto* GI=NewObject<UGameInstance>(GEngine); auto* Career=NewObject<USimCopterCareerSubsystem>(GI);
  Career->BeginCareer(); TestFalse(TEXT("New career starts without helper"),Career->IsAirSupportUnlocked());
  Career->SetAirSupportUnlocked(true); Career->ContinueCareerIntoNextCity();
- TestTrue(TEXT("Helper unlock persists between levels"),Career->IsAirSupportUnlocked());
+ TestFalse(TEXT("Entering the next city clears helper eligibility"),Career->IsAirSupportUnlocked());
+ TestFalse(TEXT("An unfinished city cannot dispatch a helper"),System->IsSupportUnlocked());
+ Career->SetAirSupportUnlocked(true);
+ TestFalse(TEXT("Legacy carried unlock cannot enable an unfinished city"),System->IsSupportUnlocked());
+ TestFalse(TEXT("Manual automatic order cannot bypass graduation"),System->OrderSupport(INDEX_NONE,true));
+ TestTrue(TEXT("Graduation fixture loads actual career thresholds"),Missions->MissionSystem.LoadCareerData(
+  FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()/TEXT("../Reference/SimCopterOriginalGame/tweak/career.twk"))));
+ Missions->MissionSystem.SelectCareerCity(0);
+ Missions->MissionSystem.AddScore(399);
+ Missions->MissionSystem.AdvanceCareerIfComplete();
+ TestFalse(TEXT("One point below graduation keeps helper locked"),System->IsSupportUnlocked());
+ Missions->MissionSystem.AddScore(1);
+ Missions->MissionSystem.AdvanceCareerIfComplete();
+ TestTrue(TEXT("Passing current city permits helper"),System->IsSupportUnlocked());
+ Missions->MissionSystem.SelectCareerCity(1);
+ Missions->MissionSystem.ContinueSession(1000);
+ TestFalse(TEXT("Fresh session after a transfer or warp requires graduation again"),System->IsSupportUnlocked());
  Ops->SetSupportAircraft(true);
  TestFalse(TEXT("Player cannot take over dispatch helper"),Heli->CanBeEnteredBy(Heli->GetActorLocation(),10000));
  const FVector Before=Heli->GetActorLocation(); Ops->AdvanceAutopilot(Before+FVector(0,0,1000),0.1f,500);
@@ -388,6 +426,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  System->ServiceRoofs.Add(0xD1,TArray<FVector>{Hospital});
  const int32 RescueId=Missions->MissionSystem.CreateIncidentMedevacAt(PX,PY);
  auto* Patient=Person(6,Pickup+FVector(0,0,24)); Patient->MissionEventId=RescueId;
+ Patient->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian,TEXT("PED1"),Root,125);
  Patient->BehaviorContext.Attributes[EBhavAttr::MedevacHealth]=1;
  System->AssignedEvent=RescueId; System->MissionAttemptSeconds=0; System->WorkSeconds=0;
  Heli->SetAutopilotTransform(Pickup+FVector(0,0,1500),FRotator::ZeroRotator,0.05f);
@@ -408,7 +447,104 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestNull(TEXT("Delivered patient no longer occupies helper cabin"),Patient->GetBehaviorCarrier());
  const auto* Rescued=Missions->MissionSystem.FindRecord(RescueId);
  TestTrue(TEXT("One delivery and no casualties are recorded"),Rescued && Rescued->MedevacDelivered==1 && Rescued->Casualties==0);
+ TestTrue(TEXT("Helper patient resumes original post-delivery program"),Patient->bBehaviorActive &&
+  Patient->BehaviorContext.Stack.Num()>0 && Patient->BehaviorContext.Stack[0].ProgramId==282);
+ bool bCheered=false;
+ for(int32 Step=0;Step<120;++Step)
+ {
+  Patient->UpdateOriginalBehavior(0.05f);
+  bCheered |= Patient->GetFigureMnemonic()==TEXT("Whoa");
+ }
+ TestTrue(TEXT("Delivered helper patient performs original Whoa celebration"),bCheered);
+ TestFalse(TEXT("Celebration does not kill the patient"),Patient->IsMissionPatientDead());
+ TestTrue(TEXT("Original celebration finishes, rather than looping"),!Patient->IsBehaviorActive());
  Building->Destroy(); HospitalBlock->Destroy(); PickupGround->Destroy();
+
+ // A building destination and a passenger in a narrow strip beside another building.
+ // The old helper aimed at the roof / person's feet, so a safe full-body sweep could
+ // never reach either goal. Exercise the real flight and walking path with no teleport.
+ struct FTransportWorld : ISimCopterMissionWorld
+ {
+  ASimCopterTrafficSystemActor* Traffic=nullptr;
+  bool bResolve=false;
+  virtual int32 GetXbldTileId(int32 X,int32 Y) const override { return 0x70; }
+  virtual int32 GetBuildingFootprintSize(int32,int32) const override { return 1; }
+  virtual bool GetCameraTile(int32& X,int32& Y) const override { X=64; Y=64; return true; }
+  virtual bool GetPlayerTile(int32& X,int32& Y) const override { return GetCameraTile(X,Y); }
+  virtual bool TrySpawnMissionPerson(int32,int32,int32,int32,int32) override { return true; }
+  virtual bool TryResolveTransportSpawnTile(int32 X,int32 Y,int32& OutX,int32& OutY) override
+  {
+   OutX=X; OutY=Y;
+   if (!bResolve) return true;
+   FVector Origin,Clearing;
+   return Traffic->TryGetTileCenterWorldLocation(X,Y,Origin) && Traffic->TryFindTransportClearing(Origin,Clearing,275,3200) &&
+    Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Clearing,OutX,OutY);
+  }
+ } TransportWorld;
+ TransportWorld.Traffic=Traffic;
+ Missions->MissionSystem=FSimCopterMissionSystem();
+ Missions->MissionSystem.Initialize(&TransportWorld,1); Missions->MissionSystem.BeginSession();
+ const int32 TransportId=Missions->MissionSystem.CreateEventAt(76,64,TYPE_Transport);
+ TestTrue(TEXT("Transport fixture created"),TransportId>=0);
+ FVector DropCenter; Traffic->TryGetTileCenterWorldLocation(76,64,DropCenter);
+ FVector WaitCenter; Traffic->TryGetTileCenterWorldLocation(64,64,WaitCenter);
+ auto* Ground=Box(FVector(0,0,-40),FVector(24000,24000,40));
+ auto* DropBuilding=Box(DropCenter+FVector(0,0,600),FVector(520,520,600));
+ auto* WaitBuilding=Box(WaitCenter+FVector(0,600,600),FVector(900,400,600));
+ TestFalse(TEXT("Roof-centre marker is not a clearing"),Traffic->IsTransportClearing(DropCenter));
+ TestFalse(TEXT("Pedestrian-size gap is too small for rotor footprint"),Traffic->IsTransportClearing(WaitCenter));
+ FVector Clearing;
+ TestTrue(TEXT("Nearby ground clearing exists"),Traffic->TryFindTransportClearing(DropCenter,Clearing));
+ TestTrue(TEXT("Clearing remains within four original tiles"),FVector::Dist2D(Clearing,DropCenter)<=1600);
+ TestTrue(TEXT("Dropoff is ground-level"),FMath::Abs(Clearing.Z)<1);
+ TestFalse(TEXT("Bounded resolver does not move missions across the city"),Traffic->TryFindTransportClearing(DropCenter,Clearing,350,200));
+ Traffic->WaterTileFlags.Init(1,128*128);
+ TestFalse(TEXT("Water cannot be a clearing"),Traffic->TryFindTransportClearing(WaitCenter,Clearing));
+ Traffic->WaterTileFlags.Init(0,128*128);
+ TransportWorld.bResolve=true;
+ Missions->MissionSystem.ResolveTransportDestinationClearings();
+ const auto* Adjusted=Missions->MissionSystem.FindRecord(TransportId);
+ TestTrue(TEXT("Old roof destination relocates to nearby clearing"),Adjusted->SecondaryX!=76 || Adjusted->SecondaryY!=64);
+ TestEqual(TEXT("Primary map marker follows clearing"),Adjusted->TileX,Adjusted->SecondaryX);
+ const FIntPoint SavedDestination(Adjusted->SecondaryX,Adjusted->SecondaryY);
+ Missions->MissionSystem.ResolveTransportDestinationClearings();
+ TestTrue(TEXT("Repeated restore keeps the same destination"),SavedDestination==FIntPoint(Adjusted->SecondaryX,Adjusted->SecondaryY));
+ const int32 FreshTransportId=Missions->MissionSystem.CreateEventAt(76,64,TYPE_Transport);
+ const auto* FreshTransport=Missions->MissionSystem.FindRecord(FreshTransportId);
+ TestNotNull(TEXT("New transport can still be created beside a blocked building"),FreshTransport);
+ if (FreshTransport)
+ {
+  FVector FreshPickup,FreshDrop;
+  TestTrue(TEXT("New mission pickup has helicopter clearance"),Traffic->TryGetTileCenterWorldLocation(FreshTransport->TertiaryX,FreshTransport->TertiaryY,FreshPickup) && Traffic->IsTransportClearing(FreshPickup));
+  TestTrue(TEXT("New mission destination has helicopter clearance"),Traffic->TryGetTileCenterWorldLocation(FreshTransport->SecondaryX,FreshTransport->SecondaryY,FreshDrop) && Traffic->IsTransportClearing(FreshDrop));
+  TestTrue(TEXT("New destination stays in its original neighbourhood"),FVector::Dist2D(FreshDrop,DropCenter)<=3200);
+ }
+ auto* Fare=Person(4,WaitCenter+FVector(0,0,24)); Fare->MissionEventId=TransportId;
+ System->AssignedEvent=TransportId; System->bReturning=false; System->bAutomatic=false;
+ System->MissionAttemptSeconds=0; System->WorkSeconds=0; System->bHasLandingSurface=false;
+ Heli->SetAutopilotTransform(WaitCenter+FVector(-2000,0,1800),FRotator::ZeroRotator,0.05f);
+ bool bFareBoarded=false,bTouchedBuilding=false,bRecalled=false;
+ for(int32 Step=0;Step<3600 && !Fare->HasMissionResolutionReported();++Step)
+ {
+  System->UpdateSupport(0.05f); Ops->Update(0.05f); Fare->Tick(0.05f);
+  bFareBoarded |= Fare->GetBehaviorCarrier()==Heli;
+  // A loaded recall still owes this passenger the destination stored on their own event.
+  if(bFareBoarded && !bRecalled) { System->RecallSupport(); bRecalled=true; }
+  bTouchedBuilding |= Heli->GetParkingWorldBounds().Intersect(DropBuilding->GetComponentsBoundingBox()) ||
+   Heli->GetParkingWorldBounds().Intersect(WaitBuilding->GetComponentsBoundingBox());
+ }
+ AddInfo(FString::Printf(TEXT("Transport result: helicopter=%s fare=%s boarded=%d delivered=%d status=%s"),
+  *Heli->GetActorLocation().ToString(),*Fare->GetActorLocation().ToString(),bFareBoarded,Fare->HasMissionResolutionReported(),*Ops->GetStatus()));
+ TestTrue(TEXT("Helper collects passenger via nearby clearing"),bFareBoarded);
+ TestTrue(TEXT("Helper delivers transport even after loaded recall"),Fare->HasMissionResolutionReported());
+ TestFalse(TEXT("Transport flight keeps rotors and tail outside buildings"),bTouchedBuilding);
+ TestTrue(TEXT("Delivered fare remains an ordinary living pedestrian"),!Fare->IsHidden() && Fare->IsBehaviorActive() && !Fare->IsMissionPatientDead());
+ TestTrue(TEXT("Landing stays in the original neighbourhood"),FVector::Dist2D(Heli->GetActorLocation(),DropCenter)<=1600);
+ TestTrue(TEXT("Fare exits beside the nearby landing point"),FVector::Dist2D(Fare->GetActorLocation(),Heli->GetActorLocation())<=180);
+ TestEqual(TEXT("Transport credits exactly one delivery"),Missions->MissionSystem.FindRecord(TransportId)->TransportDelivered,1);
+ Ground->Destroy(); DropBuilding->Destroy(); WaitBuilding->Destroy();
+ Missions->MissionSystem=FSimCopterMissionSystem();
+ Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
 
  // Even a forced helper contact must not invoke the player's accident/fine path.
  auto* UnharmedCar=World->SpawnActor<ASimCopterGroundAgent>(); UnharmedCar->AgentKind=ESimCopterGroundAgentKind::Vehicle;

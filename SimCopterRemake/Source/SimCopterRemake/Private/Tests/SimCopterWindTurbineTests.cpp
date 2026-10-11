@@ -4,6 +4,7 @@
 #include "City/SimCity2000CityActor.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterWindTurbineTest,"SimCopter.CityIntro.WindTurbineLifecycle",
@@ -22,8 +23,29 @@ bool FSimCopterWindTurbineTest::RunTest(const FString&)
 	auto* Rotors=City->BuildingInstanceComponents[City->WindTurbineComponentIndex].Get();
 	const int32 Count=Rotors->GetInstanceCount();
 	TestTrue(TEXT("Entire wind farm receives blades"),Count>10);
+	// Trace the blade's actual triangles, then repeat after rotation. Empty sectors stay open.
+	const auto CheckBladeCollision=[&]
+	{
+		FTransform Pose; Rotors->GetInstanceTransform(0,Pose,true);
+		const float Radius=Rotors->GetStaticMesh()->GetBounds().BoxExtent.Z;
+		FCollisionQueryParams Query(SCENE_QUERY_STAT(TurbineBladeTest),true);
+		for (int32 Blade=0; Blade<3; ++Blade)
+		{
+			const FQuat Spin(FVector::ForwardVector,Blade*2*PI/3);
+			const FVector Point=Spin.RotateVector(FVector(0,0,Radius*.65f));
+			FHitResult Hit;
+			TestTrue(TEXT("Each spinning blade blocks aircraft/visibility traces"),World->LineTraceSingleByChannel(Hit,
+				Pose.TransformPosition(Point+FVector(50,0,0)),Pose.TransformPosition(Point-FVector(50,0,0)),ECC_Visibility,Query) && Hit.GetComponent()==Rotors);
+			const FVector Gap=FQuat(FVector::ForwardVector,PI/3).RotateVector(Point);
+			FHitResult GapHit;
+			World->LineTraceSingleByChannel(GapHit,Pose.TransformPosition(Gap+FVector(50,0,0)),Pose.TransformPosition(Gap-FVector(50,0,0)),ECC_Visibility,Query);
+			TestFalse(TEXT("Space between blades is not a solid rotor disc"),GapHit.GetComponent()==Rotors);
+		}
+	};
+	CheckBladeCollision();
 	FTransform Before,After; Rotors->GetInstanceTransform(0,Before);
 	City->AdvanceWindTurbines(.5f); Rotors->GetInstanceTransform(0,After);
+	CheckBladeCollision();
 	TestTrue(TEXT("Blades turn about the fixed original hub"),Before.GetLocation().Equals(After.GetLocation()) && !Before.GetRotation().Equals(After.GetRotation()));
 	City->AdvanceWindTurbines(0); FTransform Held; Rotors->GetInstanceTransform(0,Held);
 	TestTrue(TEXT("Zero elapsed time holds rotor pose"),Held.Equals(After));

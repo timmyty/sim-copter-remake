@@ -104,6 +104,8 @@ public:
 	void AppendMissionMarkerAvoidanceWidgets(TArray<TSharedPtr<SWidget>>& OutWidgets) const;
 
 private:
+	friend class FSimCopterCaptureCageTest;
+	friend class FSimCopterRemoteRecoveryTest;
 	// The dispatch strip's page width. Wider than a tool flap to carry full artwork and controls.
 	static constexpr float DispatchPageWidth = 232.0f;
 
@@ -125,6 +127,8 @@ private:
 	// unlike every other brush here it is not owned by the art object.
 	TSharedPtr<FSlateBrush> DispatchFillBrush;
 	TSharedPtr<FSlateBrush> ApacheFillBrush;
+	TSharedPtr<FSlateBrush> CageFillBrush;
+	TSharedPtr<FSlateBrush> TaserFillBrush;
 
 	TSharedPtr<SMenuAnchor> MegaphoneMenu;
 	TArray<TSharedPtr<SWidget>> MissionMarkerAvoidancePanels;
@@ -164,6 +168,8 @@ private:
 	TSharedRef<SWidget> BuildToolFlap(const SimCopterFlapLayout::FFlap& Flap);
 	TSharedRef<SWidget> BuildDispatchFlap();
 	TSharedRef<SWidget> BuildApacheFlap();
+	TSharedRef<SWidget> BuildCaptureCageFlap();
+	TSharedRef<SWidget> BuildRemoteTaserFlap();
 
 	// The shared background for the two strips the original has no artwork for.
 	void AddStripBackground(

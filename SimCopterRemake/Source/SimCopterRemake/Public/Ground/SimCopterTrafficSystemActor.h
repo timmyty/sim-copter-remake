@@ -39,11 +39,9 @@ enum class ESimCopterTrafficFlowMode : uint8
 };
 
 // Which car AI drives the traffic. Original = the decoded SimCopter behavior: cars wander the
-// road graph with random turns, queue behind blockers (jams form naturally, and the player's
-// landed helicopter blocks tiles), no traffic lights. This is the default. Modernized = the
-// remake's traffic-light + blockage-recovery system: cars prefer to carry straight on, wait out a
-// red at the intersections, and dig themselves out when stuck. Note that ApplyPlayerRoadBlocking is
-// an Original-mode rule, so a landed helicopter does not stop cars in Modernized.
+// road graph without traffic lights. This is the default. Modernized adds timed stoplights.
+// Both modes use congestion-aware exits and bounded car-only deadlock recovery, a requested
+// divergence from retail. Mission queues and aircraft obstructions still hold in both modes.
 UENUM(BlueprintType)
 enum class ESimCopterTrafficAiMode : uint8
 {
@@ -65,6 +63,10 @@ struct FSimCopterWholeMapRecord
 
 struct FSimCopterVehicleTrafficState
 {
+	// Net displacement, not overlap impulses, decides whether traffic is making progress.
+	FVector ProgressLocation = FVector::ZeroVector;
+	float NoProgressSeconds = 0.0f;
+	float CarPhaseSeconds = 0.0f;
 	FVector LastLocation = FVector::ZeroVector;
 	float BlockedSeconds = 0.0f;
 	float RecentCollisionSeconds = 0.0f;
@@ -243,6 +245,10 @@ public:
 		bool& bOutAllowsElevatedMesh) const;
 	bool IsWaterTile(int32 FileX, int32 FileY) const;
 	bool TryFindNearestTransportLandTile(int32 OriginX, int32 OriginY, int32& OutX, int32& OutY);
+	/** Ground-level helicopter footprint, with a clear vertical approach. Search stays local. */
+	bool IsTransportClearing(const FVector& Surface, float RadiusCm = 275.0f) const;
+	bool TryFindTransportClearing(const FVector& Origin, FVector& OutSurface, float RadiusCm = 275.0f,
+		float MaxDistanceCm = 1600.0f, const FVector* WalkFrom = nullptr) const;
 	int32 GetPeopleStoredFacingFromWorldLocations(
 		const FVector& FromWorldLocation,
 		const FVector& ToWorldLocation) const;
@@ -256,6 +262,8 @@ public:
 		const ASimCopterGroundAgent& From,
 		int32 LoopFlagFilter,
 		int32 StateFilter) const;
+	// Ground equivalent of the cabin reservation: one deployed medic per casualty.
+	ASimCopterGroundAgent* FindAndClaimGroundPatient(ASimCopterGroundAgent& Medic) const;
 	// FUN_004ca4f0(State, 0): state match whose visibility attribute is zero.
 	bool HasHiddenBehaviorPersonInState(int32 State) const;
 	// FUN_004c9f10: the crowd around a person - how many other people are within RadiusTiles, the
@@ -809,9 +817,13 @@ protected:
 	int32 ActivePedestrianCount = 0;
 
 private:
+	friend class FSimCopterTrafficFlowTest;
 	friend class FSimCopterPatientPlacementTest;
+	friend class FSimCopterMedicRouteTest;
+	friend class FSimCopterPatientMarkerTest;
 	friend class FSimCopterPatientCityPlacementTest;
 	friend class FSimCopterParkedAircraftTrafficTest;
+	friend class FSimCopterVehicleTaserTest;
 	friend class USimCopterAirOperationsSubsystem;
 	friend class USimCopterAirOperationsComponent;
 	friend class FSimCopterAirOperationsTest;
@@ -1229,6 +1241,9 @@ public:
 	// jam mission. Only the dispatch pools run the original's routine, so only they roll here.
 	void ApplyBlockedVehicleJamRoll(ASimCopterGroundAgent& Vehicle);
 	bool TryStartVehicleRecovery(ASimCopterGroundAgent& Vehicle, FSimCopterVehicleTrafficState& State);
+	bool CanVehicleRecoverFromTraffic(const ASimCopterGroundAgent& Vehicle) const;
+	bool ShouldPhaseVehiclePair(const ASimCopterGroundAgent& A, const ASimCopterGroundAgent& B) const;
+	int32 ChooseUncongestedVehicleExit(const ASimCopterGroundAgent& Vehicle, int32 FromIndex, int32 PreviousIndex, int32 PreferredIndex) const;
 	ASimCopterGroundAgent* FindClosestBlockingVehicle(const ASimCopterGroundAgent& Vehicle, const FVector& ForwardDirection) const;
 	FVector ChooseVehicleBypassDirection(const ASimCopterGroundAgent& Vehicle, const ASimCopterGroundAgent* BlockingVehicle, const FVector& ForwardDirection) const;
 	bool TryMakeVehicleLaneGuidanceTarget(const ASimCopterGroundAgent& Vehicle, FVector& OutTarget, float& OutDistanceFromLane, bool& bOutTraversingDiagonalRoad) const;

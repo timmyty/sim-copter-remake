@@ -90,10 +90,10 @@ void ASimCopterHelicopterPawn::RequestAirSupport(bool bAutomatic)
 	else LastToolStatus=Ops && !Ops->IsSupportUnlocked()?TEXT("Pass a level to unlock Air Support."):TEXT("Select an active map mission. Air Support must finish its current passenger/cargo delivery first.");
 	if(Missions) Missions->ShowAirOperationsMessage(LastToolStatus);
 }
-void ASimCopterHelicopterPawn::TogglePoliceTaser()
+void ASimCopterHelicopterPawn::ToggleRemoteTaser()
 {
 	if (IsFixedWingAircraft()) return;
 	StopPrimaryToolUse(); // Clear held fire AND a queued projectile press before changing roles.
-	AirOperations->TogglePoliceTaser();
+	AirOperations->ToggleRemoteTaser();
 	RefreshCrosshairVisibility();
 }

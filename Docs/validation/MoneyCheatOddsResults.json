@@ -1,0 +1,265 @@
+{
+  "date": "2026-10-10",
+  "editorBuild": "Succeeded",
+  "shippingBuild": "Succeeded",
+  "failureTiers": [
+    {
+      "maximum": 16666,
+      "failurePercent": 2,
+      "minimum": 1
+    },
+    {
+      "maximum": 33333,
+      "failurePercent": 4,
+      "minimum": 16667
+    },
+    {
+      "maximum": 49999,
+      "failurePercent": 7,
+      "minimum": 33334
+    }
+  ],
+  "testRuns": [
+    {
+      "run": "tests-targeted",
+      "succeeded": 28,
+      "succeededWithWarnings": 2,
+      "failed": 0,
+      "notRun": 0,
+      "inProcess": 0,
+      "tests": [
+        {
+          "fullTestPath": "SimCopter.Cheats.CEOFreeDeliveryAndLifetime",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.CityEffects",
+          "state": "Success",
+          "warnings": 17,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.DialogEscape",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.DriveInCommands",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.FuelShieldsAndTurbo",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.GortOriginalAssets",
+          "state": "Success",
+          "warnings": 1,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.GortPlayback",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.GortRender",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.GortReturnToGame",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.GortTimeline",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.MoneySuccessRate",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.NuclearPreservesServices",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.OriginalDialogArt",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.OriginalDogAssets",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.OriginalParser",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Cheats.PauseMenuGuide",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.AntiAliasingMethod",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.CitySettings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.ControlBindings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.DisplayResolution",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.GraphicsPersistence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.HorizontalSlider",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.LowPowerMode",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.MenuItems",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.MenuLayout",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.OverallQualityLabels",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.RealTimeOfDay",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.SoundSettings",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.SoundVolumePersistence",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.Settings.TimeOfDay",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        }
+      ]
+    },
+    {
+      "run": "tests-render",
+      "succeeded": 1,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0,
+      "inProcess": 0,
+      "tests": [
+        {
+          "fullTestPath": "SimCopter.Cheats.PauseMenuGuide",
+          "state": "Success",
+          "warnings": 0,
+          "errors": 0
+        },
+        {
+          "fullTestPath": "SimCopter.DriveIn.Playback",
+          "state": "Success",
+          "warnings": 11,
+          "errors": 0
+        }
+      ]
+    }
+  ],
+  "visualReview": [
+    "guide-money.png"
+  ],
+  "manualGameplay": false,
+  "manualListening": false,
+  "installation": "Installed with verified backups; installed binaries match the validated build.",
+  "installedFiles": [
+    {
+      "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+      "AfterSHA256": "C5018FEDA20FC68A63F167B645C6F23A0D2A7941ED5FDA7BC620E86A4817ACC3"
+    },
+    {
+      "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+      "AfterSHA256": "1F8C34AA14FB5A33B3B448A95102BD51DC5445076558E8FCBD87F25627E017E4"
+    },
+    {
+      "Relative": "Docs/CheatCodes.md",
+      "AfterSHA256": "CB2E4EEB6C942E46426BA4A787D9CABF9B0BCF979CB644CB858C2776C7CA3A5A"
+    },
+    {
+      "Relative": "Manifest_NonUFSFiles_Win64.txt",
+      "AfterSHA256": "87C42657CA0EFCDB4AB42EAD6CB4763DEDDEE8E9E76C457B13716D74BBB9210A"
+    },
+    {
+      "Relative": "Manifest_DebugFiles_Win64.txt",
+      "AfterSHA256": "0B178B1B288F038A9A411A8511FC42FA85950B2D52FF98A1DF4E11C20570D9B7"
+    }
+  ],
+  "evidence": "Docs/scratchpad/cheat-menu/"
+}
