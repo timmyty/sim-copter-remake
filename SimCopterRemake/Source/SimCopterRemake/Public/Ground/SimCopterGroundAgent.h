@@ -67,6 +67,10 @@ class SIMCOPTERREMAKE_API ASimCopterGroundAgent
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 
 public:
@@ -80,6 +84,9 @@ public:
 	void CompletePoliceDelivery(const FVector& Roof);
 	void SetVehicleStalled(bool bPlayerCaused = false);
 	void ApplyHelicopterVehicleImpact(const FVector& WorldImpact);
+	bool ApplyWeaponVehicleHit(bool bMissile, const FVector& WorldImpact);
+	void ExplodeVehicle();
+	bool HasVehicleExploded() const { return bVehicleExploded; }
 	void RebuildVehicleDents();
 	bool IsTowableVehicle() const { return AgentKind == ESimCopterGroundAgentKind::Vehicle && bVehicleStalled && !IsVehicleAccidentBurning() && !bVehicleExploded && !bMissionResolutionReported; }
 	bool IsVehicleTipped() const { return bVehicleTipped; }
@@ -288,6 +295,8 @@ public:
 	bool HasMissionResolutionReported() const { return bMissionResolutionReported; }
 	void SetMissionResolutionReported(bool bReported) { bMissionResolutionReported = bReported; }
 	bool IsMissionPatientDead() const { return bMissionPatientDead; }
+	bool IsAirSupportPassenger() const { return bAirSupportPassenger; }
+	void BeginAirSupportRescue() { bAirSupportPassenger = true; }
 	void ResetMissionActionTracking()
 	{
 		bMissionPickupCreditAwarded = false;
@@ -310,9 +319,16 @@ public:
 	const FString& GetMeshTableName() const { return MeshTableName; }
 	void SetMissionInjuredPose();
 	void SetBandFormationTarget(const FVector& Target, float FacingYaw, bool bEnabled);
+	bool TryResolveBandStandLocation(const FVector& Desired, const FVector& Center, FVector& OutLocation,
+		TConstArrayView<FVector> Reserved = {});
 	bool CanWalkBandSegment(const FVector& From, const FVector& To);
+	bool CanTakeBandStep(const FVector& To);
+	FVector BandListenerCenter = FVector::ZeroVector;
+	float BandListenerClearance = 0;
+	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> BandNeighbors;
 	bool GetBandWaypoint(const FVector& Goal, FVector& OutWaypoint);
 	bool bBandFormationActive = false;
+	bool bHasBandCelebrationTarget = false;
 	FVector BandFormationTarget = FVector::ZeroVector;
 	float BandFormationYaw = 0;
 	TArray<FVector> BandPath;
@@ -1235,6 +1251,7 @@ public:
 
 private:
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterBandCelebrationTest;
 	friend class FSimCopterAircraftRoadUpdateTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;
@@ -1396,6 +1413,7 @@ private:
 	bool bMissionPickupCounted = false;
 	bool bMissionResolutionReported = false;
 	bool bMissionPatientDead = false;
+	bool bAirSupportPassenger = false;
 	bool bAmbulanceHandoffPending = false;
 	bool bPersistentHospitalRoofCrew = false;
 	// The roof post from SetHospitalRoofPost: centre and surface Z of the building this worker
@@ -1683,6 +1701,7 @@ protected:
 	// each of them having to remember. Runs after all of them and before the ground snap, beside
 	// ContainToHospitalRoofPost.
 	void ContainOutsideBuildingGeometry();
+	bool IsVehicleStepBlockedByAircraft(const FVector& Delta, const FQuat& Rotation) const;
 	void MoveAgainstCityGeometry(const FVector& Delta, const FQuat& Rotation);
 
 	// ISimCopterBehaviorWorld

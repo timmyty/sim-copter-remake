@@ -14,6 +14,13 @@ The October 9 update also includes original cheat entry/effects, synchronized Go
 dialogue, HD drive-in videos, visible aircraft occupants, flyable Transport planes,
 improved emergency road coverage, city intro tours and first-impact car accidents.
 
+The October 10 source update adds city-specific flyovers and original music,
+spinning turbines, shoulder-camera taser aiming, a pause-menu cheat guide, quieter
+fire reporting, a larger spaced victory band, safer medical/helper operations,
+cockpit wiring, improved airplane controls and expanded Apache destruction.
+See [the publication notes](Docs/ForkChanges.md#october-10-scheduled-combined-publication)
+for the complete change list. Downloadable releases retain their tagged feature set.
+
 - [All changes, departures from the original, and credits](Docs/ForkChanges.md)
 - [Complete file inventory and inherited commits](Docs/ForkFileInventory.md)
 - [Build and dependency instructions](Docs/ForkBuild.md)
@@ -93,7 +100,7 @@ While playing a city, press **Ctrl + Alt + X** to open the original bitmap cheat
 
 Drive-in theaters play local MP4 videos, including HD and higher resolutions, with localized sound at every theater, fading with distance from each screen. The complete picture stretches across the theater screen's full width and 75% of its height, centered vertically, without cropping. Movies loop until stopped, pause with the game, and end when leaving the city or when all theaters are demolished. Cities without a theater receive one on a clear, level lot during loading. Look for the small screen/play logo on the minimap. Imported maps need a suitable 3x3 lot; occupied or uneven ground is preserved.
 
-New profiles start on **KINV**. Once you tune another station, the game remembers that choice across cities and restarts, together with your existing volume setting. See [placement and radio details](Docs/DriveInPlacementAndRadio.md).
+New profiles start on **Rock (KROC)**. Each level starts with the radio enabled on the last chosen station. A nonzero volume is retained; a previous zero-volume OFF setting returns to an audible default. See [cockpit and radio details](Docs/CockpitAndSupportSafety.md).
 
 1. Put your videos in **`DriveInVideos` beside `SimCopterRemake.exe`** in the packaged game folder. Source builds also read `SimCopterRemake/Content/DriveInVideos`.
 2. Use **H.264 video and AAC audio in `.mp4` files** for Windows playback. Use a plain filename, including spaces if needed, without a folder path or URL.

@@ -1,5 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
+#include "Audio/SimCopterAudioSubsystem.h"
+#include "Components/AudioComponent.h"
 #include "City/SimCopterDriveIn.h"
 #include "City/SimCity2000CityActor.h"
 #include "Formats/SimCity2000Reader.h"
@@ -37,6 +39,11 @@ public:
 			World->InitializeActorsForPlay(FURL());
 			Controller = World->SpawnActor<ASimCopterPlayerController>();
 			Controller->Possess(World->SpawnActor<APawn>());
+			auto* Audio = World->GetSubsystem<USimCopterAudioSubsystem>();
+			Audio->bSoundsAvailable = true; // Observe requested cues even with the test mix muted.
+			Audio->StopStandaloneSounds();
+			Controller->ExecuteCheatCodes(TEXT("hsi"));
+			Test->TestTrue(TEXT("Unavailable theater does not play a success cue"), Audio->LooseComponents.IsEmpty());
 			City = World->SpawnActorDeferred<ASimCity2000CityActor>(ASimCity2000CityActor::StaticClass(), FTransform::Identity);
 			City->bLoadOnConstruction = false;
 			City->bRenderProceduralMapExtension = false;
@@ -48,6 +55,14 @@ public:
 			Test->TestEqual(TEXT("Loaded map has a real theater and minimap location"), Theaters.Num(), 1);
 			DriveIn = ASimCopterDriveInPlayer::Get(World);
 			Test->AddInfo(Controller->ExecuteCheatCodes(TEXT("hsi")));
+			CheckCheatCue(Audio, TEXT("MBoxCht"));
+			Audio->StopStandaloneSounds();
+			Controller->ExecuteCheatCodes(TEXT("HSI"));
+			Test->TestFalse(TEXT("Uppercase HSI toggles lowercase request off"), DriveIn->IsVideoActive());
+			CheckCheatCue(Audio, TEXT("MBoxCht1"));
+			Audio->StopStandaloneSounds();
+			Controller->ExecuteCheatCodes(TEXT("HSI"));
+			CheckCheatCue(Audio, TEXT("MBoxCht"));
 			Test->TestEqual(TEXT("The authored theater screen is found"), DriveIn->GetScreenCount(), 1);
 			Started = FPlatformTime::Seconds();
 		}
@@ -112,6 +127,14 @@ private:
 	ASimCopterDriveInPlayer* DriveIn = nullptr;
 	double Started = 0;
 	int32 Stage = 0;
+	void CheckCheatCue(USimCopterAudioSubsystem* Audio, const TCHAR* Name)
+	{
+		const FString Path = Audio->ResolveWavPath(Name, SimCopterSound::ESoundDir::Root).ToLower();
+		const auto* Component = Audio->LooseFiles.Find(Path);
+		Test->TestTrue(FString::Printf(TEXT("Movie cheat uses shared %s cue"), Name), Component && Component->IsValid());
+		if (Component && Component->IsValid())
+			Test->TestTrue(TEXT("Cheat cue can play while paused"), Component->Get()->bIsUISound);
+	}
 	void CheckTheaterPicture()
 	{
 		if (DriveIn->Surfaces.IsEmpty()) return;

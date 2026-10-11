@@ -212,7 +212,9 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestTrue(TEXT("AI helper independently delivers its assigned car"),ServiceCar->HasMissionResolutionReported());
 
  // Helper cabin releases must use distinct door positions, not a shared destination point.
- Heli->SetActorLocation(FVector(15000,15000,100)); Heli->VelocityCmPerSec=FVector::ZeroVector;
+ FVector HelperPad; Traffic->TryGetAirportPadWorldLocation(0,HelperPad);
+ const float HelperDoorOffset=Heli->GetActorLocation().Z-Heli->GetPassengerDropWorldLocation().Z;
+ Heli->SetActorLocation(HelperPad+FVector(0,0,HelperDoorOffset+25)); Heli->VelocityCmPerSec=FVector::ZeroVector;
  Ops->ReleaseCargo(); Ops->bDeployed=false;
  System->AssignedEvent=INDEX_NONE;
  System->SupportHome=Heli->GetPassengerDropWorldLocation()+FVector(700,700,2200);
@@ -357,6 +359,78 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  System->AssignedEvent=INDEX_NONE; System->bAutomatic=true; System->bReturning=false;
  System->UpdateSupport(0.05f);
  TestEqual(TEXT("Automatic helper never treats Base Location as a mission"),System->AssignedEvent,INDEX_NONE);
+
+ // End-to-end helper flight: collect a fragile patient, clear a real blocking building,
+ // descend onto a hospital roof, and deliver the same living actor without penalties.
+ PC->UnPossess(); Heli->RemoveMissionPassengers(100); Ops->ReleaseCargo(); Ops->bDeployed=false;
+	// The mission-system reset above reuses event IDs. Retire its old fixture people so
+	// an earlier dropped swimmer cannot consume this patient's new one-person rescue.
+	for (auto Existing : Traffic->PedestrianAgents) if (Existing.IsValid()) Existing->Destroy();
+	Traffic->PedestrianAgents.Reset();
+ Ops->SetSupportAircraft(true); Heli->SwitchHelicopterModel(0);
+ System->SupportHelicopter=Heli; System->bAutomatic=false; System->bReturning=false;
+ City->WaterGameplayTerrainClasses.Init(10,128*128);
+ const FVector Pickup(-20000,-18000,0), Hospital(-12000,-18000,300);
+ auto Box=[&](const FVector& At,const FVector& Half)
+ {
+  auto* Actor=World->SpawnActor<AActor>(); auto* Shape=NewObject<UBoxComponent>(Actor);
+  Actor->SetRootComponent(Shape); Actor->AddInstanceComponent(Shape); Shape->SetBoxExtent(Half);
+  Shape->SetCollisionEnabled(ECollisionEnabled::QueryOnly); Shape->SetCollisionResponseToAllChannels(ECR_Block);
+  Shape->RegisterComponent(); Actor->SetActorLocation(At); return Actor;
+ };
+ auto* Building=Box(FVector(-17000,-18000,550),FVector(150,900,550));
+ auto* HospitalBlock=Box(Hospital-FVector(0,0,150),FVector(700,700,150));
+ auto* PickupGround=Box(Pickup-FVector(0,0,40),FVector(1000,1000,40));
+ int32 PX=0,PY=0,HX=0,HY=0;
+ TestTrue(TEXT("Patient has a valid city tile"),Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Pickup,PX,PY));
+ Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Hospital,HX,HY);
+ Traffic->XbldTileIds[HY*128+HX]=0xD1;
+ System->ServiceRoofs.Add(0xD1,TArray<FVector>{Hospital});
+ const int32 RescueId=Missions->MissionSystem.CreateIncidentMedevacAt(PX,PY);
+ auto* Patient=Person(6,Pickup+FVector(0,0,24)); Patient->MissionEventId=RescueId;
+ Patient->BehaviorContext.Attributes[EBhavAttr::MedevacHealth]=1;
+ System->AssignedEvent=RescueId; System->MissionAttemptSeconds=0; System->WorkSeconds=0;
+ Heli->SetAutopilotTransform(Pickup+FVector(0,0,1500),FRotator::ZeroRotator,0.05f);
+ bool bHitBuilding=false,bBoarded=false;
+ for(int32 Step=0;Step<2400 && !Patient->HasMissionResolutionReported();++Step)
+ {
+  System->UpdateSupport(0.05f); Ops->Update(0.05f); Patient->UpdateOriginalBehavior(0.05f);
+  bBoarded |= Patient->GetBehaviorCarrier()==Heli;
+  bHitBuilding |= Heli->GetParkingWorldBounds().Intersect(Building->GetComponentsBoundingBox());
+ }
+ TestTrue(TEXT("Helper boards the assigned real patient"),bBoarded);
+ TestFalse(TEXT("Full airframe clears the building during the rescue"),bHitBuilding);
+ AddInfo(FString::Printf(TEXT("Helper rescue result: position=%s patient=%s state=%d initial=%d event=%d resolved=%d health=%d"),
+  *Heli->GetActorLocation().ToString(),*Patient->GetActorLocation().ToString(),Patient->BehaviorContext.GetStateIndex(),
+  Patient->InitialPersonState,Patient->MissionEventId,Patient->HasMissionResolutionReported(),Patient->GetBehaviorAttribute(EBhavAttr::MedevacHealth)));
+ TestTrue(TEXT("Helper completes roof delivery within two minutes"),Patient->HasMissionResolutionReported());
+ TestFalse(TEXT("Critical patient remains alive during helper rescue"),Patient->IsMissionPatientDead());
+ TestNull(TEXT("Delivered patient no longer occupies helper cabin"),Patient->GetBehaviorCarrier());
+ const auto* Rescued=Missions->MissionSystem.FindRecord(RescueId);
+ TestTrue(TEXT("One delivery and no casualties are recorded"),Rescued && Rescued->MedevacDelivered==1 && Rescued->Casualties==0);
+ Building->Destroy(); HospitalBlock->Destroy(); PickupGround->Destroy();
+
+ // Even a forced helper contact must not invoke the player's accident/fine path.
+ auto* UnharmedCar=World->SpawnActor<ASimCopterGroundAgent>(); UnharmedCar->AgentKind=ESimCopterGroundAgentKind::Vehicle;
+ UnharmedCar->SetOwner(Traffic); UnharmedCar->SetActorLocation(Heli->GetActorLocation());
+ UnharmedCar->CurrentVelocityCmPerSec=FVector(800,0,0);
+ const int32 CashBefore=Missions->GetSessionCash(),ScoreBefore=Missions->GetSessionScore();
+ Ops->SetSupportGoal(Heli->GetActorLocation()); Ops->Update(0.05f);
+ TestFalse(TEXT("Helper contact cannot tip or ignite a car"),UnharmedCar->bVehicleTipped || UnharmedCar->bVehicleExploded);
+ TestEqual(TEXT("Helper contact cannot fine the player"),Missions->GetSessionCash(),CashBefore);
+ TestEqual(TEXT("Helper contact cannot dock player score"),Missions->GetSessionScore(),ScoreBefore);
+ UnharmedCar->Destroy();
+
+ // Defensive attribution remains per person and survives a save; it grants no false rescue.
+ const int32 FailedId=Missions->MissionSystem.CreateIncidentMedevacAt(PX,PY);
+ auto* Protected=Person(6,Heli->GetActorLocation()); Protected->MissionEventId=FailedId;
+ TestTrue(TEXT("Responsibility fixture boards support"),Protected->BoardCarrier(Heli,false,true));
+ TArray<uint8> PersonSave; TestTrue(TEXT("Support passenger saves"),Protected->CaptureRuntimeSaveState(PersonSave));
+ TestTrue(TEXT("Support passenger restores"),Protected->RestoreRuntimeSaveState(PersonSave));
+ TestTrue(TEXT("Helper responsibility survives save"),Protected->IsAirSupportPassenger());
+ TestTrue(TEXT("Unexpected helper casualty resolves without player penalty"),Missions->NotifyMissionPersonDied(Protected));
+ const auto* Failed=Missions->MissionSystem.FindRecord(FailedId);
+ TestTrue(TEXT("Helper failure neither charges a casualty nor invents a delivery"),Failed && Failed->Casualties==0 && Failed->MedevacDelivered==0 && Failed->MedevacVictims==0);
  GEngine->DestroyWorldContext(World); World->DestroyWorld(false);
  return true;
 }

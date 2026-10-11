@@ -1,0 +1,987 @@
+{
+  "Date": "2026-10-10",
+  "EditorBuild": "Succeeded",
+  "ShippingBuild": "Succeeded",
+  "Reproduction": "Sea Cliff: 16 newly created incident patients inaccessible before the fix",
+  "Succeeded": 115,
+  "SucceededWithWarnings": 14,
+  "Failed": 0,
+  "NotRun": 0,
+  "Maps": 45,
+  "BuildingBounds": 51799,
+  "ScheduledPatients": 51633,
+  "IncidentPatients": 720,
+  "OnScreenPlaytest": false,
+  "Tests": [
+    {
+      "Path": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Collision.AirframeColliderFit",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Collision.BuildingWalls",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Collision.StepSweepShape",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Collision.WalkProbeIgnoresOverhead",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Collision.WallContainmentStep",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.ArrivalAction",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.EmergencyCrewStates",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.Failures",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.HospitalParamedicRespawn",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.HospitalRoofPost",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.MedevacHandoffGates",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.PoliceRoofBoarding",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.Selection",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.Spiral",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.StationScan",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.TargetSnap",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Dispatch.TileRules",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Interaction.AirframeGap",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Interaction.PassengerDoorOffset",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Interaction.ReactionStack",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Interaction.ReactionTable",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Interaction.SpiralScan",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.ArsonistRenderedBuildingTarget",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.BaseLocationRecord",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.BuildingFireDifficulty",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.BurglarCarStaysOpen",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.CrimeIdentityAndSpawn",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.CrimePlacementNeedsBuilding",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.DispatchLocationVoice",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.FireDouse",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.FireDouseAcrossFootprint",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.FireLifecycle",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.HospitalSites",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.IncrementalUpdateTextAndPenalties",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.MapFocusRules",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.MarkerCoordinates",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.MarkerLabelFits",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.MarkerOverlap",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.MarkerUiAvoidance",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.MedevacCasualtyHasNoDeliveryReward",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.MedevacRecordLayout",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.OriginalMissionAvailability",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.OriginalPickupMessage",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.ParamedicCabinHandoff",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.PassengersAboardNeverFailMission",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.PlaneDeckRescue",
+      "State": "Success",
+      "Warnings": [
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_5' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_12' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_13' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_54' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_55' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_56' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_57' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_58' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_59' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_7.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_60' which is static to it. Aborting."
+      ],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.PostAnnouncementVoice",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.PRNGParity",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.RiotCountsRewardsAndPenaltyErosion",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.RiotViability",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.RooftopRescueCountsPhasesRewardsAndVoices",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.RuntimeSaveRoundTrip",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.SafePassengerLanding",
+      "State": "Success",
+      "Warnings": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_8.Untitled:PersistentLevel.SimCopterHelicopterPawn_0",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_5' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_12' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_13' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_54' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_55' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_56' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_57' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_58' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_59' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_8.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_60' which is static to it. Aborting."
+      ],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.SaveFocusAndTransportLayout",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.SchedulerParity",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.ServiceFireSuppressionUsesFlameOffset",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.SessionStart",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.TrafficJamCarClearCompletes",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.TransportPassengerSpawnOutsideBuildings",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.TransportSchedulerTimer",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.TypeDisplayNames",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.UserCityDefaultSettings",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.WeightTableParity",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.XbldPropertyTable",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.NpcMedical.BandObstacleRoutes",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.RescuePilot.PassengerIdentity",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "SimCopterGroundAgent_0 head 4, seat 4",
+        "SimCopterGroundAgent_1 head 9, seat 9",
+        "SimCopterGroundAgent_2 head 7, seat 7",
+        "SimCopterGroundAgent_3 head 8, seat 8",
+        "SimCopterGroundAgent_4 head 5, seat 5"
+      ]
+    },
+    {
+      "Path": "SimCopter.RescuePilot.RuntimeRegression",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city0",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city0: 323 building bounds, 0 corner misses, 318 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city1",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city1: 286 building bounds, 0 corner misses, 286 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city10",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city10: 491 building bounds, 0 corner misses, 490 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city11",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city11: 845 building bounds, 0 corner misses, 845 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city12",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city12: 1161 building bounds, 0 corner misses, 1149 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city13",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city13: 694 building bounds, 0 corner misses, 694 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city14",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city14: 692 building bounds, 0 corner misses, 692 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city15",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city15: 1069 building bounds, 0 corner misses, 1066 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city16",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city16: 714 building bounds, 0 corner misses, 714 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city17",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city17: 588 building bounds, 0 corner misses, 587 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city18",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city18: 867 building bounds, 0 corner misses, 867 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city19",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city19: 1768 building bounds, 0 corner misses, 1751 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city2",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city2: 316 building bounds, 0 corner misses, 315 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city20",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city20: 1173 building bounds, 0 corner misses, 1171 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city21",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city21: 1553 building bounds, 0 corner misses, 1553 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city22",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city22: 1392 building bounds, 0 corner misses, 1386 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city23",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city23: 1615 building bounds, 0 corner misses, 1610 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city24",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city24: 2335 building bounds, 0 corner misses, 2335 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city25",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city25: 3277 building bounds, 0 corner misses, 3271 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city26",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city26: 2754 building bounds, 0 corner misses, 2751 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city27",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city27: 3196 building bounds, 0 corner misses, 3174 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city28",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city28: 3019 building bounds, 0 corner misses, 3019 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city29",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "city29: 2329 building bounds, 0 corner misses, 2320 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city3",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city3: 182 building bounds, 0 corner misses, 182 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city4",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city4: 275 building bounds, 0 corner misses, 274 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city5",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city5: 273 building bounds, 0 corner misses, 273 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city6",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city6: 575 building bounds, 0 corner misses, 575 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city7",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city7: 1130 building bounds, 0 corner misses, 1130 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city8",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city8: 386 building bounds, 0 corner misses, 385 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.career.city9",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "city9: 962 building bounds, 0 corner misses, 960 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.arcocity",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "arcocity: 118 building bounds, 0 corner misses, 118 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.cancer",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "cancer: 1289 building bounds, 0 corner misses, 1284 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.CAPE_WELLS",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "CAPE WELLS: 2624 building bounds, 0 corner misses, 2609 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "EGYPT FALLS: 1456 building bounds, 0 corner misses, 1454 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.glorioso",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "glorioso: 903 building bounds, 0 corner misses, 900 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.happylnd",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "happylnd: 310 building bounds, 0 corner misses, 310 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.hawaii",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "hawaii: 397 building bounds, 0 corner misses, 397 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.KATHY'S_RETREAT",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "KATHY'S RETREAT: 922 building bounds, 0 corner misses, 921 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.la-isla",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "la-isla: 841 building bounds, 0 corner misses, 833 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.lakeland",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "lakeland: 695 building bounds, 0 corner misses, 689 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.rio",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "rio: 1259 building bounds, 0 corner misses, 1259 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.stchrisc",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "stchrisc: 1190 building bounds, 0 corner misses, 1183 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.THE_BAHAMAS",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "THE BAHAMAS: 1133 building bounds, 0 corner misses, 1114 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.TOKYO",
+      "State": "Success",
+      "Warnings": [
+        "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+      ],
+      "Evidence": [
+        "TOKYO: 2197 building bounds, 0 corner misses, 2194 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.CityPatients.volcano",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "volcano: 225 building bounds, 0 corner misses, 225 patients spawned, 0 embedded checks",
+        "Incidents: 12 ambient people inside bounds, 16 new calls, 0 inaccessible patients"
+      ]
+    },
+    {
+      "Path": "SimCopter.Safety.OutdoorPatients",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Safety.ParkedAircraftTraffic",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.ServicePosts.ActualHospitalGeometry",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": [
+        "Idle extent 117.9 cm; final offset X=2303.802 Y=-339.740 Z=1200.000; carrier SimCopterHelicopterPawn_0"
+      ]
+    },
+    {
+      "Path": "SimCopter.ServicePosts.SpacingEntrancesAndImpact",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Traffic.JamBlockerDirection",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Traffic.JamHornThresholds",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Traffic.JamQueueSpacing",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Traffic.RoadMeshSurfaceRules",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Traffic.TunnelGeometry",
+      "State": "Success",
+      "Warnings": [],
+      "Evidence": []
+    },
+    {
+      "Path": "SimCopter.Traffic.TunnelTransit",
+      "State": "Success",
+      "Warnings": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_62.Untitled:PersistentLevel.SimCopterGroundAgent_0",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_62.Untitled:PersistentLevel.SimCopterGroundAgent_1",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_62.Untitled:PersistentLevel.SimCopterGroundAgent_2",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_62.Untitled:PersistentLevel.SimCopterGroundAgent_3"
+      ],
+      "Evidence": []
+    }
+  ],
+  "InstalledExeSHA256": "F37062827207D2D943127C2260CF8C2E8E20D4B4F3F07CAD165FBA5C496C6D3F"
+}

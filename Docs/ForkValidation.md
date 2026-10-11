@@ -1,5 +1,110 @@
 # Fork validation
 
+## October 10 scheduled publication integration
+
+This is fresh validation of the combined completed source since `754b434`, run
+at the authorized 8 PM CDT publication time. All 391 source, configuration,
+project and build-wrapper files match between the development and publication
+copies. Their normalized SHA-256 is
+`c60802ca72e11e38a877010a1873cff99948ec50068c8337aec05f325d6f5250`.
+
+- Both Editor and Shipping wrapper invocations succeeded with zero build actions:
+  the current targets were already up to date. This is not a clean rebuild.
+- The full headless suite passed **377 of 379 tests** (356 clean, 21 with warnings).
+  The same two documented failures remain: `Formats.SimCity2000.ReferenceCity`
+  has no flat/water/sloped samples in its local fixture, and `UI.FlapLayout`
+  expects mask 127 while the current result is 31. There were no new failures.
+- All **37 offscreen tests passed**: the 30 authored city flyovers, route/control
+  restoration, turbine lifecycle, airplane controls/propeller, cockpit frame,
+  pause-menu cheat guide, drive-in playback and shoulder aim. Two tests retain
+  known fixture warnings: synthetic-world drive-in attachments and two missing
+  optional FLAP bitmaps in the cockpit test. Selected fresh images were reviewed
+  for the close City 16 plane pass, City 18 wind farm, City 23 helicopter follow,
+  cockpit wiring, shoulder pose, gear control and readable cheat guide.
+- The separate **original flyover audio mixer test passed without warnings**.
+  Its private Windows mixer captured active output, pause/resume, master volume,
+  skip, natural completion and level teardown while silencing hardware output.
+- The installed executable and PDB match the current Shipping build by SHA-256;
+  all 30 installed original flyover WAVs match the source data and NonUFS
+  manifest, and both installed movies match the development/publication assets.
+  No binary replacement or recook was needed during this publication.
+
+The headless warnings include existing synthetic-world/material/missing-asset
+fixtures and unrelated editor-plugin HTTP connectivity timeouts. Builds retain
+the warning that MSVC 14.51 is newer than preferred 14.50. No interactive gameplay
+or human listening check is claimed. Original media remains locally supplied and
+ignored. The release archives on GitHub retain their tagged contents; this run
+publishes the combined source and does not create a new downloadable archive.
+
+See [actual changes](ForkChanges.md#october-10-scheduled-combined-publication) and
+[portable evidence](validation/PublicationIntegration20261010Results.json).
+Fresh local reports and logs are under `Docs/scratchpad/publication-20261010/`;
+the graphics fixtures are in their respective task scratch directories.
+Individual task results below and in other validation JSON files are earlier
+results, retained as history rather than presented as fresh checks.
+
+## Aircraft, collisions, and Apache destruction - October 10, 2026
+
+Editor and Shipping builds succeeded. All 123 selected headless tests passed
+(6 warning-only fixtures). The new tests fire both weapon types at cars and
+pedestrians, verify survivor-preserving Radioactivity injuries, dispatch a real
+player-contact reaction, exercise climb/throttle/gear and old-save migration, and
+destroy every one of City 1's 286 buildings, including six essential-service
+buildings. One building is hit through the actual missile trace; the remaining
+instance/footprint paths are exhausted and all 286 demolition origins are saved.
+
+The city-intro regression checks that each plane owns independent propeller parts,
+retains its translucent blur disc, animates during paused flyovers, retracts gear,
+and cleans up without changing saved ambient traffic. The landing-gear plate was
+rendered offscreen in both UP and DOWN positions and visually reviewed.
+
+Warning-only fixtures retain existing synthetic-world attachment/collision messages,
+an intentional missing-sound lookup, and an unconfigured tear-gas asset root. No
+new gameplay test produced warnings. Installed executable and symbols were backed
+up and SHA-256 verified. No assets required recooking; saves, cities, radio tracks,
+and videos were not modified. No interactive gameplay or listening test was run.
+Source and documentation were synchronized into the publication checkout without
+altering its existing index or pushing ahead of the scheduled publication.
+
+See [behavior and controls](AircraftAndDestruction.md),
+[machine-readable results](validation/AircraftAndDestructionResults.json), and local
+evidence under `Docs/scratchpad/aircraft-destruction/`.
+
+
+## Medical incident placement follow-up - October 10, 2026
+
+Sea Cliff's direct callout path passed with its actual buildings, but medical
+conversion of an existing pedestrian bypassed that placement guard. Before the
+fix, a real-city regression created 16 new medical incidents whose patients stayed
+inside building bounds or on roofs. These were new calls, not restored saves.
+
+Both incidental injuries (fire/crime) and player-caused injuries now validate the
+existing person before allocating a medical record. Unsafe positions search nearby
+outdoor ground, ordered by distance within each tile ring, and validate the final
+ground-snapped position. The same actor is retained. Failed placement leaves the
+actor and mission count unchanged; failed record allocation restores its old
+position. Medical markers use the resulting tile. Injury initialization clears old
+roof confinement and movement anchors so subsequent behavior cannot return the
+patient to the inaccessible location.
+
+Editor and Shipping builds succeeded. All 129 selected headless tests passed:
+115 clean and 14 with warnings. Three existing fixtures account for collision/deck
+warnings; eleven map tests captured the editor plugin's unrelated HTTP connectivity
+timeout. The 45-map regression checked 51,799 building bounds, 51,633 scheduled
+patient spawns and 720 incident patients, including ground/roof injuries, subsequent
+behavior, marker coordinates and refusal when no safe ground exists. All incident
+patients remained outside building bounds with the 32 cm clearance. Waterfront
+pieces and geometry beyond the map boundary are excluded from the four on-land
+injury fixtures; water refusal is tested separately. The hospital admission test
+now raises an already-created patient to exercise its unchanged height guard.
+
+Installed the Shipping executable and symbols with verified SHA-256 hashes and
+rollback copies of binaries/manifests. The local publication checkout has the same
+source changes; unrelated work was preserved with target-hash guards and backups.
+No interactive playtest or migration of already-saved patients is claimed.
+Local evidence: `Docs/scratchpad/sea-cliff-patients/`; portable results:
+[SeaCliffPatientResults.json](validation/SeaCliffPatientResults.json).
+
 ## Outdoor patients and parked aircraft traffic - October 9, 2026
 
 New state-6 medical patients reject occupied building tiles, standing building
@@ -212,3 +317,40 @@ original commercial data, installed builds and NVIDIA SDK files are excluded fro
 new publication additions. The compact result manifest above travels with the fork.
 Earlier feature documents contain historical package/install checks; they are not
 new October 8 packaging or playtest claims.
+
+## Fire alerts and victory band — October 10, 2026
+
+- Editor and Shipping builds succeeded through `RebuildUnrealCpp.bat`.
+- 70 selected tests passed: 68 clean, two with existing fixture warnings
+  (`PlaneDeckRescue`, `SafePassengerLanding`); zero failed or skipped.
+- Reversing the fire-report cap, player-centered band placement and distant path
+  connection caused all three new regressions to fail. Restored code passed.
+- Installed executable/PDB and manifest updates have verified backups and SHA-256
+  receipts under `Docs/scratchpad/fire-band/installation.json`. No assets or saves
+  were changed. The local publication source matches all 11 edited source files;
+  no commit/push was performed in this task.
+- No interactive gameplay/listening check. Remaining manual check: trigger a fire
+  burst, return to the airport on different sides and walk around a terminal or
+  parked aircraft while the band plays, including after loading a completed level.
+
+See [behavior details](NpcMedicalAndHelicopterUpdate.md#fire-announcements-and-victory-band-follow-up--october-10-2026)
+and [compact validation results](validation/FireBandResults.json). Full logs and
+before/fixed-source comparisons are in `Docs/scratchpad/fire-band/`.
+
+## Victory-band roster, clustering and timing — October 10, 2026
+
+- Editor and Shipping builds succeeded through `RebuildUnrealCpp.bat`.
+- All 70 selected tests passed (68 clean, two with the existing `PlaneDeckRescue`
+  and `SafePassengerLanding` fixture warnings).
+- Tests cover original roster totals for all 30 cities, restoration from eight to
+  five and then 57 people with one leader, repeated initialization, ten-second
+  shape changes, reserved spacing for large bands, following a moving player,
+  actual marching/arrival, local yielding, personal-space route rejection and
+  escape, walls, parked/overhead aircraft, stale paths and medical cancellation.
+- Installed executable/PDB and manifest updates have verified backups and SHA-256
+  receipts. All seven edited source files match the local publication checkout;
+  unrelated changes were preserved. No commit/push or interactive playtest.
+
+See [behavior notes](NpcMedicalAndHelicopterUpdate.md#loose-victory-band-and-original-roster--october-10-2026)
+and [validation results](validation/BandRevampResults.json). Local evidence:
+`Docs/scratchpad/band-revamp/`.

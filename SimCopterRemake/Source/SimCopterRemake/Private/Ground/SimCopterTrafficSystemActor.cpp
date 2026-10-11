@@ -8139,6 +8139,47 @@ bool ASimCopterTrafficSystemActor::IsPedestrianSpawnLocationOpen(const FVector& 
 	return true;
 }
 
+bool ASimCopterTrafficSystemActor::TryPlacePatientOnOutdoorGround(ASimCopterGroundAgent& Patient) const
+{
+	const FVector OriginalLocation = Patient.GetActorLocation();
+	if (IsOutdoorPatientSpawnValid(OriginalLocation)) return true;
+	int32 TileX, TileY;
+	if (!TryGetPeopleTileCoordinateAtWorldLocation(OriginalLocation, TileX, TileY)) return false;
+
+	// The callout spawner adapts FUN_004c4190's neighboring-cell search to the rendered city.
+	// Injury conversions do not call that spawner: keep this person's identity, but search and
+	// validate their final snapped position before publishing a medical incident for them.
+	const int32 MaxRing = FMath::Clamp(GetBuildingFootprintSize(TileX, TileY), 1, 4) + 2;
+	for (int32 Ring = 0; Ring <= MaxRing; ++Ring)
+	{
+		TArray<FVector, TInlineAllocator<256>> Candidates;
+		for (int32 Y = -Ring; Y <= Ring; ++Y)
+			for (int32 X = -Ring; X <= Ring; ++X)
+			{
+				if (Ring > 0 && FMath::Abs(X) != Ring && FMath::Abs(Y) != Ring) continue;
+				FVector Center;
+				if (!TryGetTileCenterWorldLocation(TileX + X, TileY + Y, Center)) continue;
+				Center.Z += 92.0f;
+				Candidates.Add(Center);
+				for (int32 Corner = 0; Corner < 4; ++Corner)
+					Candidates.Add(Center + FVector(Corner & 1 ? 1 : -1, Corner & 2 ? 1 : -1, 0) * ActiveTileSize * 0.22f);
+			}
+		Candidates.Sort([&](const FVector& A, const FVector& B)
+		{
+			return FVector::DistSquared2D(A, OriginalLocation) < FVector::DistSquared2D(B, OriginalLocation);
+		});
+		for (const FVector& Candidate : Candidates)
+		{
+			if (!IsOutdoorPatientSpawnValid(Candidate)) continue;
+			Patient.SetActorLocation(Candidate, false, nullptr, ETeleportType::TeleportPhysics);
+			Patient.SnapToGroundImmediate();
+			if (IsOutdoorPatientSpawnValid(Patient.GetActorLocation())) return true;
+		}
+	}
+	Patient.SetActorLocation(OriginalLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	return false;
+}
+
 bool ASimCopterTrafficSystemActor::IsOutdoorPatientSpawnValid(const FVector& SpawnLocation) const
 {
 	int32 TileX = INDEX_NONE;

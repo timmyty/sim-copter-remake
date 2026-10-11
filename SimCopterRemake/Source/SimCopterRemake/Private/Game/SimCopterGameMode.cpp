@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Game/SimCopterGameMode.h"
+#include "Audio/SimCopterRadio.h"
 #include "Game/SimCopterCityIntro.h"
 #include "Game/SimCopterLoadingSubsystem.h"
 #include "Camera/PlayerCameraManager.h"
@@ -84,6 +85,7 @@ void ASimCopterGameMode::BeginPlay()
 	}
 
 	ApplyPendingSession();
+	if (auto* Radio = USimCopterRadioSubsystem::Get(this)) Radio->StartLevelPlayback();
 
 	GetWorldTimerManager().SetTimerForNextTick(this, &ASimCopterGameMode::PlaceSessionOnAirportPads);
 }
@@ -183,6 +185,7 @@ void ASimCopterGameMode::PlaceSessionOnAirportPads()
 		FVector(-TileSizeCm * 0.75f, 0.0f, PlayerPawn->GetSimpleCollisionHalfHeight() + 4.0f);
 	PlayerPawn->TeleportTo(StandLocation, FRotator(0.0f, 0.0f, 0.0f), /*bIsATest=*/false, /*bNoCheck=*/true);
 
+	if (auto* Pilot = Cast<ASimCopterOnFootPawn>(PlayerPawn)) Pilot->SetParkedHelicopter(PlayerHelicopter);
 	PlaceHangar(Traffic, StandLocation);
 
 	// This is deliberately last. The city-entry pad pass, default on-foot placement and hangar
@@ -293,7 +296,7 @@ void ASimCopterGameMode::ApplyPendingAircraftRestores(UWorld* World)
 		return;
 	}
 
-	if (ASimCopterHelicopterPawn* Helicopter = Cast<ASimCopterHelicopterPawn>(Helicopters[0]))
+	if (ASimCopterHelicopterPawn* Helicopter = SimCopterHelicopterParking::ResolveCurrentAircraft(World))
 	{
 		Helicopter->ApplyCareerCityTransfer(
 			Transfer.ActiveHelicopterTypeIndex,

@@ -21,7 +21,7 @@ TArray<FCommand> Parse(const FString& Text)
 	// Remake movie commands consume the whole line: a filename containing an original
 	// cheat phrase must never also trigger that cheat (especially Radioactivity).
 	const FString Trimmed = Text.TrimStartAndEnd();
-	if (Trimmed == TEXT("HSI")) return {{ECode::HSI}};
+	if (Trimmed.Equals(TEXT("HSI"), ESearchCase::IgnoreCase)) return {{ECode::HSI}};
 	if (Trimmed == TEXT("Stop video")) return {{ECode::StopVideo}};
 	if (Trimmed.StartsWith(TEXT("Play video:"), ESearchCase::CaseSensitive))
 		return {{ECode::PlayVideo, 0, Trimmed.Mid(11).TrimStartAndEnd()}};

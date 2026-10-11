@@ -191,7 +191,25 @@ void USimCopterAirOperationsSubsystem::EnsureSupport()
 	Heli->GetAirOperations()->SetSupportAircraft(true);
 	Heli->GetAirOperations()->SetSupportGoal(SupportHome);
 	UGameplayStatics::FinishSpawningActor(Heli,Spawn);
-	Heli->SwitchHelicopterModel(0);
+	if (!Heli->SwitchHelicopterModel(0)) { Heli->Destroy(); return; }
+	// Do not introduce the helper inside a tall building beside the airport.
+	const FBox SpawnBounds = Heli->GetParkingWorldBounds();
+	FCollisionQueryParams SpawnQuery(SCENE_QUERY_STAT(AirSupportSpawn),true,Heli);
+	bool bClearSpawn = false;
+	for (int32 Attempt=0;Attempt<64;++Attempt)
+	{
+		const FVector Offset(0,0,Attempt*500.0f);
+		if (!GetWorld()->OverlapBlockingTestByChannel(SpawnBounds.GetCenter()+Offset,FQuat::Identity,
+			ECC_Visibility,FCollisionShape::MakeBox(SpawnBounds.GetExtent()+FVector(20)),SpawnQuery))
+		{
+			SupportHome += Offset;
+			Heli->SetAutopilotTransform(SupportHome,FRotator::ZeroRotator,0.05f);
+			Heli->GetAirOperations()->SetSupportGoal(SupportHome);
+			bClearSpawn = true;
+			break;
+		}
+	}
+	if (!bClearSpawn) { Heli->Destroy(); return; }
 	Heli->SetDebugToolGrant(ESimCopterHelicopterTool::TowClamp,true);
 	Heli->SetDebugToolGrant(ESimCopterHelicopterTool::CaptureCage,true);
 	Heli->GetAirOperations()->SetStatus(TEXT("AIR SUPPORT: available"));
@@ -219,11 +237,26 @@ FString USimCopterAirOperationsSubsystem::GetSupportStatus() const
 	if(!SupportHelicopter.IsValid()) return TEXT("Air Support preparing at base.");
 	return SupportHelicopter->GetAirOperations()->GetStatus();
 }
+bool USimCopterAirOperationsSubsystem::IsRescuingPerson(const ASimCopterGroundAgent* Person) const
+{
+	return Person && SupportHelicopter.IsValid() && AssignedEvent != INDEX_NONE &&
+		Person->MissionEventId == AssignedEvent && !Person->HasMissionResolutionReported() &&
+		!Person->IsMissionCarried() && (!Person->GetBehaviorCarrier() || Person->GetBehaviorCarrier() == SupportHelicopter.Get());
+}
+
 void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 {
 	auto* Heli=SupportHelicopter.Get(); auto* Mission=Missions(); auto* Road=Traffic();
 	if(!Heli || !Mission || !Road) return;
 	auto* Ops=Heli->GetAirOperations();
+	const auto HoverOver = [Heli](const FVector& Surface, float DoorClearance)
+	{
+		const FVector Here = Heli->GetActorLocation();
+		const FBox Bounds = Heli->GetParkingWorldBounds();
+		const float DoorOffset = Here.Z - Heli->GetPassengerDropWorldLocation().Z;
+		const float BodyOffset = Bounds.IsValid ? Here.Z - Bounds.Min.Z + 16.0f : DoorOffset;
+		return Surface + FVector(0,0,FMath::Max(DoorOffset+DoorClearance,BodyOffset));
+	};
 	const auto& Records=Mission->GetMissionRecords();
 	const auto* Record=Records.FindByPredicate([&](const auto& R){return CanAssignAirSupport(R) && R.EventId==AssignedEvent;});
 	// Loaded people and slung cargo are always delivered before accepting another job or recall.
@@ -239,6 +272,7 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		bool Police=false, Medical=false;
 		for(const auto& Slot:Slots) if(auto* P=Slot.Person.Get()) { Police|=P->IsHandcuffed() && !P->IsMedevacVictim(); Medical|=P->IsMedevacVictim(); }
 		FVector Destination=SupportHome-FVector(700,700,2200);
+		Road->TryGetAirportPadWorldLocation(0,Destination);
 		if(Police || Medical)
 		{
 			if(!FindServiceRoof(Police?0xD2:0xD1,Heli->GetActorLocation(),Destination)) { Ops->SetStatus(TEXT("AIR SUPPORT: awaiting a service roof")); return; }
@@ -246,15 +280,22 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		else if(Record && (Record->TypeMask & SimCopterMissions::TYPE_Transport))
 		{
 			int32 X=0,Y=0;
-			if(Mission->TryGetMissionDestinationTile(Record->EventId,X,Y)) Road->TryGetTileCenterWorldLocation(X,Y,Destination);
+			if(Mission->TryGetMissionDestinationTile(Record->EventId,X,Y))
+			{
+				float RoofExtent = 0;
+				if (!Road->TryGetBuildingRoofPost(X,Y,Destination,RoofExtent)) Road->TryGetTileCenterWorldLocation(X,Y,Destination);
+			}
 		}
-		Ops->SetSupportGoal(Destination+FVector(0,0,Heli->GetPassengerDropHeightOffsetCm()+25));
+		Ops->SetSupportGoal(HoverOver(Destination,25));
 		Ops->SetStatus(Police?TEXT("AIR SUPPORT: transporting prisoners"):Medical?TEXT("AIR SUPPORT: transporting patients"):TEXT("AIR SUPPORT: transporting passengers"));
 		if(FVector::Distance(Heli->GetPassengerDropWorldLocation(),Destination)<180 && Heli->GetVelocityCmPerSec().Size()<100 && !Police)
 		{
 			for(const auto& Slot:Slots) if(auto* P=Slot.Person.Get())
 			{
 				// Use the same occupied-door queue as the player's aircraft.
+				FVector Exit;
+				if (!Heli->FindClearPassengerExit(P,Exit) || (P->MissionEventId != INDEX_NONE &&
+					!Mission->IsPassengerDeliveryLocationAllowed(P->GetMissionPassengerKind(), Exit-FVector(0,0,P->GetCapsuleHalfHeightCm()), P->MissionEventId))) break;
 				if (!P->AlightFromCarrier()) break;
 				if(Mission->NotifyMissionPersonDelivered(P)) { P->SetMissionRetiredAlivePose(); P->SetLifeSpan(8); }
 			}
@@ -294,6 +335,8 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		{ TargetPerson=*It; break; }
 	}
 	FVector Target;
+	if (TargetPerson && (Record->TypeMask & (SimCopterMissions::TYPE_Medevac |
+		SimCopterMissions::TYPE_RescuePeople | SimCopterMissions::TYPE_Transport))) TargetPerson->BeginAirSupportRescue();
 	if(Record->TypeMask==SimCopterMissions::TYPE_BoatTow)
 	{
 		auto* Ambient=Cast<ASimCopterAmbientVehiclesActor>(UGameplayStatics::GetActorOfClass(GetWorld(),ASimCopterAmbientVehiclesActor::StaticClass()));
@@ -310,8 +353,9 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 	if(TargetCar) Target=TargetCar->GetActorLocation();
 	else if(TargetPerson) Target=TargetPerson->GetActorLocation()-FVector(0,0,TargetPerson->GetCapsuleHalfHeightCm());
 	else if(!Road->TryGetTileCenterWorldLocation(Record->TileX,Record->TileY,Target)) { AssignedEvent=INDEX_NONE; return; }
-	const float Height=TargetCar?float(Heli->GetActorLocation().Z-Heli->GetCargoAnchorWorldLocation().Z)+180:Heli->GetPassengerDropHeightOffsetCm()+45;
-	Ops->SetSupportGoal(Target+FVector(0,0,Height));
+	const FVector Goal = TargetCar ? Target+FVector(0,0,float(Heli->GetActorLocation().Z-Heli->GetCargoAnchorWorldLocation().Z)+180) : HoverOver(Target,45);
+	const float Height = Goal.Z-Target.Z;
+	Ops->SetSupportGoal(Goal);
 	if(FVector::Dist2D(Heli->GetActorLocation(),Target)>170 || FMath::Abs(Heli->GetActorLocation().Z-Target.Z-Height)>100) return;
 	WorkSeconds+=DeltaSeconds;
 	if(TargetCar)

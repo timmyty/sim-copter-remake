@@ -30,6 +30,7 @@ enum class ESimCopterSettingsScreen : uint8
 	SaveBeforeLeave,// MBox.bmp, STRINGTABLE 49 Yes/No
 	CheatEntry,
 	CheatEnding,
+	CheatGuide,
 };
 
 /**

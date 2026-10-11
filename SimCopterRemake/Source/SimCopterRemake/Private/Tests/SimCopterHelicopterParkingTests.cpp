@@ -2,6 +2,9 @@
 #include "City/SimCopterAirport.h"
 #include "City/SimCopterHangar.h"
 #include "Engine/GameInstance.h"
+#include "Flight/SimCopterHelicopterRegistry.h"
+#include "Ground/SimCopterOnFootPawn.h"
+#include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
 #include "Flight/SimCopterHelicopterParking.h"
 #include "Flight/SimCopterHelicopterPawn.h"
@@ -138,6 +141,30 @@ bool FSimCopterPurchaseParkingTest::RunTest(const FString& Parameters)
 	Aircraft.Reset();
 	UGameplayStatics::GetAllActorsOfClass(World, ASimCopterHelicopterPawn::StaticClass(), Aircraft);
 	TestEqual(TEXT("Failed purchase leaves no phantom aircraft"), Aircraft.Num(), CountBeforeFailure);
+	return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterWarpAircraftTest,"SimCopter.Career.WarpAircraftIdentity",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterWarpAircraftTest::RunTest(const FString&)
+{
+	const auto Init=UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(false).CreateNavigation(false).CreateAISystem(false);
+	auto* World=UWorld::CreateWorld(EWorldType::Game,false,NAME_None,nullptr,true,ERHIFeatureLevel::Num,&Init);
+	ON_SCOPE_EXIT { World->DestroyWorld(false); };
+	FActorSpawnParameters Params; Params.Name=TEXT("A_AirportPlane");
+	auto* Plane=World->SpawnActor<ASimCopterHelicopterPawn>(FVector::ZeroVector,FRotator::ZeroRotator,Params);
+	Plane->SwitchHelicopterModel(SimCopterHelicopterRegistry::PlaneTypeIndex);
+	Params.Name=TEXT("Z_StarterHelicopter");
+	auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>(FVector(1000,0,0),FRotator::ZeroRotator,Params);
+	Heli->SwitchHelicopterModel(4);
+	auto* PC=World->SpawnActor<APlayerController>(); World->AddController(PC);
+	auto* Pilot=World->SpawnActor<ASimCopterOnFootPawn>(); PC->Possess(Pilot);
+	TestEqual(TEXT("On-foot warp fallback keeps starter despite alphabetically earlier plane"),SimCopterHelicopterParking::ResolveCurrentAircraft(World),Heli);
+	Pilot->SetParkedHelicopter(Heli);
+	TestEqual(TEXT("Parked helicopter identity controls career transfer"),SimCopterHelicopterParking::ResolveCurrentAircraft(World),Heli);
+	Pilot->SetParkedHelicopter(Plane);
+	TestEqual(TEXT("Intentionally exited plane is still remembered"),SimCopterHelicopterParking::ResolveCurrentAircraft(World),Plane);
+	PC->Possess(Heli);
+	TestEqual(TEXT("Current possession wins over any parked selection"),SimCopterHelicopterParking::ResolveCurrentAircraft(World),Heli);
 	return true;
 }
 #endif

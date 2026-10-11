@@ -379,6 +379,7 @@ bool USimCopterRadioSubsystem::PlaySlot(ESimCopterRadioSlot Slot, USimCopterAudi
 void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (bCityIntroSuspended) return;
 
 	USimCopterAudioSubsystem* Audio = USimCopterAudioSubsystem::Get(this);
 	if (Audio == nullptr || Stations.Num() == 0)
@@ -523,6 +524,29 @@ void USimCopterRadioSubsystem::RearmSchedule(bool bStopCurrent)
 // ---------------------------------------------------------------------------------------------
 // Controls
 // ---------------------------------------------------------------------------------------------
+
+void USimCopterRadioSubsystem::SetCityIntroSuspended(bool bSuspended)
+{
+	if (bCityIntroSuspended == bSuspended) return;
+	if (bSuspended) SuspendSequentialPlayback();
+	bCityIntroSuspended = bSuspended;
+	// Use the same resume policy as leaving/re-entering the cockpit: remembered
+	// station and power, exact saved offset for sequential music, next shuffled item otherwise.
+	RearmSchedule(/*bStopCurrent=*/bSuspended);
+}
+
+void USimCopterRadioSubsystem::StartLevelPlayback()
+{
+	if (auto* Settings = USimCopterSettings::Get(this))
+	{
+		// The volume slider's zero position is also its OFF switch. A level start must
+		// restore audible playback even when the previous city ended with that switch off.
+		if (Settings->GetRadioVolume() == 0) Settings->SetRadioVolume(USimCopterSettings::VolumeMax);
+		Settings->ApplySound(this);
+	}
+	else if (Volume <= 0.0f) SetVolume(1.0f);
+	SetPowered(true);
+}
 
 void USimCopterRadioSubsystem::SetPowered(bool bInPowered)
 {

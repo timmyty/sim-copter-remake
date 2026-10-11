@@ -5,11 +5,19 @@
 #include "SimCopterCityIntro.generated.h"
 
 class ACameraActor;
+class UAudioComponent;
 class ASimCopterPlayerController;
 class ASimCopterTrafficSystemActor;
 class ASimCopterAmbientVehiclesActor;
 class FSimCopterTourViewExtension;
 class SWidget;
+
+struct FSimCopterCityIntroFrame
+{
+	FVector Position = FVector::ZeroVector;
+	FVector Target = FVector::ZeroVector;
+	float OverviewWeight = 0;
+};
 
 struct FSimCopterCityIntroRoute
 {
@@ -17,10 +25,24 @@ struct FSimCopterCityIntroRoute
 	float Distance = 0;
 	static constexpr float FieldOfView = 55;
 	static constexpr float Elevation = 38;
-	static constexpr float Duration = 24;
-	// Fit every corner for the entire revolution, including the title/skip safe area.
+	// SCHOOK: CityRide 0x0044ce50 -> CITY<n>_B.SMK. All 30 CD movies have
+	// 451 frames and a -6666 Smacker delay (66.66 ms); not the CITY*_S previews.
+	static constexpr float FrameSeconds = 0.06666f;
+	static constexpr float Duration = 451 * FrameSeconds;
+	int32 CityIndex = INDEX_NONE;
+	float TileSize = 400;
+	float ReferenceDistance = 0;
+	TArray<FSimCopterCityIntroFrame> Frames;
+	FBox FinaleBounds = FBox(ForceInit);
+	FVector AircraftStart = FVector::ZeroVector;
+	FVector AircraftDirection = FVector::ForwardVector;
+	bool bHelicopterSubject = false;
+	float AircraftPassSeconds = 14;
+	// Only the establishing view fits the whole map. The rest follows the
+	// authored descent, low passes and landmark finale in the original movie.
 	void Fit(float AspectRatio);
 	FTransform Evaluate(float Alpha) const;
+	FTransform EvaluateAircraft(float Seconds, int32 Index) const;
 };
 
 // FUN_0044ce50 presents the selected city's cityride before play. The remake uses
@@ -41,7 +63,14 @@ public:
 private:
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterCityTourRenderTest;
+	friend class FSimCopterCityIntroAudioTest;
+	friend class FSimCopterCityIntroMixerCommand;
+	void StartMusic();
+	void UpdateMusic(bool bActive);
+	void StopMusic();
 	void UpdateCamera();
+	UPROPERTY(Transient) TObjectPtr<UAudioComponent> Music;
+	bool bRadioSuspended = false;
 	UPROPERTY(Transient) TObjectPtr<ACameraActor> Camera;
 	TWeakObjectPtr<ASimCopterPlayerController> Controller;
 	FSimCopterCityIntroRoute Route;

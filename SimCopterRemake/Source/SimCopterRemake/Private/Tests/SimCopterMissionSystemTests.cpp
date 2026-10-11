@@ -1555,6 +1555,57 @@ bool FSimCopterDispatchLocationVoiceTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterFireAnnouncementBurstTest,
+	"SimCopter.Missions.FireAnnouncementBurst",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterFireAnnouncementBurstTest::RunTest(const FString& Parameters)
+{
+	FSimCopterTestMissionWorld World;
+	FSimCopterMissionSystem System;
+	System.Initialize(&World, 1);
+	System.Tuning.FireSpreadInterval = MAX_int32;
+	auto ReportCount = [&World]()
+	{
+		return World.UiMessages.FilterByPredicate([](const FSimCopterMissionUiMessage& Message)
+		{ return Message.Kind == 5; }).Num();
+	};
+	for (int32 I = 0; I < 8; ++I)
+	{
+		const int32 Event = I % 2 == 0 ? System.CreateEventAt(30 + I * 3, 30, TYPE_BuildingFire) :
+			System.CreateEventOfType(TYPE_CarFireEvent);
+		TestTrue(TEXT("Every fire still creates an active, selectable incident"),
+			Event != INDEX_NONE && System.FindRecord(Event) && System.FindRecord(Event)->bActive);
+	}
+	TestEqual(TEXT("Eight simultaneous fires produce only two HUD reports"), ReportCount(), 2);
+	TestEqual(TEXT("Only two complete four-clip radio reports are queued"), World.RadioVoiceCalls.Num(), 8);
+	const int32 Medevac = System.CreateEventOfType(TYPE_Medevac);
+	TestTrue(TEXT("Medical report still creates a mission"), Medevac != INDEX_NONE);
+	TestEqual(TEXT("Medical report is not suppressed"), ReportCount(), 3);
+	TestEqual(TEXT("Medical radio is not suppressed"), World.RadioVoiceCalls.Num(), 12);
+	System.CreateEventAt(70, 30, TYPE_BuildingFire);
+	TestEqual(TEXT("Interleaved other reports cannot restart a fire storm"), ReportCount(), 3);
+	System.Tick(29.0f);
+	System.CreateEventAt(74, 30, TYPE_BuildingFire);
+	TestEqual(TEXT("Fire reports stay quiet before the full cooldown"), ReportCount(), 3);
+	System.Tick(1.0f);
+	TestEqual(TEXT("Suppressed reports never become a deferred backlog"), ReportCount(), 3);
+	System.CreateEventAt(78, 30, TYPE_BuildingFire);
+	System.CreateEventOfType(TYPE_CarFireEvent);
+	System.CreateEventAt(82, 30, TYPE_BuildingFire);
+	TestEqual(TEXT("Later fires can start another burst, still capped at two"), ReportCount(), 5);
+	TestEqual(TEXT("Both later fire reports have intact radio phrases"), World.RadioVoiceCalls.Num(), 20);
+
+	TArray<uint8> Saved;
+	FMemoryWriter Writer(Saved);
+	System.SerializeRuntimeState(Writer);
+	FMemoryReader Reader(Saved);
+	TestTrue(TEXT("Mission save restores with the unchanged layout"), System.SerializeRuntimeState(Reader));
+	System.CreateEventAt(86, 30, TYPE_BuildingFire);
+	TestEqual(TEXT("Loading resets transient announcement throttling"), ReportCount(), 6);
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FSimCopterPostAnnouncementVoiceTest,
 	"SimCopter.Missions.PostAnnouncementVoice",

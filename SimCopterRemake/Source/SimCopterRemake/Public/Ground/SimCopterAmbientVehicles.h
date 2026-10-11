@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Game/SimCopterCityIntro.h"
 
 #include "SimCopterAmbientVehicles.generated.h"
 
@@ -182,6 +183,10 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterAmbientVehiclesActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 
 public:
@@ -192,7 +197,7 @@ public:
 
 	// Cinematic aircraft use the original PLANE1 geometry and a separate presentation
 	// clock. They never advance crash missions, respawn timers or the saved fleet.
-	void BeginCityTour(const FBox& Bounds);
+	void BeginCityTour(const FBox& Bounds, const FSimCopterCityIntroRoute* Route = nullptr);
 	void UpdateCityTour(float ElapsedSeconds);
 	void EndCityTour();
 	static FTransform EvaluateCityTourPlane(const FBox& Bounds, float Seconds, int32 Index);
@@ -283,6 +288,8 @@ private:
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterCityTourRenderTest;
 	UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> CityTourPlanes;
+	UPROPERTY(Transient) TObjectPtr<UProceduralMeshComponent> CityTourRotor;
+	TOptional<FSimCopterCityIntroRoute> CityTourRoute;
 	FBox CityTourBounds = FBox(ForceInit);
 	bool bCityTourActive = false;
 	bool CityTourPreviousVisibility[SimCopterAmbientVehicles::PlaneSlots] = {};
@@ -292,6 +299,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UMaterialInterface> VertexColorMaterial;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInterface> CityTourDiscMaterial;
 	UPROPERTY(Transient) TObjectPtr<class USimCopterFlashingLightsComponent> UfoLights;
 
 	UPROPERTY(Transient)
@@ -354,7 +364,7 @@ private:
 	int32 TileDistanceToCamera(const FIntPoint& Tile) const;
 
 	// --- mesh plumbing ---
-	UProceduralMeshComponent* CreateVehicleMesh(int32 ObjectId, const TCHAR* Name);
+	UProceduralMeshComponent* CreateVehicleMesh(int32 ObjectId, const TCHAR* Name, bool bPresentationAircraft = false);
 	void EnsurePools();
 	float GetModelTopHeightCm(int32 ObjectId) const;
 

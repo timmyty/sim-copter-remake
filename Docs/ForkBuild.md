@@ -22,6 +22,23 @@ it completely, and run `SimCopterRemake.exe`. The instructions below are for sou
    directories and representative files. Neither this source fork nor Git LFS
    supplies the original game's commercial data.
 
+## Original city flyover soundtracks
+
+Supply the full `CITY0_B.SMK` through `CITY29_B.SMK` movies from your original
+media under `Reference/SimCopterOriginalGame/smk`, install FFmpeg on PATH, then run:
+
+```powershell
+python Tools/Unreal/BakeCityIntroAudio.py
+```
+
+Use `--source` to point to another folder containing the full movies. The script
+decodes their original audio without resampling into the ignored
+`Reference/SimCopterOriginalGame/sound/cityride` directory. Shipping builds require
+all thirty WAVs. The existing staging pipeline places them in
+`SimCopter/sound/cityride` beside the packaged game; verify those thirty entries in
+`Manifest_NonUFSFiles_Win64.txt`. Original SMK movies and derived WAVs are not
+included in this source publication. See [flyover details](OriginalCityIntroRoutes.md).
+
 ## Editor and generated assets
 
 Close the Unreal editor before compiling; from the repository root in PowerShell:

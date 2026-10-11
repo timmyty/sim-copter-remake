@@ -31,6 +31,7 @@
 #include "UI/SSimCopterMessageBox.h"
 #include "UI/SSimCopterSaveNameDialog.h"
 #include "UI/SSimCopterCheatDialog.h"
+#include "UI/SSimCopterCheatGuide.h"
 #include "UI/SSimCopterGortSequence.h"
 #include "UI/SSimCopterSettingsMenu.h"
 #include "UI/SSimCopterSoundSettings.h"
@@ -961,6 +962,12 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 {
 	switch (NewScreen)
 	{
+	case ESimCopterSettingsScreen::CheatGuide:
+		return SNew(SSimCopterCheatGuide).Art(Art)
+			.OnClosed(FSimpleDelegate::CreateWeakLambda(this, [this]()
+			{
+				EnterScreen(ESimCopterSettingsScreen::Menu);
+			}));
 	case ESimCopterSettingsScreen::CheatEnding:
 	{
 		auto Sequence = SNew(SSimCopterGortSequence).Art(Art ? Art->GetBitmap(TEXT("martian.bmp")) : nullptr)
@@ -1381,6 +1388,10 @@ void ASimCopterPlayerController::HandleSettingsItem(const ESimCopterSettingsItem
 {
 	switch (Item)
 	{
+	case ESimCopterSettingsItem::CheatCodes:
+		EnterScreen(ESimCopterSettingsScreen::CheatGuide);
+		return;
+
 	case ESimCopterSettingsItem::CitySettings:
 		EnterScreen(ESimCopterSettingsScreen::CitySettings);
 		return;

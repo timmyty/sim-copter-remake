@@ -1,0 +1,428 @@
+{
+  "schema_version": 1,
+  "date_local": "2026-10-10",
+  "timezone": "America/Chicago",
+  "scheduled_not_before_utc": "2026-10-11T01:00:00Z",
+  "evidence_recorded_utc": "2026-10-11T01:11:53.688182+00:00",
+  "repository": "https://github.com/timmyty/sim-copter-remake",
+  "branch": "main",
+  "baseline_commit": "754b4344ac3e401bf608c1181bc6c2e9953a06a0",
+  "source_verification": {
+    "source_file_count": 391,
+    "source_publication_match": true,
+    "normalized_source_sha256": "c60802ca72e11e38a877010a1873cff99948ec50068c8337aec05f325d6f5250",
+    "normalization": "CRLF to LF; sorted relative path + NUL + per-file SHA256 + LF"
+  },
+  "builds": [
+    {
+      "target": "Editor",
+      "command": "RebuildUnrealCpp.bat",
+      "result": "Succeeded",
+      "actions": 0,
+      "detail": "Fresh wrapper invocation; target already up to date, not a clean rebuild.",
+      "log": "Docs/scratchpad/publication-20261010/build-editor.log",
+      "log_sha256": "120b9e3b81756a70ef595be8bd9301e3c8139069ac3ed94e5b0b616026959e08"
+    },
+    {
+      "target": "Shipping",
+      "command": "RebuildUnrealCpp.bat Shipping",
+      "result": "Succeeded",
+      "actions": 0,
+      "detail": "Fresh wrapper invocation; target already up to date, not a clean rebuild.",
+      "log": "Docs/scratchpad/publication-20261010/build-shipping.log",
+      "log_sha256": "7c308a5a16f6376f3708ae843cb8d8dba5bef34a881cf4b7ccd527bf9163d923"
+    }
+  ],
+  "fresh_tests": [
+    {
+      "mode": "NullRHI, NoSound; complete SimCopter filter",
+      "exit_code": 1,
+      "counts": {
+        "succeeded": 356,
+        "succeededWithWarnings": 21,
+        "failed": 2,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 146.3607940673828,
+      "report": "Docs/scratchpad/publication-20261010/tests-full/index.json",
+      "report_sha256": "b1cf27535bdd572973d390f8e9a6a85051f00e187f1a843e4c93f7f4094e099e",
+      "warning_tests": [
+        {
+          "test": "SimCopter.AircraftRoadUpdate.AllCitiesAndAircraft",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Cheats.CityEffects",
+          "warnings": 17
+        },
+        {
+          "test": "SimCopter.Cheats.GortOriginalAssets",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.City.BuildingDemolition",
+          "warnings": 34
+        },
+        {
+          "test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Missions.PlaneDeckRescue",
+          "warnings": 11
+        },
+        {
+          "test": "SimCopter.Missions.SafePassengerLanding",
+          "warnings": 12
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city19",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city21",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city23",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city24",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city25",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city26",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city27",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city28",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city29",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.CAPE_WELLS",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Traffic.TunnelTransit",
+          "warnings": 4
+        },
+        {
+          "test": "SimCopter.UI.HangarPurchaseParking",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Water.SupplyGeometry",
+          "warnings": 11
+        }
+      ],
+      "failures": [
+        {
+          "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+          "messages": [
+            "Expected 'Finds flat land ALTM sample' to be not null.",
+            "Expected 'Finds water ALTM sample' to be not null.",
+            "Expected 'Finds sloped ALTM sample' to be not null."
+          ]
+        },
+        {
+          "test": "SimCopter.UI.FlapLayout",
+          "messages": [
+            "Expected 'The four flaps between them cover every career equipment bit' to be 127, but it was 31."
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "D3D12 RenderOffscreen, NoSound; 30 authored flyovers and focused graphics/lifecycle tests",
+      "exit_code": 0,
+      "counts": {
+        "succeeded": 35,
+        "succeededWithWarnings": 2,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 122.43544006347656,
+      "report": "Docs/scratchpad/publication-20261010/tests-render/index.json",
+      "report_sha256": "b9bac132468c80696d223357ec1a9cfd12ff646fa064f88a0948eded89c5527d",
+      "warning_tests": [
+        {
+          "test": "SimCopter.DriveIn.Playback",
+          "warnings": 11
+        },
+        {
+          "test": "SimCopter.UI.CockpitFrame",
+          "warnings": 2
+        }
+      ],
+      "failures": [],
+      "tests": [
+        "SimCopter.AircraftDestruction.PlaneControlsAndPropeller",
+        "SimCopter.Cheats.PauseMenuGuide",
+        "SimCopter.CityIntro.AuthoredRendering.City00",
+        "SimCopter.CityIntro.AuthoredRendering.City01",
+        "SimCopter.CityIntro.AuthoredRendering.City02",
+        "SimCopter.CityIntro.AuthoredRendering.City03",
+        "SimCopter.CityIntro.AuthoredRendering.City04",
+        "SimCopter.CityIntro.AuthoredRendering.City05",
+        "SimCopter.CityIntro.AuthoredRendering.City06",
+        "SimCopter.CityIntro.AuthoredRendering.City07",
+        "SimCopter.CityIntro.AuthoredRendering.City08",
+        "SimCopter.CityIntro.AuthoredRendering.City09",
+        "SimCopter.CityIntro.AuthoredRendering.City10",
+        "SimCopter.CityIntro.AuthoredRendering.City11",
+        "SimCopter.CityIntro.AuthoredRendering.City12",
+        "SimCopter.CityIntro.AuthoredRendering.City13",
+        "SimCopter.CityIntro.AuthoredRendering.City14",
+        "SimCopter.CityIntro.AuthoredRendering.City15",
+        "SimCopter.CityIntro.AuthoredRendering.City16",
+        "SimCopter.CityIntro.AuthoredRendering.City17",
+        "SimCopter.CityIntro.AuthoredRendering.City18",
+        "SimCopter.CityIntro.AuthoredRendering.City19",
+        "SimCopter.CityIntro.AuthoredRendering.City20",
+        "SimCopter.CityIntro.AuthoredRendering.City21",
+        "SimCopter.CityIntro.AuthoredRendering.City22",
+        "SimCopter.CityIntro.AuthoredRendering.City23",
+        "SimCopter.CityIntro.AuthoredRendering.City24",
+        "SimCopter.CityIntro.AuthoredRendering.City25",
+        "SimCopter.CityIntro.AuthoredRendering.City26",
+        "SimCopter.CityIntro.AuthoredRendering.City27",
+        "SimCopter.CityIntro.AuthoredRendering.City28",
+        "SimCopter.CityIntro.AuthoredRendering.City29",
+        "SimCopter.CityIntro.RouteAndControlRestoration",
+        "SimCopter.CityIntro.WindTurbineLifecycle",
+        "SimCopter.DriveIn.Playback",
+        "SimCopter.RescuePilot.ShoulderAim",
+        "SimCopter.UI.CockpitFrame"
+      ]
+    },
+    {
+      "mode": "RenderOffscreen, DeterministicAudio; private Windows XAudio2 mixer captures and silences hardware output",
+      "exit_code": 0,
+      "counts": {
+        "succeeded": 1,
+        "succeededWithWarnings": 0,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 16.181180953979492,
+      "report": "Docs/scratchpad/publication-20261010/tests-audio/index.json",
+      "report_sha256": "ca97c88154f0b9847efdb76e0c03070c00a47fbf3b21a95c61c2d2a136425ab6",
+      "warning_tests": [],
+      "failures": [],
+      "tests": [
+        "SimCopter.CityIntro.OriginalAudioMixer"
+      ],
+      "mixer_measurements": [
+        "city16_playing output peak 0.204500",
+        "focus_paused output peak 0.000000",
+        "focus_resumed output peak 0.121224",
+        "skipped output peak 0.000000",
+        "myrtle_restarted output peak 0.352074",
+        "natural_finish output peak 0.000000",
+        "restarted_again output peak 0.352074",
+        "level_teardown output peak 0.000000"
+      ]
+    }
+  ],
+  "known_failures": [
+    "SimCopter.Formats.SimCity2000.ReferenceCity: local fixture lacks flat/water/sloped ALTM samples.",
+    "SimCopter.UI.FlapLayout: mask expectation 127, actual 31."
+  ],
+  "warning_context": [
+    "Headless: 21 warning-only tests, including known synthetic-world/material/missing-asset fixtures and unrelated editor-plugin HTTP connectivity timeouts.",
+    "Offscreen: DriveIn.Playback has 11 synthetic-world attachment warnings; UI.CockpitFrame has two missing optional original FLAP bitmap warnings.",
+    "Builds warn that MSVC 14.51 is newer than the preferred 14.50 toolchain."
+  ],
+  "installed_build": {
+    "action": "Verified existing installation; no recook or binary replacement in this publication run.",
+    "files": [
+      {
+        "path": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "sha256": "55f70529c8f6baa49b1e0c688c04c9ae86e7f45d5813a7129c965ef802b31278"
+      },
+      {
+        "path": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "sha256": "476d10b2b1034bbfff2dbfef313128c9f740ddcabbe05771a41a47182ac092f6"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city0.wav",
+        "sha256": "ffc3151d7da6eec458b712c3e5b0ef4215f14e5785c98364c738534016f4becb"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city1.wav",
+        "sha256": "39f184f556328af8e4b4085979f5a731bbb6f559b45feaca8a8155cc9d1ad2d8"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city2.wav",
+        "sha256": "4a05ecd4a739e6d9686da0f96605bab9b9584ca5d2401ec9fdeb69ff9b75ebe0"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city3.wav",
+        "sha256": "2819f0afda828a079f04080a3a8708119469bab610993100efb42cf23dd9227d"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city4.wav",
+        "sha256": "57252e0e4b17536674283ae98614a8094e2c7cbc98aab187c96253634d7ffa39"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city5.wav",
+        "sha256": "46fb11e77bd89903738385581f7a2988b952d5cc3c9642c11f3494f350151e4a"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city6.wav",
+        "sha256": "2ca661aa7ad024da22055d6c1be34928c310d5875de6da5e4ddb8ba302c7f5b4"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city7.wav",
+        "sha256": "2819f0afda828a079f04080a3a8708119469bab610993100efb42cf23dd9227d"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city8.wav",
+        "sha256": "a13447b824d8ccec6bcdf3c7c1fa7ca9acb3021755e000de07ccb8403f05da76"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city9.wav",
+        "sha256": "57252e0e4b17536674283ae98614a8094e2c7cbc98aab187c96253634d7ffa39"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city10.wav",
+        "sha256": "6d3d651d2fb39073ae99f3c77127df27a6507e6f34f4e0d0f140d86b38ca6c2c"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city11.wav",
+        "sha256": "46fb11e77bd89903738385581f7a2988b952d5cc3c9642c11f3494f350151e4a"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city12.wav",
+        "sha256": "97ae55e52bbe3cf648b60fa0fa8b318977b9b4f06ee613ef452bf4359fd025ac"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city13.wav",
+        "sha256": "97ae55e52bbe3cf648b60fa0fa8b318977b9b4f06ee613ef452bf4359fd025ac"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city14.wav",
+        "sha256": "46fb11e77bd89903738385581f7a2988b952d5cc3c9642c11f3494f350151e4a"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city15.wav",
+        "sha256": "4a05ecd4a739e6d9686da0f96605bab9b9584ca5d2401ec9fdeb69ff9b75ebe0"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city16.wav",
+        "sha256": "97ae55e52bbe3cf648b60fa0fa8b318977b9b4f06ee613ef452bf4359fd025ac"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city17.wav",
+        "sha256": "a5f14135f2450f788a545399b21beae9ce0767e9301fd37b900ff600a8d878c2"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city18.wav",
+        "sha256": "57252e0e4b17536674283ae98614a8094e2c7cbc98aab187c96253634d7ffa39"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city19.wav",
+        "sha256": "6d3d651d2fb39073ae99f3c77127df27a6507e6f34f4e0d0f140d86b38ca6c2c"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city20.wav",
+        "sha256": "ffc3151d7da6eec458b712c3e5b0ef4215f14e5785c98364c738534016f4becb"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city21.wav",
+        "sha256": "6a4957cafe91f5834d7e45f233062d0ae17f7ed53d6fa19f5cc52d47b9b6e4c9"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city22.wav",
+        "sha256": "6d3d651d2fb39073ae99f3c77127df27a6507e6f34f4e0d0f140d86b38ca6c2c"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city23.wav",
+        "sha256": "6a4957cafe91f5834d7e45f233062d0ae17f7ed53d6fa19f5cc52d47b9b6e4c9"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city24.wav",
+        "sha256": "2819f0afda828a079f04080a3a8708119469bab610993100efb42cf23dd9227d"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city25.wav",
+        "sha256": "2ca661aa7ad024da22055d6c1be34928c310d5875de6da5e4ddb8ba302c7f5b4"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city26.wav",
+        "sha256": "a13447b824d8ccec6bcdf3c7c1fa7ca9acb3021755e000de07ccb8403f05da76"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city27.wav",
+        "sha256": "ffc3151d7da6eec458b712c3e5b0ef4215f14e5785c98364c738534016f4becb"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city28.wav",
+        "sha256": "39f184f556328af8e4b4085979f5a731bbb6f559b45feaca8a8155cc9d1ad2d8"
+      },
+      {
+        "path": "SimCopter/sound/cityride/city29.wav",
+        "sha256": "2ca661aa7ad024da22055d6c1be34928c310d5875de6da5e4ddb8ba302c7f5b4"
+      },
+      {
+        "path": "DriveInVideos/HSI.mp4",
+        "sha256": "d559c7ac4d45714c48c892a67e94f71d1870d383a3239001a3ecb3c611c19957"
+      },
+      {
+        "path": "DriveInVideos/LightsCameraActionSimCopter.mp4",
+        "sha256": "efdd0b6828b7bacd67cd1fb5fbb43006dfdad9b73de8d7eb80824ed6e59e470c"
+      }
+    ],
+    "original_audio_files_in_nonufs_manifest": 30
+  },
+  "visual_review": {
+    "fresh": true,
+    "images": [
+      "Docs/scratchpad/cockpit-support/cockpit-1920x1080-expanded.png",
+      "Docs/scratchpad/shoulder-aim/aim.png",
+      "Docs/scratchpad/aircraft-destruction/gear-1.png",
+      "Docs/scratchpad/cheat-menu/guide-top.png",
+      "Docs/scratchpad/original-city-intros/city16-aircraft-pass.png",
+      "Docs/scratchpad/original-city-intros/city18-finale.png",
+      "Docs/scratchpad/original-city-intros/city23-finale.png"
+    ],
+    "observations": "Reviewed cockpit wiring/control placement, shoulder pose and visible hand-mounted taser, gear UP/speed UI, readable cheat guide, close plane pass, wind-farm finale and helicopter tracking. These are offscreen fixtures, not interactive gameplay."
+  },
+  "earlier_task_evidence": [
+    "OriginalCityIntroResults.json",
+    "CityIntroAudioResults.json",
+    "ShoulderAimResults.json",
+    "CheatMenuResults.json",
+    "FireBandResults.json",
+    "BandRevampResults.json",
+    "SeaCliffPatientResults.json",
+    "CockpitAndSupportSafetyResults.json",
+    "AircraftAndDestructionResults.json"
+  ],
+  "limitations": [
+    "Two pre-existing full-suite failures remain; this is not an all-green suite.",
+    "No interactive playtest or human listening check; original camera routes are authored adaptations, not recovered exact original coordinates.",
+    "Original reference movies and generated cityride WAVs remain ignored/local. Shipping requires locally supplied original game data and the documented audio extraction step.",
+    "This publishes the combined source snapshot. Existing GitHub release archives retain their tagged contents; no new downloadable release archive was created in this run."
+  ]
+}

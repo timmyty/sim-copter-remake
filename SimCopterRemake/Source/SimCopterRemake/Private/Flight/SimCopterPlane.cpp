@@ -3,6 +3,46 @@
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
+#include "Flight/SimCopterPlaneParts.h"
+#include "Flight/SimCopterHelicopterPresentation.h"
+#include "Formats/MaxisMeshLibrary.h"
+#include "Formats/SimCopterOriginalGamePaths.h"
+#include "ProceduralMeshComponent.h"
+
+void ASimCopterHelicopterPawn::SetPlaneThrottle(float Value)
+{
+	if (IsFixedWingAircraft()) PlaneThrottle = FMath::Clamp(Value, 0.0f, 1.0f);
+}
+
+void ASimCopterHelicopterPawn::TogglePlaneLandingGear()
+{
+	if (!IsFixedWingAircraft()) return;
+	if (FlightModel.State == ESimCopterFlightState::Parked && bPlaneLandingGearDown)
+	{
+		LastToolStatus = TEXT("Landing gear stays DOWN while on the ground.");
+		return;
+	}
+	bPlaneLandingGearDown = !bPlaneLandingGearDown;
+	LastToolStatus = bPlaneLandingGearDown ? TEXT("Landing gear DOWN") : TEXT("Landing gear UP");
+	if (PlaneParts) PlaneParts->SetPresentationTime(0, false, bPlaneLandingGearDown);
+}
+
+void ASimCopterHelicopterPawn::RebuildPlaneParts()
+{
+	if (PlaneParts) { PlaneParts->DestroyComponent(); PlaneParts = nullptr; }
+	if (!IsFixedWingAircraft()) { PlaneThrottle = 0; bPlaneLandingGearDown = true; return; }
+	FString Error;
+	const auto Library = FMaxisMeshLibrary::GetShared(SimCopterOriginalGame::ResolveRoot(), Error);
+	const TArray<FColor>* Palette = nullptr;
+	const auto* Object = Library ? Library->FindObjectByObjectId(302, &Palette) : nullptr;
+	if (!Object || !HeliBodyMeshComponent) return;
+	TArray<FColor> Paint;
+	if (Palette) SimCopterHelicopterPresentation::MakePaintPalette(*Palette, Paint, SimCopterHelicopterRegistry::PlaneTypeIndex);
+	PlaneParts = NewObject<USimCopterPlanePartsComponent>(this);
+	PlaneParts->SetupAttachment(HeliBodyMeshComponent); AddInstanceComponent(PlaneParts); PlaneParts->RegisterComponent();
+	PlaneParts->Build(*Object, Palette ? &Paint : nullptr, ModelUnitsPerCentimeter, ModelScale, ModelVertexColorMaterial, RotorDiscMaterial);
+	PlaneParts->SetPresentationTime(0, false, bPlaneLandingGearDown);
+}
 
 bool ASimCopterHelicopterPawn::CanAcceptPassenger(ESimCopterMissionPassengerKind Kind, const ASimCopterGroundAgent* Person) const
 {
@@ -34,9 +74,12 @@ void ASimCopterHelicopterPawn::StepFixedWing(float Dt, const FSimCopterFlightInp
 		(Inputs.bTurnRightKey || Inputs.bSlideRightKey ? 1.0f : 0.0f) -
 		(Inputs.bTurnLeftKey || Inputs.bSlideLeftKey ? 1.0f : 0.0f), -1.0f, 1.0f);
 	const bool bPowered = bEngineRunning && FlightModel.Fuel > 0;
-	const bool bBraking = Pitch < -0.15f || (bOnGround && Inputs.ClimbCommand < 0);
-	const float TargetSpeed = !bPowered ? (bOnGround ? 0 : 650) : bBraking ? (bOnGround ? 0 : 650) :
-		Pitch > 0.15f || (bOnGround && Inputs.ClimbCommand > 0) ? 3200 : bOnGround ? 0 : 1800;
+	// W/S (the shared pitch binding) controls climb/descent. Space/Ctrl and
+	// controller collective adjust a retained throttle independently of pitch.
+	SetPlaneThrottle(PlaneThrottle + Inputs.ClimbCommand * Dt * .4f);
+	const float TargetSpeed = !bPowered ? (bOnGround ? 0 : 650) :
+		bOnGround ? PlaneThrottle * 3200 : FMath::Lerp(650.0f, 3200.0f, PlaneThrottle);
+	const bool bBraking = TargetSpeed < ToFloat(FlightModel.ForwardSpeed) * PositionScale * Unit;
 	float Speed = FMath::FInterpConstantTo(ToFloat(FlightModel.ForwardSpeed) * PositionScale * Unit,
 		TargetSpeed, Dt, bBraking ? 1300 : 1100);
 	float Heading = ToFloat(FlightModel.Heading) / 10;
@@ -46,8 +89,8 @@ void ASimCopterHelicopterPawn::StepFixedWing(float Dt, const FSimCopterFlightInp
 	FlightModel.BankSmoothed = FromFloat(Bank * 10);
 	FlightModel.BankTarget = FlightModel.BankSmoothed;
 	FlightModel.SlideTarget = FlightModel.SlideSmoothed = 0;
-	float Climb = bPowered ? Inputs.ClimbCommand * Speed * 0.38f : -260;
-	if (bOnGround) Climb = bPowered && Speed >= 600 && Inputs.ClimbCommand > 0 ? Speed * 0.38f : 0;
+	float Climb = bPowered ? Pitch * Speed * 0.38f : -260;
+	if (bOnGround) Climb = bPowered && Speed >= 600 && Pitch > 0 ? Pitch * Speed * 0.38f : 0;
 	FlightModel.PitchTarget = FlightModel.PitchSmoothed = FromFloat(-FMath::RadiansToDegrees(FMath::Atan2(Climb, FMath::Max(Speed,1.0f))) * 10);
 	FlightModel.BounceTimer = FMath::Max(0, FlightModel.BounceTimer - FromFloat(Dt));
 	if (FlightModel.BounceTimer > 0)
@@ -65,7 +108,7 @@ void ASimCopterHelicopterPawn::StepFixedWing(float Dt, const FSimCopterFlightInp
 		if (!bOnGround)
 		{
 			LastFlightEvents.bTouchedDown = true;
-			if ((Speed > 1300 || Climb < -500) && !FlightModel.bCheatInvulnerable)
+			if ((Speed > 1300 || Climb < -500 || !bPlaneLandingGearDown) && !FlightModel.bCheatInvulnerable)
 			{
 				LastFlightEvents.DamageTaken = FMath::Min(FlightModel.HitPoints, 70);
 				FlightModel.HitPoints -= LastFlightEvents.DamageTaken;
@@ -73,6 +116,7 @@ void ASimCopterHelicopterPawn::StepFixedWing(float Dt, const FSimCopterFlightInp
 			}
 		}
 		FlightModel.State = ESimCopterFlightState::Parked;
+		if (!bPlaneLandingGearDown) { Speed = 0; PlaneThrottle = 0; LastToolStatus = TEXT("Belly landing! Lower gear before touchdown."); }
 		Climb = 0;
 		if (Environment.bHostileSurface && !FlightModel.bCheatInvulnerable)
 		{
@@ -124,7 +168,7 @@ void ASimCopterHelicopterPawn::EnsureTransportPlane(UWorld* World)
 		if (!Plane) return;
 		if (!Plane->SwitchHelicopterModel(SimCopterHelicopterRegistry::PlaneTypeIndex)) { Plane->Destroy(); return; }
 		Plane->PlaceOnHelipad(Position, 0);
-		Plane->SetAirOperationsStatus(TEXT("Transport plane: one passenger. Accelerate, climb to take off; brake and descend to land."));
+		Plane->SetAirOperationsStatus(TEXT("Transport plane: W/S climb/descend, Space/Ctrl throttle, G landing gear. One transport passenger."));
 		return;
 	}
 }

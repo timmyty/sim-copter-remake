@@ -1,0 +1,94 @@
+{
+  "Date": "2026-10-10",
+  "EditorBuild": "Succeeded",
+  "ShippingBuild": "Succeeded",
+  "Passed": 70,
+  "PassedWithWarnings": 2,
+  "Failed": 0,
+  "NotRun": 0,
+  "WarningTests": [
+    "SimCopter.Missions.PlaneDeckRescue",
+    "SimCopter.Missions.SafePassengerLanding"
+  ],
+  "BandTests": [
+    {
+      "Name": "SimCopter.NpcMedical.BandClusterAndSpacing",
+      "State": "Success",
+      "Duration": 0.1526443064212799
+    },
+    {
+      "Name": "SimCopter.NpcMedical.BandObstacleRoutes",
+      "State": "Success",
+      "Duration": 0.008430298417806625
+    }
+  ],
+  "OriginalCountSource": [
+    "FUN_004c2a20",
+    "FUN_004c29d0",
+    "FUN_00408210"
+  ],
+  "OriginalSpawnAttemptFormula": "max(1, cityIndex / 8) * (cityIndex / 2 + 5), integer division, City0..29",
+  "OriginalCountCaveat": "Original placement/pool failures can reduce the visible count; remake retries safe placement to meet the requested total.",
+  "PhaseSeconds": 10,
+  "PlayerClearanceCm": 250,
+  "MemberClearanceCm": 100,
+  "SourceFiles": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterBandNavigation.cpp",
+      "SHA256": "B2AE1FA2FAD71029D66342CE4967EB8E9B4D622D84EDED7A0B95F30E943C51BC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterBandNavigation.h",
+      "SHA256": "990A8BF270A7F18B2A853359E3CD1E1AAD27AD8D5CCE61749A0EA34ECFAFFE82"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp",
+      "SHA256": "DF17288F4838F82AF3C715AB002748312F286BB9F40D69DB4C02D51AF0E81797"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h",
+      "SHA256": "7A0248E92209157404A5E83D10B53A8D0D2706AC9F94147BE9A212809D9072D4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterMissionSystemActor.cpp",
+      "SHA256": "9E7628CC9C9091F4618097FF3EF896D8BEC4128EE53DE5C26E5ADBD28D499E18"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystemActor.h",
+      "SHA256": "B5F7F2DF386887B3824FAF9BE6057C7F41BD43FCA2598E01E79FFA3BF201C062"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcMedicalTests.cpp",
+      "SHA256": "11699D3187372ED5F5CE1AB25C53DFAA1C3708AB954776D2AC6F7BE443686327"
+    }
+  ],
+  "Installation": {
+    "InstalledAt": "2026-10-10T15:51:15.9976957-05:00",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\band-revamp\\before-install-20261010-155111",
+    "Files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "BeforeSHA256": "11C13E6F5850B471797217F8487ED13E0DFB62D3577A151DFE3E4A850FF77AE2",
+        "AfterSHA256": "A7662DE687B77E0305F75AB7A6D4D294499343313032B7E341E99927A1C51FD9"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "BeforeSHA256": "28A89120676DCBB982C6856FED11042C9366F10FE95851ED26667ED245C1AA09",
+        "AfterSHA256": "91A771084CC1FD30009A3DC234444EDB59D1406389FC123B62346C345B4DDF61"
+      },
+      {
+        "Relative": "Manifest_NonUFSFiles_Win64.txt",
+        "BeforeSHA256": "F8AD96D49E3929329A5995A0D6A407397F134EDF3D550690A97CCF0827C76558",
+        "AfterSHA256": "3894BD1AF5E404574C3D42B028ECA39E2E2F04C33249F1DED67DE49853FF2229"
+      },
+      {
+        "Relative": "Manifest_DebugFiles_Win64.txt",
+        "BeforeSHA256": "4D72BEF8560BD3EA4DF85B33F06ADAF312A20C9AEF9083CE086DCFF45E667A5E",
+        "AfterSHA256": "377F1F7C2A54F774CB417BFCF313979DFE33C293E15E7FBF028D38B8D17E20C6"
+      }
+    ],
+    "PassedTests": 70
+  },
+  "InteractivePlaytest": false,
+  "GitPushed": false
+}

@@ -216,7 +216,14 @@ FString ASimCopterPlayerController::ExecuteCheatCodes(const FString& Text)
 			auto* DriveIn = ASimCopterDriveInPlayer::Get(GetWorld());
 			const FString File = Command.Code == ECode::Movies ? TEXT("LightsCameraActionSimCopter.mp4") :
 				Command.Code == ECode::HSI ? TEXT("HSI.mp4") : Command.FileName;
-			Results.Add(DriveIn->PlayVideo(File, Command.Code != ECode::PlayVideo));
+			bool bMovieApplied = false;
+			Results.Add(DriveIn->PlayVideo(File, Command.Code != ECode::PlayVideo, &bMovieApplied));
+			if (bMovieApplied)
+			{
+				// FUN_00435680 chooses the same success/off cues for its movie toggle.
+				bApplied = true;
+				bEnabled = DriveIn->IsVideoActive();
+			}
 			break;
 		}
 		case ECode::StopVideo:
@@ -226,18 +233,22 @@ FString ASimCopterPlayerController::ExecuteCheatCodes(const FString& Text)
 		case ECode::Radioactivity:
 		{
 			// FUN_004515d0: blast sound and white flash, then FUN_004a6940 destroys the city.
-			int32 Count = 0;
+			int32 Count = 0, Injured = 0;
 			for (TActorIterator<ASimCity2000CityActor> City(GetWorld()); City; ++City)
 			{
 				TArray<FIntPoint> Cleared;
 				Count += City->ApplyNuclearCheat(Cleared);
 				for (TActorIterator<ASimCopterTrafficSystemActor> Traffic(GetWorld()); Traffic; ++Traffic)
 					Traffic->ClearXbldTiles(Cleared);
+				for (TActorIterator<ASimCopterMissionSystemActor> MissionActor(GetWorld()); MissionActor; ++MissionActor)
+					MissionActor->ClearDestroyedBuildingFires(Cleared);
 			}
 			if (auto* Audio = USimCopterAudioSubsystem::Get(this))
 				Audio->PlayFile2D(TEXT("blast"), SimCopterSound::ESoundDir::Root);
 			if (PlayerCameraManager) PlayerCameraManager->StartCameraFade(1, 0, 3.2f, FLinearColor::White, false, false);
-			Results.Add(FString::Printf(TEXT("Nuclear blast: %d buildings destroyed."), Count));
+			for (TActorIterator<ASimCopterMissionSystemActor> MissionActor(GetWorld()); MissionActor; ++MissionActor)
+				Injured += MissionActor->ApplyNuclearPopulationDamage(FMath::Rand());
+			Results.Add(FString::Printf(TEXT("Nuclear blast: %d buildings destroyed, %d people injured."), Count, Injured));
 			bApplied = true;
 			break;
 		}

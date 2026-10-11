@@ -108,6 +108,10 @@ USTRUCT(BlueprintType)
 struct SIMCOPTERREMAKE_API FSimCopterMissionPassengerSlot
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "SimCopter|Missions")
 	int32 EventId = INDEX_NONE;
@@ -132,6 +136,10 @@ USTRUCT(BlueprintType)
 struct SIMCOPTERREMAKE_API FSimCopterHelicopterTypeTuning
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimCopter|Flight")
 	float MaxBankDeg = 42.67f;
@@ -186,6 +194,10 @@ USTRUCT(BlueprintType)
 struct SIMCOPTERREMAKE_API FSimCopterLandingTuning
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimCopter|Landing")
 	float MaxPitchDeg = 5.16f;
@@ -207,6 +219,10 @@ USTRUCT(BlueprintType)
 struct SIMCOPTERREMAKE_API FSimCopterRopeTuning
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimCopter|Rope")
 	float BucketFillPoundsPerFrame = 30.0f;
@@ -231,6 +247,10 @@ USTRUCT(BlueprintType)
 struct SIMCOPTERREMAKE_API FSimCopterDamageTuning
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimCopter|Damage")
 	float MinFireAltitudeCm = -4800.0f;
@@ -257,6 +277,10 @@ class SIMCOPTERREMAKE_API ASimCopterHelicopterPawn
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class FSimCopterPlaneControlsTest;
+	friend class FSimCopterWeaponDamageTest;
+	friend class FSimCopterCityWeaponTest;
+	friend class FSimCopterPilotConversationTest;
 
 public:
 	ASimCopterHelicopterPawn();
@@ -601,6 +625,14 @@ public:
 	int32 GetHelicopterTypeIndex() const { return ActiveHelicopterTypeIndex; }
 	bool IsFixedWingAircraft() const { return ActiveHelicopterTypeIndex == SimCopterHelicopterRegistry::PlaneTypeIndex; }
 	static void EnsureTransportPlane(UWorld* World);
+	float GetPlaneThrottle() const { return PlaneThrottle; }
+	void SetPlaneThrottle(float Value);
+	bool IsPlaneLandingGearDown() const { return bPlaneLandingGearDown; }
+	void TogglePlaneLandingGear();
+	void RebuildPlaneParts();
+	float PlaneThrottle = 0;
+	bool bPlaneLandingGearDown = true;
+	UPROPERTY(Transient) TObjectPtr<class USimCopterPlanePartsComponent> PlaneParts;
 	bool CanAcceptPassenger(ESimCopterMissionPassengerKind Kind, const ASimCopterGroundAgent* Person = nullptr) const;
 	void StepFixedWing(float DeltaSeconds, const FSimCopterFlightInputs& Inputs, const FSimCopterFlightEnvironment& Environment);
 	friend class FSimCopterAircraftRoadUpdateTest;
@@ -1819,6 +1851,7 @@ private:
 	/** Replay's Hide HUD state. Collapses the overlays without tearing them down and rebuilding. */
 	bool bHudHiddenForReplay = false;
 
+	TSharedPtr<SWidget> CockpitFrameWidget;
 	TSharedPtr<SWidget> DashboardWidget;
 	TSharedPtr<class SSimCopterDashboard> DashboardPanel;
 

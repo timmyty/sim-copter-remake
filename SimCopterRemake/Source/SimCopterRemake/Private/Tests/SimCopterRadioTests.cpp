@@ -20,10 +20,10 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterRadioPreferenceTest,
 bool FSimCopterRadioPreferenceTest::RunTest(const FString&)
 {
 	TArray<FSimCopterRadioStation> Stations;
-	for (const TCHAR* Name : {TEXT("KJAZ"), TEXT("KMIX"), TEXT("KINV")}) Stations.AddDefaulted_GetRef().CallSign = Name;
+	for (const TCHAR* Name : {TEXT("KJAZ"), TEXT("KMIX"), TEXT("KINV"), TEXT("KROC")}) Stations.AddDefaulted_GetRef().CallSign = Name;
 	USimCopterSettings* Store = NewObject<USimCopterSettings>(NewObject<UGameInstance>());
 	Store->RadioStation = INDEX_NONE; Store->RadioStationCallSign.Reset();
-	TestEqual(TEXT("Fresh preference defaults to KINV"), Store->ResolveRadioStation(Stations), 2);
+	TestEqual(TEXT("Fresh preference defaults to Rock 104"), Store->ResolveRadioStation(Stations), 3);
 	Store->SetRadioStation(1);
 	TestEqual(TEXT("Legacy saved index is respected"), Store->ResolveRadioStation(Stations), 1);
 	Store->RememberRadioStation(1, TEXT("KMIX"));
@@ -40,9 +40,9 @@ bool FSimCopterRadioPreferenceTest::RunTest(const FString&)
 	Reload->SetRadioStation(2);
 	TestEqual(TEXT("Settings tuner replaces previous call sign"), Reload->ResolveRadioStation(Stations), 2);
 	Reload->RememberRadioStation(8, TEXT("REMOVED"));
-	TestEqual(TEXT("Missing station falls back to KINV"), Reload->ResolveRadioStation(Stations), 2);
+	TestEqual(TEXT("Missing station falls back to Rock 104"), Reload->ResolveRadioStation(Stations), 3);
 	Stations.Pop();
-	TestEqual(TEXT("Missing KINV falls back to KMIX"), Reload->ResolveRadioStation(Stations), 0);
+	TestEqual(TEXT("Missing Rock falls back to KMIX"), Reload->ResolveRadioStation(Stations), 0);
 	Stations.Reset();
 	TestEqual(TEXT("Empty station list is safe"), Reload->ResolveRadioStation(Stations), INDEX_NONE);
 	GConfig->UnloadFile(TestIni); IFileManager::Get().Delete(*TestIni);
@@ -327,6 +327,13 @@ bool FSimCopterRadioPossessionGateTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("leaving disables radio playback"), Radio->IsPlayerInHelicopter());
 	Radio->SetPlayerInHelicopter(true);
 	TestFalse(TEXT("re-entering preserves the player's off setting"), Radio->IsPowered());
+	Radio->SetVolume(0.35f);
+	Radio->StartLevelPlayback();
+	TestTrue(TEXT("A new level switches the radio on"),Radio->IsPowered());
+	TestEqual(TEXT("An audible volume survives level start"),Radio->GetVolume(),0.35f);
+	Radio->SetPowered(false); Radio->SetVolume(0);
+	Radio->StartLevelPlayback();
+	TestTrue(TEXT("A zero-volume OFF setting cannot silence the next level"),Radio->IsPowered() && Radio->GetVolume()>0);
 
 	return true;
 }

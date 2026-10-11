@@ -391,9 +391,9 @@ int32 USimCopterSettings::ResolveRadioStation(const TArray<FSimCopterRadioStatio
 	const int32 Saved = Find(RadioStationCallSign);
 	if (Saved != INDEX_NONE) return Saved;
 	if (RadioStationCallSign.IsEmpty() && Stations.IsValidIndex(RadioStation)) return RadioStation;
-	// Requested remake default. Original FUN_00430890 used KMIX for an absent preference.
-	const int32 Artist = Find(TEXT("KINV"));
-	if (Artist != INDEX_NONE) return Artist;
+	// Requested first-time tuning: Rock 104 (KROC). Explicit saved selections still win.
+	const int32 Rock = Find(TEXT("KROC"));
+	if (Rock != INDEX_NONE) return Rock;
 	const int32 Mix = Find(TEXT("KMIX"));
 	return Mix != INDEX_NONE ? Mix : Stations.IsEmpty() ? INDEX_NONE : 0;
 }

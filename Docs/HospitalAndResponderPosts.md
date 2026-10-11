@@ -12,12 +12,13 @@ aircraft, and retries later when no safe position exists. Hospital and police
 staffing share the same placement checks. Exactly coincident workers in older
 saves are separated without moving normal workers approaching a helicopter.
 
-Hospitals and police stations also have a ground entrance post, with a sign and
-one persistent responder. The hospital's preferred location is in front of the
+Hospitals and police stations also have a ground entrance post with one persistent
+responder. Hospital and police entrance signs were removed on October 8 and 10,
+2026, respectively. The hospital's preferred location is in front of the
 lower entrance wing; blocked or wet approaches try another accessible side.
 Terrain, geometry, water and occupancy are checked. Roof and entrance staff are
 counted independently, including a height check, and absent entrance workers
-use the existing 40-second replacement delay. Transient entrance caches/signs
+use the existing 40-second replacement delay. Transient entrance caches
 rebuild on load; existing responder serialization carries their post and state.
 
 Ground medics use the existing state-5 hospital behavior to unload nearby landed
@@ -84,7 +85,7 @@ Interactive gameplay, final Unreal lighting and listening still need a live
 check; no foreground game session was launched (per repository workflow).
 
 Manual checks: land at a hospital roof and unload several patients; observe
-separated medics walking to the cabin. Visit the signed ground entrance with a
+separated medics walking to the cabin. Visit the ground entrance with a
 landed helicopter, then with a patient carried on foot. Confirm each admission
 once. Collect a ground police officer and check that roof officers remain
 available. Compare the facade and H from low altitude. Strike a car, keep contact,
