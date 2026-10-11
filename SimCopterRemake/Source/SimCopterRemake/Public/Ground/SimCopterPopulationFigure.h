@@ -86,6 +86,8 @@ public:
 		// When false (no head texture available) the head part is drawn as a colored ball in
 		// the body section instead of a textured head section.
 		bool bTexturedHead = true;
+		// Cabin presentation keeps the same figure and folds its legs into a seated pose.
+		bool bSeatedPose = false;
 		// Optional procedural pose for one actor. An individual source frame emits at sections 0/1;
 		// ordinary population clips retain their prebuilt frames and original geometry.
 		int32 FrameIndex = INDEX_NONE;

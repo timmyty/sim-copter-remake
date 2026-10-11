@@ -9311,6 +9311,24 @@ void ASimCopterHelicopterPawn::AdvanceCockpitStabilizedAttitude(float DeltaSecon
 		CockpitAttitudeLerpSpeed);
 }
 
+bool ASimCopterHelicopterPawn::IsPassengerProvidingMedicalCare(int32 SlotIndex) const
+{
+	if (!MissionPassengerSlots.IsValidIndex(SlotIndex)) return false;
+	const auto* Medic = MissionPassengerSlots[SlotIndex].Person.Get();
+	// BHAV 281 identifies medics by state 5. Keep this display separate from the original
+	// deterioration program: animating a portrait must never modify health or its dice rolls.
+	if (!Medic || Medic->GetBehaviorAttribute(EBhavAttr::State) != 5 ||
+		Medic->GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0) return false;
+	for (const auto& Slot : MissionPassengerSlots)
+	{
+		const auto* Patient = Slot.Person.Get();
+		if (Patient && Patient->IsMedevacVictim() &&
+			Patient->GetBehaviorAttribute(EBhavAttr::WrittenOff) == 0 &&
+			int16(Patient->GetBehaviorAttribute(EBhavAttr::MedevacHealth)) > 0) return true;
+	}
+	return false;
+}
+
 void ASimCopterHelicopterPawn::RefreshCabinOccupants()
 {
 	if (!CabinOccupantsMesh) return;
@@ -9322,32 +9340,110 @@ void ASimCopterHelicopterPawn::RefreshCabinOccupants()
 	uint32 Key = bHasPilot ? 1 : 0;
 	Key = HashCombine(Key, GetTypeHash(TypeIndex));
 	Key = HashCombine(Key, GetTypeHash(MissionPassengerSlots.Num()));
-	for (const auto& Slot : MissionPassengerSlots)
+	for (auto& Slot : MissionPassengerSlots)
 	{
 		Key = HashCombine(Key, GetTypeHash(Slot.Person.Get()));
 		Key = HashCombine(Key, uint32(Slot.Kind));
+		if (const auto* Person = Slot.Person.Get())
+		{
+			Slot.HeadImageIndex = Person->GetHeadImageIndex();
+			Key = HashCombine(Key, GetTypeHash(Person->GetPedestrianFigureName()));
+			Key = HashCombine(Key, GetTypeHash(Person->GetPedestrianFigureClothesOffset()));
+		}
 		Key = HashCombine(Key, GetTypeHash(Slot.HeadImageIndex));
 	}
 	if (CabinOccupantsKey == Key) return;
-	CabinOccupantsKey = Key;
-	FMaxisMeshSection Occupants;
-	if (bHasPilot) SimCopterHelicopterPresentation::AppendSeatedOccupant(
-		SimCopterHelicopterPresentation::CabinSeat(TypeIndex, 0), FLinearColor(0.10f,0.25f,0.55f), false, Occupants);
-	const FLinearColor Clothes[] = {FLinearColor(0.6f,0.24f,0.1f),FLinearColor(0.2f,0.45f,0.22f),FLinearColor(0.45f,0.35f,0.6f)};
+	FString Error;
+	const auto Shared = FSimCopterPopulationFigure::GetShared(ResolveOriginalGameRoot(), Error);
+	if (!Shared.IsValid()) return;
+	UProceduralMeshComponent* FigureMesh = NewObject<UProceduralMeshComponent>(this);
+	FProcMeshSection Bodies;
+	CabinOccupantsMesh->ClearAllMeshSections();
+	auto AppendPerson = [&](int32 SeatIndex, const FString& FigureName, int32 HeadIndex, int32 ClothesOffset)
+	{
+		const int32 FigureIndex = Shared->Model.FindFigureIndex(FigureName);
+		if (!Shared->Model.Figures.IsValidIndex(FigureIndex)) return;
+		const auto& Figure = Shared->Model.Figures[FigureIndex];
+		const auto* Clip = Shared->Model.FindClip(Figure, TEXT("NoMo"));
+		const auto* Standing = Shared->Model.FindClip(Figure, TEXT("1Wal"));
+		if (!Clip || !Standing) return;
+		const auto& HeadTable = FSimCopterPopulationFigure::GetHeadImageTable();
+		HeadIndex = FMath::Clamp(HeadIndex, 0, HeadTable.Num() - 1);
+		auto* HeadMaterial = CabinHeadMaterials.FindRef(HeadIndex).Get();
+		if (!HeadMaterial)
+		{
+			const auto* HeadImage = Shared->HeadImages.Find(HeadTable[HeadIndex]);
+			auto* Parent = LoadObject<UMaterialInterface>(nullptr,
+				TEXT("/Game/Materials/M_SimCopterLitSpriteTexture.M_SimCopterLitSpriteTexture"));
+			if (HeadImage && Parent)
+			{
+				auto* Texture = FSimCopterPopulationSprite::CreateTextureFromImage(this, *HeadImage, TEXT("CabinHead"));
+				HeadMaterial = UMaterialInstanceDynamic::Create(Parent, this);
+				HeadMaterial->SetTextureParameterValue(TEXT("Texture"), Texture);
+				HeadMaterial->SetScalarParameterValue(TEXT("CardNormalUpBias"), 0.0f);
+				CabinHeadMaterials.Add(HeadIndex, HeadMaterial);
+			}
+		}
+		FSimCopterPopulationFigure::FBuildParams Params;
+		// Cabin coordinates are authored at model scale .25. Fit the complete seated figure
+		// to the existing canopy envelope, without replacing its body proportions or clothes.
+		Params.HeightCm = 32.0f;
+		Params.ClothesOffset = ClothesOffset;
+		Params.FrameIndex = 0;
+		Params.bSeatedPose = true;
+		Params.bTexturedHead = HeadMaterial != nullptr;
+		bool bHasHead = false;
+		if (!FSimCopterPopulationFigure::BuildClipSections(FigureMesh, Figure, *Clip, Shared->Palette,
+			Params, FSimCopterPopulationFigure::Calibrate(*Standing, Params.HeightCm), bHasHead)) return;
+		const FVector Seat = SimCopterHelicopterPresentation::CabinSeat(TypeIndex, SeatIndex);
+		for (int32 SectionIndex = 0; SectionIndex < 2; ++SectionIndex)
+		{
+			const auto* Source = FigureMesh->GetProcMeshSection(SectionIndex);
+			if (!Source || Source->ProcVertexBuffer.IsEmpty()) continue;
+			FProcMeshSection Section = *Source;
+			Section.SectionLocalBox = FBox(ForceInit);
+			for (auto& Vertex : Section.ProcVertexBuffer)
+			{
+				Vertex.Position += Seat;
+				Section.SectionLocalBox += Vertex.Position;
+			}
+			if (SectionIndex == 0)
+			{
+				const uint32 Base = Bodies.ProcVertexBuffer.Num();
+				Bodies.ProcVertexBuffer.Append(Section.ProcVertexBuffer);
+				for (uint32 Index : Section.ProcIndexBuffer) Bodies.ProcIndexBuffer.Add(Base + Index);
+				Bodies.SectionLocalBox += Section.SectionLocalBox;
+			}
+			else
+			{
+				CabinOccupantsMesh->SetProcMeshSection(SeatIndex + 1, Section);
+				CabinOccupantsMesh->SetMaterial(SeatIndex + 1, HeadMaterial);
+			}
+		}
+	};
+	if (bHasPilot) AppendPerson(0, TEXT("pilot"), 0, 0);
 	for (int32 I = 0; I < FMath::Min(GetPassengerSeatCount(), MissionPassengerSlots.Num()); ++I)
 	{
 		const auto& Slot = MissionPassengerSlots[I];
-		const int32 ColorIndex = Slot.Person.IsValid() ? Slot.Person->GetHeadImageIndex() % 3 : I % 3;
-		SimCopterHelicopterPresentation::AppendSeatedOccupant(SimCopterHelicopterPresentation::CabinSeat(TypeIndex, I+1),
-			Clothes[FMath::Max(0,ColorIndex)], Slot.Kind == ESimCopterMissionPassengerKind::Medevac, Occupants);
+		if (const auto* Person = Slot.Person.Get())
+			AppendPerson(I + 1, Person->GetPedestrianFigureName(), Person->GetHeadImageIndex(), Person->GetPedestrianFigureClothesOffset());
+		else
+		{
+			// Legacy/count-only manifests have a head but no actor until save references resolve.
+			static const TCHAR* FiguresByHead[] = {TEXT("pilot"), TEXT("Kopp"), TEXT("Fireman"),
+				TEXT("Medik"), TEXT("Blonde"), TEXT("5man"), TEXT("2woman"), TEXT("Child"),
+				TEXT("Woman"), TEXT("2blonde"), TEXT("Medik")};
+			AppendPerson(I + 1, FiguresByHead[FMath::Clamp(Slot.HeadImageIndex, 0, 10)], Slot.HeadImageIndex, 0);
+		}
 	}
-	CabinOccupantsMesh->ClearAllMeshSections();
-	if (!Occupants.IsEmpty())
+	if (!Bodies.ProcVertexBuffer.IsEmpty())
 	{
-		CabinOccupantsMesh->CreateMeshSection_LinearColor(0, Occupants.Vertices, Occupants.Triangles,
-			Occupants.Normals, Occupants.UVs, Occupants.VertexColors, Occupants.Tangents, false);
+		CabinOccupantsMesh->SetProcMeshSection(0, Bodies);
 		CabinOccupantsMesh->SetMaterial(0, ModelVertexColorMaterial);
 	}
+	CabinOccupantsKey = Key;
+	// Clothing and head changes must refresh the UI even if the seat count/mood stayed put.
+	RefreshDashboardSeats();
 }
 
 void ASimCopterHelicopterPawn::UpdateVisuals(float DeltaSeconds)

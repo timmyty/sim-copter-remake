@@ -1,5 +1,29 @@
 # Fork validation
 
+## October 10 NPC appearance publication
+
+Editor and Shipping builds succeeded for the NPC appearance and medic portrait
+changes. All **18 focused tests** and the **offscreen character/cabin test**
+passed. The render fixture verified ten character comparisons and 4,638 visible
+occupant pixels through the helicopter canopy; the resulting images and care
+frames were reviewed. No interactive gameplay check was performed.
+
+Before publication, all 4,619 tracked or publication-eligible files were compared
+between the development and publication copies, including Git LFS asset object
+hashes. No implementation, asset, tool or documentation was missing. The sole
+intentional copy difference is the publication-specific MP4 Git LFS rule.
+All 393 source/configuration, project and build-wrapper files match; their
+normalized SHA-256 is
+`0d46a850c8b38fca5904f3ad88a0b563e28dbabd07de0bbf5f3889c9e59666a4`.
+The changed NPC source hashes still match the tested files, and the installed
+executable and symbols match the successful Shipping build.
+
+The other recent tasks were already published in `29085c5` and its ancestors.
+The earlier combined suite below is historical evidence; it was not rerun for
+this publication-only audit. Its two known failures remain documented. This
+commit publishes source and does not replace the downloadable release archive.
+See [NPC results and publication audit](validation/NpcAppearanceResults.json).
+
 ## October 10 scheduled publication integration
 
 This is fresh validation of the combined completed source since `754b434`, run

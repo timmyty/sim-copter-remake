@@ -96,6 +96,10 @@ public:
 		ESimCopterArtRotation Rotation = ESimCopterArtRotation::None,
 		bool bNearestNeighbor = false);
 
+	// Keep the original faces/moods, but use the real figure's shirt palette in every seat.
+	const FSlateBrush* GetPassengerPortrait(const FString& FigureName, int32 ClothesOffset, int32 HeadIndex, int32 Mood,
+		int32 CareFrame = INDEX_NONE);
+
 	// Somewhere UObject-shaped to hang a texture the remake builds at runtime rather than loads.
 	// The cockpit map re-uploads its rasterised buffer every tick and its Slate widget cannot own
 	// the texture itself.

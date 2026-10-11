@@ -31,6 +31,7 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterShoulderAimTest;
+	friend class FSimCopterNpcAppearanceTest;
 
 public:
 	ASimCopterOnFootPawn();

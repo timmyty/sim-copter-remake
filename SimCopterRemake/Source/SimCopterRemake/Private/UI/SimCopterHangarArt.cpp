@@ -6,6 +6,7 @@
 #include "Flight/SimCopterHelicopterRegistry.h"
 #include "Formats/MaxisWindowsBitmapReader.h"
 #include "Ground/SimCopterPopulationSprite.h"
+#include "Ground/SimCopterPopulationFigure.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformFileManager.h"
 #include "ImageUtils.h"
@@ -109,6 +110,104 @@ FString GetUpscaledSlateFileName(const FString& OriginalFileName)
 
 	return FString();
 }
+}
+
+const FSlateBrush* USimCopterHangarArt::GetPassengerPortrait(
+	const FString& FigureName, int32 ClothesOffset, int32 HeadIndex, int32 Mood, int32 CareFrame)
+{
+	HeadIndex = FMath::Clamp(HeadIndex, 0, 10);
+	Mood = FMath::Clamp(Mood, 0, 2);
+	CareFrame = CareFrame < 0 ? INDEX_NONE : CareFrame % 6;
+	const FString Key = FString::Printf(TEXT("Person:%s:%d:%d:%d:%d"), *FigureName, ClothesOffset, HeadIndex, Mood, CareFrame);
+	if (const auto* Cached = Brushes.Find(Key)) return Cached->Get();
+	FString Error;
+	const auto Shared = FSimCopterPopulationFigure::GetShared(OriginalGameRoot, Error);
+	if (!Shared.IsValid()) return nullptr;
+	const int32 FigureIndex = Shared->Model.FindFigureIndex(FigureName);
+	if (!Shared->Model.Figures.IsValidIndex(FigureIndex)) return nullptr;
+	const auto& Figure = Shared->Model.Figures[FigureIndex];
+	// ARCP torso parts measured in the shipped NoMo poses. The first part of these four
+	// figures is the belt/pelvis, while Ne0 is their shirt; other human figures start at it.
+	const bool bSecondPart = FigureName == TEXT("pilot") || FigureName == TEXT("Kopp") ||
+		FigureName == TEXT("5man") || FigureName == TEXT("Fireman");
+	if (!Figure.Parts.IsValidIndex(bSecondPart ? 1 : 0)) return nullptr;
+	const auto& Shirt = Figure.Parts[bSecondPart ? 1 : 0];
+	const int32 ShirtRamp = Shirt.FixedColor == 0
+		? (Shirt.ColorIndex + FMath::Clamp(ClothesOffset, 0, 13)) % 14 : Shirt.ColorIndex;
+	// PEOPLE1's clothing ramps, read from the original palette. Limit replacements to
+	// the shoulders so hair, skin, hats, bandages and all three expressions stay intact.
+	static constexpr int32 PortraitShirtRamp[] = {4, 8, 0, 9, 5, 2, 5, 3, 11, 6, 2};
+	FMaxisTextureImage Sheet;
+	if (!FMaxisWindowsBitmapReader::LoadPalettedBitmapFromFile(
+		ResolveBitmapPath(TEXT("PEOPLE1.BMP")), Sheet, Error, TransparentPaletteIndex)) return nullptr;
+	constexpr int32 Width = FSimCopterPopulationSprite::People1FrameWidth;
+	constexpr int32 Height = FSimCopterPopulationSprite::People1FrameHeight;
+	if (Sheet.Width < (HeadIndex + 2) * Width || Sheet.Height < (Mood + 1) * Height) return nullptr;
+	FMaxisTextureImage Portrait;
+	Portrait.Width = Width; Portrait.Height = Height;
+	Portrait.Pixels.SetNumUninitialized(Width * Height);
+	for (int32 Y = 0; Y < Height; ++Y)
+	{
+		for (int32 X = 0; X < Width; ++X)
+		{
+			FColor Pixel = Sheet.Pixels[(Mood * Height + Y) * Sheet.Width + (HeadIndex + 1) * Width + X];
+			if (Y >= 24 && Pixel.A != 0)
+			{
+				for (int32 Shade = 0; Shade < 16; ++Shade)
+				{
+					const int32 Source = 16 + PortraitShirtRamp[HeadIndex] * 16 + Shade;
+					const int32 Target = 0x20 + ShirtRamp * 16 + Shade;
+					if (!Shared->Palette.IsValidIndex(Source) || !Shared->Palette.IsValidIndex(Target)) continue;
+					// PEOPLE1 stores the same ramps at VGA precision (each RGB channel rounded
+					// down to a multiple of four); GEO's CMAP retains all eight bits.
+					const auto& ModelColor = Shared->Palette[Source];
+					const FColor PortraitColor(ModelColor.R & 0xfc, ModelColor.G & 0xfc, ModelColor.B & 0xfc);
+					if (Pixel == PortraitColor)
+					{
+						Pixel = Shared->Palette[Target];
+						break;
+					}
+				}
+			}
+			Portrait.Pixels[Y * Width + X] = Pixel;
+		}
+	}
+	if (CareFrame != INDEX_NONE)
+	{
+		// A requested presentation addition, not an original PEOPLE1 animation. Preserve the
+		// face/mood above the shoulders; animate uniform sleeves and gloved hands tending a
+		// patient in the foreground. Six cached pixel-art frames need no per-frame uploads.
+		auto Rect = [&](int32 X, int32 Y, int32 W, int32 H, FColor Color)
+		{
+			for (int32 Row = FMath::Max(0, Y); Row < FMath::Min(Height, Y + H); ++Row)
+				for (int32 Col = FMath::Max(0, X); Col < FMath::Min(Width, X + W); ++Col)
+					Portrait.Pixels[Row * Width + Col] = Color;
+		};
+		const FColor Sleeve = Shared->Palette[0x24 + ShirtRamp * 16];
+		const FColor Glove(206, 234, 229), GloveShade(105, 158, 158), Outline(32, 52, 58);
+		const int32 HandY = 25 + (CareFrame == 1 || CareFrame == 4 ? 2 : CareFrame == 2 || CareFrame == 5 ? 1 : 0);
+		Rect(3, 30, 21, 3, Outline);
+		Rect(4, 30, 19, 2, FColor(188, 205, 207)); // patient blanket
+		Rect(5, 23, 4, 5, Sleeve); Rect(18, 23, 4, 5, Sleeve);
+		for (int32 I = 0; I < 5; ++I)
+		{
+			const int32 Y = 24 + (HandY - 24) * I / 4;
+			Rect(7 + I, Y, 3, 3, Sleeve); Rect(17 - I, Y, 3, 3, Sleeve);
+		}
+		Rect(10, HandY, 8, 4, Outline);
+		Rect(11, HandY, 6, 3, GloveShade);
+		Rect(11, HandY, 5, 2, Glove);
+		Rect(13, HandY + 2, 4, 1, Glove);
+	}
+	auto* Texture = FSimCopterPopulationSprite::CreateTextureFromImage(this, Portrait, TEXT("PassengerPortrait"));
+	if (!Texture) return nullptr;
+	TSharedPtr<FSlateBrush> Brush = MakeShared<FSlateBrush>();
+	Brush->SetResourceObject(Texture);
+	Brush->ImageSize = FVector2D(Width, Height);
+	Brush->DrawAs = ESlateBrushDrawType::Image;
+	Textures.Add(Key, Texture);
+	Brushes.Add(Key, Brush);
+	return Brush.Get();
 }
 
 void USimCopterHangarArt::SetOriginalGameRoot(const FString& InOriginalGameRoot)

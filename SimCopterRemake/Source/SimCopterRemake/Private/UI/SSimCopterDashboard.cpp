@@ -1147,9 +1147,41 @@ void SSimCopterDashboard::RebuildSeats()
 			Source,
 			/*bColorKeyed=*/true,
 			/*bNearestNeighbor=*/true);
+		if (Art.IsValid() && Slots.IsValidIndex(SeatIndex))
+		{
+			if (const auto* Person = Slots[SeatIndex].Person.Get())
+			{
+				if (const auto* Matching = Art->GetPassengerPortrait(Person->GetPedestrianFigureName(),
+					Person->GetPedestrianFigureClothesOffset(), Person->GetHeadImageIndex(), Row))
+					PortraitBrush = Matching;
+			}
+		}
 		TSharedRef<SWidget> Portrait = PortraitBrush != nullptr
 			? StaticCastSharedRef<SWidget>(SNew(SImage).Image(PortraitBrush))
 			: SNullWidget::NullWidget;
+		if (Art.IsValid() && Slots.IsValidIndex(SeatIndex) && Slots[SeatIndex].Person.IsValid())
+		{
+			// Read live patient status instead of latching it when the seat window is rebuilt.
+			// World time pauses with the game; the existing mood remains the face for every frame.
+			Portrait = SNew(SImage).Image_Lambda([WeakPawn = Pawn, WeakArt = Art, SeatIndex, PortraitBrush]() -> const FSlateBrush*
+			{
+				const auto* Heli = WeakPawn.Get(); auto* ArtObject = WeakArt.Get();
+				if (!Heli || !ArtObject || !Heli->GetMissionPassengerSlots().IsValidIndex(SeatIndex)) return PortraitBrush;
+				const auto& Slot = Heli->GetMissionPassengerSlots()[SeatIndex];
+				const auto* Person = Slot.Person.Get();
+				if (!Person) return PortraitBrush;
+				const int32 Frame = Heli->IsPassengerProvidingMedicalCare(SeatIndex) && Heli->GetWorld()
+					? FMath::FloorToInt(Heli->GetWorld()->GetTimeSeconds() * 6.0) % 6 : INDEX_NONE;
+				const auto* Brush = ArtObject->GetPassengerPortrait(Person->GetPedestrianFigureName(),
+					Person->GetPedestrianFigureClothesOffset(), Person->GetHeadImageIndex(), Slot.PortraitState, Frame);
+				return Brush ? Brush : PortraitBrush;
+			}).ToolTipText_Lambda([WeakPawn = Pawn, SeatIndex]()
+			{
+				const auto* Heli = WeakPawn.Get();
+				return Heli && Heli->IsPassengerProvidingMedicalCare(SeatIndex)
+					? FText::FromString(TEXT("Treating patients — slows health loss until hospital delivery.")) : FText::GetEmpty();
+			});
+		}
 
 		// An occupied seat can be dragged out to put that passenger down; an empty one is scenery.
 		if (Slots.IsValidIndex(SeatIndex))
