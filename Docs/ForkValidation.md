@@ -1,5 +1,21 @@
 # Fork validation
 
+## Windows download v1.0.6 - October 10, 2026
+
+The downloadable package now includes all completed changes through the NPC
+identity and medic-care update, plus an expanded README describing this fork.
+Fresh distribution staging verified 912 runtime files and all 903 NonUFS
+dependencies, 45 maps, 21 KINV tracks, two movies and 30 flyover soundtracks.
+The executable matches the successful Shipping build by SHA-256. The launcher
+and its Shipping child survived a 31-second hidden startup check with an
+isolated profile and no renderer or audio. Personal data and symbols are excluded.
+
+Archive publication requires per-entry SHA-256 verification and matching GitHub
+asset digests. This packaging-only update reuses the existing tested executable
+and cooked content; it does not claim a new build, recook, full regression run,
+interactive playtest or listening check. See [release notes](Releases/v1.0.6.md)
+and [package evidence](validation/WindowsRelease106Results.json).
+
 ## October 10 NPC appearance publication
 
 Editor and Shipping builds succeeded for the NPC appearance and medic portrait
