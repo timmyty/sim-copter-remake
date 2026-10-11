@@ -1,0 +1,116 @@
+{
+  "VerifiedAtUtc": "2026-10-11T06:03:29.6614175Z",
+  "DurationSeconds": 8,
+  "SaveVersion": 9,
+  "EditorBuild": "Docs/scratchpad/vehicle-taser/build-editor-final.log",
+  "ShippingBuild": "Docs/scratchpad/vehicle-taser/build-shipping.log",
+  "TestsPassed": 14,
+  "TestsFailed": 0,
+  "TestsSkipped": 0,
+  "TestsWithWarnings": 0,
+  "Tests": [
+    {
+      "fullTestPath": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.PullOverOrder",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.PursuitTargetFilter",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.SpeederSpeed",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.SpotlightMark",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.RemoteRecovery.SaveAndObstruction",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Safety.ParkedAircraftTraffic",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.ArchiveRoundTrip",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.Names",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.QuickSavePersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.RestoreState",
+      "state": "Success"
+    }
+  ],
+  "Installation": {
+    "InstalledAtUtc": "2026-10-11T06:02:48.455196Z",
+    "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "71A57C27C5EEFD4F5429DE04C747EFA052E89014A928AE4F4602F5039BA56E99",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\vehicle-taser/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "792B1AD2E412DC475A1F13BD7848C011336310BD12DC33F2D4F74EE3A24138A4",
+    "TestsPassed": 14,
+    "ChangedFiles": 1,
+    "AssetsChanged": false,
+    "InteractiveGameplayChecked": false
+  },
+  "SourceFiles": [
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterAirOperations.h",
+      "SHA256": "A4F87D5838D34B55D753C7DF392A1901926E972E5A92FAF2D9D4817B6743670B"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirOperations.cpp",
+      "SHA256": "E22F8C82976DC777164D36DC963DA0A2047FE5DEB91C2BA03CCC507E2A756B8A"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h",
+      "SHA256": "916B8BE8A1AE8880AC8C765CCA9013E823D950FEAFF552023CD7BBF3A4C1913A"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp",
+      "SHA256": "E09FA4A8497C41318F485E25C16A49647192392F5EE49DDC5DD031DCDA682B22"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgentAirOperations.cpp",
+      "SHA256": "5C2D536C8A22FEB2B25B21CD8E102E0366E57EC002B7D7B7A5E342771E3C42F9"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTrafficSystemActor.h",
+      "SHA256": "CA2AB616F10151575D50ADE3C151B5EDB048E17C4729D12C1F17359BB46DC240"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterTrafficSystemActor.cpp",
+      "SHA256": "9BCB4999F8AAAE9F9309739B6CCB9F1061F8978797743C36ABBC2ED6A6636414"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterVehicleTaserTests.cpp",
+      "SHA256": "3D2149121BF9DCFAC2B3B4C0466CCD3F369E3928C1132534283562119BCF877E"
+    }
+  ],
+  "InteractiveGameplayChecked": false,
+  "PublicationCheckoutSynchronized": false
+}

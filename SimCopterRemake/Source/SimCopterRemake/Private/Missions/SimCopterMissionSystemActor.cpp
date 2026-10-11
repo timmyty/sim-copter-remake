@@ -462,6 +462,7 @@ bool ASimCopterMissionSystemActor::RestoreRuntimeSaveState(const TArray<uint8>& 
 	}
 
 	SessionElapsedSeconds = FMath::Max(0.0f, SessionElapsedSeconds);
+	MissionSystem.ResolveTransportDestinationClearings();
 	StopMarchingBandAudio();
 	bMarchingBandSpawned = false;
 	bMarchingBandApproaching = false;
@@ -511,6 +512,19 @@ void ASimCopterMissionSystemActor::Tick(float DeltaTime)
 		MissionSystem.CreateEventOfType(SimCopterMissions::TYPE_Transport);
 	if (MissionSystem.bTransportOnly && !bWasTransportOnly)
 		MissionSystem.SetMapFocusRecordIndex(MissionSystem.GetMapFocusRecordIndex(), SimCopterMissions::EMapFocusReason::LifecycleAdopt);
+	// The purchased fitting belongs to the player's fleet, including parked aircraft.
+	// The helper's free cage must never silently change the player's mission mix.
+	bool bOwnsCaptureCage = false;
+	for (TActorIterator<ASimCopterHelicopterPawn> It(GetWorld()); It; ++It)
+	{
+		if (!It->IsSupportAircraft() && It->GetEquipmentState().HasCareerBit(
+			SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::CaptureCage)))
+		{
+			bOwnsCaptureCage = true;
+			break;
+		}
+	}
+	MissionSystem.SetCaptureCageOwned(bOwnsCaptureCage);
 	MissionSystem.Tick(DeltaTime);
 	ProcessPassengerTransfers(DeltaTime);
 	ProcessRescueTransfers();
@@ -1846,11 +1860,10 @@ bool ASimCopterMissionSystemActor::TryResolveTransportSpawnTile(
 
 	if (ASimCopterTrafficSystemActor* TrafficSystem = ResolveTrafficSystem())
 	{
-		if (!TrafficSystem->IsWaterTile(OriginX, OriginY))
-		{
-			return true;
-		}
-		return TrafficSystem->TryFindNearestTransportLandTile(OriginX, OriginY, OutTileX, OutTileY);
+		FVector Origin, Clearing;
+		return TrafficSystem->TryGetTileCenterWorldLocation(OriginX, OriginY, Origin) &&
+			TrafficSystem->TryFindTransportClearing(Origin, Clearing, 275.0f, 3200.0f) &&
+			TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Clearing, OutTileX, OutTileY);
 	}
 	return true;
 }
@@ -2683,13 +2696,20 @@ bool ASimCopterMissionSystemActor::CanHospitalParamedicBoardPlayerHelicopter(
 	// A living patient or a body already in the cabin always belongs to the hospital unload
 	// service first. Do not let a helper medic claim another seat just because the casualty made
 	// their mission record inactive.
+	bool bHasMedic = false;
 	for (const FSimCopterMissionPassengerSlot& Slot : Helicopter->GetMissionPassengerSlots())
 	{
 		if (Slot.Kind == ESimCopterMissionPassengerKind::Medevac)
 		{
 			return false;
 		}
+		const auto* Person = Slot.Person.Get();
+		bHasMedic |= Person && Person->GetBehaviorAttribute(EBhavAttr::State) == 5 && !Person->IsMissionPatientDead();
 	}
+	// Remake standby crew: one hospital medic can join before any medical call exists.
+	// Further crew still require the existing waiting-patient policy. Seat, approach and
+	// boarding-height checks remain at the shared selection/BoardCarrier boundaries.
+	if (!bHasMedic) return true;
 
 	bool bHasWaitingMedevacPatient = false;
 	for (const SimCopterMissions::FSimCopterMissionRecord& Record : MissionSystem.GetRecords())
@@ -4270,8 +4290,8 @@ void ASimCopterMissionSystemActor::BuildMissionWorldMarkers(TArray<FSimCopterMis
 			// A medevac record has no drop-off (+0x30 stays -1): any hospital takes the patient. So
 			// while one of this event's patients is aboard the player's helicopter, the tag points
 			// at whichever hospital is nearest the helicopter right now; with no hospital in the
-			// city there is no tag. Otherwise it marks the patient at +0x28, which FUN_004a73e0
-			// clears once everybody is picked up.
+			// city there is no hospital tag. Pickup tags below track the remaining people rather
+			// than the coarse +0x28 mission tile maintained by FUN_004a73e0.
 			const int32 PatientsAboard = PlayerHelicopter != nullptr
 				? PlayerHelicopter->GetMissionPassengerCount(Record.EventId, ESimCopterMissionPassengerKind::Medevac)
 				: 0;
@@ -4303,9 +4323,21 @@ void ASimCopterMissionSystemActor::BuildMissionWorldMarkers(TArray<FSimCopterMis
 					OutMarkers.Add(Marker);
 				}
 			}
-			else
+			// The record stores a whole tile, not the casualty's position. Mark every remaining
+			// person directly, including after relocation/load, and retain these pickup tags when
+			// another patient from the same call is already aboard. Never leave a phantom tile tag.
+			for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
 			{
-				AddTileMarker(Record.TileX, Record.TileY, TEXT("PATIENT"), Record.Name, FLinearColor(0.8f, 0.12f, 0.55f, 1.0f));
+				const auto* Patient = *It;
+				if (Patient->MissionEventId != Record.EventId || Patient->IsActorBeingDestroyed() ||
+					!Patient->IsMedevacVictim() || Patient->HasMissionResolutionReported() ||
+					Patient->GetBehaviorCarrier() != nullptr || Patient->IsHidden()) continue;
+				FSimCopterMissionWorldMarkerEntry Marker;
+				Marker.WorldLocation = Patient->GetActorLocation();
+				Marker.Label = TEXT("PATIENT");
+				Marker.Detail = Record.Name;
+				Marker.Color = FLinearColor(0.8f, 0.12f, 0.55f, 1.0f);
+				OutMarkers.Add(Marker);
 			}
 			continue;
 		}

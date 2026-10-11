@@ -1,0 +1,220 @@
+{
+  "version": "v1.0.7",
+  "verified_at_utc": "2026-10-11T08:05:05.803631+00:00",
+  "baseline_commit": "731e213",
+  "source_verification": {
+    "file_count": 403,
+    "source_publication_match": true,
+    "normalized_source_sha256": "704515c1390be7b4fc646df537eb47227f0d06938b505f2544c51bbd776d5abf"
+  },
+  "builds": [
+    {
+      "target": "editor",
+      "result": "Succeeded",
+      "detail": "Required wrapper invoked; current target already up to date (0 actions). Compiled gameplay changes from the immediately preceding tasks retained.",
+      "log": "Docs/scratchpad/release-v1.0.7/build-editor.log",
+      "log_sha256": "3241246da4d2a3ab240305041d67a4b3e5ea9cfeb0ed61861f21d2c8daa03044"
+    },
+    {
+      "target": "shipping",
+      "result": "Succeeded",
+      "detail": "Required wrapper invoked; current target already up to date (0 actions). Compiled gameplay changes from the immediately preceding tasks retained.",
+      "log": "Docs/scratchpad/release-v1.0.7/build-shipping.log",
+      "log_sha256": "c46899c7d388d1399c63a447fbedd08ecd0a4872b670af9d0455ed555de6b487"
+    }
+  ],
+  "tests": [
+    {
+      "mode": "Complete SimCopter suite with NullRHI",
+      "counts": {
+        "succeeded": 415,
+        "succeededWithWarnings": 20,
+        "failed": 4,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 189.9669952392578,
+      "failures": [
+        {
+          "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+          "messages": [
+            "Expected 'Finds flat land ALTM sample' to be not null.",
+            "Expected 'Finds water ALTM sample' to be not null.",
+            "Expected 'Finds sloped ALTM sample' to be not null."
+          ]
+        },
+        {
+          "test": "SimCopter.Radio.SequentialResume",
+          "messages": [
+            "Expected 'Progress persisted on disk' to be true."
+          ]
+        },
+        {
+          "test": "SimCopter.Settings.SoundVolumePersistence",
+          "messages": [
+            "Expected 'Selected volume is written to disk' to be 3500, but it was 10000.",
+            "Expected 'Selected volume is written to disk' to be 0, but it was 10000.",
+            "Expected 'Selected volume is written to disk' to be 3500, but it was 10000.",
+            "Expected 'Selected volume is written to disk' to be 0, but it was 10000.",
+            "Expected 'Selected volume is written to disk' to be 3500, but it was 10000.",
+            "Expected 'Selected volume is written to disk' to be 0, but it was 10000."
+          ]
+        },
+        {
+          "test": "SimCopter.UI.FlapLayout",
+          "messages": [
+            "Expected 'The four flaps between them cover every career equipment bit' to be 127, but it was 31."
+          ]
+        }
+      ],
+      "warnings": [
+        {
+          "test": "SimCopter.Cheats.CityEffects",
+          "warnings": 17
+        },
+        {
+          "test": "SimCopter.Cheats.GortOriginalAssets",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.City.BuildingDemolition",
+          "warnings": 34
+        },
+        {
+          "test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Missions.PlaneDeckRescue",
+          "warnings": 11
+        },
+        {
+          "test": "SimCopter.Missions.SafePassengerLanding",
+          "warnings": 12
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city19",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city21",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city22",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city24",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city25",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city26",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city27",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city28",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city29",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.TOKYO",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Traffic.TunnelTransit",
+          "warnings": 4
+        },
+        {
+          "test": "SimCopter.UI.HangarPurchaseParking",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Water.SupplyGeometry",
+          "warnings": 11
+        }
+      ],
+      "report": "Docs/scratchpad/release-v1.0.7/tests-full/index.json",
+      "report_sha256": "360ec58ace52d2e4964473426606aacb72cb3e6d55ba0c67589ac6d5e90090c3"
+    },
+    {
+      "mode": "Focused D3D12 RenderOffscreen, NoSound",
+      "counts": {
+        "succeeded": 8,
+        "succeededWithWarnings": 0,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 8.374672889709473,
+      "failures": [],
+      "warnings": [],
+      "report": "Docs/scratchpad/release-v1.0.7/tests-render/index.json",
+      "report_sha256": "9e23a405119f18f5d488483c25ca17086df78c41b863ad29788ee8c725ee314b"
+    },
+    {
+      "mode": "Two persistence cases rerun with MultiprocessSaveConfig and an isolated user directory",
+      "counts": {
+        "succeeded": 2,
+        "succeededWithWarnings": 0,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 0.2016981989145279,
+      "failures": [],
+      "warnings": [],
+      "report": "Docs/scratchpad/release-v1.0.7/tests-persistence/index.json",
+      "report_sha256": "8199de164fdbdd26236ad61a712462c3e589d5de0a9bfc733cf83d6f0d029a9c"
+    }
+  ],
+  "runtime": {
+    "files": 912,
+    "bytes": 2006835748,
+    "nonufs_verified": 903,
+    "maps": 45,
+    "kinv_tracks": 21,
+    "drive_in_movies": 2,
+    "flyover_soundtracks": 30,
+    "shipping_sha256": "86bfc36d519a23a28ca10fd29cfcaf0b5aa24a8b5f3caf060c09dbfbaed3c399"
+  },
+  "startup": {
+    "launcher_exited": false,
+    "launcher_pid": 61752,
+    "children": [
+      {
+        "pid": 147596,
+        "cpu_seconds": 0.84375,
+        "window_handle": 0,
+        "working_set_bytes": 697073664,
+        "path": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.7\\SimCopterRemake-v1.0.7-Windows-x64\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe"
+      }
+    ],
+    "seconds": 31.256429,
+    "mode": "NullRHI, unattended, no audio, isolated user directory",
+    "limitation": "Checks bootstrap and startup survival only; no visible rendering or gameplay check."
+  },
+  "assembly": "Fresh distribution staging from the latest verified installed Shipping executable and unchanged cooked/runtime assets; no new recook.",
+  "archive_gate": "Verify every decompressed ZIP entry against staging SHA-256, then require matching GitHub uploaded asset digests.",
+  "receipt_location": "Docs/scratchpad/release-v1.0.7/",
+  "limitations": [
+    "Known ReferenceCity local-fixture sample failure and outdated FlapLayout full-equipment-mask expectation remain documented.",
+    "NullRHI rendering cases do not render; changed graphics paths additionally exercised by focused offscreen tests.",
+    "No interactive gameplay or listening check."
+  ]
+}

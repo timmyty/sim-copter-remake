@@ -66,12 +66,14 @@ void ASimCity2000CityActor::BuildWindTurbines(const FMaxisMeshObject& OriginalMo
 		Face({P,P+Back,Q+Back,Q},FVector(0,P.Y+Q.Y,P.Z+Q.Z));
 		Face({P+Back,FVector(.06f*Radius,0,0),Q+Back},FVector::ForwardVector);
 	}
-	auto* Mesh=SimCopterRuntimeStaticMesh::Build(this,{Section},false);
+	auto* Mesh=SimCopterRuntimeStaticMesh::Build(this,{Section},true);
 	if (!Mesh) return;
 	auto* Rotors=NewObject<UInstancedStaticMeshComponent>(this,MakeUniqueObjectName(this,UInstancedStaticMeshComponent::StaticClass(),TEXT("WindTurbineBlades")));
 	Rotors->SetStaticMesh(Mesh); Rotors->SetupAttachment(SceneRoot);
 	Rotors->SetMobility(EComponentMobility::Movable); Rotors->SetCastShadow(true);
-	Rotors->SetCollisionEnabled(ECollisionEnabled::NoCollision); Rotors->SetCanEverAffectNavigation(false);
+	Rotors->SetCollisionObjectType(ECC_WorldDynamic);
+	Rotors->SetCollisionResponseToAllChannels(ECR_Block);
+	Rotors->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); Rotors->SetCanEverAffectNavigation(false);
 	Rotors->SetRemoveSwap(); Rotors->RegisterComponent();
 	WindTurbineComponentIndex=BuildingInstanceComponents.Add(Rotors);
 	BuildingModelMeshes.Add(Mesh); ComponentInstanceBuildings.AddDefaulted();

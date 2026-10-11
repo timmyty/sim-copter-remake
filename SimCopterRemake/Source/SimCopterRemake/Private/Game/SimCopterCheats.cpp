@@ -54,8 +54,11 @@ TArray<FCommand> Parse(const FString& Text)
 
 bool WinsMoneyGamble(int32 Amount, int32 Roll)
 {
+	// Remake balance: split the valid amount range into thirds, with 2%, 4% and 7% losses.
+	// The original amount-dependent threshold made large requests lose most of the time.
+	const int32 LosingRolls = Amount <= 16666 ? 1000 : Amount <= 33333 ? 2000 : 3500;
 	return Amount > 0 && Amount < 50000 && Roll >= 0 && Roll < 50000 &&
-		Roll >= (Amount - 50000) / 2 + 50000;
+		Roll >= LosingRolls;
 }
 
 int32 AircraftTypeForKey(const FKey& Key)

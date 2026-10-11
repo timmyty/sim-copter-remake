@@ -169,6 +169,7 @@ void FSimCopterFlightModel::ResetOnSurface(int32 InPosX, int32 InPosZ, int32 Sur
 	ClimbSpeed = 0;
 	SpeedDelta = 0;
 	HorizontalSpeed = 0;
+	bTravelBoostActive = false;
 	VelX = VelZ = 0;
 	DeltaX = DeltaZ = 0;
 	RotorSpeed = 0;
@@ -191,6 +192,8 @@ void FSimCopterFlightModel::ResetOnSurface(int32 InPosX, int32 InPosZ, int32 Sur
 void FSimCopterFlightModel::Step(float DeltaSeconds, const FSimCopterFlightInputs& Inputs, const FSimCopterFlightEnvironment& Env, FSimCopterFlightEvents& OutEvents)
 {
 	OutEvents = FSimCopterFlightEvents();
+	bTravelBoostActive = Inputs.bTravelBoost && !Inputs.bTurbo &&
+		State == ESimCopterFlightState::Flying && IsRotorLifting() && Fuel > 0;
 
 	const int32 Dt = FMath::Clamp(FromFloat(DeltaSeconds), 1, One);
 
@@ -605,6 +608,13 @@ void FSimCopterFlightModel::StepVelocity(int32 Dt, const FSimCopterFlightInputs&
 	const int32 SlideVel = Mul(SlideSmoothed, SlideVelocityScale);
 	VelX = Mul(FwdX, Speed) - Mul(FwdZ, SlideVel);
 	VelZ = Mul(FwdZ, Speed) + Mul(FwdX, SlideVel);
+	// Scale the complete horizontal travel vector once; never compound this with x10 turbo
+	// or feed it back into ForwardSpeed, which would accelerate exponentially while held.
+	if (bTravelBoostActive)
+	{
+		VelX = Mul(VelX, TravelBoostScale);
+		VelZ = Mul(VelZ, TravelBoostScale);
+	}
 
 	// FUN_004679d0 computes the magnitude through floating point.
 	const float VelXf = ToFloat(VelX);

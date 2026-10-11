@@ -6,6 +6,7 @@
 #include "Brushes/SlateColorBrush.h"
 #include "Dom/JsonObject.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterRegistry.h"
 #include "Framework/Application/IInputProcessor.h"
 #include "Framework/Application/SlateApplication.h"
@@ -359,6 +360,10 @@ void SSimCopterToolFlaps::Construct(const FArguments& InArgs)
 			DispatchPanel
 		];
 
+	TSharedRef<SWidget> TaserPanel = BuildRemoteTaserFlap();
+	MissionMarkerAvoidancePanels.Add(TaserPanel);
+	Column->AddSlot().AutoHeight().HAlign(HAlign_Right).Padding(PanelGap)[TaserPanel];
+
 	// The Apache's armament strip sits with the tool flaps. It collapses on every other airframe,
 	// so the column is unchanged for the eight civilian models.
 	TSharedRef<SWidget> ApachePanel = BuildApacheFlap();
@@ -382,6 +387,12 @@ void SSimCopterToolFlaps::Construct(const FArguments& InArgs)
 			[
 				ToolPanel
 			];
+		if (Flap.EquipmentMask == SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::Megaphone))
+		{
+			TSharedRef<SWidget> CagePanel = BuildCaptureCageFlap();
+			MissionMarkerAvoidancePanels.Add(CagePanel);
+			Column->AddSlot().AutoHeight().HAlign(HAlign_Right).Padding(PanelGap)[CagePanel];
+		}
 	}
 
 	// Nothing but the flap column: the calibration panel is hosted separately, top-middle of the
@@ -1369,6 +1380,7 @@ void SSimCopterToolFlaps::PressAction(const EAction Action)
 	// decided here.
 	{
 		const ESimCopterHelicopterTool ActionTool =
+			(Action == EAction::CageRaise || Action == EAction::CageLower || Action == EAction::CageOpen) ? ESimCopterHelicopterTool::CaptureCage :
 			(Action == EAction::CannonFire) ? ESimCopterHelicopterTool::WaterCannon :
 			(Action == EAction::MegaphoneBroadcast) ? ESimCopterHelicopterTool::Megaphone :
 			(Action == EAction::TearGasFire) ? ESimCopterHelicopterTool::TearGas :
@@ -1385,6 +1397,16 @@ void SSimCopterToolFlaps::PressAction(const EAction Action)
 
 	switch (Action)
 	{
+	case EAction::CageRaise:
+		Helicopter->GetAirOperations()->SetCagePanelInput(1);
+		break;
+	case EAction::CageLower:
+		Helicopter->GetAirOperations()->SetCagePanelInput(-1);
+		break;
+	case EAction::CageOpen:
+		Helicopter->SetSelectedTool(ESimCopterHelicopterTool::CaptureCage);
+		if (Helicopter->GetAirOperations()->IsCage()) Helicopter->GetAirOperations()->OpenCargo();
+		break;
 	case EAction::CannonFire:
 		Helicopter->StartWaterCannon();
 		break;
@@ -1445,6 +1467,10 @@ void SSimCopterToolFlaps::ReleaseAction(const EAction Action)
 
 	switch (Action)
 	{
+	case EAction::CageRaise:
+	case EAction::CageLower:
+		Helicopter->GetAirOperations()->SetCagePanelInput(0);
+		break;
 	case EAction::CannonFire:
 		Helicopter->StopWaterCannon();
 		break;
@@ -1554,9 +1580,63 @@ void SSimCopterToolFlaps::AddStripBackground(
 		MakeImage(DispatchFrameFile, DispatchFrameRight));
 }
 
-// SCHOOK: none - the Apache's weapons are model capabilities, not equipment bits, so
-// FUN_004127d0 never builds a flap for them and the original ships no artwork. This strip is the
-// remake's, built from the same donor frame as the dispatch strip.
+TSharedRef<SWidget> SSimCopterToolFlaps::BuildRemoteTaserFlap()
+{
+	auto Canvas=SNew(SConstraintCanvas);
+	AddStripBackground(*Canvas, PageWidth, TaserFillBrush);
+	AddTextAtPage(*Canvas,65,8,195,16,MakeLabel(FText::FromString(TEXT("REMOTE TASER")),LabelFontSize));
+	AddAtPage(*Canvas,12,16,107,20,
+		SNew(SButton).IsFocusable(false).ContentPadding(FMargin(2)).HAlign(HAlign_Center).VAlign(VAlign_Center)
+		.ButtonColorAndOpacity(FLinearColor(.22f,.29f,.34f)).ForegroundColor(FlapReadout)
+		.ToolTipText(FText::FromString(TEXT("Take off, then aim the nose taser while autopilot follows a criminal car or robber and seeks a clear shot. Move the mouse or right stick to aim; left click / X / RT fires. Hold right mouse for cockpit buttons. N / R3+Y switches modes.")))
+		.OnClicked_Lambda([this] { if (GetPawn()) GetPawn()->ToggleRemoteTaser(); return FReply::Handled(); })
+		[SNew(STextBlock).Font(FlapFont(GetScaledFontSize(12))).ColorAndOpacity(FlapReadout)
+		.Text_Lambda([this] { return FText::FromString(GetPawn() && GetPawn()->GetAirOperations()->IsRemoteTaserActive()?TEXT("FLY HELICOPTER"):TEXT("AIM TASER")); })]);
+	AddTextAtPage(*Canvas,65,43,215,14,SNew(STextBlock)
+		.Text_Lambda([this] { return FText::FromString(GetPawn()?GetPawn()->GetAirOperations()->GetRemoteTaserReadout():TEXT("N / R3+Y")); })
+		.Visibility(EVisibility::HitTestInvisible).Justification(ETextJustify::Center)
+		.ColorAndOpacity(FlapReadout).Font(FlapFont(GetScaledFontSize(8))));
+	return SNew(SBox).Visibility_Lambda([this]
+	{ return GetPawn() && !GetPawn()->IsFixedWingAircraft()?EVisibility::SelfHitTestInvisible:EVisibility::Collapsed; })
+		[SNew(SSimCopterToolGlow).Active_Lambda([this] { return GetPawn() && GetPawn()->GetAirOperations()->IsRemoteTaserActive(); })[MakePanel(PageWidth,Canvas)]];
+}
+
+// User-requested cage controls, using the original frame and buttons like the dispatch strip.
+TSharedRef<SWidget> SSimCopterToolFlaps::BuildCaptureCageFlap()
+{
+	TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
+	AddStripBackground(*Canvas, PageWidth, CageFillBrush);
+	AddTextAtPage(*Canvas, 65, 8, 195, 16,
+		MakeLabel(NSLOCTEXT("SimCopterFlaps", "CaptureCage", "CAPTURE CAGE"), LabelFontSize));
+	const EAction Actions[] = { EAction::CageLower, EAction::CageRaise, EAction::CageOpen };
+	const TCHAR* Labels[] = { TEXT("LOWER"), TEXT("RAISE"), TEXT("OPEN") };
+	const TCHAR* Tips[] = {
+		TEXT("Hold to form and lower the cage (V, Page Down / D-pad down). The floor seals automatically around people."),
+		TEXT("Hold to raise (Page Up / D-pad up). Keep holding at the top to board occupants and stow the cage."),
+		TEXT("Open the floor and release occupants (G / D-pad left).") };
+	for (int32 K=0; K<3; ++K)
+	{
+		const float X = 20.0f + K*37.0f;
+		AddAtPageKey(*Canvas, FString::Printf(TEXT("Cage_%s"), Labels[K]), X, 14, 17, 18,
+			MakeHeldArtButton(OctagonFile, OctagonNormal, OctagonPressed, Actions[K], FText::FromString(Tips[K])));
+		AddTextAtPage(*Canvas, X+8.5f, 36, 65, 16, MakeLabel(FText::FromString(Labels[K]), 9));
+	}
+	AddTextAtPage(*Canvas, 65, 46, 190, 14,
+		SNew(STextBlock).Text_Lambda([this]
+		{
+			return FText::FromString(GetPawn() ? GetPawn()->GetAirOperations()->GetCageReadout() : TEXT("STOWED"));
+		}).Visibility(EVisibility::HitTestInvisible).Justification(ETextJustify::Center)
+		.ColorAndOpacity(FlapReadout).Font(FlapFont(GetScaledFontSize(9))));
+	const int32 Mask = SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::CaptureCage);
+	return SNew(SBox).Visibility(TAttribute<EVisibility>::CreateSP(this, &SSimCopterToolFlaps::GetFlapVisibility, Mask))
+		[SNew(SSimCopterToolGlow).Active_Lambda([this]
+		{
+			return GetPawn() && GetPawn()->GetActiveTool()==ESimCopterHelicopterTool::CaptureCage;
+		})[MakePanel(PageWidth, Canvas)]];
+}
+
+// SCHOOK: none - Apache weapons are model capabilities, not equipment bits. This remake strip
+// uses the dispatch donor frame when custom Apache artwork is absent.
 TSharedRef<SWidget> SSimCopterToolFlaps::BuildApacheFlap()
 {
 	TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);

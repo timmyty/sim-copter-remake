@@ -218,6 +218,7 @@ void USimCopterCareerSubsystem::BeginCareer()
 void USimCopterCareerSubsystem::ContinueCareerIntoNextCity()
 {
 	bApacheEncounterSpawned = false;
+	bAirSupportUnlocked = false;
 	// FUN_00408210 touches none of this: the books and the log carry straight over. Only the
 	// depreciation resets, and not here - FUN_0047a240 re-places every owned airframe and
 	// FUN_00484790 zeroes each one's heli[0xcd], which is the accrual FUN_0048b070 subtracts

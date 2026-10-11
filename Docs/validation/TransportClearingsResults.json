@@ -1,0 +1,322 @@
+{
+  "editorBuild": "Succeeded",
+  "shippingBuild": "Succeeded",
+  "tests": {
+    "succeeded": 103,
+    "succeededWithWarnings": 2,
+    "failed": 0,
+    "notRun": 0,
+    "inProcess": 0
+  },
+  "bundledCitiesChecked": 45,
+  "warnings": [
+    {
+      "test": "SimCopter.Missions.PlaneDeckRescue",
+      "entries": [
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_5' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_12' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_13' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_54' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_55' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_56' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_57' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_58' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_59' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_5.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_60' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.36"
+        }
+      ]
+    },
+    {
+      "test": "SimCopter.Missions.SafePassengerLanding",
+      "entries": [
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_6.Untitled:PersistentLevel.SimCopterHelicopterPawn_0",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.37"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_5' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_12' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_13' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_54' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_55' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_56' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_57' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_58' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_59' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "PIE: AttachTo: '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_6.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_60' which is static to it. Aborting.",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.11-03.37.38"
+        }
+      ]
+    }
+  ],
+  "installation": {
+    "InstalledAt": "2026-10-10T22:39:40.9152973-05:00",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\transport-clearings\\before-install-20261010-223936",
+    "Files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "BeforeSHA256": "314DC660C7710847D2BCA70EFFCBC3E205AA055221D449DE885699D7C131786B",
+        "AfterSHA256": "314DC660C7710847D2BCA70EFFCBC3E205AA055221D449DE885699D7C131786B"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "BeforeSHA256": "FEE46675514FB4155FA8ECCD885FF5795400B986D4E827E1AEC3EDE5DF146B4A",
+        "AfterSHA256": "FEE46675514FB4155FA8ECCD885FF5795400B986D4E827E1AEC3EDE5DF146B4A"
+      },
+      {
+        "Relative": "Manifest_NonUFSFiles_Win64.txt",
+        "BeforeSHA256": "861C2FA3A5E037E2E394F3074AD1257D5BD46EE11034ABBE51A36A2F9ED3EB06",
+        "AfterSHA256": "861C2FA3A5E037E2E394F3074AD1257D5BD46EE11034ABBE51A36A2F9ED3EB06"
+      },
+      {
+        "Relative": "Manifest_DebugFiles_Win64.txt",
+        "BeforeSHA256": "183374EB9F2CCA52B8FD91F6FE7441C25C5675925558DE259490D2892A76AC57",
+        "AfterSHA256": "183374EB9F2CCA52B8FD91F6FE7441C25C5675925558DE259490D2892A76AC57"
+      }
+    ],
+    "PassedTests": 105
+  },
+  "interactivePlaytest": false,
+  "localSourceSynchronized": true,
+  "pushed": false,
+  "earlierRuns": "Initial 350 cm clearance rejected two whole cities; measured helper bounds justified 275 cm. Two early broad runs exited before reporting; refreshing compilation restored the full suite. A later startup stalled during overlapping workspace builds and only that headless process was stopped. The final passing report supersedes these attempts.",
+  "evidenceDirectory": "Docs/scratchpad/transport-clearings",
+  "sourceSHA256": {
+    "Private/Flight/SimCopterAirSupport.cpp": "8491ea931dec80f2ce198c1ba583f5131bc0175ed92785b786eb254b6cb70ec7",
+    "Private/Ground/SimCopterGroundAgent.cpp": "8a114430c00b86037dea2f62203bcae030b6bacd81ee1bf34d41c8f4d6148e3d",
+    "Private/Ground/SimCopterTrafficSystemActor.cpp": "074183be8d65ff423d62734df22bbd71b0d3b7c155779a32135151234f5f4a92",
+    "Private/Missions/SimCopterMissionSystem.cpp": "40fe09462697d19fb47f64017c03e3277327d327bee9e2f7d2628918edfa1719",
+    "Private/Missions/SimCopterMissionSystemActor.cpp": "169f9d940e4a16644165322495b8effdf7a66654bb56073f9b51a1d0aef8e08e",
+    "Private/Tests/SimCopterAirOperationsTests.cpp": "8f17413beb8f556874f45799d8c2111d7c86eae11c5675a04ed0b682221e2fab",
+    "Public/Flight/SimCopterAirOperations.h": "e7c765c28b999c87ca31c2c8b65e7b28b75475ef493483a4afb75088986d9b55",
+    "Public/Ground/SimCopterGroundAgent.h": "193c35962b66e1f0a9a2f6ee210815ffdea8c03723f72b30688510227abac613",
+    "Public/Ground/SimCopterTrafficSystemActor.h": "d6ec6c6c4b9241c1d4036e378ffb44eb0c3586a96fc7697f382c371f9d00b5a7",
+    "Public/Missions/SimCopterMissionSystem.h": "71aa71a9059678e2149626678c0458aee241b0d157af625805345ea8d5093c11",
+    "Private/Tests/SimCopterTransportClearingsTests.cpp": "fc34f907f906e990898e28f12c5ec60080c9e3a24f4a9616a7dd3778269a77d9"
+  }
+}

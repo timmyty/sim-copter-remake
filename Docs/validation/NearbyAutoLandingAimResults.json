@@ -1,0 +1,109 @@
+{
+  "VerifiedAtUtc": "2026-10-11T06:24:49.6801115Z",
+  "LandingSearchRadiusCm": 1800,
+  "YawDegrees": 360,
+  "PitchLimitsDegrees": [
+    -85,
+    85
+  ],
+  "OfficerUiWordingRemoved": true,
+  "EditorBuild": "Docs/scratchpad/nearby-auto-land/build-editor-final.log",
+  "ShippingBuild": "Docs/scratchpad/nearby-auto-land/build-shipping.log",
+  "TestsPassed": 14,
+  "TestsFailed": 0,
+  "TestsSkipped": 0,
+  "TestsWithWarnings": 0,
+  "Tests": [
+    {
+      "fullTestPath": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.PullOverOrder",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.PursuitTargetFilter",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.SpeederSpeed",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.SpotlightMark",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.RemoteRecovery.SaveAndObstruction",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.Safety.ParkedAircraftTraffic",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.ArchiveRoundTrip",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.Names",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.QuickSavePersistence",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.RestoreState",
+      "state": "Success"
+    }
+  ],
+  "Installation": {
+    "InstalledAtUtc": "2026-10-11T06:24:04.3580051Z",
+    "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "9EE55B08F46050E018A63962A9F86786F6E478D264AB84C88A13994A96704AA8",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\nearby-auto-land/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "6E2AC8E3908FAC75A17EE86446A07760E5BCE77E3A8D43023AEA77A54711B7DA",
+    "TestsPassed": 14,
+    "ChangedFiles": 1,
+    "AssetsChanged": false,
+    "InteractiveGameplayChecked": false
+  },
+  "SourceFiles": [
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterAirOperations.h",
+      "SHA256": "CA6ECFA2B2ABCB68303F660D9959E9126A98978ECB322A5470D23E2455E4DBDC"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirOperations.cpp",
+      "SHA256": "4D8AF4DF6E873E4379BBAE571ED7A84E8F40E17BF415B68C1ABA3C17707A5112"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPilotRecovery.cpp",
+      "SHA256": "05606CB71C1DB3B23A7346049B0AF1D8838DA8494F4A09287FCB515CA0DBDDE8"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterToolFlaps.cpp",
+      "SHA256": "B24E310E89D2EF5D64AD274F9C294D8B4B829769CE7B0143781652BCA23382F2"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "SHA256": "2F9F6E15ED90D2916D6A832B26A87F9DB79FB7905F86CC876C9DD6DD3A261A3F"
+    }
+  ],
+  "InteractiveGameplayChecked": false,
+  "PublicationCheckoutSynchronized": false
+}

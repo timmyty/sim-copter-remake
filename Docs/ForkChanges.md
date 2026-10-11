@@ -5,6 +5,22 @@ of [JamesIV4/sim-copter-remake](https://github.com/JamesIV4/sim-copter-remake), 
 on [wyozi's version](https://github.com/wyozi/sim-copter-remake/tree/25d81802b065eac5fee1dbd74afb75d1e59004e8).
 Original authorship and commit history are retained.
 
+## October 11 combined gameplay release v1.0.7
+
+This release gathers all completed changes since v1.0.6: intelligent traffic and
+bounded car-only phasing; helper unlocks tied to the current city's graduation;
+slower helpers and normal 30% Shift flight boost; remote helicopter tasers,
+criminal pursuit and temporary car disable; safe unattended landing and harness
+recovery; patient marker/medic route fixes; capture cage controls and transport
+clearings; tiered money-cheat odds; dropped-person and standby-medic fixes; and
+collision on the actual rotating turbine blades. All earlier work remains in the
+source history. [Release notes](Releases/v1.0.7.md) and
+[combined validation](validation/WindowsRelease107Results.json).
+
+## October 10 Dispatch transport clearings
+
+Transport pickups and destinations move to nearby dry, level clearings with rotor/tail space and a clear approach. The helper guides waiting passengers to its landing point, uses ground drop-offs, and completes loaded deliveries before returning to base. Existing saved destination markers migrate locally. Patients delivered by the helper resume the original brief celebration and retirement behavior. [Implementation and validation](TransportClearings.md).
+
 ## October 10 matching NPC identities and medic care
 
 Walking people, helicopter occupants and passenger portraits now use the same
@@ -92,7 +108,7 @@ cars. Both weapons injure pedestrians through the medical system.
 See [behavior, controls, and original references](AircraftAndDestruction.md).
 
 **This version deliberately departs from the original 1996 gameplay.** In
-particular, controlling a police passenger and firing a taser from a helicopter
+particular, remotely aiming a nose-mounted taser from a helicopter
 while an AI pilot circles the area is a fictional addition. It is not a claim
 about authentic SimCopter equipment, original mechanics, or real taser range.
 
@@ -204,15 +220,16 @@ parts of the original game.
 
 ## Police tasers and arrests
 
-- The on-foot weapon and helicopter police passenger weapon are nonlethal tasers.
+- The on-foot weapon and helicopter nose-mounted remote weapon are nonlethal tasers.
   Both call `StunForArrest`; neither fires a bullet/missile nor applies a damage or
   death interaction. A successful hit preserves health, immobilizes the living
   criminal and suspends their behavior. Civilians are not valid arrest targets
   and block shots at criminals behind them.
 - On foot: hold right mouse / LT to aim, left mouse / RT to fire, within 6.5 m.
-  Airborne with a living officer aboard: N / R3+Y enters police taser mode; mouse
-  or right stick aims; click, X or RT fires. The fictional airborne range is 60 m.
-- Police passenger mode now says **POLICE TASER**, with a short blue electrical
+  Airborne: the AIM TASER button or N / R3+Y enters remote aim with automatic orbit,
+  with no officer required. Move the mouse or use the right stick to aim; right mouse releases the cockpit cursor;
+  click, X or RT fires. The fictional airborne range is 60 m.
+- Remote mode now says **REMOTE TASER**, with a short blue electrical
   discharge matching the on-foot effect. The old “sniper” wording and crash/dust
   impact effect have been replaced. This publication also clears queued aircraft
   fire on mode changes and blocks Apache gun/missile tool commands and held-gun
@@ -287,6 +304,9 @@ Details: [mission improvements](MissionImprovements.md), [rescue/pilot fixes](Re
 
 - Purchasable swinging tow clamp and four-person capture cage, with scenery
   collision, cabin-capacity checks, actual NPC/vehicle cargo and save restoration.
+- The cage adds a matching cockpit flap below the megaphone, permanent skid fittings,
+  extending bars and an automatically sealing floor. Owning one increases criminal
+  mission weighting; see [capture cage controls](CaptureCage.md).
 - Generated auto repair yards, junkyards and shoreline harbor repair sites accept
   compatible cargo. Recovered hulls and stalled vehicles have distinct mission names.
 - An AI helper unlocks after completing a level, responds automatically or to the
@@ -297,12 +317,13 @@ Details: [mission improvements](MissionImprovements.md), [rescue/pilot fixes](Re
   explosion. Player-created wreck/recovery jobs cannot farm rewards.
 - Ambient breakdowns are limited to one every 15 minutes without towing equipment;
   equipped aircraft retain the faster 150-second interval and two-car limit.
-- Airborne pilot exits trigger the existing helicopter crash descent. P / B toggles
-  a visible parachute with gradual braking; last-moment deployment does not erase
-  impact injury. Water and dry falls use their respective medical rules.
+- Airborne helicopter exits now hold briefly, then search for clear flat ground
+  within 18 metres and wait safely if blocked. A purchased harness retrieves a carried person first,
+  then the pilot, on uneven terrain. Held Space is cleared on exit. P / B toggles
+  the parachute; damaging falls play pain audio and severe falls add a crack cue.
 - Y opens Tools and switches Tools/Dispatch, A confirms, B cancels; LB/RB yaw and
-  both together remain an optional menu shortcut. R3+B exits, R3+Y selects police
-  taser mode. Menu navigation cannot move a deployed cable.
+  both together remain an optional menu shortcut. R3+B exits, R3+Y selects remote
+  taser aiming and automatic orbit. Menu navigation cannot move a deployed cable.
 - On-foot taser mesh, canopy, health, helper assignments, cargo, custody, recovery,
   impacts and relevant progression are integrated into versioned saves.
 

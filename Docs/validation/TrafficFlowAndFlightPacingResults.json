@@ -1,0 +1,320 @@
+{
+  "VerifiedAtUtc": "2026-10-11T07:29:25.7863774Z",
+  "EditorBuild": "Docs/scratchpad/traffic-flow/build-editor-final.log",
+  "ShippingBuild": "Docs/scratchpad/traffic-flow/build-shipping.log",
+  "TestsPassed": 48,
+  "TestsFailed": 0,
+  "TestsSkipped": 0,
+  "TestsWithWarnings": 1,
+  "WarningNote": "Four existing contextless synthetic-world teardown warnings in SimCopter.Traffic.TunnelTransit; existing engine deprecation and SurfaceZ compiler warnings retained.",
+  "Tests": [
+    {
+      "fullTestPath": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.AirOperations.HelperCruisePacing",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Career.CityTransition",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Career.FinalCityEndsTheLadder",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Career.WarpAircraftIdentity",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Cheats.FuelShieldsAndTurbo",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.PullOverOrder",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.PursuitTargetFilter",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.SpeederSpeed",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Crime.SpotlightMark",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.AltitudeCeiling",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.CanExitHelicopter",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.CollectiveDrivesEngine",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.CoordinatedTurn",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.DamagedLanding",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.DryRotorSpoolsDown",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.EasyModel",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.EngineHoldArbitration",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.FixedMath",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.FrameRateIndependence",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.LandingRules",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.ObjectCollisionDamage",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.PassengerTransferClearance",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.PitchDrivesSpeed",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.RotorSpoolDown",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.RotorSpoolGate",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.TakeoffPrompt",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.TakeoffRepeat",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.TravelBoostAndTurbo",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.TurbulenceAndDamage",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Flight.TurbulenceFrameRate",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Safety.ParkedAircraftTraffic",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.ArchiveRoundTrip",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.Names",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.QuickSavePersistence",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.SaveGame.RestoreState",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.Flow.Following",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.Flow.Intersection",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.Flow.Recovery",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.Flow.Routing",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.JamBlockerDirection",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.JamHornThresholds",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.JamQueueSpacing",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.RoadMeshSurfaceRules",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.TunnelGeometry",
+      "state": "Success",
+      "warnings": 0
+    },
+    {
+      "fullTestPath": "SimCopter.Traffic.TunnelTransit",
+      "state": "Success",
+      "warnings": 4
+    }
+  ],
+  "Installation": {
+    "InstalledAtUtc": "2026-10-11T07:28:58.8421678Z",
+    "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "86BFC36D519A23A28CA10FD29CFCAF0B5AA24A8B5F3CAF060C09DBFBAED3C399",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\traffic-flow/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "CEC6B825E1E81695E4F0D96F4F68F499BBFD0D4EBBF7485A5CADE751BF8EAD01",
+    "TestsPassed": 48,
+    "ChangedFiles": 1,
+    "AssetsChanged": false,
+    "InteractiveGameplayChecked": false
+  },
+  "SourceFiles": [
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterTrafficSystemActor.cpp",
+      "SHA256": "B54F6BAC1B8B16133E49B1D3C3D3A319CA10F24FFB6AE990A542173CDA250932"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTrafficSystemActor.h",
+      "SHA256": "44D79D2773FEDAC4C083ACB97DE1B46C40C4DB35A2F25E83125A3BAD2884A895"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h",
+      "SHA256": "6B883B5888ED77CB92E0AEE1203939A2D698E56CE7A6196BA0F4D18F09998C3B"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirSupport.cpp",
+      "SHA256": "4E87E05559F51D3478CD240034DD52B7DED59C7B61080CEFA5BE11CFC9472705"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirOperations.cpp",
+      "SHA256": "FF7185DA92742C6FA40B9E3A6E62E209E104ABF829F8A7D073E8FB52FD541E63"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp",
+      "SHA256": "EED644DDD10D988D23537DF4AA363AC26F75374A62437EA96F9E42F9B84236CA"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterFlightModel.cpp",
+      "SHA256": "4F10FCFEAE57027D2E1099F2046088F3AEE6CF461C5E5C98F4615113C1A57CE3"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterFlightModel.h",
+      "SHA256": "B81759929272373E89A15244DC4B5962BF737F4AFEFB7A55A7272129BCB41F8B"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterCareerSubsystem.cpp",
+      "SHA256": "6BF7A5FD2635968E5213EA07BA54043AC685388E7958DA2C219BD000042B5B17"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAirOperationsTests.cpp",
+      "SHA256": "6B1F4565E197DC5B6F901CC52CA862731A943CF350C50FD2758FC2F7A7C0365B"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTrafficFlowTests.cpp",
+      "SHA256": "88B67EE5E90F7867EFB7CC0475073EFA29E13C3208690A0169E4EB77B496D9C3"
+    },
+    {
+      "File": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFlightPacingTests.cpp",
+      "SHA256": "0026989C80E0804CABA1AB0881405056F7644A0CF0DAA3A6E006969D62BA2FCA"
+    }
+  ],
+  "ImplementationDiff": "Docs/scratchpad/traffic-flow/implementation.diff",
+  "NormalShiftHorizontalMultiplier": 1.3,
+  "HelperCruiseCmPerSecond": 600,
+  "HelperRequiresCurrentCityGraduation": true,
+  "DefaultCarPhaseSeconds": 3.2,
+  "InteractiveGameplayChecked": false,
+  "PublicationCheckoutSynchronized": false
+}

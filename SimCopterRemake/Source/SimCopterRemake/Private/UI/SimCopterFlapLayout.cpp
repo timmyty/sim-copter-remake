@@ -109,6 +109,9 @@ const TCHAR* GetActionName(const EAction Action)
 	case EAction::BucketRaise: return TEXT("Raise bucket");
 	case EAction::BucketLower: return TEXT("Lower bucket");
 	case EAction::MegaphoneBroadcast: return TEXT("Megaphone");
+	case EAction::CageRaise: return TEXT("Raise capture cage");
+	case EAction::CageLower: return TEXT("Lower capture cage");
+	case EAction::CageOpen: return TEXT("Open capture cage");
 	case EAction::HarnessRaise: return TEXT("Raise harness");
 	case EAction::HarnessLower: return TEXT("Lower harness");
 	case EAction::TearGasFire: return TEXT("Fire tear gas");

@@ -102,6 +102,7 @@ class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public S
 	friend class FSimCopterCityWeaponTest;
 	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
+	friend class FSimCopterPatientMarkerTest;
 	
 public:	
 	ASimCopterMissionSystemActor();

@@ -1,0 +1,266 @@
+{
+  "feature": "Capture cage cockpit controls, skid fittings, automatic seal and crime weighting",
+  "date": "2026-10-10",
+  "builds": {
+    "editor": "Succeeded",
+    "shipping": "Succeeded"
+  },
+  "reports": {
+    "tests-final": {
+      "succeeded": 32,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "tests": [
+        {
+          "name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.CaptureCage.ControlsMountsAndMissionWeights",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.Contexts",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.ContextualHelp",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.FlightRouting",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.HelpDeviceStyle",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.HelpPresentation",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuConfirmCancel",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuOutlineArt",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuRoutedInput",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.MenuSpatialNavigation",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.RadialSelection",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Controller.WheelPresentation",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimeIdentityAndSpawn",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimePlacementNeedsBuilding",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.OriginalMissionAvailability",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.PassengersAboardNeverFailMission",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.RuntimeSaveRoundTrip",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.SchedulerParity",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.WeightTableParity",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Passengers.FaceProgram",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Passengers.FallGravity",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Passengers.HeadImages",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Passengers.PortraitRendering",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.Passengers.VoiceRates",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.SaveGame.ArchiveRoundTrip",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.SaveGame.Names",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.SaveGame.QuickSavePersistence",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.SaveGame.RestoreState",
+          "state": "Success",
+          "warnings": []
+        }
+      ]
+    },
+    "render-final": {
+      "succeeded": 1,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0,
+      "tests": [
+        {
+          "name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+          "state": "Success",
+          "warnings": []
+        },
+        {
+          "name": "SimCopter.CaptureCage.ControlsMountsAndMissionWeights",
+          "state": "Success",
+          "warnings": [
+            {
+              "event": {
+                "type": "Warning",
+                "message": "LogTemp: SimCopter hangar art: 'FLAP-dispatch.BMP' is not in the original game's BMP folder.",
+                "context": "log",
+                "artifact": "00000000000000000000000000000000"
+              },
+              "filename": "",
+              "lineNumber": -1,
+              "timestamp": "2026.10.11-03.33.05"
+            },
+            {
+              "event": {
+                "type": "Warning",
+                "message": "LogTemp: SimCopter hangar art: 'FLAP-apache-missles-gun.BMP' is not in the original game's BMP folder.",
+                "context": "log",
+                "artifact": "00000000000000000000000000000000"
+              },
+              "filename": "",
+              "lineNumber": -1,
+              "timestamp": "2026.10.11-03.33.05"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "previews": {
+    "controls": [
+      "controls-0.75.png",
+      "controls-1.00.png",
+      "controls-1.25.png"
+    ],
+    "geometry": [
+      "cage-stage-0.png",
+      "cage-stage-1.png",
+      "cage-stage-2.png",
+      "cage-stage-3.png"
+    ],
+    "mode": "Offscreen Slate and base-color scene captures; no interactive playtest"
+  },
+  "limitations": [
+    "No foreground gameplay/input-feel verification.",
+    "The first broad test run ended without a report during concurrent project work. The final selected regression run is reported separately.",
+    "Offscreen controls use original fallback panel artwork; missing optional custom dispatch/Apache bitmaps produce fixture warnings."
+  ],
+  "shipping_sha256": "314dc660c7710847d2bca70effcbc3e205aa055221d449de885699d7c131786b",
+  "installation": {
+    "InstalledAt": "2026-10-10T22:37:07.2843269-05:00",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\capture-cage\\before-install-20261010-223702",
+    "Files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "BeforeSHA256": "5A52C55ED13218A08A6D96C428E5C000CA7CB0B4678D3743750D231B60213B4A",
+        "AfterSHA256": "314DC660C7710847D2BCA70EFFCBC3E205AA055221D449DE885699D7C131786B"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "BeforeSHA256": "3A221B28F68175D00FE59BF20DE2C3658CFC742D7DD759A9BD636774229042BA",
+        "AfterSHA256": "FEE46675514FB4155FA8ECCD885FF5795400B986D4E827E1AEC3EDE5DF146B4A"
+      },
+      {
+        "Relative": "Manifest_NonUFSFiles_Win64.txt",
+        "BeforeSHA256": "62E52B8CB7CA2B86963609A387B2355B1FBC25CAC8BB90DA2E52B342922FDECF",
+        "AfterSHA256": "861C2FA3A5E037E2E394F3074AD1257D5BD46EE11034ABBE51A36A2F9ED3EB06"
+      },
+      {
+        "Relative": "Manifest_DebugFiles_Win64.txt",
+        "BeforeSHA256": "ED2F2A527A33F7A4A3B90A0E02FB80D830EE8FCD4D73D2288F44898EA4026E72",
+        "AfterSHA256": "183374EB9F2CCA52B8FD91F6FE7441C25C5675925558DE259490D2892A76AC57"
+      }
+    ],
+    "PassedTests": 32
+  }
+}

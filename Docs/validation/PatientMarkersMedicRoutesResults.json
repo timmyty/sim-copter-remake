@@ -1,0 +1,78 @@
+{
+  "validatedAtUtc": "2026-10-11T05:29:56.814977+00:00",
+  "scope": "Exact patient marker anchors and obstacle-aware deployed medic approaches",
+  "editorBuild": "Docs/scratchpad/patient-markers-medic-paths/build-consistent.log",
+  "fullEditorRebuild": "Docs/scratchpad/remote-taser-recovery/build-editor-consistent.log",
+  "shippingBuild": "Docs/scratchpad/patient-markers-medic-paths/build-shipping.log",
+  "buildsSucceeded": true,
+  "tests": {
+    "succeeded": 73,
+    "succeededWithWarnings": 2,
+    "failed": 0,
+    "notRun": 0,
+    "inProcess": 0
+  },
+  "testReport": "Docs/scratchpad/patient-markers-medic-paths/tests-final/index.json",
+  "warningTests": [
+    "SimCopter.Missions.PlaneDeckRescue",
+    "SimCopter.Missions.SafePassengerLanding"
+  ],
+  "regressions": {
+    "patientMarkersBefore": "Four assertions failed: exact anchor, moving anchor, shared-event patient count, phantom marker after boarding.",
+    "medicRoutingReversed": "Five assertions failed: single medic stranded; three medics selected one casualty and all stranded; neither group backed out of the enclosure.",
+    "fixedSingleMedic": {
+      "uniqueTargets": 1,
+      "arrivals": 1,
+      "minimumXcm": -1146.2
+    },
+    "fixedThreeMedics": {
+      "uniqueTargets": 3,
+      "arrivals": 3,
+      "minimumXcm": -1254.1
+    },
+    "originalBhavPickup": "BHAV 801/262 navigated the enclosure and picked up the same patient.",
+    "finalMarkers": "Exact actor location and elevation, moving actor, multiple casualties, resolved/carried removal."
+  },
+  "intermediateValidation": "An earlier run after overlapping header compilation showed unrelated assertion failures and crashed. A full consistent Editor rebuild followed by all 75 passing tests supersedes that run; the initial result is retained in tests-fixed.log.",
+  "installation": {
+    "InstalledAt": "2026-10-11T00:28:51.9443730-05:00",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\patient-markers-medic-paths\\before-install-20261011-002847",
+    "Files": [
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "BeforeSHA256": "C5018FEDA20FC68A63F167B645C6F23A0D2A7941ED5FDA7BC620E86A4817ACC3",
+        "AfterSHA256": "74C1EE885BEB44B1D003EAD8E7C7292A9854C755CDA65C62A36AC0CD29536314"
+      },
+      {
+        "Relative": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "BeforeSHA256": "1F8C34AA14FB5A33B3B448A95102BD51DC5445076558E8FCBD87F25627E017E4",
+        "AfterSHA256": "B39F7FDB92E4DA40A384CBB2147B1846A5F820A3D74275713E2964DFAB975851"
+      },
+      {
+        "Relative": "Manifest_NonUFSFiles_Win64.txt",
+        "BeforeSHA256": "87C42657CA0EFCDB4AB42EAD6CB4763DEDDEE8E9E76C457B13716D74BBB9210A",
+        "AfterSHA256": "6175E8EE433FB44D33C1258F2916A50B6517853B021C75F62DC9DBEEC824E640"
+      },
+      {
+        "Relative": "Manifest_DebugFiles_Win64.txt",
+        "BeforeSHA256": "0B178B1B288F038A9A411A8511FC42FA85950B2D52FF98A1DF4E11C20570D9B7",
+        "AfterSHA256": "7A5BDA202D8EEB0513B66CBB7F52B356970DB70776B708920F20F36A030EB69A"
+      }
+    ],
+    "PassedTests": 75
+  },
+  "developmentSourceSha256": {
+    "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterMissionSystemActor.cpp": "4d8d42f41d29610a91b03a7ae799fcdfd889c44a4d359d5a433393e229fe6a1a",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTrafficSystemActor.h": "8f8ad2f02abfd8cf4e452616a372b8d96ba3b7c48cef47f33abe75c2093bcf19",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterTrafficSystemActor.cpp": "66a63b00a6225896fd02bcc75525532caee068cb3e2ce2b48d88a23d52c168ed",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp": "7940c3329dfa5adcd18ee9857bea8e008fc767f9114b840062bc2209392f9b9b",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h": "481e0fcbb36afebbe85cbb6f51c701fb447227c9e62ff3ff218b6c5d6b32c09d",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystemActor.h": "b18e1c0f40aef33e3c4e0c0408b5076a9f15f01f4be025d36dbaf16e5a6df5eb",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMedicRouteTests.cpp": "60ce78caaf241aa52e2d7a308c925ac47c41f3a155a6862d8e0065021667b642"
+  },
+  "publication": "Task-specific edits synchronized locally; unrelated pending work preserved. No commit or push.",
+  "limitations": [
+    "No interactive game or screenshot validation.",
+    "Routing is a bounded local physical path search; unreachable destinations remain blocked rather than bypassing collision."
+  ]
+}

@@ -1,5 +1,11 @@
 # Fork validation
 
+## October 11 release v1.0.7
+
+Fresh combined validation: 437/439 headless cases passed after rerunning two persistence checks with config writes enabled; the two previously documented ReferenceCity fixture and FlapLayout mask expectations remain. The initial broad run passed 435/439: its Multiprocess flag suppressed disk config writes, causing the two additional persistence failures. Engine ConfigCacheIni.cpp confirms that MultiprocessSaveConfig enables those writes; both isolated reruns passed. All 8 focused offscreen tests passed. Both build wrappers succeeded, and the staged launcher survived a hidden 31-second isolated startup. All 403 source/configuration/project/build files match the publication checkout. No interactive gameplay or listening check was performed.
+
+Runtime inventory verifies 912 files and 903 NonUFS dependencies, including all 45 maps, 21 KINV tracks, two movies and 30 flyover soundtracks. Personal data and debug symbols are excluded. [Detailed results](validation/WindowsRelease107Results.json) and [release notes](Releases/v1.0.7.md).
+
 ## Windows download v1.0.6 - October 10, 2026
 
 The downloadable package now includes all completed changes through the NPC

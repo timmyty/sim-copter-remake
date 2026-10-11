@@ -22,6 +22,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterWaterGameplay.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Game/SimCopterSettings.h"
@@ -53,7 +54,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogSimCopterOnFootPawn, Log, All);
 namespace
 {
 constexpr uint32 OnFootRuntimeSaveMagic = 0x464f4f54; // 'FOOT'
-constexpr int32 OnFootRuntimeSaveVersion = 3;
+constexpr int32 OnFootRuntimeSaveVersion = 4;
 
 void SerializeOnFootBool(FArchive& Archive, bool& Value)
 {
@@ -607,6 +608,7 @@ void ASimCopterOnFootPawn::DropCarriedMissionPerson()
 
 	// Don't let the auto-pickup logic re-grab them on the very next frame.
 	MissionPickupCooldownSeconds = MissionDropRepickupCooldownSeconds;
+	LastPutDownPerson = Patient;
 }
 
 bool ASimCopterOnFootPawn::PickUpMissionPerson(ASimCopterGroundAgent* MissionPerson)
@@ -705,6 +707,8 @@ bool ASimCopterOnFootPawn::CaptureRuntimeSaveState(TArray<uint8>& OutData) const
 	Writer << Health << Peak << Injury;
 	bool bSavedParachute = bParachuteDeployed;
 	SerializeOnFootBool(Writer, bSavedParachute);
+	bool bSavedAutoRescue=bAutoRescueAttached;
+	SerializeOnFootBool(Writer,bSavedAutoRescue);
 	return !Writer.IsError();
 }
 
@@ -769,6 +773,8 @@ bool ASimCopterOnFootPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 	if (Version >= 2) Reader << PilotHealth << FallPeakZ << InjurySeconds;
 	bool bSavedParachute = false;
 	if (Version >= 3) SerializeOnFootBool(Reader, bSavedParachute);
+	bool bSavedAutoRescue=false;
+	if (Version >= 4) SerializeOnFootBool(Reader,bSavedAutoRescue);
 	if (!FMath::IsFinite(PilotHealth) || PilotHealth < 0 || PilotHealth > 100 || !FMath::IsFinite(FallPeakZ) || !FMath::IsFinite(InjurySeconds) || InjurySeconds < 0) return false;
 
 	if (Reader.IsError() || Reader.Tell() != Data.Num() || Transform.ContainsNaN() || Velocity.ContainsNaN() ||
@@ -810,6 +816,8 @@ bool ASimCopterOnFootPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		Move->Velocity = Velocity;
 	}
 	SetParachuteDeployed(bSavedParachute && MovementMode == MOVE_Falling);
+	bAutoRescueAttached=bSavedAutoRescue;
+	if (bAutoRescueAttached) GetCharacterMovement()->SetMovementMode(MOVE_None);
 	CameraPitchDeg = SavedCameraPitchDeg;
 	if (CameraBoom != nullptr)
 	{
@@ -956,6 +964,8 @@ void ASimCopterOnFootPawn::TryAutoEnterHelicopter()
 
 void ASimCopterOnFootPawn::TryEnterHelicopter(const float ReachCm)
 {
+	if (bAutoRescueAttached || (ParkedHelicopter && ParkedHelicopter->GetAirOperations()->IsRecoveringPilot() &&
+		ParkedHelicopter->HasHarnessRider())) return;
 	ASimCopterHelicopterPawn* Helicopter = FindHelicopterWithinReach(ReachCm);
 	if (Helicopter == nullptr)
 	{

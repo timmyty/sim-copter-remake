@@ -177,6 +177,7 @@ void SerializeFlightModel(FArchive& Archive, FSimCopterFlightModel& Model)
 	Archive << Model.TurbulenceClock << Model.TurbulenceFrameSeconds;
 	Archive << Model.ReferenceFrameSeconds << Model.SpeedChaseFrameSeconds;
 	Archive << Model.RotorVisualMultiplier << Model.FireDamageAccrued << Model.RandState;
+	if (Archive.IsLoading()) Model.bTravelBoostActive = false;
 }
 // Parameters authored by Tools/Unreal/CreateSimCopterMaterials.py.
 const FName RotorDiscOpacityParameterName(TEXT("DiscOpacity"));
@@ -1019,7 +1020,7 @@ void ASimCopterHelicopterPawn::Tick(float DeltaSeconds)
 		RemainingSeconds -= StepSeconds;
 	}
 
-	AirOperations->AimPoliceTaser(MouseLookYawInput + ControllerRightXInput, -(MouseLookPitchInput + ControllerRightYInput), DeltaSeconds);
+	AirOperations->UpdateRemoteTaserControls(MouseLookYawInput,MouseLookPitchInput,ControllerRightXInput,ControllerRightYInput,DeltaSeconds);
 	AirOperations->Update(DeltaSeconds);
 	UpdateVisuals(DeltaSeconds);
 	UpdateRotorWash(DeltaSeconds);
@@ -1042,7 +1043,7 @@ void ASimCopterHelicopterPawn::Tick(float DeltaSeconds)
 void ASimCopterHelicopterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent->BindKey(EKeys::N, IE_Pressed, this, &ASimCopterHelicopterPawn::TogglePoliceTaser);
+	PlayerInputComponent->BindKey(EKeys::N, IE_Pressed, this, &ASimCopterHelicopterPawn::ToggleRemoteTaser);
 	PlayerInputComponent->BindKey(EKeys::T, IE_Pressed, this, &ASimCopterHelicopterPawn::SelectTowClamp);
 	PlayerInputComponent->BindKey(EKeys::V, IE_Pressed, this, &ASimCopterHelicopterPawn::SelectCaptureCage);
 
@@ -1975,6 +1976,8 @@ bool ASimCopterHelicopterPawn::LoadHelicopterMeshFromOriginalGameRoot()
 
 void ASimCopterHelicopterPawn::ResetAircraft()
 {
+	AirOperations->EndPilotRecovery();
+	if (AirOperations->IsRemoteTaserActive()) AirOperations->ToggleRemoteTaser();
 	VelocityCmPerSec = FVector::ZeroVector;
 	CurrentPitchDeg = 0.0f;
 	CurrentRollDeg = 0.0f;
@@ -2777,6 +2780,7 @@ void ASimCopterHelicopterPawn::ResetTransientInputState()
 	bBumperLeftHeld = bBumperRightHeld = false;
 	CargoKeyboardCableInput=0; bBumperChordLatched=false;
 	AirOperations->SetCableInput(0);
+	AirOperations->SetCagePanelInput(0);
 	// Everything here is "what is the player pressing right now", none of it is simulation state,
 	// and all of it goes stale the instant the pawn is unpossessed - axis bindings stop firing and
 	// action Released handlers never arrive. FlushPressedKeys cannot reach the bools below: they
@@ -2819,6 +2823,10 @@ void ASimCopterHelicopterPawn::ResetTransientInputState()
 	ControllerRightYInput = 0.0f;
 	ControllerRightTriggerInput = 0.0f;
 	LastClimbCommand = 0;
+	RopeAdjustInput = 0;
+	PendingWinchCommand = SimCopterWinch::CommandIdle;
+	SetWinchHeldInput(false,0);
+	ControllerAppliedWinchDirection=0;
 }
 
 // The stuck-key half, which is the one that actually stalls a takeoff. A key held across a
@@ -2843,6 +2851,7 @@ void ASimCopterHelicopterPawn::FlushStuckKeys(AController* ForController)
 void ASimCopterHelicopterPawn::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+	AirOperations->EndPilotRecovery();
 	FlushStuckKeys(NewController);
 	ResetTransientInputState();
 	// Every way into the cockpit lands here, so this is where the takeoff prompt's clock restarts.
@@ -2866,6 +2875,7 @@ void ASimCopterHelicopterPawn::UnPossessed()
 	// Controller is still valid until APawn::UnPossessed clears it, and flushing here is what
 	// stops the outgoing pawn's held keys from following the player to the next one.
 	if (auto* PC = Cast<APlayerController>(GetController())) PC->HiddenActors.Remove(this);
+	if (AirOperations->IsRemoteTaserActive()) AirOperations->ToggleRemoteTaser();
 	FlushStuckKeys(GetController());
 	ResetTransientInputState();
 	if (Cast<APlayerController>(GetController()) != nullptr)
@@ -2880,7 +2890,7 @@ void ASimCopterHelicopterPawn::UnPossessed()
 
 bool ASimCopterHelicopterPawn::CanExitHelicopter() const
 {
-	return !IsSupportAircraft() && !(AirOperations && AirOperations->IsPoliceTaserActive());
+	return !IsSupportAircraft();
 }
 
 bool ASimCopterHelicopterPawn::CanTransferMissionPassengers() const
@@ -3911,6 +3921,7 @@ void ASimCopterHelicopterPawn::UpdateCrosshairVisibility()
 		!bHudHiddenForReplay
 		&& !bFreeCameraActive
 		&& CrosshairWidget.IsValid()
+		&& !AirOperations->IsRemoteTaserActive() // Remote sight uses the centred helmet reticle in the HUD.
 		&& CameraModeShowsCrosshair(CameraMode, IsApacheHelicopter()));
 }
 
@@ -3923,7 +3934,11 @@ void ASimCopterHelicopterPawn::UpdateCrosshairWorldLocation()
 
 	const float OffsetCm = FMath::Max(1.0f, CrosshairWorldOffsetCm);
 	FVector AimPoint = GetActorLocation();
-	if (CameraMode == ESimCopterCameraMode::Rescue)
+	if (AirOperations->IsRemoteTaserActive())
+	{
+		AimPoint=AirOperations->GetRemoteTaserMuzzle()+AirOperations->GetRemoteTaserDirection()*OffsetCm;
+	}
+	else if (CameraMode == ESimCopterCameraMode::Rescue)
 	{
 		// The overhead mark denotes the point directly beneath the airframe, independent of
 		// helicopter bank and of any orbit/look adjustment.
@@ -4377,15 +4392,16 @@ void ASimCopterHelicopterPawn::ExitHelicopter()
 		if (!bIsLanded)
 		{
 			OnFootPawn->BeginAirborneExit(ExitLocation, VelocityCmPerSec);
-			// User-requested abandonment: use the existing falling wreck/impact/recovery path.
-			// Neutral controls alone keep an airborne original-model helicopter hovering forever.
-			if (!bFlightModelSeeded) SeedFlightModelFromActor();
-			bEngineRunning = false;
-			FlightModel.HitPoints = 0;
-			FlightModel.State = ESimCopterFlightState::Dying;
-			WriteOffPassengersInDestroyedHelicopter();
+			if (IsFixedWingAircraft())
+			{
+				bEngineRunning=false; FlightModel.HitPoints=0;
+				FlightModel.State=ESimCopterFlightState::Dying;
+				WriteOffPassengersInDestroyedHelicopter();
+			}
 		}
+		const bool bRecoverAfterExit=!bIsLanded && !IsFixedWingAircraft();
 		PlayerController->Possess(OnFootPawn);
+		if (bRecoverAfterExit) AirOperations->BeginPilotRecovery(OnFootPawn);
 		BlendPossessionViewTarget(
 			PlayerController,
 			OutgoingViewTarget,
@@ -4482,7 +4498,7 @@ void ASimCopterHelicopterPawn::ControllerLeftTrigger(float Value)
 
 void ASimCopterHelicopterPawn::ControllerRightTrigger(float Value)
 {
-	if(AirOperations->IsPoliceTaserActive() && Value>0.5f && ControllerRightTriggerInput<=0.5f) AirOperations->FirePoliceTaser();
+	if(AirOperations->IsRemoteTaserActive() && Value>0.5f && ControllerRightTriggerInput<=0.5f) AirOperations->FireRemoteTaser();
 	ControllerRightTriggerInput = FMath::Clamp(Value, 0.0f, 1.0f);
 }
 
@@ -4657,7 +4673,7 @@ void ASimCopterHelicopterPawn::ControllerCancelReleased()
 
 void ASimCopterHelicopterPawn::ControllerEnterExitPressed()
 {
-	if (bControllerCameraAdjustHeld && ControllerMode == ESimCopterControllerMode::None) { TogglePoliceTaser(); return; }
+	if (bControllerCameraAdjustHeld && ControllerMode == ESimCopterControllerMode::None) { ToggleRemoteTaser(); return; }
 	if (ControllerMode == ESimCopterControllerMode::DispatchWheel)
 	{
 		ControllerToolWheelPressed();
@@ -4761,12 +4777,23 @@ void ASimCopterHelicopterPawn::ControllerDPadRightReleased()
 	bControllerDPadRightHeld = false;
 }
 
+FTransform ASimCopterHelicopterPawn::GetCaptureCageMountTransform() const
+{
+	FBox Bounds;
+	const bool bHasBounds = TryGetAirframeLocalBoundsCm(Bounds);
+	const FTransform Frame = ModelPivot ? ModelPivot->GetComponentTransform() : GetActorTransform();
+	const FVector Mount(0, 0, bHasBounds ? Bounds.Min.Z + 10.0 : -30.0);
+	const float HalfWidth = bHasBounds ? FMath::Clamp(float(Bounds.GetExtent().Y), 12.0f, 100.0f) : 35.0f;
+	const float HalfLength = bHasBounds ? FMath::Clamp(float(Bounds.Max.X)*0.9f, 18.0f, 75.0f) : 40.0f;
+	return FTransform(Frame.GetRotation(), Frame.TransformPosition(Mount), FVector(HalfLength / 75.0f, HalfWidth / 75.0f, 1));
+}
+
 void ASimCopterHelicopterPawn::UpdateControllerInput(const float DeltaSeconds)
 {
 	UpdateControllerRadialSelection();
 	const bool bCanMoveCargo = AirOperations->IsCargoToolSelected() &&
 		ControllerMode == ESimCopterControllerMode::None && !bControllerCameraAdjustHeld;
-	AirOperations->SetCableInput(bCanMoveCargo ? CargoKeyboardCableInput +
+	AirOperations->SetCableInput(bCanMoveCargo ? CargoKeyboardCableInput + AirOperations->GetCagePanelInput() +
 		(bControllerDPadUpHeld ? 1.0f : 0.0f) - (bControllerDPadDownHeld ? 1.0f : 0.0f) : 0.0f);
 
 	const bool bRadialOwnsRightStick =
@@ -5050,7 +5077,7 @@ void ASimCopterHelicopterPawn::ToggleRope()
 // panel's USE button both land here so there is exactly one dispatch path (plan 5.2).
 void ASimCopterHelicopterPawn::StartPrimaryToolUse()
 {
-	if (AirOperations->IsPoliceTaserActive()) { AirOperations->FirePoliceTaser(); return; }
+	if (AirOperations->IsRemoteTaserActive()) { AirOperations->FireRemoteTaser(); return; }
 	if (AirOperations->IsCargoToolSelected()) { AirOperations->UseCargoTool(); return; }
 	if (bPrimaryToolUseHeld)
 	{
@@ -5165,6 +5192,7 @@ void ASimCopterHelicopterPawn::SetSelectedTool(ESimCopterHelicopterTool Tool)
 	SelectedTool = Tool;
 	CargoKeyboardCableInput = 0;
 	AirOperations->SetCableInput(0);
+	AirOperations->SetCagePanelInput(0);
 	StopPrimaryToolUse();
 	bWaterCannonHeld = false;
 	bBucketDumpHeld = false;
@@ -5924,7 +5952,7 @@ void ASimCopterHelicopterPawn::UpdateToolDispatch(float DeltaSeconds)
 bool ASimCopterHelicopterPawn::TryBeginToolUse(ESimCopterHelicopterTool Tool)
 {
 	// Passenger taser mode owns fire input, including alternate/debug tool commands.
-	if (AirOperations->IsPoliceTaserActive()) return false;
+	if (AirOperations->IsRemoteTaserActive()) return false;
 	// SCHOOK: ToolRefusedSound 0x00485f50
 	// Every capability gate in FUN_00485f50 does the same two things: post the missing-equipment
 	// string and Play3D(0x80 NOEQUIP) at the helicopter. So does the hotkey path in
@@ -7418,11 +7446,11 @@ FSimCopterFlightInputs ASimCopterHelicopterPawn::BuildFlightInputs() const
 	}
 
 	constexpr float KeyThreshold = KeyAxisThreshold;
-	if (const auto* Cheats = SimCopterCheats::Get(this); Cheats && Cheats->bSuperpower)
-	{
-		const auto* PC = Cast<APlayerController>(GetController());
-		Inputs.bTurbo = PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
-	}
+	const auto* PC = Cast<APlayerController>(GetController());
+	const bool bShiftHeld = PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
+	const auto* Cheats = SimCopterCheats::Get(this);
+	Inputs.bTurbo = bShiftHeld && Cheats && Cheats->bSuperpower;
+	Inputs.bTravelBoost = bShiftHeld && !Inputs.bTurbo;
 	Inputs.bPitchForwardKey = PitchInput > KeyThreshold;
 	Inputs.bPitchBackKey = PitchInput < -KeyThreshold;
 	Inputs.bTurnRightKey = RollInput > KeyThreshold || (bBumperRightHeld && !bBumperLeftHeld && !bBumperChordLatched);
@@ -8585,7 +8613,7 @@ void ASimCopterHelicopterPawn::EmitWaterCannonFrame()
 // tracer per frame out of a seventy-slot pool.
 void ASimCopterHelicopterPawn::EmitApacheMachineGunFrame()
 {
-	if (AirOperations->IsPoliceTaserActive() || ApachePool == nullptr ||
+	if (AirOperations->IsRemoteTaserActive() || ApachePool == nullptr ||
 		!bPrimaryToolUseHeld ||
 		GetActiveTool() != ESimCopterHelicopterTool::ApacheMachineGun ||
 		!IsToolAvailable(ESimCopterHelicopterTool::ApacheMachineGun))
@@ -8714,7 +8742,7 @@ void ASimCopterHelicopterPawn::UpdateHelicopterAudio(float DeltaSeconds)
 		}
 
 		const bool bGunFiring =
-			!AirOperations->IsPoliceTaserActive() && bPrimaryToolUseHeld &&
+			!AirOperations->IsRemoteTaserActive() && bPrimaryToolUseHeld &&
 			GetActiveTool() == ESimCopterHelicopterTool::ApacheMachineGun &&
 			IsToolAvailable(ESimCopterHelicopterTool::ApacheMachineGun);
 		if (bGunFiring)
@@ -9336,7 +9364,7 @@ void ASimCopterHelicopterPawn::RefreshCabinOccupants()
 	CabinOccupantsMesh->SetRelativeScale3D(FVector(ModelScale / 0.25f));
 	if (!bUsingOriginalMesh) return;
 	const int32 TypeIndex = GetHelicopterTypeIndex();
-	const bool bHasPilot = GetController() != nullptr || (AirOperations && AirOperations->IsAIPiloted());
+	const bool bHasPilot = GetController() != nullptr || (AirOperations && AirOperations->IsSupportAircraft());
 	uint32 Key = bHasPilot ? 1 : 0;
 	Key = HashCombine(Key, GetTypeHash(TypeIndex));
 	Key = HashCombine(Key, GetTypeHash(MissionPassengerSlots.Num()));
@@ -9545,6 +9573,7 @@ void ASimCopterHelicopterPawn::UpdateVisuals(float DeltaSeconds)
 
 void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 {
+	if (AirOperations->IsRemoteTaserActive()) return;
 	if (CameraBoom == nullptr || CameraComponent == nullptr)
 	{
 		return;

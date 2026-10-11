@@ -83,6 +83,8 @@ public:
 	bool IsInPoliceCustody() const { return bTaserStunned || bHandcuffed; }
 	void CompletePoliceDelivery(const FVector& Roof);
 	void SetVehicleStalled(bool bPlayerCaused = false);
+	bool DisableVehicleWithTaser();
+	bool IsVehicleTaserDisabled() const { return VehicleTaserSeconds > 0.0f; }
 	void ApplyHelicopterVehicleImpact(const FVector& WorldImpact);
 	bool ApplyWeaponVehicleHit(bool bMissile, const FVector& WorldImpact);
 	void ExplodeVehicle();
@@ -94,7 +96,7 @@ public:
 	void DouseVehicleAccident();
 	void BeginVehicleEscape(const FVector& From);
 	bool IsVehicleTowed() const { return bVehicleTowed; }
-	bool IsVehicleImmobilized() const { return bVehicleStalled || bVehicleTowed; }
+	bool IsVehicleImmobilized() const { return bVehicleStalled || bVehicleTowed || IsVehicleTaserDisabled(); }
 	void SetVehicleTowed(bool bTowed);
 	void CompleteVehicleTow(bool bScrap);
 	int32 GetTowMissionId() const { return TowMissionId; }
@@ -102,6 +104,9 @@ public:
 	void EnsureTowMission(bool bPlayerCaused);
 private:
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterRemoteRecoveryTest;
+	friend class FSimCopterVehicleTaserTest;
+	friend class FSimCopterTrafficFlowTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterParkedAircraftTrafficTest;
 	bool bVehicleTipped = false;
@@ -118,6 +123,7 @@ private:
 	bool bVehicleStalled = false;
 	bool bVehicleTowed = false;
 	bool bVehicleExploded = false;
+	float VehicleTaserSeconds = 0.0f;
 	int32 HelicopterImpactCount = 0;
 	int32 TowMissionId = INDEX_NONE;
 	float VehicleImpactCooldown = 0.0f;
@@ -326,6 +332,16 @@ public:
 	bool TryResolveBandStandLocation(const FVector& Desired, const FVector& Center, FVector& OutLocation,
 		TConstArrayView<FVector> Reserved = {});
 	bool CanWalkBandSegment(const FVector& From, const FVector& To);
+	bool CanWalkGroundSegment(const FVector& From, const FVector& To, const AActor* ApproachTarget = nullptr);
+	bool CanWalkMedicSegment(const FVector& From, const FVector& To, const AActor* Target);
+	bool GetMedicWaypoint(const FVector& Goal, AActor* Target, FVector& OutWaypoint);
+	// Transient routing only; the original BHAV retains selection, walking speed and handoff.
+	TArray<FVector> MedicPath;
+	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> MedicPathNeighbors;
+	TWeakObjectPtr<AActor> MedicPathTarget;
+	FVector MedicPathGoal = FVector::ZeroVector;
+	double NextMedicPathTime = 0;
+	bool bMedicPathAttempted = false;
 	bool CanTakeBandStep(const FVector& To);
 	FVector BandListenerCenter = FVector::ZeroVector;
 	float BandListenerClearance = 0;
@@ -351,6 +367,8 @@ public:
 	// Opcode 37 retired this person while they were still alive - a patient handed over, a
 	// criminal caught. 'Inju', the knockdown/passenger-fall pose, not the corpse.
 	void SetMissionRetiredAlivePose();
+	/** Continue the shipped BHAV 282 celebration after an assisted hospital delivery. */
+	void ResumeDeliveredPatientBehavior();
 
 	// Mission-required roof staff are outside the disposable ambient-population budget. A medic
 	// may be far across the city while the player collects a patient and still has to be present
@@ -1255,6 +1273,7 @@ public:
 
 private:
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterMedicRouteTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterBandCelebrationTest;
 	friend class FSimCopterAircraftRoadUpdateTest;

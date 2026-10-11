@@ -699,6 +699,7 @@ public:
 	int32 GetDifficultyTier() const { return DifficultyTier; }
 	const TArray<FSimCopterMissionRecord>& GetRecords() const { return Records; }
 	const FSimCopterMissionRecord* FindRecord(int32 EventId) const;
+	void ResolveTransportDestinationClearings();
 	const TArray<FSimCopterFlame>& GetFlames() const { return Flames; }
 	int32 GetActiveFlameCount() const { return ActiveFlameCount; }
 	const int32* GetCumulativeWeightTable() const { return CumulativeWeights; }
@@ -706,6 +707,8 @@ public:
 	// Exposed for parity tests.
 	FSimCopterMsvcRand& GetRand() { return Rand; }
 	void RebuildCumulativeWeights();                 // FUN_004a6d20
+	// Remake equipment incentive, derived from owned aircraft; never overwrites city/save tuning.
+	void SetCaptureCageOwned(bool bOwned);
 	static bool IsFireSuitableTile(int32 XbldId);    // FUN_004a5f60 tile test
 	// FUN_004b2cd0's crash-site test: the tile will take a fire and there is none already burning
 	// inside FUN_004a6860's spiral. A plane that hits a tile passing this starts a building fire
@@ -770,6 +773,7 @@ private:
 	ISimCopterMissionWorld* World = nullptr;
 	FSimCopterMsvcRand Rand;
 	FSimCopterCareerCity CareerCity;
+	bool bCaptureCageOwned = false;
 
 
 	TArray<FSimCopterCareerCity> CareerCities;

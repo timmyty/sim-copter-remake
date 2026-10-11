@@ -22,7 +22,7 @@ TConstArrayView<SSimCopterCheatGuide::FEntry> SSimCopterCheatGuide::GetEntries()
 		{ TEXT("Been there, done that"), TEXT("Complete the current career city's score target. Return to the hangar to advance.") },
 		{ TEXT("The map, please"), TEXT("Toggle the city map while on foot.") },
 		{ TEXT("Warp me to career: 12"), TEXT("Travel to a career level; replace 12 with a number from 1 to 30. Retains cash, equipment and aircraft ownership.") },
-		{ TEXT("Give me bucks or give me death: 1000"), TEXT("Gamble for cash; replace 1000 with an amount from 1 to 49999. Losing ends the current game and returns to the main menu. Existing saves remain.") },
+		{ TEXT("Give me bucks or give me death: 1000"), TEXT("Gamble for cash; replace 1000 with an amount from 1 to 49999. Failure chance: 2% for 1-16666, 4% for 16667-33333, and 7% for 33334-49999. A win awards the requested amount. Losing ends the current game and returns to the main menu; existing saves remain.") },
 		{ TEXT("A megaphone in the hand is worth two in the bush"), TEXT("Toggle on-foot megaphone commands with F6-F10.") },
 		{ TEXT("Out on a Sunday drive"), TEXT("Toggle a camera riding a city vehicle.") },
 		{ TEXT("PAMCAREYGOLDMAN"), TEXT("Reveal hidden portrait faces on applicable city signs.") },

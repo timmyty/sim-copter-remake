@@ -113,3 +113,35 @@ two with existing fixture warnings), including actual roster restoration and
 movement checks. The installed executable/PDB and two manifests were backed up,
 updated and hash-verified. Seven source files were synchronized locally; no push
 or interactive gameplay/listening check. See [results](validation/BandRevampResults.json).
+
+## Patient markers and deployed medic routes — October 11, 2026
+
+Patient pickup markers now anchor to each live casualty's actor position and elevation,
+instead of the mission tile center. They follow relocated patients, distinguish multiple
+patients in one call, and disappear when the person is resolved or carried. Remaining
+ground patients stay marked when another patient from the same call is aboard.
+
+Deployed medics reserve separate available casualties and use the existing bounded
+physical A* planner to get around obstructions, including routes that initially lead
+away from the patient. Paths recheck obstacles and replan for moved targets. The probes
+respect geometry, step heights, fire, water, hospital posts, parked aircraft and nearby
+people. The target aircraft remains approachable for boarding. Failed routes release
+the patient claim and retry after a delay. Original BHAV 801/262 selection flow, movement
+speed, contact checks, pickup and handoff remain in control; route state is transient.
+
+Before the fix, exact patient-marker checks failed four assertions. Reversing the medic
+approach and reservation fixes reproduced five failures in a U-shaped enclosure: one
+medic and all three medics stayed trapped, with the group selecting the same casualty.
+With the fix, all four medics in those two scenarios reached their separate targets
+without crossing the wall, and the shipped BHAV program completed a patient pickup.
+
+Editor and Shipping builds succeeded. All 75 selected headless tests passed: 73 clean
+and two with existing PlaneDeckRescue/SafePassengerLanding fixture warnings. The final
+run followed a full consistent Editor rebuild after overlapping earlier compilations
+produced an invalid intermediate test run. The validated executable, symbols and two
+manifests were installed with rollback backups and SHA-256 verification. Task source
+was synchronized to the local publication checkout, preserving other pending changes.
+No commit, push, or interactive gameplay/visual check was performed.
+
+Evidence: `Docs/scratchpad/patient-markers-medic-paths/` and
+[validation results](validation/PatientMarkersMedicRoutesResults.json).

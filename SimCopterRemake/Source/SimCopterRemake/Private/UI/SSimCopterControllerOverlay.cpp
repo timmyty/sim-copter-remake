@@ -49,14 +49,15 @@ void SSimCopterControllerOverlay::Construct(const FArguments& InArgs)
 		SNew(SOverlay)
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)
 		[SNew(STextBlock).Text(FText::FromString(TEXT("+"))).Font(ControllerFont(28,true))
-		.Visibility_Lambda([this]() { const auto* H=Pawn.Get(); return H && H->GetAirOperations()->IsPoliceTaserActive()?EVisibility::HitTestInvisible:EVisibility::Collapsed; })]
+		.Visibility_Lambda([this]() { const auto* H=Pawn.Get(); return H && H->GetAirOperations()->IsRemoteTaserActive()?EVisibility::HitTestInvisible:EVisibility::Collapsed; })]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Top).Padding(FMargin(10,15,10,0))
 		[SNew(STextBlock).Font(ControllerFont(13,true)).Justification(ETextJustify::Center)
 		.Text_Lambda([this]()
 		{
 			const auto* H=Pawn.Get(); if(!H) return FText::GetEmpty();
 			auto* Ops=H->GetAirOperations(); FString Text;
-			if(Ops->IsPoliceTaserActive() || Ops->IsDeployed()) Text=Ops->GetStatus();
+			if(Ops->IsRemoteTaserActive() || Ops->IsDeployed()) Text=Ops->GetStatus();
+			if(Ops->IsRemoteTaserActive()) Text=TEXT("REMOTE TASER  |  AUTO ORBIT follows the target\nMouse / right stick: aim   |   Left click / X / RT: fire   |   Hold RMB: cockpit cursor   |   N / R3+Y: exit\n")+Ops->GetRemoteTaserReadout();
 			if(Ops->IsDeployed())
 			{
 				Text+=FString::Printf(TEXT("\nCable %.1fm | PgUp/PgDn or D-pad up/down winch | X / click grab | G / D-pad left release"),Ops->GetCableLength()/100);

@@ -62,6 +62,9 @@ enum class EAction : uint8
 	// artwork. The remake gives them a strip of their own (see SSimCopterToolFlaps).
 	ApacheMissileFire,
 	ApacheGunFire,
+	CageRaise,
+	CageLower,
+	CageOpen,
 };
 
 // The three button strips. Frames are packed left to right at unequal widths:

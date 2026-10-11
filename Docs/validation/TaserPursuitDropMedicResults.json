@@ -1,0 +1,55 @@
+{
+  "Date": "2026-10-11",
+  "Changes": [
+    "Criminal car and robber pursuit with visibility-aware positioning",
+    "Direct mouse sight with frame-independent travel and RMB cockpit cursor",
+    "Dropped-person detachment, tilt/collision restoration, and walk-away repickup rule",
+    "One standby hospital medic without a medical event"
+  ],
+  "EditorBuild": "Docs/scratchpad/taser-pursuit/build-editor-final.log",
+  "ShippingBuild": "Docs/scratchpad/taser-pursuit/build-shipping.log",
+  "Tests": {
+    "Report": "Docs/scratchpad/taser-pursuit/tests-first/index.json",
+    "Succeeded": 20,
+    "Warnings": 0,
+    "Failed": 0,
+    "NotRun": 0,
+    "Names": [
+      "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+      "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+      "SimCopter.Crime.PullOverOrder",
+      "SimCopter.Crime.PursuitTargetFilter",
+      "SimCopter.Crime.SpeederSpeed",
+      "SimCopter.Crime.SpotlightMark",
+      "SimCopter.MedicalNavigation.DroppedMedics",
+      "SimCopter.MedicalNavigation.PatientMarkers",
+      "SimCopter.Missions.ParamedicAlightsOnHelipad",
+      "SimCopter.Missions.ParamedicCabinHandoff",
+      "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+      "SimCopter.RemoteRecovery.SaveAndObstruction",
+      "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "SimCopter.Safety.ParkedAircraftTraffic",
+      "SimCopter.SaveGame.ArchiveRoundTrip",
+      "SimCopter.SaveGame.Names",
+      "SimCopter.SaveGame.QuickSavePersistence",
+      "SimCopter.SaveGame.RestoreState",
+      "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding"
+    ]
+  },
+  "Installation": {
+    "InstalledAtUtc": "2026-10-11T06:54:25.9696657Z",
+    "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "CEC6B825E1E81695E4F0D96F4F68F499BBFD0D4EBBF7485A5CADE751BF8EAD01",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\taser-pursuit/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "9EE55B08F46050E018A63962A9F86786F6E478D264AB84C88A13994A96704AA8",
+    "TestsPassed": 20,
+    "ChangedFiles": 1,
+    "AssetsChanged": false,
+    "InteractiveGameplayChecked": false
+  },
+  "SourceHashes": "Docs/scratchpad/taser-pursuit/validated-source-hashes.json",
+  "InteractivePlaytest": false,
+  "PublicationSynchronized": false,
+  "Notes": "Existing engine deprecation warnings and startup legacy map-path warning remain in logs; no test warnings."
+}
