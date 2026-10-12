@@ -180,6 +180,14 @@ struct SIMCOPTERREMAKE_API FSimCopterMapServiceBlip
 	FIntPoint EndTile = FIntPoint(INDEX_NONE, INDEX_NONE); // +0x14, where it is heading
 };
 
+struct FSimCopterMapRecoveryWaypoint
+{
+	FIntPoint Tile;
+	bool bHarbor = false;
+	bool bCargoDestination = false;
+	bool bActive = false;
+};
+
 // Everything one FUN_004a28e0 + FUN_004a3820 + FUN_004a4200 + FUN_004a4370 pass needs.
 struct SIMCOPTERREMAKE_API FSimCopterMapFrame
 {
@@ -203,6 +211,8 @@ struct SIMCOPTERREMAKE_API FSimCopterMapFrame
 
 	TArray<FSimCopterMapServiceBlip> ServiceBlips;
 	TArray<FIntPoint> DriveInTiles;
+	TArray<FSimCopterMapRecoveryWaypoint> RecoveryWaypoints;
+	FIntPoint PoliceDestination = FIntPoint(INDEX_NONE, INDEX_NONE);
 };
 
 // The two toggles and the zoom, which outlive a frame. The original keeps them in globals

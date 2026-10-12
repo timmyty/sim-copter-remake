@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-11",
+  "feature": "Police custody recovery, nearest-station route, disabled burglar arrest, checkup crew, police-roof car delivery and conditional junkyard world marker",
+  "builds": {
+    "editor": "Succeeded",
+    "editorLog": "../scratchpad/police-recovery/editor-build-4.log",
+    "shipping": "Succeeded",
+    "shippingLog": "../scratchpad/police-recovery/shipping-build.log"
+  },
+  "headless": {
+    "report": "../scratchpad/police-recovery/tests-final/index.json",
+    "successfulResults": 18,
+    "logicCases": 17,
+    "failed": 0,
+    "withWarnings": 0,
+    "visualNoOps": ["SimCopter.AirOperations.TaserVisuals"],
+    "coverage": [
+      "Deployed officer physically retrieves each of four tased criminal states and returns with the same actor",
+      "Officer retains custody until two passenger seats are free",
+      "Officer five metres from an immobilized burglar car approaches and completes the active mission",
+      "Actual cockpit map produces nearest-police-station line pixels and label independently of optional blips, updates with flight and removes route after delivery",
+      "Police-roof cage deliveries complete stalled-vehicle and burglar missions with height and speed guards and no duplicate reward",
+      "Shared world-marker builder shows JUNKYARD only for the player's held stalled vehicle and removes it on release or delivery",
+      "Moving getaway and boat cargo do not show the stalled-vehicle world marker",
+      "Repair-only, fuel-only, teargas-only and combined paid orders spawn original mechanic programs with original figure geometry",
+      "Combined crew positions remain separate after ground snap; original work counter advances",
+      "Empty and airborne orders spawn no crew; nearby crew suppress duplicates",
+      "Related existing police boarding, checkup, cage recovery, air operations, taser and medical-navigation regressions"
+    ]
+  },
+  "diagnosticEvidence": {
+    "initialReport": "../scratchpad/police-recovery/tests-first/index.json",
+    "workerDiagnostics": "../scratchpad/police-recovery/tests-diagnostics/index.json",
+    "observedFailure": "All three mechanics overlapped after snapping from the doorsill to the ground and failed to advance their work counter; fixed by checking the grounded placement.",
+    "originalServiceEvidence": ["FUN_004385c0", "FUN_004c1ea0", "FUN_004c1fb0", "people.df BHAV 1204 and 1020"]
+  },
+  "installation": {
+    "receipt": "../scratchpad/police-recovery/installation.json",
+    "exe": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "sha256": "B05D0BB72669300A5E4B578F37ABAC955F02A7BAA0A7C55F9F2852B9382BFC64",
+    "previousSha256": "5266DA05BA5B1AFD53B3FE0A619218A31C8106C02F333A73790D2DECF4B94245",
+    "backupVerified": true,
+    "installedHashVerified": true,
+    "cookedAssetsChanged": false
+  },
+  "interactivePlaytest": false,
+  "publicationCheckoutChanged": false,
+  "pushed": false
+}

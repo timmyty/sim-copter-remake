@@ -3277,6 +3277,18 @@ int32 AppendMaxisMeshObject(
 		const int32 AtlasRawRow = static_cast<int32>(Face.MaterialIndex / FMaxisTextureReader::AtlasColumnCount);
 		const int32 AtlasDecodedRow = FMaxisTextureReader::AtlasColumnCount - 1 - AtlasRawRow;
 
+		// CA137 (SIM3D1 object 0x09b) has a gray construction pad at Maxis Y=0,
+		// with one corner only 0.0184 units higher. FUN_00482890 also supplies a
+		// textured zone base at Y=0, so a depth buffer makes the two floors flicker.
+		// Separate only this authored floor; keep the base, posts and block walls intact.
+		bool bConstructionPad = MeshObject.Header.Id == 0x09b && Face.FaceType == 15 &&
+			Face.MaterialIndex == 48 && Face.VertexIndices.Num() == 4;
+		if (bConstructionPad)
+			for (const uint16 Index : Face.VertexIndices)
+				bConstructionPad &= MeshObject.Vertices.IsValidIndex(Index) &&
+					MeshObject.Vertices[Index].Y >= 0 && MeshObject.Vertices[Index].Y <= 1311; // 0.02 in 16.16
+		const FVector FaceOffset = bConstructionPad ? FVector(0,0,2) : FVector::ZeroVector;
+
 		for (int32 FaceVertexIndex = 0; FaceVertexIndex < Face.VertexIndices.Num(); ++FaceVertexIndex)
 		{
 			const uint16 SourceVertexIndex = Face.VertexIndices[FaceVertexIndex];
@@ -3288,7 +3300,7 @@ int32 AppendMaxisMeshObject(
 			const FVector ConvertedVertex = FMaxisMeshReader::ConvertMaxisVertexToUnreal(MeshObject.Vertices[SourceVertexIndex], MeshUnitsPerCentimeter) * MeshScale;
 			// Global 180-degree yaw about world up (matches the negated tile-center signs above).
 			const FVector LocalVertex(-ConvertedVertex.X, -ConvertedVertex.Y, ConvertedVertex.Z);
-			Section.Vertices.Add(TileOrigin + LocalVertex);
+			Section.Vertices.Add(TileOrigin + LocalVertex + FaceOffset);
 			Section.UVs.Add(Face.RawUVs.IsValidIndex(FaceVertexIndex) ? FMaxisMeshReader::ConvertMaxisUVToUnreal(Face.RawUVs[FaceVertexIndex]) : FVector2D::ZeroVector);
 			if (bBakedAtlasTexturedFace)
 			{
@@ -6651,10 +6663,17 @@ int32 ASimCity2000CityActor::ApplyNuclearCheat(TArray<FIntPoint>& OutClearedTile
 	for (const auto& Building : Buildings)
 	{
 		if (Building.bDemolished || !SimCopterCheats::CanNuclearBlastDemolish(Building.XbldId, FMath::Rand())) continue;
+		FBox CollapseBounds(ForceInit);
+		const bool bHasCollapseBounds=TryGetBuildingBoundsAtTile(Building.OriginTile.X,Building.OriginTile.Y,CollapseBounds);
 		TArray<FIntPoint> Cleared;
 		if (DemolishBuildingAtTile(Building.OriginTile.X, Building.OriginTile.Y, Cleared))
 		{
 			++Count; OutClearedTiles.Append(Cleared);
+			if (bHasCollapseBounds) for (TActorIterator<ASimCopterMissionSystemActor> Missions(GetWorld()); Missions; ++Missions)
+			{
+				Missions->InjurePeopleOnCollapsedBuilding(CollapseBounds,Building.OriginTile.X,Building.OriginTile.Y,true);
+				break;
+			}
 			if (SimCopterCheats::ShouldSpawnPostBlastFire(FMath::Rand()))
 			{
 				if (!Effects)

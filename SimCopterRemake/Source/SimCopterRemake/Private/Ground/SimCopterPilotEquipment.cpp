@@ -38,27 +38,103 @@ void Cable(FMaxisMeshSection& Out, FVector A, FVector B, double Radius, FLinearC
 }
 }
 
-void SimCopterPilotEquipment::BuildTaser(FMaxisMeshSection& Out)
+void SimCopterPilotEquipment::BuildTaser(FMaxisMeshSection& Out, float Deployment)
 {
 	Out = FMaxisMeshSection();
-	const FLinearColor Yellow(0.95f,0.58f,0.015f), Black(0.025f,0.03f,0.035f), Steel(0.38f,0.43f,0.47f);
-	Box(Out,FVector(0,0,2),FVector(9,2.8,3.2),Yellow); // yellow receiver
-	Box(Out,FVector(8,0,2.4),FVector(2.5,3.2,3),Black); // replaceable dual cartridge
-	Box(Out,FVector(-4,0,-5),FVector(2.7,2.4,5),Black,0.28); // raked grip
-	Box(Out,FVector(-4,0,-10),FVector(3.4,2.65,0.9),Yellow); // battery heel
-	Box(Out,FVector(2,0,-6),FVector(4,0.65,0.65),Black); // open trigger guard
-	Box(Out,FVector(5.5,0,-3.4),FVector(0.6,0.65,2),Black);
-	Box(Out,FVector(-0.5,0,-2.5),FVector(0.65,0.6,1.7),Steel,-0.3); // trigger
+	const FLinearColor Shell(.16f,.22f,.25f), Black(.018f,.024f,.029f), Steel(.48f,.58f,.60f);
+	const float Open=FMath::Clamp(Deployment,0.f,1.f);
+	// Remake energy weapon: graphite grip, layered ceramic receiver and four hinged emitters.
+	// Keep the original grip anchor so the shoulder pose still holds the actual handle.
+	Box(Out,FVector(-1,0,2),FVector(8,3,3.2),Shell);
+	Box(Out,FVector(-6,0,2),FVector(2.8,3.5,3.7),Black);
+	Box(Out,FVector(-4,0,-5),FVector(2.7,2.4,5),Black,.28);
+	Box(Out,FVector(-4,0,-10),FVector(3.4,2.65,.9),Steel);
+	Box(Out,FVector(2,0,-6),FVector(4,.65,.65),Steel);
+	Box(Out,FVector(5.5,0,-3.4),FVector(.6,.65,2),Steel);
+	Box(Out,FVector(-.5,0,-2.5),FVector(.65,.6,1.7),Steel,-.3);
+	for (int32 Ring=0; Ring<3; ++Ring)
+		for (int32 Segment=0; Segment<12; ++Segment)
+		{
+			const double A=Segment*UE_TWO_PI/12, B=(Segment+1)*UE_TWO_PI/12;
+			Cable(Out,FVector(5+Ring*1.2,3.3*FMath::Cos(A),2+3.3*FMath::Sin(A)),
+				FVector(5+Ring*1.2,3.3*FMath::Cos(B),2+3.3*FMath::Sin(B)),.32,Steel);
+		}
+	for (int32 Petal=0; Petal<4; ++Petal)
+	{
+		const double Angle=Petal*UE_HALF_PI+UE_PI/4;
+		const FVector Radial(0,FMath::Cos(Angle),FMath::Sin(Angle));
+		const FVector Hinge=FVector(7,0,2)+Radial*2.5;
+		const FVector Tip=FVector(14-2*Open,0,2)+Radial*(2.5+5.2*Open);
+		Cable(Out,Hinge,Tip,1.45,Shell);
+		Cable(Out,Hinge+Radial*.9,Tip+Radial*.9,.35,Steel);
+		Cable(Out,Tip,Tip+FVector(1.6,0,0)-Radial*.6,.6,Black);
+	}
 	for (double Side : {-1.0,1.0})
 	{
-		Box(Out,FVector(10.6,Side*1.6,2.5),FVector(0.3,0.8,1.5),Yellow);
-		Cable(Out,FVector(10.9,Side*1.6,2.5),FVector(11.4,Side*1.6,2.5),0.45,Steel); // electrodes
-		Box(Out,FVector(-5,Side*2.85,2),FVector(1.3,0.25,0.7),Black); // safety switch
-		for (int32 I=0; I<4; ++I) Box(Out,FVector(-5.5+I*0.8,Side*2.85,4.5),FVector(0.18,0.2,0.8),Black);
+		Box(Out,FVector(-1,Side*3.05,2),FVector(4.4,.15,1.8),Black);
+		for (int32 I=0; I<4; ++I) Box(Out,FVector(-4,Side*2.45,-3-I*1.4),FVector(2,.15,.24),Shell);
 	}
-	Box(Out,FVector(7,0,5.8),FVector(0.5,0.5,0.5),Steel); // front sight
-	Box(Out,FVector(-7,0,5.8),FVector(0.5,1.4,0.5),Black); // rear sight
-	Box(Out,FVector(-7,0,5.9),FVector(0.3,0.5,0.5),FLinearColor(0.03f,0.7f,0.12f));
+	Box(Out,FVector(-2,0,5.5),FVector(4.5,1,.5),Black);
+}
+
+void SimCopterPilotEquipment::BuildTaserCircuits(FMaxisMeshSection& Out, float Deployment, float Energy, float Phase)
+{
+	Out=FMaxisMeshSection();
+	const FLinearColor Color=FMath::Lerp(FLinearColor(.018f,.07f,.065f),FLinearColor(.035f,.85f,.65f),Energy);
+	for (double Side : {-1.0,1.0})
+	{
+		for (int32 Path=0; Path<3; ++Path)
+		{
+			const double Z=.8+Path*1.1;
+			Cable(Out,FVector(-5,Side*3.24,Z),FVector(-2+Path,Side*3.24,Z),.13,Color);
+			Cable(Out,FVector(-2+Path,Side*3.24,Z),FVector(-1+Path,Side*3.24,Z+.6),.13,Color);
+			Cable(Out,FVector(-1+Path,Side*3.24,Z+.6),FVector(4.5,Side*3.24,Z+.6),.13,Color);
+		}
+		for (int32 Lamp=0; Lamp<4; ++Lamp)
+			Box(Out,FVector(-6.5+Lamp*.65,Side*3.57,3.5),FVector(.19,.08,.35),Color);
+	}
+	for (int32 Petal=0; Petal<4; ++Petal)
+	{
+		const double Angle=Petal*UE_HALF_PI+UE_PI/4;
+		const FVector R(0,FMath::Cos(Angle),FMath::Sin(Angle));
+		const FVector Tip=FVector(14-2*Deployment,0,2)+R*(2.5+5.2*Deployment);
+		Cable(Out,FVector(7,0,2)+R*1.2,Tip-R*1.3,.22,Color);
+		if (Energy>.01f && Deployment>.5f)
+		{
+			const FVector Center(14,0,2);
+			const FVector Mid=(Tip+Center)*.5+FVector(0,FMath::Sin(Phase*27+Petal),FMath::Cos(Phase*21+Petal))*.7;
+			Cable(Out,Tip-R*1.4,Mid,.10,Color); Cable(Out,Mid,Center,.10,Color);
+		}
+	}
+	for (auto& UV:Out.UVs) UV=FVector2D(.5,.5);
+}
+
+void SimCopterPilotEquipment::BuildTaserOrb(FMaxisMeshSection& Out, float Radius, float Phase, float Energy, bool bCore)
+{
+	Out=FMaxisMeshSection();
+	if (Radius<=.001f || Energy<=.001f) return;
+	const FLinearColor Color=FMath::Lerp(FLinearColor(.12f,.18f,.19f),FLinearColor(.04f,.9f,.72f),Energy);
+	if (bCore) for (int32 Ring=0; Ring<8; ++Ring) for (int32 Slice=0; Slice<16; ++Slice)
+	{
+		const auto P=[&](int32 R,int32 S)
+		{
+			const double Lat=-UE_HALF_PI+R*UE_PI/8, Lon=S*UE_TWO_PI/16;
+			return FVector(FMath::Sin(Lat),FMath::Cos(Lat)*FMath::Cos(Lon),FMath::Cos(Lat)*FMath::Sin(Lon))*Radius*.70;
+		};
+		Quad(Out,P(Ring,Slice),P(Ring,Slice+1),P(Ring+1,Slice+1),P(Ring+1,Slice),Color,true);
+	}
+	for (int32 Ring=0; Ring<3; ++Ring) for (int32 Segment=0; Segment<32; ++Segment)
+	{
+		const auto P=[&](int32 K)
+		{
+			const float A=K*UE_TWO_PI/32+Phase*(Ring%2 ? -3 : 2);
+			const float R=Radius*(bCore ? 1.f : 1.f+.08f*FMath::Sin(K*9.f+Phase*35));
+			const FVector V(FMath::Sin(A)*R,FMath::Cos(A)*R,0);
+			return FRotator(Ring*60,0,35+Phase*25).RotateVector(V);
+		};
+		Cable(Out,P(Segment),P(Segment+1),Radius*.035,FLinearColor(.15f,.7f,1.f)*Energy);
+	}
+	for (auto& UV:Out.UVs) UV=FVector2D(.5,.5);
 }
 
 void SimCopterPilotEquipment::BuildParachute(FMaxisMeshSection& Out)

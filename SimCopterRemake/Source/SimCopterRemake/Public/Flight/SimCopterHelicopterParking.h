@@ -10,6 +10,15 @@ class USimCopterCareerSubsystem;
 namespace SimCopterHelicopterParking
 {
 SIMCOPTERREMAKE_API ASimCopterHelicopterPawn* ResolveCurrentAircraft(const UObject* WorldContext);
+// The original career +0x48 mask belongs to the whole owned helicopter fleet.
+SIMCOPTERREMAKE_API TArray<ASimCopterHelicopterPawn*> GetPlayerFleet(const UObject* WorldContext,
+	const USimCopterCareerSubsystem* Career);
+SIMCOPTERREMAKE_API int32 GetFleetEquipmentMask(const UObject* WorldContext,
+	const USimCopterCareerSubsystem* Career);
+SIMCOPTERREMAKE_API void SynchronizeFleetEquipment(const UObject* WorldContext,
+	const USimCopterCareerSubsystem* Career);
+// City entry and legacy saves must materialize every owned type, without moving existing actors.
+SIMCOPTERREMAKE_API void EnsureOwnedFleet(ASimCopterHangar* Hangar, const USimCopterCareerSubsystem* Career);
 // SCHOOK: FUN_0047c0c0 case 0xe7, first F-15 tile in scene order.
 // The five late-game maps (City25..29) retain their original hidden spawn points.
 constexpr int32 FirstApacheEncounterCityIndex = 25;
@@ -31,6 +40,8 @@ SIMCOPTERREMAKE_API void SortByDoorDistance(TArray<FPad>& Pads, const FVector& D
 SIMCOPTERREMAKE_API bool OverlapsParkedAircraft(const FBox& Candidate, const TArray<FBox>& Occupants);
 
 // Creates a separate, unpossessed airframe. No money/ownership changes on failure.
+// City restoration can use all twelve pads; shop deliveries keep the eight nearest the hangar.
 SIMCOPTERREMAKE_API ASimCopterHelicopterPawn* SpawnOnFreePad(
-	ASimCopterHangar* Hangar, ASimCopterHelicopterPawn* Existing, int32 TypeIndex, FString& OutError);
+	ASimCopterHangar* Hangar, ASimCopterHelicopterPawn* Existing, int32 TypeIndex, FString& OutError,
+	bool bIncludeCornerPads = false);
 }

@@ -258,10 +258,15 @@ void ASimCopterGameMode::ApplyPendingAircraftRestores(UWorld* World)
 	ON_SCOPE_EXIT
 	{
 		if (GetGameInstance())
+		{
+			SimCopterHelicopterParking::EnsureOwnedFleet(
+				Cast<ASimCopterHangar>(UGameplayStatics::GetActorOfClass(World, ASimCopterHangar::StaticClass())),
+				GetGameInstance()->GetSubsystem<USimCopterCareerSubsystem>());
 			SimCopterHelicopterParking::EnsureApacheEncounter(
 				Cast<ASimCopterTrafficSystemActor>(UGameplayStatics::GetActorOfClass(World, ASimCopterTrafficSystemActor::StaticClass())),
 				SimCopterHelicopterParking::ResolveCurrentAircraft(World),
 				GetGameInstance()->GetSubsystem<USimCopterCareerSubsystem>());
+		}
 	};
 	if (USimCopterSaveSubsystem* Saves = USimCopterSaveSubsystem::Get(this); Saves != nullptr)
 	{
@@ -277,8 +282,8 @@ void ASimCopterGameMode::ApplyPendingAircraftRestores(UWorld* World)
 	}
 
 	// SCHOOK: SessionPlaceHelicopters 0x0047a240. The original walks the owned mask and hands each
-	// airframe a pad; the remake models the one the player flies, so the transfer names it and the
-	// rest stay on the books. This runs after the pad pass so the switch lands on a placed pawn.
+	// airframe a pad. Restore the selected airframe first; EnsureOwnedFleet then recreates the
+	// remaining owned types with its fittings. The switch runs after the initial pad placement.
 	const FSimCopterCareerCityTransfer Transfer = Career->GetPendingCityTransfer();
 
 	TArray<AActor*> Helicopters;
@@ -302,9 +307,8 @@ void ASimCopterGameMode::ApplyPendingAircraftRestores(UWorld* World)
 			Transfer.ActiveHelicopterTypeIndex,
 			Transfer.CareerEquipmentMask,
 			Transfer.CareerTearGasRounds);
+		Career->ClearPendingCityTransfer();
 	}
-
-	Career->ClearPendingCityTransfer();
 }
 
 void ASimCopterGameMode::PlaceHangar(ASimCopterTrafficSystemActor* Traffic, const FVector& PlayerStandLocation)

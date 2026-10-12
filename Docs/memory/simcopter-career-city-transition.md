@@ -5,6 +5,10 @@ finishing a level took your money, your fleet and your fittings with it."*
 
 *Recorded 2026-08-27.*
 
+**2026-10-11 parked-fleet follow-up:** ownership previously survived graduation only on the books. A purchased Dauphin left parked in the outgoing city had no actor in the next city. `EnsureOwnedFleet`, called after saved aircraft/active transfer restoration and before the airport plane, now recreates missing owned types on clear pads. It repairs affected saves without moving or servicing existing aircraft or charging again; full nine-model fleets can use the four corner pads as overflow. Sold types remain absent. The new actual purchase/transfer/load regression failed five assertions before correction; all 55 combined headless checks pass (one existing warning-bearing fixture). See [details](../CareerFleetRestoration.md) and [results](../validation/CareerFleetRestorationResults.json). Includes the pilot-level landing fix; both executables and symbols are installed with verified backups/hashes after the user closed the game.
+
+**2026-10-11 follow-up:** the actor-name fallback in `ResolveCareerHelicopterPawn` became unsafe once the airport plane, purchased aircraft, and helper coexisted. Next Level is selected on foot, so the first sorted actor could replace the selected helicopter and discard its capture cage. Capture now shares `SimCopterHelicopterParking::ResolveCurrentAircraft` with restoration: possessed aircraft, the pilot's parked aircraft, then filtered fallback. `SimCopter.Career.OnFootAircraftAndCageTransfer` exercises the actual capture and game-mode restore with competing aircraft and a purchased Agusta/cage. A pending transfer is consumed only when a player aircraft receives it.
+
 ## Ground truth
 
 `FUN_0044bf70`, the career-select page's message handler (control **0x7d7**), branches the OK on

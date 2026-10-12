@@ -2528,6 +2528,93 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindNearestBehaviorPerson(
 	return Best;
 }
 
+int32 ASimCopterTrafficSystemActor::SpawnCheckupCrew(ASimCopterHelicopterPawn& Helicopter, int32 ServiceCount)
+{
+	// SCHOOK: CheckupCrew 0x004c1ea0. CheckupApply (004385c0) counts each paid
+	// repair/fuel/teargas line, then requests that many class-6/BHAV-1204 mechanics.
+	// 004c1fb0 suppresses another crew while the previous workers remain nearby.
+	if (ServiceCount <= 0 || !Helicopter.CanTransferMissionPassengers() || !GetWorld() || !GroundAgentClass) return 0;
+	for (const auto Weak : PedestrianAgents)
+		if (const auto* Agent = Weak.Get(); Agent && !Agent->IsActorBeingDestroyed() &&
+			Agent->InitialBehaviorProgramId == 1204 &&
+			FVector::DistSquared2D(Agent->GetActorLocation(),Helicopter.GetActorLocation()) < FMath::Square(ActiveTileSize*4.f)) return 0;
+	ServiceCount = FMath::Clamp(ServiceCount,1,3);
+	int32 Spawned = 0;
+	for (int32 Attempt=0; Attempt<ServiceCount*2 && Spawned<ServiceCount && PedestrianAgents.Num()<MaxPedestrianAgents; ++Attempt)
+	{
+		FActorSpawnParameters Params; Params.Owner=this;
+		auto* Worker = GetWorld()->SpawnActor<ASimCopterGroundAgent>(GroundAgentClass,Helicopter.GetActorLocation(),FRotator::ZeroRotator,Params);
+		if (!Worker) continue;
+		Worker->InitialPersonState=0;
+		Worker->SetInitialBehaviorClass(6);
+		Worker->SetInitialBehaviorProgramId(1204);
+		Worker->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian,TEXT(""),
+			ActiveOriginalGameRootPath.IsEmpty() ? ResolveOriginalGameRoot() : ActiveOriginalGameRootPath,PedestrianSpeedCmPerSec);
+		if (!Worker->IsUsingOriginalMesh()) { Worker->Destroy(); continue; }
+		// Passenger exits are checked at doorsill height before the passenger falls.
+		// Mechanics start on the ground; checking that higher point and then snapping
+		// each worker down lets the whole crew occupy the same spot.
+		const float Radius=Worker->GetCollisionRadiusCm(), Half=Worker->GetCapsuleHalfHeightCm();
+		FCollisionQueryParams Query(SCENE_QUERY_STAT(CheckupCrewPlacement),false,Worker);
+		Query.AddIgnoredActor(&Helicopter);
+		bool bPlaced=false;
+		for (int32 Index=0;Index<10 && !bPlaced;++Index)
+		{
+			Worker->SetActorLocation(Helicopter.GetPassengerDropWorldLocation(Index)+FVector(0,0,Half));
+			Worker->SnapToGroundImmediate();
+			const FVector Location=Worker->GetActorLocation();
+			bool bOccupied=false;
+			for (TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It)
+			{
+				if (*It==Worker || It->IsHidden() || It->IsActorBeingDestroyed() || It->GetBehaviorCarrier() || It->IsMissionCarried()) continue;
+				if (FMath::Abs(Location.Z-It->GetActorLocation().Z)<Half+It->GetCapsuleHalfHeightCm()+5 &&
+					FVector::DistSquared2D(Location,It->GetActorLocation())<FMath::Square(Radius+It->GetCollisionRadiusCm()+12))
+				{ bOccupied=true; break; }
+			}
+			if (bOccupied || GetWorld()->OverlapBlockingTestByChannel(Location,FQuat::Identity,ECC_Pawn,
+				FCollisionShape::MakeCapsule(Radius+2,FMath::Max(Radius+2,Half-1)),Query)) continue;
+			FVector Door=Helicopter.GetPassengerDropWorldLocation(Index%2); Door.Z=Location.Z;
+			FHitResult Hit;
+			bPlaced=!GetWorld()->SweepSingleByChannel(Hit,Door,Location,FQuat::Identity,ECC_Camera,
+				FCollisionShape::MakeSphere(Radius),Query);
+		}
+		if (!bPlaced) { Worker->Destroy(); continue; }
+		PedestrianAgents.Add(Worker);
+		++Spawned;
+	}
+	return Spawned;
+}
+
+ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindPoliceRecoveryTarget(const ASimCopterGroundAgent& Officer) const
+{
+	ASimCopterGroundAgent* Best = nullptr;
+	float BestDistance = FMath::Square(ActiveTileSize * 30.f); // BHAV 1053's search radius.
+	const auto Consider = [&](ASimCopterGroundAgent* Agent)
+	{
+		if (!Agent || Agent->IsActorBeingDestroyed() || Agent->IsHidden() || Agent->HasMissionResolutionReported() ||
+			Agent->GetBehaviorCarrier() || Agent->IsMissionCarried() || Agent->IsPassengerFalling() ||
+			Agent->IsMedevacVictim() || Agent->IsMissionPatientDead()) return;
+		const bool bUncaught = Agent->IsArrestableSuspect() && Agent->IsBehaviorActive() &&
+			Agent->GetBehaviorAttribute(EBhavAttr::CriminalCaught) == 0 &&
+			Agent->GetLastReactionProgramId() != 1060;
+		const bool bPerson = Agent->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian &&
+			(Agent->IsInPoliceCustody() || bUncaught);
+		const bool bCar = Agent->IsCriminalCar() && Agent->IsVehicleImmobilized() && !Agent->IsVehicleTowed() &&
+			!Agent->IsVehicleTipped() && Agent->GetCriminalState() != uint8(SimCopterCriminalCar::EState::BurglarOutside);
+		if (!bPerson && !bCar) return;
+		if (bCar)
+		{
+			const auto* Missions = ResolveMissionSystem();
+			if (!Missions || !Missions->IsMissionEventActive(Agent->GetCriminalEventId())) return;
+		}
+		const float Distance = FVector::DistSquared(Officer.GetActorLocation(), Agent->GetActorLocation());
+		if (Distance < BestDistance) { BestDistance = Distance; Best = Agent; }
+	};
+	for (auto Agent : PedestrianAgents) Consider(Agent.Get());
+	for (auto Car : CriminalCars) Consider(Car.Get());
+	return Best;
+}
+
 ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(ASimCopterGroundAgent& Medic) const
 {
 	TArray<ASimCopterGroundAgent*> Candidates;
@@ -4805,7 +4892,7 @@ void ASimCopterTrafficSystemActor::UpdateSpeeders(const float DeltaSeconds)
 	for (const TWeakObjectPtr<ASimCopterGroundAgent>& CarPtr : VehicleAgents)
 	{
 		ASimCopterGroundAgent* Car = CarPtr.Get();
-		if (Car == nullptr || !Car->IsSpeeder())
+		if (Car == nullptr || !Car->IsSpeeder() || Car->IsVehicleTowed() || Car->IsVehicleTaserDisabled() || Car->HasMissionResolutionReported())
 		{
 			continue;
 		}
@@ -4977,7 +5064,7 @@ void ASimCopterTrafficSystemActor::UpdateCriminalCars(const float DeltaSeconds)
 	{
 		ASimCopterGroundAgent* Car = CriminalCars[Index].Get();
 		if (IsInTunnelTransit(Car)) continue;
-		if (Car && Car->IsVehicleTipped()) continue;
+		if (Car && (Car->IsVehicleTipped() || Car->IsVehicleTowed() || Car->IsVehicleTaserDisabled() || Car->HasMissionResolutionReported())) continue;
 		if (Car == nullptr)
 		{
 			CriminalCars.RemoveAt(Index);
@@ -6766,7 +6853,12 @@ void ASimCopterTrafficSystemActor::PruneAgentArray(TArray<TWeakObjectPtr<ASimCop
 		// killed, or removed with the vehicle they were on). Culling them stranded every victim
 		// of a mission that starts away from the player - a train rescue puts its passengers on
 		// a train that can be anywhere on the map, and they were being destroyed the same frame.
-		if (Agent->IsVehicleImmobilized() || Agent->IsInPoliceCustody() || Agent->IsMissionCarried() || Agent->GetBehaviorCarrier() != nullptr || Agent->MissionEventId != INDEX_NONE ||
+		// Victory musicians use states 17/18 but no mission event ID. They must remain at
+		// the airport while the player flies home from the job that completed the level.
+		const int32 PersonState = Agent->GetBehaviorAttribute(EBhavAttr::State);
+		const bool bAirportMusician = Agent->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian &&
+			(PersonState == 17 || PersonState == 18);
+		if (bAirportMusician || Agent->IsVehicleImmobilized() || Agent->IsInPoliceCustody() || Agent->IsMissionCarried() || Agent->GetBehaviorCarrier() != nullptr || Agent->MissionEventId != INDEX_NONE ||
 			Agent->IsMissionPatientDead() ||
 			Agent->IsPersistentHospitalRoofCrew() ||
 			Agent->GetBehaviorStartingVehicle() != nullptr)

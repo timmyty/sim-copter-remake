@@ -1,10 +1,15 @@
 # Fork file inventory and inherited history
 
-This inventory covers the publication snapshot relative to wyozi
+This historical inventory covers the initial October 8 publication snapshot relative to wyozi
 `25d81802b065eac5fee1dbd74afb75d1e59004e8`. Original history is preserved.
 See [ForkChanges.md](ForkChanges.md) for the behavior and authenticity notes.
 
-## Local publication changes (167 files)
+For the current tree, use the [v1.0.8 source](https://github.com/timmyty/sim-copter-remake/tree/v1.0.8)
+and [changes since v1.0.7](https://github.com/timmyty/sim-copter-remake/compare/v1.0.7...v1.0.8).
+The current release's source and package audit is recorded in
+[WindowsRelease108Results.json](validation/WindowsRelease108Results.json).
+
+## Initial publication changes (167 files)
 
 A = added, M = modified. Binary assets and the 21 songs use Git LFS. No local
 scratch packages, saves, SDK dependencies or original game data are new additions.

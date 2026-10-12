@@ -140,7 +140,24 @@ bool FSimCopterShoulderAimTest::RunTest(const FString&)
 		}, 0.5f));
 	}
 
-	for (const float Pitch : {-62.0f, 14.0f})
+	// Free look must retain the same vertical range when walking and when aiming.
+	for (const bool bAim : {false,true})
+	{
+		if (bAim) Pilot->StartTaserAim(); else Pilot->StopTaserAim();
+		Pilot->GetCharacterMovement()->Velocity=FVector(150,0,0);
+		Pilot->CameraPitchDeg=0;
+		Pilot->MouseLookPitch(-1); Step(240); Pilot->MouseLookPitch(0);
+		TestTrue(TEXT("Mouse can look almost straight up while walking"), Pilot->CameraPitchDeg>84);
+		Pilot->ControllerLookPitch(1); Step(240); Pilot->ControllerLookPitch(0);
+		TestTrue(TEXT("Controller can look almost straight down while walking"), Pilot->CameraPitchDeg<-84);
+		Pilot->ControllerLookPitch(-1); Step(240); Pilot->ControllerLookPitch(0);
+		TestTrue(TEXT("Controller can look almost straight up while walking"), Pilot->CameraPitchDeg>84);
+		Pilot->MouseLookPitch(1); Step(240); Pilot->MouseLookPitch(0);
+		TestTrue(TEXT("Mouse can look almost straight down while walking"), Pilot->CameraPitchDeg<-84);
+		TestTrue(TEXT("Vertical look stays short of inversion"), FMath::Abs(Pilot->CameraPitchDeg)<=85);
+	}
+	Pilot->GetCharacterMovement()->Velocity=FVector::ZeroVector;
+	for (const float Pitch : {-85.0f, 85.0f})
 	{
 		Pilot->CameraPitchDeg = Pitch; Step(2);
 		TestTrue(TEXT("Arm and barrel follow extreme aim pitches"), FVector::DotProduct(Pilot->TaserMesh->GetForwardVector(), Pilot->CameraComponent->GetForwardVector()) > 0.999);

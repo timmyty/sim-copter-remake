@@ -337,9 +337,14 @@ void FSimCopterMissionSystem::UpdateSchedulerCadence()
 	// FUN_004a6e60 includes Base Location in DAT_0057f9c8 (FUN_004a7a10).
 	// Restore the original availability: tier 1 normally has one job, with a second
 	// only after the full 380-second interval. Excluding the base crowded early cities.
-	if (ActiveCount < MaxEasyWithDifficulty)
+	// Recovery is a remake addition, outside FUN_004a6e60's seven original families.
+	// Keep total counts/save data intact, but never let optional towing consume their slots.
+	int32 ScheduledCount = ActiveCount;
+	for (const auto& Record : Records)
+		if (Record.bActive && Record.Category != CAT_Background && IsRecoveryMission(Record.TypeMask)) --ScheduledCount;
+	if (ScheduledCount < MaxEasyWithDifficulty)
 	{
-		SpawnCountdown = (SpawnCountdown - FrameDeltaEma) + ((ActiveCount - MaxEasyWithDifficulty) + 1) * Tuning.IntervalAdj;
+		SpawnCountdown = (SpawnCountdown - FrameDeltaEma) + ((ScheduledCount - MaxEasyWithDifficulty) + 1) * Tuning.IntervalAdj;
 	}
 }
 
@@ -850,7 +855,7 @@ void FSimCopterMissionSystem::AnnounceCreated(const FSimCopterMissionRecord& Rec
 	}
 
 	ActiveCount++;
-	SpawnCountdown = EasyIntervalCache;
+	if (!IsRecoveryMission(Record.TypeMask)) SpawnCountdown = EasyIntervalCache;
 	PostMissionAnnouncement(Record);
 }
 
@@ -1808,8 +1813,14 @@ void FSimCopterMissionSystem::UpdateLifecycle()
 		// min(dx,dy) + 2*max(dx,dy), with the near-scene cutoff at 12.
 		constexpr int32 CrimeAndRiotMask =
 			TYPE_Robber | TYPE_Arsonist | TYPE_Burglar | TYPE_Mugger | TYPE_Riot;
-		bool bAdvanceTimer = true;
-		if ((Rec.TypeMask & CrimeAndRiotMask) != 0 && World != nullptr && !World->IsPlayerOnFoot())
+		// Remake custody precedes the original EVT_CriminalCaught station-delivery credit.
+		// FUN_004a73e0 knows only proximity and completed arrests, so without this gate a
+		// cuffed passenger commits timer-based burglaries while being flown to the police roof.
+		const bool bCrimeInCustody = (Rec.TypeMask & (CrimeAndRiotMask & ~TYPE_Riot)) != 0 &&
+			World != nullptr && World->IsCrimeInCustody(Rec.EventId);
+		bool bAdvanceTimer = !bCrimeInCustody;
+		if (bCrimeInCustody) Rec.TimeAccum = 0;
+		if (!bCrimeInCustody && (Rec.TypeMask & CrimeAndRiotMask) != 0 && World != nullptr && !World->IsPlayerOnFoot())
 		{
 			int32 PlayerX = 0;
 			int32 PlayerY = 0;

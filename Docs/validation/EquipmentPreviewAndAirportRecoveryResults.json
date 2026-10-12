@@ -1,0 +1,66 @@
+{
+  "Date": "2026-10-11",
+  "Changes": [
+    "Equipment page identifies active aircraft, browses catalog models with arrows, marks owned items, and previews all six fittings on native helicopter geometry.",
+    "On-foot camera pitch permits -85 through +85 degrees with mouse and controller while moving or aiming.",
+    "Airport victory musicians survive ambient distance pruning and missing members are replenished. Airport placement and city-dependent counts are preserved.",
+    "Junkyard car release accepts a majority of the rotated body footprint in the ring, body bottom up to 300 cm above the platform, and speed at most 200 cm/s."
+  ],
+  "Builds": {
+    "Editor": "Succeeded",
+    "Shipping": "Succeeded",
+    "Wrapper": "RebuildUnrealCpp.bat",
+    "EditorLog": "Docs/scratchpad/equipment-preview/build-editor-final-contrast.log",
+    "ShippingLog": "Docs/scratchpad/equipment-preview/build-shipping-final.log"
+  },
+  "Regression": {
+    "Succeeded": 23,
+    "SucceededWithWarnings": 1,
+    "Failed": 0,
+    "NotRun": 0,
+    "Report": "Docs/scratchpad/equipment-preview/tests-combined/index.json",
+    "Warning": "HangarPurchaseParking has two existing contextless test-world DestroyActor warnings.",
+    "ReproducedBeforeFix": [
+      "Eight camera clamp assertions failed.",
+      "Actual ambient pruning removed three airport musicians and missing leader/roster recovery failed.",
+      "Elevated rotated burglar-car release left the mission unresolved."
+    ]
+  },
+  "Offscreen": {
+    "Succeeded": 1,
+    "Failed": 0,
+    "RHI": "D3D12 SM6",
+    "Report": "Docs/scratchpad/equipment-preview/render-contrast/index.json",
+    "ImagesInspected": [
+      "equipment-0.png",
+      "equipment-1.png",
+      "equipment-2.png",
+      "equipment-3.png",
+      "equipment-4.png",
+      "equipment-5.png"
+    ],
+    "Folder": "Docs/scratchpad/equipment-preview",
+    "FinalPolish": "Explicit light button style and sRGB preview color packing; equipment test repeated after visual-only adjustments."
+  },
+  "Installation": {
+    "InstalledAtUtc": "2026-10-11T22:21:02.1857573Z",
+    "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "478EF2D4F6466F96D7F6A7F130EB57F10CD5956D8E1E0654036E0EF4DF4F2C9E",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\equipment-preview/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "47AEEF77C062811C1D06BF4380BE80BD5AA16A21B85749665D9B66F0F0929C42",
+    "TestsPassed": 24,
+    "TestsWithWarnings": 1,
+    "OffscreenTestsPassed": 1,
+    "AssetsChanged": false,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false,
+    "Pushed": false
+  },
+  "SourceHashes": "Docs/scratchpad/equipment-preview/tested-source-hashes.json",
+  "DiffEvidence": "Docs/scratchpad/equipment-preview/diffs",
+  "Limitations": [
+    "No interactive flight/walking or music-listening session.",
+    "Preview uses projected native geometry with illustrative equipment fittings; it does not change gameplay airframe fittings.",
+    "Short-drop delivery transfers the car to the existing yard lift; no new ballistic fall simulation."
+  ]
+}

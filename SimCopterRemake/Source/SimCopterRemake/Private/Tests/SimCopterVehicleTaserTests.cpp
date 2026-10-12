@@ -13,6 +13,7 @@
 #include "Game/SimCopterPlayerController.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Audio/SimCopterAudioSubsystem.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterVehicleTaserTest,"SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -28,9 +29,11 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	auto* PC = World->SpawnActor<ASimCopterPlayerController>();
 	PC->Player = NewObject<ULocalPlayer>(GEngine); World->AddController(PC); PC->Possess(Heli);
 	auto* Ops = Heli->GetAirOperations();
-	Ops->bRemoteTaserActive = true;
-	Ops->RemoteTaserCamera = World->SpawnActor<ACameraActor>();
-	Ops->UpdateRemoteTaserMount();
+	Ops->BeginPlay(); // This isolated world does not begin play automatically; exercise paired FX teardown.
+	auto* Audio = USimCopterAudioSubsystem::Get(World);
+	Audio->bSoundsAvailable = true; // Exercise PCM loading and independent voices without a speaker device.
+	Ops->ToggleRemoteTaser();
+	TestTrue(TEXT("Real remote sight hides the helicopter"), Ops->IsRemoteTaserActive() && PC->HiddenActors.Contains(Heli));
 	const auto NewCar = [&](const FVector& Location)
 	{
 		auto* Car = World->SpawnActor<ASimCopterGroundAgent>();
@@ -51,6 +54,34 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 		Ops->FireRemoteTaser();
 	};
 	FireAt(Car->GetActorLocation());
+	TestNotNull(TEXT("Discharge creates continuous trail geometry"), Ops->RemoteTaserTrail.Get());
+	TSet<FPrimitiveComponentId> HiddenComponents;
+	PC->BuildHiddenComponentList(Ops->GetRemoteTaserMuzzle(), HiddenComponents);
+	TestFalse(TEXT("The active remote sight must not hide the discharge or hit arcs"),
+		HiddenComponents.Contains(Ops->RemoteTaserTrail->GetPrimitiveSceneId()));
+	const auto* Trail = Ops->RemoteTaserTrail->GetProcMeshSection(0);
+	TestTrue(TEXT("White trails cover the muzzle-to-contact distance"), Trail && Trail->SectionLocalBox.GetSize().Size()>2500);
+	if (Trail) for (const auto& Vertex : Trail->ProcVertexBuffer)
+		if (Vertex.Color != FColor::White) { AddError(TEXT("Taser trails must be white")); break; }
+	TestEqual(TEXT("Trail cannot cause damage or block other traces"), Ops->RemoteTaserTrail->GetCollisionEnabled(), ECollisionEnabled::NoCollision);
+	TestEqual(TEXT("Shot and hit have separate audible voices"), Audio->LooseComponents.Num(), 2);
+	Heli->AddActorWorldOffset(FVector(0,200,0));
+	TestTrue(TEXT("Discharge stays where fired as helicopter moves"), Ops->RemoteTaserTrail->GetComponentTransform().Equals(FTransform::Identity));
+	Heli->AddActorWorldOffset(FVector(0,-200,0));
+	Ops->UpdateRemoteTaserDischarge(.1f);
+	const auto* CarArcs=Ops->RemoteTaserTrail->GetProcMeshSection(1);
+	TestTrue(TEXT("Disabled vehicle is surrounded by electrical arcs"), CarArcs && CarArcs->ProcVertexBuffer.Num()>100);
+	const FVector FirstArcPoint=CarArcs ? CarArcs->ProcVertexBuffer[0].Position : FVector::ZeroVector;
+	Ops->FireRemoteTaser();
+	TestEqual(TEXT("Recharge cannot emit duplicate sound"), Audio->LooseComponents.Num(), 2);
+	TestTrue(TEXT("Trail remains briefly visible"), Ops->RemoteTaserTrail->IsVisible());
+	Ops->UpdateRemoteTaserDischarge(.21f);
+	CarArcs=Ops->RemoteTaserTrail->GetProcMeshSection(1);
+	TestTrue(TEXT("Electricity flows around the car after the muzzle trail fades"), CarArcs &&
+		!CarArcs->ProcVertexBuffer[0].Position.Equals(FirstArcPoint));
+	Ops->UpdateRemoteTaserDischarge(.4f);
+	TestFalse(TEXT("Expired trail is hidden"), Ops->RemoteTaserTrail->IsVisible());
+	TestEqual(TEXT("Expired trail releases its geometry"), Ops->RemoteTaserTrail->GetNumSections(), 0);
 	TestTrue(TEXT("Real helicopter firing disables the hit car"), Car->IsVehicleTaserDisabled());
 	TestTrue(TEXT("Disabled car reports immobilized"), Car->IsVehicleImmobilized());
 	TestTrue(TEXT("Hit readout explains temporary stop"), Ops->Status.Contains(TEXT("car disabled")));
@@ -64,7 +95,7 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	Car->SetTrafficSpeedScale(3.0f);
 	Car->Tick(2.0f);
 	TestTrue(TEXT("Traffic impulses and separation cannot displace the stopped car"), Car->GetActorLocation().Equals(StoppedAt));
-	TestEqual(TEXT("Timer advances in simulation time"), Car->VehicleTaserSeconds, 6.0f);
+	TestEqual(TEXT("Timer advances in simulation time"), Car->VehicleTaserSeconds, 14.0f);
 	Traffic->SyncVehicleTrafficStates(.1f);
 	auto& State = Traffic->VehicleTrafficStates.FindChecked(TObjectKey<ASimCopterGroundAgent>(Car));
 	State.BlockedSeconds = 20;
@@ -75,24 +106,26 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	TestTrue(TEXT("Blocked-road recovery preserves the route while disabled"), Car->GetMoveTargetLocation().Equals(Route));
 	TestEqual(TEXT("No bypass recovery starts while disabled"), State.RecoveryBypassSeconds, 0.0f);
 	Ops->FireRemoteTaser();
-	TestEqual(TEXT("Recharge blocks repeated fire"), Car->VehicleTaserSeconds, 6.0f);
+	TestEqual(TEXT("Recharge blocks repeated fire"), Car->VehicleTaserSeconds, 14.0f);
 	FireAt(Car->GetActorLocation());
-	TestEqual(TEXT("Fresh hit refreshes rather than stacks duration"), Car->VehicleTaserSeconds, 8.0f);
+	TestEqual(TEXT("Fresh hit refreshes rather than stacks duration"), Car->VehicleTaserSeconds, 16.0f);
 	Car->Tick(3.0f);
 	TArray<uint8> Save;
 	TestTrue(TEXT("Disabled vehicle saves"), Car->CaptureRuntimeSaveState(Save));
 	auto* Restored = NewCar(FVector(0,4000,100));
 	TestTrue(TEXT("Disabled vehicle restores"), Restored->RestoreRuntimeSaveState(Save));
-	TestEqual(TEXT("Save retains remaining duration"), Restored->VehicleTaserSeconds, 5.0f);
+	TestEqual(TEXT("Save retains remaining duration"), Restored->VehicleTaserSeconds, 13.0f);
 	TestTrue(TEXT("Save retains the route"), Restored->GetMoveTargetLocation().Equals(Route));
 	Restored->Tick(4.0f);
 	TestTrue(TEXT("Restored car remains stopped before expiry"), Restored->IsVehicleTaserDisabled() && Restored->GetActorLocation().Equals(StoppedAt));
+	Restored->Tick(8.0f);
+	TestTrue(TEXT("Disabled save remains stopped after the old eight-second duration"),Restored->IsVehicleTaserDisabled());
 	Restored->Tick(1.0f); Restored->Tick(.1f);
 	TestFalse(TEXT("Timer expires automatically"), Restored->IsVehicleImmobilized());
 	TestTrue(TEXT("Restored car resumes its route"), Restored->GetActorLocation().X > StoppedAt.X);
 	Restored->Destroy();
 	TArray<uint8> Legacy = Save;
-	Legacy.SetNum(Legacy.Num()-sizeof(float));
+	Legacy.SetNum(Legacy.Num()-3*sizeof(float)-2); // v9/v10 timers, v11 stun timer and two byte flags
 	const int32 LegacyVersion = 8;
 	FMemory::Memcpy(Legacy.GetData()+sizeof(uint32), &LegacyVersion, sizeof(LegacyVersion));
 	auto* LegacyCar = NewCar(FVector(0,5000,100));
@@ -102,11 +135,11 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	LegacyCar->Destroy();
 	auto* InvalidCar = NewCar(FVector(0,6000,100));
 	const float InvalidDuration = -1.0f;
-	FMemory::Memcpy(Save.GetData()+Save.Num()-sizeof(float), &InvalidDuration, sizeof(float));
+	FMemory::Memcpy(Save.GetData()+Save.Num()-3*sizeof(float)-2, &InvalidDuration, sizeof(float));
 	TestFalse(TEXT("Invalid saved duration is rejected"), InvalidCar->RestoreRuntimeSaveState(Save));
 	InvalidCar->Destroy();
-	Car->Tick(5.0f); Car->Tick(.1f);
-	TestTrue(TEXT("Original car resumes driving after eight seconds"), !Car->IsVehicleTaserDisabled() && Car->GetActorLocation().X > StoppedAt.X);
+	Car->Tick(13.0f); Car->Tick(.1f);
+	TestTrue(TEXT("Original car resumes driving after sixteen seconds"), !Car->IsVehicleTaserDisabled() && Car->GetActorLocation().X > StoppedAt.X);
 
 	// Cars use non-colliding render meshes. Exercise the rotated body away from its capsule.
 	Car->SetActorLocationAndRotation(FVector(3000,0,100), FRotator(0,55,0));
@@ -142,8 +175,11 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 		SimCopterAirOperations::TraceRemoteTaserTarget(World,Heli,Roof+FVector(0,0,1000),-FVector::UpVector,1500,End));
 	Blocker->SetActorLocation(FMath::Lerp(Car->GetActorLocation(),Ops->GetRemoteTaserMuzzle(),.5));
 	Box->SetBoxExtent(FVector(250));
+	const int32 SoundsBeforeMiss = Audio->LooseComponents.Num();
 	FireAt(Car->GetActorLocation());
+	TestEqual(TEXT("Blocked shot plays firing sound without an impact sound"), Audio->LooseComponents.Num(), SoundsBeforeMiss+1);
 	TestFalse(TEXT("Actual firing through a wall cannot disable the car"), Car->IsVehicleTaserDisabled());
+	TestFalse(TEXT("Blocked shots have no body shock target"), Ops->TaserImpactTarget.IsValid());
 	Blocker->Destroy();
 	FireAt(Roof);
 	TestTrue(TEXT("Actual firing at body disables a car without capsule collision"), Car->IsVehicleTaserDisabled());
@@ -160,7 +196,63 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	TestFalse(TEXT("Wreck cannot be disabled"), Wreck->DisableVehicleWithTaser());
 	auto* Civilian = World->SpawnActor<ASimCopterGroundAgent>(); Civilian->SetActorLocation(FVector(0,9000,100));
 	TestFalse(TEXT("Vehicle disable cannot affect pedestrians"), Civilian->DisableVehicleWithTaser());
+	auto* Suspect = World->SpawnActor<ASimCopterGroundAgent>();
+	Suspect->BehaviorContext.ResetToState(12); Suspect->SetActorLocation(FVector(3500,3000,100));
+	const int32 SoundsBeforeSuspect = Audio->LooseComponents.Num();
+	FireAt(Suspect->GetActorLocation());
+	TestTrue(TEXT("Suspect hit disables the enemy without killing them"), Suspect->bTaserStunned && !Suspect->IsMissionPatientDead());
+	TestEqual(TEXT("Disabling an enemy plays the impact cue too"), Audio->LooseComponents.Num(), SoundsBeforeSuspect+2);
+	TestTrue(TEXT("Pedestrian contact starts the body shock effect"), Ops->TaserImpactTarget.Get()==Suspect);
+	const auto* PersonArcs=Ops->RemoteTaserTrail->GetProcMeshSection(1);
+	if (TestTrue(TEXT("Pedestrian has visible electrical geometry"), PersonArcs && PersonArcs->ProcVertexBuffer.Num()>100))
+	{
+		// A bolt's centre follows the actor; its square cross-section may choose a different
+		// world-space roll when rebuilt, so an individual corner is not a stable anchor.
+		const auto FirstBoltCenter=[](const FProcMeshSection* Section)
+		{
+			FVector Center=FVector::ZeroVector;
+			for (int32 I=0; I<24; ++I) Center+=Section->ProcVertexBuffer[I].Position;
+			return Center/24;
+		};
+		const FVector FirstPersonPoint=FirstBoltCenter(PersonArcs);
+		const FVector LocalPoint=Suspect->GetActorTransform().InverseTransformPosition(FirstPersonPoint);
+		Suspect->AddActorWorldOffset(FVector(170,-90,25)); Suspect->SetActorRotation(FRotator(0,60,0));
+		Ops->UpdateRemoteTaserDischarge(0);
+		PersonArcs=Ops->RemoteTaserTrail->GetProcMeshSection(1);
+		TestTrue(TEXT("Shock stays on a moved and rotated pedestrian"),
+			FirstBoltCenter(PersonArcs).Equals(Suspect->GetActorTransform().TransformPosition(LocalPoint),.01));
+		const FVector MovedPoint=PersonArcs->ProcVertexBuffer[0].Position;
+		Ops->UpdateRemoteTaserDischarge(.35f);
+		PersonArcs=Ops->RemoteTaserTrail->GetProcMeshSection(1);
+		TestTrue(TEXT("Pedestrian electricity animates after the muzzle trail fades"),
+			PersonArcs && !PersonArcs->ProcVertexBuffer[0].Position.Equals(MovedPoint));
+		TestEqual(TEXT("Muzzle trail has expired before the shock"), Ops->RemoteTaserTrail->GetProcMeshSection(0)->ProcVertexBuffer.Num(),0);
+		if (PersonArcs) for (const auto& Vertex : PersonArcs->ProcVertexBuffer)
+			if (Vertex.Color!=FColor::White) { AddError(TEXT("Pedestrian shock must have white arcs")); break; }
+	}
+	Ops->UpdateRemoteTaserDischarge(.36f);
+	TestFalse(TEXT("Pedestrian shock expires"), Ops->RemoteTaserTrail->IsVisible());
+	TestEqual(TEXT("Pedestrian shock releases geometry"), Ops->RemoteTaserTrail->GetNumSections(),0);
+	FireAt(Suspect->GetActorLocation());
+	TestTrue(TEXT("A repeated contact still shows electricity without restarting stun"), Ops->TaserImpactTarget.Get()==Suspect && Suspect->bTaserStunned);
+	Suspect->SetActorHiddenInGame(true); Ops->UpdateRemoteTaserDischarge(.01f);
+	TestFalse(TEXT("Hidden or boarded pedestrian cannot leave floating electricity"), Ops->TaserImpactTarget.IsValid());
+	Suspect->Destroy();
+	Civilian->SetActorLocation(FVector(3500,3000,100));
+	const int32 CivilianHealth=Civilian->GetBehaviorAttribute(EBhavAttr::MedevacHealth);
+	FireAt(Civilian->GetActorLocation());
+	TestTrue(TEXT("A civilian contact also has cosmetic shock feedback"), Ops->TaserImpactTarget.Get()==Civilian);
+	TestFalse(TEXT("Cosmetic feedback does not arrest civilians"), Civilian->bTaserStunned);
+	TestEqual(TEXT("Cosmetic feedback preserves civilian health"), Civilian->GetBehaviorAttribute(EBhavAttr::MedevacHealth),CivilianHealth);
+	Civilian->Destroy(); Ops->UpdateRemoteTaserDischarge(.01f);
+	TestFalse(TEXT("Destroyed targets remove their body shock"), Ops->TaserImpactTarget.IsValid());
 	Ops->EndRemoteTaser();
+	TestFalse(TEXT("Leaving the sight restores the airframe"),PC->HiddenActors.Contains(Heli));
+	AActor* Effects=Ops->RemoteTaserTrail->GetOwner();
+	TestTrue(TEXT("Effects have an independent transient owner"),Effects!=Heli && Effects->HasAnyFlags(RF_Transient));
+	Ops->EndPlay(EEndPlayReason::Destroyed);
+	TestTrue(TEXT("Ending helicopter play destroys its independent effects actor"),Effects->IsActorBeingDestroyed());
+	TestNull(TEXT("Ending helicopter play releases the trail component"),Ops->RemoteTaserTrail.Get());
 	return true;
 }
 #endif

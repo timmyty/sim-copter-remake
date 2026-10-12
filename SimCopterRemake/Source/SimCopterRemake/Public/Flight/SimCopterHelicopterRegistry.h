@@ -32,7 +32,7 @@ enum class ESimCopterHelicopterTool : uint8
 	TearGas,
 	ApacheMissile,
 	ApacheMachineGun,
-	TowClamp,
+	TowClamp UMETA(Hidden), // Retired serialized value; loads as CaptureCage.
 	CaptureCage,
 	Count UMETA(Hidden)
 };
@@ -195,7 +195,13 @@ SIMCOPTERREMAKE_API int32 GetEquipmentPrice(ESimCopterHelicopterTool Tool);
 SIMCOPTERREMAKE_API int32 GetEquipmentSellValue(ESimCopterHelicopterTool Tool);
 
 // Career mask of every purchasable tool (0x1f).
-constexpr int32 AllCareerEquipmentBits = 0x7f;
+constexpr int32 AllCareerEquipmentBits = 0x5f;
+
+// Upgrade legacy clamp purchases without shifting saved tool ordinals or other equipment bits.
+constexpr int32 NormalizeEquipmentMask(int32 Mask)
+{
+	return ((Mask & 0x20) ? (Mask | 0x40) : Mask) & AllCareerEquipmentBits;
+}
 
 // SCHOOK: CareerGameInit 0x004080c0 / UserGameInit 0x00407f30. Both original new-game
 // paths write 3 to career + 0x48: the starting bucket (0x01) and megaphone (0x02).
@@ -261,14 +267,13 @@ struct SIMCOPTERREMAKE_API FSimCopterEquipmentState
 	// here so both paths share one gate.
 	int32 GetEffectiveEquipmentMask() const
 	{
-		return (CareerEquipmentMask | DebugGrantedEquipmentMask) &
-			SimCopterHelicopterRegistry::AllCareerEquipmentBits;
+		return SimCopterHelicopterRegistry::NormalizeEquipmentMask(CareerEquipmentMask | DebugGrantedEquipmentMask);
 	}
 
 	int32 GetTearGasRounds() const { return CareerTearGasRounds + DebugTearGasRounds; }
 
-	bool HasCareerBit(int32 Bit) const { return Bit != 0 && (CareerEquipmentMask & Bit) != 0; }
-	bool HasDebugBit(int32 Bit) const { return Bit != 0 && (DebugGrantedEquipmentMask & Bit) != 0; }
+	bool HasCareerBit(int32 Bit) const { return Bit != 0 && (SimCopterHelicopterRegistry::NormalizeEquipmentMask(CareerEquipmentMask) & Bit) != 0; }
+	bool HasDebugBit(int32 Bit) const { return Bit != 0 && (SimCopterHelicopterRegistry::NormalizeEquipmentMask(DebugGrantedEquipmentMask) & Bit) != 0; }
 
 	// FUN_0048e0b0 type 3: one round per shot, clamped at zero.
 	bool ConsumeTearGasRound()

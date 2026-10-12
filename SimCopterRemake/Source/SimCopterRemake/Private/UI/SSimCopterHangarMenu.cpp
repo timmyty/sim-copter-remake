@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterHangarMenu.h"
+#include "SimCopterEquipmentPreview.h"
 #include "Game/SimCopterCheats.h"
 #include "SimCopterMenuFocusOutline.h"
 
@@ -92,6 +93,7 @@ void SSimCopterHangarMenu::Construct(const FArguments& InArgs)
 	{
 		const int32 Row = SimCopterHangarLayout::GetCatalogRowForTypeIndex(Helicopter->GetHelicopterTypeIndex());
 		CatalogRow = Row != INDEX_NONE ? Row : 0;
+		EquipmentPreviewType = Helicopter->IsFixedWingAircraft() ? 4 : Helicopter->GetHelicopterTypeIndex();
 	}
 
 	TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
@@ -150,6 +152,7 @@ void SSimCopterHangarMenu::RebuildPage()
 	}
 
 	int32 PreviousFocusIndex = INDEX_NONE;
+	const int32 PreviousControllerIndex = ControllerFocusableWidgets.IndexOfByKey(GetControllerSelection());
 	if (FSlateApplication::IsInitialized())
 	{
 		const TSharedPtr<SWidget> FocusedWidget = FSlateApplication::Get().GetKeyboardFocusedWidget();
@@ -189,6 +192,11 @@ void SSimCopterHangarMenu::RebuildPage()
 			? 0
 			: FMath::Clamp(PreviousFocusIndex, 0, ControllerFocusableWidgets.Num() - 1);
 		InitialFocusWidget = ControllerFocusableWidgets[FocusIndex];
+		if (Page==EPage::Catalog && CatalogRow==INDEX_NONE)
+		{
+			if (PreviousControllerIndex>=8 && PreviousControllerIndex<=10) SelectEquipmentAction();
+			else SetControllerSelection(ControllerFocusableWidgets[2+UpgradeRow]);
+		}
 		if (FSlateApplication::IsInitialized())
 		{
 			FSlateApplication::Get().SetAllUserFocus(SharedThis(this), EFocusCause::Navigation);
@@ -523,42 +531,96 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 
 void SSimCopterHangarMenu::BuildCatalogUpgradesPage(SConstraintCanvas& Canvas)
 {
-	AddAt(Canvas, 12, 20, 570, 292, SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(0.86f,0.83f,0.71f)));
-	AddAt(Canvas, 24, 27, 530, 20, MakePageText(TEXT("HELICOPTER EQUIPMENT"), 14, PaperInk, ETextJustify::Left, true, false));
-	const TCHAR* ShortHelp[] = { TEXT("Drop water on fires. Refill at open water."),TEXT("Direct traffic, suspects and crowds."),TEXT("Disperse rioters. Includes ten canisters."),TEXT("Aim water at fires; draws water from the bucket."),TEXT("Winch stranded people into the cabin."),TEXT("T: equip. Recover cars to yards and boats to harbors."),TEXT("V: equip. Capture up to four people; reel fully up to board.") };
+	const auto Paper=FLinearColor(.86f,.83f,.71f);
+	AddAt(Canvas,12,20,610,392,SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(Paper));
+	AddAt(Canvas,24,27,580,20,MakePageText(TEXT("HELICOPTER EQUIPMENT"),14,PaperInk,ETextJustify::Left,true,false));
+	const auto* Active=Shop.Helicopter.Get();
+	const FString ActiveName=Active ? SimCopterHangarShop::GetModelDisplayName(Active->GetHelicopterTypeIndex()) : TEXT("None");
+	AddAt(Canvas,24,51,578,18,MakePageText(TEXT("Active helicopter: ")+ActiveName,11,PaperInk,ETextJustify::Left,true,false));
+	AddAt(Canvas,24,72,578,16,MakePageText(TEXT("Equipment purchases apply to your fleet. Arrows browse previews."),9,PaperInkDim,ETextJustify::Left,false,false));
+	// Explicit paper buttons keep this page readable in both the packaged game's
+	// core style and the editor's dark theme.
+	auto EquipmentButtonStyle=MakeShared<FButtonStyle>();
+	FSlateBrush ButtonBrush=*FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"));
+	EquipmentButtonStyle->SetNormal(ButtonBrush);
+	EquipmentButtonStyle->SetHovered(ButtonBrush);
+	ButtonBrush.TintColor=FLinearColor(.78f,.81f,.82f);
+	EquipmentButtonStyle->SetPressed(ButtonBrush);
+	ButtonBrush.TintColor=FLinearColor(.58f,.59f,.55f);
+	EquipmentButtonStyle->SetDisabled(ButtonBrush);
+	EquipmentButtonStyle->SetNormalPadding(FMargin(0));
+	EquipmentButtonStyle->SetPressedPadding(FMargin(0));
+	ButtonStyles.Add(EquipmentButtonStyle);
+
+	auto Text=[&](float X,float Y,float W,float H,TAttribute<FText> Value,int32 Size,FLinearColor Color,bool Bold=false)
+	{
+		AddAt(Canvas,X,Y,W,H,SNew(STextBlock).Text(Value).ColorAndOpacity(Color)
+			.Font(FCoreStyle::GetDefaultFontStyle(Bold ? TEXT("Bold") : TEXT("Regular"),Size)).WrapTextAt(W));
+	};
+	auto Button=[&](float X,float Y,float W,const TCHAR* Label,FOnClicked Click,TAttribute<bool> Enabled)
+	{
+		auto B=SNew(SButton).ButtonStyle(&EquipmentButtonStyle.Get()).ButtonColorAndOpacity(FLinearColor(.96f,.94f,.85f))
+			.IsFocusable(true).IsEnabled(Enabled).HAlign(HAlign_Center).VAlign(VAlign_Center)
+			.ContentPadding(0).OnClicked(Click)[MakePageText(Label,11,PaperInk,ETextJustify::Center,true,false)];
+		ControllerFocusableWidgets.Add(B);
+		B->AddMetadata(MakeShared<FSimCopterMenuFocusOutline>(FSlateRect(0,0,1,1),FSlateRect(0,0,1,1),.10f));
+		AddAt(Canvas,X,Y,W,26,B);
+	};
+	Button(304,96,28,TEXT("<"),FOnClicked::CreateSP(this,&SSimCopterHangarMenu::CycleEquipmentHelicopter,-1),true);
+	Button(582,96,28,TEXT(">"),FOnClicked::CreateSP(this,&SSimCopterHangarMenu::CycleEquipmentHelicopter,1),true);
+	Text(339,97,240,20,TAttribute<FText>::CreateLambda([this]()
+	{
+		const int32 Row=SimCopterHangarLayout::GetCatalogRowForTypeIndex(EquipmentPreviewType);
+		const bool bActive=Shop.Helicopter.IsValid() && Shop.Helicopter->GetHelicopterTypeIndex()==EquipmentPreviewType;
+		return FText::FromString(FString(SimCopterHangarShop::GetModelDisplayName(EquipmentPreviewType))+
+			(bActive ? TEXT(" / ACTIVE") : SimCopterHangarShop::GetHelicopterRowState(Shop,Row).bOwned ? TEXT(" / OWNED") : TEXT(" / CATALOG")));
+	}),10,PaperInk,true);
+	AddAt(Canvas,304,128,306,206,SNew(SSimCopterEquipmentPreview)
+		.TypeIndex_Lambda([this](){return EquipmentPreviewType;})
+		.OwnedMask_Lambda([this](){return GetOwnedEquipmentMask();})
+		.HighlightRow_Lambda([this](){return UpgradeRow;}));
+	Text(310,339,295,15,TAttribute<FText>::CreateLambda([this]()
+	{
+		return FText::FromString(FString(SimCopterHelicopterRegistry::GetToolDisplayName(SimCopterHangarShop::GetToolForUpgradeRow(UpgradeRow)))+
+			(SimCopterHangarShop::GetUpgradeRowState(Shop,UpgradeRow).bOwned ? TEXT(" / PURCHASED") : TEXT(" / PREVIEW")));
+	}),10,PaperInk,true);
+	Text(310,359,295,34,TAttribute<FText>::CreateLambda([this](){return FText::FromString(SimCopterEquipmentPreview::GetFittingDescription(UpgradeRow));}),9,PaperInkDim);
+
+	const TCHAR* Help[]={TEXT("Drop water on fires."),TEXT("Direct traffic and crowds."),TEXT("Includes ten canisters."),TEXT("Aim water from the bucket."),TEXT("Winch people into the cabin."),TEXT("Recover cars, boats and people.")};
 	for (int32 Row=0; Row<SimCopterHangarShop::UpgradeRowCount; ++Row)
 	{
-		const auto State=SimCopterHangarShop::GetUpgradeRowState(Shop,Row);
-		const auto Tool=SimCopterHangarShop::GetToolForUpgradeRow(Row);
-		const float Y=53+Row*36;
-		if(Row==UpgradeRow) AddAt(Canvas,20,Y-2,548,34,SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(0.65f,0.72f,0.74f)));
-		AddAt(Canvas,26,Y,250,15,MakePageText(FString::Printf(TEXT("%s   %s%s"), SimCopterHelicopterRegistry::GetToolDisplayName(Tool), *FormatDollars(State.ItemValue),State.bOwned?TEXT("  OWNED"):TEXT("")),10,PaperInk,ETextJustify::Left,true,false));
-		AddAt(Canvas,26,Y+15,530,16,MakePageText(ShortHelp[Row],8,PaperInk,ETextJustify::Left,false,false));
-		AddAt(Canvas,20,Y-2,548,34,MakeHotspot(FOnClicked::CreateSP(this,&SSimCopterHangarMenu::HandleSelectUpgradeRow,Row),SimCopterHelicopterRegistry::GetToolDisplayName(Tool)));
+		const float Y=96+Row*42;
+		auto B=SNew(SButton).ButtonStyle(&EquipmentButtonStyle.Get()).IsFocusable(true).ContentPadding(3)
+			.ButtonColorAndOpacity_Lambda([this,Row](){return Row==UpgradeRow ? FLinearColor(.98f,.75f,.35f) : FLinearColor(.96f,.94f,.85f);})
+			.OnClicked(FOnClicked::CreateSP(this,&SSimCopterHangarMenu::HandleActivateUpgradeRow,Row))
+			[
+				SNew(SHorizontalBox)
+				+SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(34).HeightOverride(34)
+					[SNew(SSimCopterEquipmentIcon).Row(Row)
+					.Owned_Lambda([this,Row](){return SimCopterHangarShop::GetUpgradeRowState(Shop,Row).bOwned;})
+					.Highlighted_Lambda([this,Row](){return UpgradeRow==Row;})]]
+				+SHorizontalBox::Slot().FillWidth(1).Padding(6,0,0,0)
+				[SNew(SVerticalBox)
+					+SVerticalBox::Slot().AutoHeight()[MakePageText(SimCopterHelicopterRegistry::GetToolDisplayName(SimCopterHangarShop::GetToolForUpgradeRow(Row)),10,PaperInk,ETextJustify::Left,true,false)]
+					+SVerticalBox::Slot().AutoHeight()[MakePageText(Help[Row],8,PaperInkDim,ETextJustify::Left,false,false)]
+				]
+			];
+		ControllerFocusableWidgets.Add(B);
+		B->AddMetadata(MakeShared<FSimCopterMenuFocusOutline>(FSlateRect(0,0,1,1),FSlateRect(0,0,1,1),.08f));
+		AddAt(Canvas,22,Y,271,40,B);
 	}
-
-	// Readouts (strings 437 / 438) in the bottom-right cell.
-	const SimCopterHangarShop::FRowState Selected = SimCopterHangarShop::GetUpgradeRowState(Shop, UpgradeRow);
-	AddAt(Canvas, UpgradeFundsLabelX, UpgradeFundsRowY, UpgradeLabelWidth, 18.0f,
-		MakePageText(TEXT("Current Funds"), 12, PaperInk, ETextJustify::Left, true, false));
-	AddAt(Canvas, UpgradeFundsValueX, UpgradeFundsRowY, UpgradeValueWidth, 18.0f,
-		MakePageText(FormatDollars(SimCopterHangarShop::GetCurrentFunds(Shop)), 12, PaperInk, ETextJustify::Left, true, false));
-	AddAt(Canvas, UpgradeFundsLabelX, UpgradeValueRowY, UpgradeLabelWidth, 18.0f,
-		MakePageText(TEXT("Item Value"), 12, PaperInk, ETextJustify::Left, true, false));
-	AddAt(Canvas, UpgradeFundsValueX, UpgradeValueRowY, UpgradeValueWidth, 18.0f,
-		MakePageText(FormatDollars(Selected.ItemValue), 12, PaperInk, ETextJustify::Left, true, false));
-
-	AddAt(Canvas, UpgradeBuyX, UpgradeBuyY, ShellButtonWidth, ShellButtonHeight,
-		MakeArtButton(ShellButtonStrip, ButtonFrameCount, TEXT("Buy"),
-			FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleBuy), Selected.bCanBuy));
-	AddAt(Canvas, UpgradeBuyX, UpgradeSellY, ShellButtonWidth, ShellButtonHeight,
-		MakeArtButton(ShellButtonStrip, ButtonFrameCount, TEXT("Sell"),
-			FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSell), Selected.bCanSell));
-	AddAt(Canvas, UpgradeDoneX, UpgradeDoneY, ShellButtonWidth, ShellButtonHeight,
-		MakeArtButton(ShellButtonStrip, ButtonFrameCount, TEXT("Done"),
-			FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleShowPage, EPage::Hangar)));
+	Text(24,354,270,16,TAttribute<FText>::CreateLambda([this]()
+	{
+		const auto State=SimCopterHangarShop::GetUpgradeRowState(Shop,UpgradeRow);
+		return FText::FromString(FString::Printf(TEXT("Funds: $%d    %s: $%d"),SimCopterHangarShop::GetCurrentFunds(Shop),State.bOwned ? TEXT("Sell") : TEXT("Buy"),State.ItemValue));
+	}),10,PaperInk,true);
+	Button(24,377,82,TEXT("Buy"),FOnClicked::CreateSP(this,&SSimCopterHangarMenu::HandleBuy),
+		TAttribute<bool>::CreateLambda([this](){return SimCopterHangarShop::GetUpgradeRowState(Shop,UpgradeRow).bCanBuy;}));
+	Button(115,377,82,TEXT("Sell"),FOnClicked::CreateSP(this,&SSimCopterHangarMenu::HandleSell),
+		TAttribute<bool>::CreateLambda([this](){return SimCopterHangarShop::GetUpgradeRowState(Shop,UpgradeRow).bCanSell;}));
+	Button(206,377,82,TEXT("Done"),FOnClicked::CreateSP(this,&SSimCopterHangarMenu::HandleShowPage,EPage::Hangar),true);
+	AddAt(Canvas,310,381,300,30,MakePageText(TEXT("Left/Right or LB/RB: helicopter\nA: Buy/Sell/Done    B: back to item"),8,PaperInkDim,ETextJustify::Left,false,false));
 }
-
 // --- mission log -----------------------------------------------------------------------------
 
 void SSimCopterHangarMenu::BuildMissionLogPage(SConstraintCanvas& Canvas)
@@ -740,10 +802,79 @@ FReply SSimCopterHangarMenu::HandleSelectCatalogRow(const int32 NewRow)
 
 FReply SSimCopterHangarMenu::HandleSelectUpgradeRow(const int32 NewRow)
 {
-	UpgradeRow = NewRow;
+	UpgradeRow = FMath::Clamp(NewRow, 0, SimCopterHangarShop::UpgradeRowCount - 1);
 	StatusText.Reset();
-	RebuildPage();
 	return FReply::Handled();
+}
+
+void SSimCopterHangarMenu::SelectEquipmentAction()
+{
+	// Confirming an item moves focus only. A fresh press performs a transaction.
+	// Read the new row directly; Slate may still have the previous row's enabled
+	// attributes cached until the next prepass.
+	const auto State=SimCopterHangarShop::GetUpgradeRowState(Shop,UpgradeRow);
+	const int32 Index=State.bCanBuy ? 8 : State.bCanSell ? 9 : 10;
+	if (ControllerFocusableWidgets.IsValidIndex(Index)) SetControllerSelection(ControllerFocusableWidgets[Index]);
+}
+
+FReply SSimCopterHangarMenu::HandleActivateUpgradeRow(const int32 NewRow)
+{
+	HandleSelectUpgradeRow(NewRow);
+	SelectEquipmentAction();
+	return FReply::Handled();
+}
+
+int32 SSimCopterHangarMenu::GetOwnedEquipmentMask() const
+{
+	int32 Mask = 0;
+	for (int32 Row=0; Row<SimCopterHangarShop::UpgradeRowCount; ++Row)
+		if (SimCopterHangarShop::GetUpgradeRowState(Shop,Row).bOwned)
+			Mask |= SimCopterHelicopterRegistry::GetToolCareerBit(SimCopterHangarShop::GetToolForUpgradeRow(Row));
+	return Mask;
+}
+
+FReply SSimCopterHangarMenu::CycleEquipmentHelicopter(int32 Direction)
+{
+	int32 Row = SimCopterHangarLayout::GetCatalogRowForTypeIndex(EquipmentPreviewType);
+	for (int32 Attempt=0; Attempt<CatalogTabCount; ++Attempt)
+	{
+		Row = (Row + Direction + CatalogTabCount) % CatalogTabCount;
+		if (!SimCopterHangarShop::GetHelicopterRowState(Shop,Row).bMystery)
+		{
+			EquipmentPreviewType = SimCopterHangarLayout::GetTypeIndexForCatalogRow(Row);
+			break;
+		}
+	}
+	return FReply::Handled();
+}
+
+FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
+{
+	if (Page == EPage::Catalog && CatalogRow == INDEX_NONE)
+	{
+		const FKey Key=Event.GetKey();
+		if (Key==EKeys::Gamepad_FaceButton_Right)
+		{
+			const int32 Index=ControllerFocusableWidgets.IndexOfByKey(GetControllerSelection());
+			if (Index>=8 && Index<=10)
+			{
+				if (!Event.IsRepeat()) SetControllerSelection(ControllerFocusableWidgets[2+UpgradeRow]);
+				return FReply::Handled();
+			}
+		}
+		if (Key==EKeys::Left || Key==EKeys::Gamepad_LeftShoulder) return CycleEquipmentHelicopter(-1);
+		if (Key==EKeys::Right || Key==EKeys::Gamepad_RightShoulder) return CycleEquipmentHelicopter(1);
+		if (Key==EKeys::Up || Key==EKeys::Down)
+			return HandleSelectUpgradeRow((UpgradeRow+(Key==EKeys::Up ? -1 : 1)+SimCopterHangarShop::UpgradeRowCount)%SimCopterHangarShop::UpgradeRowCount);
+	}
+	return SSimCopterNavigableMenu::OnPreviewKeyDown(Geometry,Event);
+}
+
+void SSimCopterHangarMenu::OnControllerSelectionChanged(int32 Index)
+{
+	// The equipment page's two arrow buttons precede its six always-enabled item buttons.
+	if (Page==EPage::Catalog && CatalogRow==INDEX_NONE && Index>=2 && Index<2+SimCopterHangarShop::UpgradeRowCount)
+		HandleSelectUpgradeRow(Index-2);
 }
 
 FReply SSimCopterHangarMenu::HandleBuy()
@@ -802,7 +933,7 @@ FReply SSimCopterHangarMenu::OnKeyDown(const FGeometry& MyGeometry, const FKeyEv
 		}
 		return FReply::Handled();
 	}
-	if (InKeyEvent.GetKey() == EKeys::Gamepad_FaceButton_Right)
+	if (InKeyEvent.GetKey() == EKeys::Gamepad_FaceButton_Right || InKeyEvent.GetKey() == EKeys::Escape)
 	{
 		return Page == EPage::Hangar
 			? HandleDone()

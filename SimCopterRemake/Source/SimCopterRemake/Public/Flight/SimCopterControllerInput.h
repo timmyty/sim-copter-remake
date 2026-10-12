@@ -9,7 +9,8 @@
 // and camera adjustment during the same frame.
 namespace SimCopterControllerInput
 {
-constexpr int32 DispatchSlotCount = 6;
+constexpr int32 DispatchSlotCount = 7;
+constexpr int32 RecallAllServiceIndex = 102;
 struct FDispatchSelection
 {
 	int32 ServiceIndex;
@@ -60,7 +61,7 @@ SIMCOPTERREMAKE_API FFlightRouting ResolveFlightRouting(
 SIMCOPTERREMAKE_API FVector2D GetRadialSlotDirection(int32 Index, int32 SlotCount);
 
 // Radial slot zero is at twelve o'clock and the remaining slots proceed clockwise. Returning
-// INDEX_NONE inside the dead zone removes the highlight: release from centre cancels.
+// to the dead zone retains the last valid choice; a newly opened wheel stays unselected.
 SIMCOPTERREMAKE_API int32 ResolveRadialIndex(
 	const FVector2D& Stick,
 	int32 SlotCount,

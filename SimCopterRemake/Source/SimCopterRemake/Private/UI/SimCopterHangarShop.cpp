@@ -18,7 +18,7 @@ namespace
 using namespace SimCopterMissions;
 
 // FUN_0042d840's equipment permutation: upgrades page row -> equipment bit index.
-constexpr int32 UpgradeRowToEquipmentIndex[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 5, 6 };
+constexpr int32 UpgradeRowToEquipmentIndex[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 6 };
 
 // The tool each equipment bit index stands for (registry order: bucket, megaphone, harness,
 // tear gas, cannon - the same order FSimCopterEquipmentDefinition::EquipmentIndex numbers).
@@ -28,7 +28,7 @@ constexpr ESimCopterHelicopterTool EquipmentIndexToTool[7] = {
 	ESimCopterHelicopterTool::RescueHarness,
 	ESimCopterHelicopterTool::TearGas,
 	ESimCopterHelicopterTool::WaterCannon,
-	ESimCopterHelicopterTool::TowClamp,
+	ESimCopterHelicopterTool::Count, // Retired clamp bit index.
 	ESimCopterHelicopterTool::CaptureCage,
 };
 
@@ -39,8 +39,7 @@ const TCHAR* const UpgradeDescriptions[SimCopterHangarShop::UpgradeRowCount] = {
 	TEXT("Tear Gas Launcher - For law enforcement use only. Useful for when your citizens get out of line. Holds ten canisters in delightful non-toxic and biodegradable forms."),
 	TEXT("Water Cannon - Basically a giant squirt gun. Eliminates need to fly directly over fires. You'll need the bucket for refills. The high pressure causes significant recoil."),
 	TEXT("Rescue Harness - Used for picking up people in emergency situations. When you need to rescue people and you can't land then the rescue harness is the right tool for the job."),
-	TEXT("Tow Clamp - Lower onto a stalled car or capsized boat. Carry cars to Auto Repair or Junkyard, boats to a Harbor repair platform. Use again to grab; G releases. Page Up/Down reels the cable."),
-	TEXT("Capture Cage - Lower the open cage over up to four people, then close it. Hold Page Up at the top for a moment to board available seats. Criminals are cuffed. G opens the floor and releases occupants."),
+	TEXT("Capture Cage - Automatically seals around people, stalled or fleeing cars, taser-disabled cars and rescued boat hulls. Take cars to the active JUNKYARD ring and boats to HARBOR; lower gently, then OPEN / G to deliver. Hold Page Up at the top to board people. Page Down lowers."),
 };
 
 // Strings 410..414: the inventory's five tick columns, left to right.
@@ -331,14 +330,17 @@ FRowState GetUpgradeRowState(const FContext& Context, const int32 UpgradeRow)
 	}
 
 	const int32 Bit = SimCopterHelicopterRegistry::GetToolCareerBit(Tool);
-	State.bOwned = Helicopter->GetEquipmentState().HasCareerBit(Bit);
+	State.bOwned = (SimCopterHelicopterParking::GetFleetEquipmentMask(Helicopter,GetCareer(Context)) & Bit)!=0;
 	State.ItemValue = State.bOwned
 		? SimCopterHelicopterRegistry::GetEquipmentSellValue(Tool)
 		: SimCopterHelicopterRegistry::GetEquipmentPrice(Tool);
 
 	if (State.bOwned)
 	{
-		State.bCanSell = !((Tool==ESimCopterHelicopterTool::TowClamp || Tool==ESimCopterHelicopterTool::CaptureCage) && Helicopter->GetAirOperations()->IsDeployed());
+		State.bCanSell = true;
+		if (Tool==ESimCopterHelicopterTool::CaptureCage)
+			for (const auto* Aircraft:SimCopterHelicopterParking::GetPlayerFleet(Helicopter,GetCareer(Context)))
+				if (Aircraft->GetAirOperations()->IsDeployed()) State.bCanSell=false;
 		if(!State.bCanSell) State.Reason=TEXT("Stow the sling before selling this equipment.");
 	}
 	else
@@ -384,6 +386,7 @@ bool BuyHelicopter(const FContext& Context, const int32 CatalogRow, FString& Out
 	}
 	Missions->AddSessionCash(-State.ItemValue);
 	Career->SetHelicopterOwned(TypeIndex, true);
+	SimCopterHelicopterParking::SynchronizeFleetEquipment(Delivered,Career);
 
 	OutMessage = FString::Printf(TEXT("Bought %s for %d Bucks."), GetModelDisplayName(TypeIndex), State.ItemValue);
 	return true;
@@ -444,6 +447,7 @@ bool DeliverCheatHelicopter(const FContext& Context, int32 TypeIndex, FString& O
 	if (!Delivered) return false;
 	Career->SetHelicopterOwned(TypeIndex, true);
 	if (TypeIndex == 2) Career->SetApacheEncounterSpawned(true);
+	SimCopterHelicopterParking::SynchronizeFleetEquipment(Delivered,Career);
 	OutMessage = FString::Printf(TEXT("%s delivered free of charge."), GetModelDisplayName(TypeIndex));
 	return true;
 }
@@ -462,7 +466,8 @@ bool BuyUpgrade(const FContext& Context, const int32 UpgradeRow, FString& OutMes
 	}
 
 	Missions->AddSessionCash(-State.ItemValue);
-	Helicopter->SetCareerEquipmentOwned(Tool, true);
+	for (auto* Aircraft:SimCopterHelicopterParking::GetPlayerFleet(Helicopter,GetCareer(Context)))
+		Aircraft->SetCareerEquipmentOwned(Tool,true);
 
 	OutMessage = FString::Printf(
 		TEXT("Bought the %s for %d Bucks."),
@@ -485,7 +490,8 @@ bool SellUpgrade(const FContext& Context, const int32 UpgradeRow, FString& OutMe
 	}
 
 	Missions->AddSessionCash(State.ItemValue);
-	Helicopter->SetCareerEquipmentOwned(Tool, false);
+	for (auto* Aircraft:SimCopterHelicopterParking::GetPlayerFleet(Helicopter,GetCareer(Context)))
+		Aircraft->SetCareerEquipmentOwned(Tool,false);
 
 	OutMessage = FString::Printf(
 		TEXT("Sold the %s for %d Bucks."),

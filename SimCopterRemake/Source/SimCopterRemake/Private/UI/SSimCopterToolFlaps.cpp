@@ -1588,12 +1588,12 @@ TSharedRef<SWidget> SSimCopterToolFlaps::BuildRemoteTaserFlap()
 	AddAtPage(*Canvas,12,16,107,20,
 		SNew(SButton).IsFocusable(false).ContentPadding(FMargin(2)).HAlign(HAlign_Center).VAlign(VAlign_Center)
 		.ButtonColorAndOpacity(FLinearColor(.22f,.29f,.34f)).ForegroundColor(FlapReadout)
-		.ToolTipText(FText::FromString(TEXT("Take off, then aim the nose taser while autopilot follows a criminal car or robber and seeks a clear shot. Move the mouse or right stick to aim; left click / X / RT fires. Hold right mouse for cockpit buttons. N / R3+Y switches modes.")))
+		.ToolTipText(FText::FromString(TEXT("Take off, then aim the nose taser while autopilot follows a criminal car or robber and seeks a clear shot. Move the mouse or right stick to aim; left click / A / RT fires. Hold right mouse for cockpit buttons. N switches modes; X opens Tools, then select Remote Taser / Fly Helicopter and press A.")))
 		.OnClicked_Lambda([this] { if (GetPawn()) GetPawn()->ToggleRemoteTaser(); return FReply::Handled(); })
 		[SNew(STextBlock).Font(FlapFont(GetScaledFontSize(12))).ColorAndOpacity(FlapReadout)
 		.Text_Lambda([this] { return FText::FromString(GetPawn() && GetPawn()->GetAirOperations()->IsRemoteTaserActive()?TEXT("FLY HELICOPTER"):TEXT("AIM TASER")); })]);
 	AddTextAtPage(*Canvas,65,43,215,14,SNew(STextBlock)
-		.Text_Lambda([this] { return FText::FromString(GetPawn()?GetPawn()->GetAirOperations()->GetRemoteTaserReadout():TEXT("N / R3+Y")); })
+		.Text_Lambda([this] { return FText::FromString(GetPawn()?GetPawn()->GetAirOperations()->GetRemoteTaserReadout():TEXT("N / X: Tools")); })
 		.Visibility(EVisibility::HitTestInvisible).Justification(ETextJustify::Center)
 		.ColorAndOpacity(FlapReadout).Font(FlapFont(GetScaledFontSize(8))));
 	return SNew(SBox).Visibility_Lambda([this]

@@ -615,6 +615,7 @@ bool USimCopterApachePoolComponent::ResolveImpact(
 				? int32(ESimCopterInteractionMode::Missile)
 				: int32(ESimCopterInteractionMode::MachineGun);
 			AmbientVehicles->ApplyWeaponHitToPlane(PlaneIndex, Mode);
+			if (Slot.Kind == EKind::Missile) ApplyPlayerCausedMissionBlast(Slot, PlaneImpact, nullptr);
 			// The round is spent either way - both weapons are in FUN_00490690's 0x4006 despawn
 			// set - and it is not terrain, so it must not open a building fire in the street below.
 			Detonate(Slot, PlaneImpact, -(End - Start).GetSafeNormal(), /*bHitTerrain=*/false);
@@ -752,15 +753,22 @@ bool USimCopterApachePoolComponent::ApplyPlayerCausedMissionBlast(
 		}
 		else if (Missions && !Agent->IsMissionPatientDead() && Agent->PrepareForPlayerCausedMedevac())
 		{
-			bConvertedToMission = Missions->CreatePlayerCausedMedevacForVictim(Agent);
+			// The missile tumble owns placement; converting a rooftop casualty must not
+			// teleport them to a distant outdoor tile before the blast can launch them.
+			bConvertedToMission = Missions->CreatePlayerCausedMedevacForVictim(Agent,bMissile);
 			if (!bConvertedToMission)
 			{
 				// A full mission pool must not turn a direct weapon strike into immunity.
 				Agent->MissionEventId = INDEX_NONE;
+				Agent->InitialPersonState = 6;
+				Agent->ResetMissionActionTracking();
 				Agent->SetMissionInjuredPose();
 				bConvertedToMission = true;
 			}
 		}
+
+		if (bMissile && bConvertedToMission && Agent->IsMedevacVictim())
+			Agent->ApplyExplosionKnockdown(ImpactWorld,RadiusCm);
 
 		if (Agent == DirectHitAgent)
 		{

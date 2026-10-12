@@ -53,8 +53,11 @@ public:
 	// binding reaches the same state the panel's own buttons change.
 	void ZoomIn();
 	void ZoomOut();
+	void ActivateButton(SimCopterMap::EButton Button);
 
 private:
+	friend class FSimCopterPoliceDestinationTest;
+	friend class FSimCopterControllerSprintTest;
 	TWeakObjectPtr<ASimCopterHelicopterPawn> Pawn;
 	TWeakObjectPtr<USimCopterHangarArt> Art;
 	float Scale = 2.0f;

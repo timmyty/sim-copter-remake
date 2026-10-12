@@ -293,7 +293,6 @@ public:
 	FVector GetCargoAnchorWorldLocation() const { return GetRopeAnchorWorldLocation(); }
 	// Skid frame follows the visible airframe's bank, bottom and width across model changes.
 	FTransform GetCaptureCageMountTransform() const;
-	void SelectTowClamp() { SetSelectedTool(ESimCopterHelicopterTool::TowClamp); }
 	void SelectCaptureCage() { SetSelectedTool(ESimCopterHelicopterTool::CaptureCage); }
 	bool IsSupportAircraft() const;
 	void SetAirOperationsStatus(const FString& Text) { LastToolStatus = Text; }
@@ -301,7 +300,6 @@ public:
 private:
 	UPROPERTY() TObjectPtr<class USimCopterAirOperationsComponent> AirOperations;
 	float CargoKeyboardCableInput = 0;
-	bool bBumperChordLatched = false;
 	bool bBumperLeftHeld = false;
 	bool bBumperRightHeld = false;
 	void ControllerLeftBumperPressed();
@@ -611,10 +609,14 @@ public:
 	bool FindClearPassengerExit(const ASimCopterGroundAgent* Person, FVector& OutCenter) const;
 
 	// Read-only controller presentation state consumed by the radial/passenger Slate layer.
+	void HandleControllerMapShortcut(FKey Key, bool bMarkerVisibility);
 	ESimCopterControllerMode GetControllerMode() const { return ControllerMode; }
 	bool IsControllerCameraAdjustHeld() const { return bControllerCameraAdjustHeld; }
 	int32 GetControllerRadialIndex() const { return ControllerRadialIndex; }
 	const TArray<ESimCopterHelicopterTool>& GetControllerToolWheelTools() const { return ControllerToolWheelTools; }
+	int32 GetControllerRemoteTaserSlot() const { return IsFixedWingAircraft() ? INDEX_NONE : ControllerToolWheelTools.Num(); }
+	int32 GetControllerPassengersSlot() const { return MissionPassengerSlots.IsEmpty() ? INDEX_NONE : ControllerToolWheelTools.Num() + (IsFixedWingAircraft() ? 0 : 1); }
+	int32 GetControllerToolWheelSlotCount() const { return ControllerToolWheelTools.Num() + (IsFixedWingAircraft() ? 0 : 1) + (MissionPassengerSlots.IsEmpty() ? 0 : 1); }
 	int32 GetControllerPassengerSlot() const { return ControllerPassengerSlot; }
 	int32 GetControllerPassengerConfirmChoice() const { return ControllerPassengerConfirmChoice; }
 	bool IsPassengerSlotControllerSelected(int32 SlotIndex) const;
@@ -1667,14 +1669,20 @@ protected:
 
 private:
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCheckupCrewTest;
+	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterApacheAftermathTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterNpcAppearanceRenderTest;
 	friend class FSimCopterApacheShopTest;
 	friend class FSimCopterFleetPaintTest;
 	friend class FSimCopterPoliceRoofBoardingTest;
 	friend class FSimCopterGroundMedicTest;
+	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterControllerContextsTest;
+	friend class FSimCopterSteeringResponseTest;
+	friend class FSimCopterControllerSprintTest;
 	// The decompiled original flight simulation; the pawn feeds it inputs and
 	// city geometry and mirrors its position/attitude onto the actor.
 	FSimCopterFlightModel FlightModel;
@@ -1930,7 +1938,7 @@ private:
 
 	void ControllerPrimaryPressed();
 	void ControllerPrimaryReleased();
-	void ControllerPassengerPressed();
+	void ControllerOptionsPressed();
 	void ControllerCancelPressed();
 	void ControllerCancelReleased();
 	void ControllerEnterExitPressed();

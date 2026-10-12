@@ -13,6 +13,7 @@
 #include "EngineUtils.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Ground/SimCopterCriminalCar.h"
 
 namespace
 {
@@ -20,6 +21,71 @@ ASimCopterMissionSystemActor* MissionActor(const AActor* Actor)
 {
 	return Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(Actor->GetWorld(), ASimCopterMissionSystemActor::StaticClass()));
 }
+}
+
+bool ASimCopterGroundAgent::UpdatePoliceRecovery()
+{
+	// Remake taser custody has no retail BHAV: 1053 selects only active criminals,
+	// and 1060 immediately credits arrest and sends them to a police car. Recover
+	// disabled people physically instead, retaining delivery credit for the station.
+	if (BehaviorContext.GetStateIndex() != 7 || bHasHospitalRoofPost || BehaviorCarrier.IsValid() ||
+		bMissionCarried || bPassengerFallActive || bMissionPatientDead || IsKnockedDown()) return false;
+	auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+	auto* Heli = ResolvePlayerHelicopter();
+	if (!Traffic || !Heli || Heli->IsFixedWingAircraft()) return false;
+	auto* Carried = Traffic->FindPersonCarriedBy(*this);
+	if (Carried && !Carried->IsInPoliceCustody()) return false;
+	auto* Target = Carried ? nullptr : Traffic->FindPoliceRecoveryTarget(*this);
+	if (!Carried && !Target) return false;
+	AActor* Goal = Carried ? static_cast<AActor*>(Heli) : Target;
+	BehaviorContext.SelectedObject = Goal;
+	BehaviorContext.SelectedLocation = Goal->GetActorLocation();
+	BehaviorContext.bHasSelection = true;
+	BehaviorContext.bSelectionIsHarness = false;
+	// BHAV 1053 searches thirty tiles, but its repeated two-tile probes and random
+	// Run-10/Run-30 bursts can lose a distant suspect. Keep a routed pursuit through
+	// physical contact, at the shipped Run-10 speed, then resume its arrest/hold.
+	BehaviorContext.Attributes[EBhavAttr::MoveSpeed] = Carried ? 16 : 25;
+	BehaviorContext.Attributes[EBhavAttr::AutoTurn] = 1;
+	if (StepTowardSelectedObject(BehaviorContext) != ESimCopterBehaviorStepResult::Arrived) return true;
+	BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
+	BehaviorStepTimeRemainingSeconds = 0;
+	if (Carried)
+	{
+		// Keep hold while hovering too high or full; never drop or teleport a prisoner.
+		if (Heli->CanBoardMissionPassengers() && Heli->GetAvailablePassengerSeats() >= 1 &&
+			Carried->BoardCarrier(Heli, false)) BoardCarrier(Heli, false);
+	}
+	else if (Target->IsCriminalCar())
+	{
+		// Electrical immobilization intentionally bypasses the retail spotlight-only
+		// stop order. Physical officer contact completes the same burglar mission.
+		if (auto* Missions = MissionActor(this); Missions && Missions->IsMissionEventActive(Target->GetCriminalEventId()))
+		{
+			Target->bMissionResolutionReported = true;
+			Target->SetCriminalState(uint8(SimCopterCriminalCar::EState::Leaving));
+			Missions->ReportBurglarCaught(Target->GetCriminalEventId());
+			Target->Destroy();
+		}
+	}
+	else if (!Target->IsInPoliceCustody())
+	{
+		// BHAV 1053 rec[17] / 1150 rec[6] push criminal-caught; 1053 rec[26]
+		// holds the officer in the original 2Gab pose while the player remains nearby.
+		if (PushReactionOnSelectedObject(BehaviorContext, 1060))
+		{
+			BehaviorContext.Stack.Reset();
+			BehaviorContext.Stack.Add({1053, 26, {}});
+		}
+	}
+	else if (!IsCarryingPerson() && !Target->GetBehaviorCarrier() && !Target->IsMissionCarried() &&
+		PutSelectedPersonOnMe(BehaviorContext))
+	{
+		Target->bHandcuffed = true;
+		Target->bTaserStunned = false;
+		Target->TaserStunSeconds = 0;
+	}
+	return true;
 }
 
 bool ASimCopterGroundAgent::IsArrestableSuspect() const
@@ -30,11 +96,13 @@ bool ASimCopterGroundAgent::IsArrestableSuspect() const
 		 SimCopterAirOperations::IsCriminalState(InitialPersonState));
 }
 
-bool ASimCopterGroundAgent::StunForArrest()
+bool ASimCopterGroundAgent::StunForArrest(float DurationSeconds)
 {
 	if (!IsArrestableSuspect() || bTaserStunned || BehaviorCarrier.IsValid() || bMissionCarried) return false;
 	bTaserStunned = true;
 	if (IsKnockedDown()) FinishKnockdown(true);
+	TaserStunSeconds=FMath::Clamp(DurationSeconds,0.f,12.f);
+	bTaserResumeBehavior=bBehaviorActive; bTaserResumeStationary=bMissionStationary;
 	bBehaviorActive = false;
 	bMissionStationary = true;
 	CurrentVelocityCmPerSec = ExternalVelocityCmPerSec = BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
@@ -343,18 +411,31 @@ void ASimCopterGroundAgent::RebuildVehicleDents()
 	}
 }
 
+bool ASimCopterGroundAgent::IsCageRecoverableVehicle() const
+{
+	if (AgentKind != ESimCopterGroundAgentKind::Vehicle || IsHidden() || IsActorBeingDestroyed() ||
+		bVehicleExploded || IsVehicleAccidentBurning() || bMissionResolutionReported) return false;
+	if (bVehicleStalled || bVehicleTowed || IsVehicleTaserDisabled()) return true;
+	if (!bFleeing) return false;
+	const auto* Missions = MissionActor(this);
+	return !bCriminalCar || !Missions || Missions->IsMissionEventActive(CriminalEventId);
+}
+
 void ASimCopterGroundAgent::SetVehicleTowed(bool bTowed)
 {
 	bVehicleTowed = bTowed;
 	bSnapToGround = !bTowed;
 	SetActorEnableCollision(!bTowed);
 	CurrentVelocityCmPerSec = ExternalVelocityCmPerSec = FVector::ZeroVector;
-	ClearMoveTarget();
+	// A released runner or temporarily disabled car keeps its road route.
 }
 
 void ASimCopterGroundAgent::CompleteVehicleTow(bool bScrap)
 {
-	if (!IsTowableVehicle()) return;
+	if (!IsCageRecoverableVehicle()) return;
+	if (bCriminalCar)
+		if (auto* Missions = MissionActor(this); Missions && Missions->IsMissionEventActive(CriminalEventId))
+			Missions->ReportBurglarCaught(CriminalEventId);
 	if (auto* Missions = MissionActor(this); Missions && TowMissionId != INDEX_NONE)
 		Missions->PostMissionEvent(SimCopterMissions::EVT_CarCleared, TowMissionId, 1, true);
 	TowMissionId = INDEX_NONE;
@@ -362,11 +443,27 @@ void ASimCopterGroundAgent::CompleteVehicleTow(bool bScrap)
 	SetVehicleTowed(false);
 	// The shop takes the vehicle off the road pool; show it on the service lift before removal.
 	bVehicleStalled = true;
+	bFleeing = false;
+	VehicleTaserSeconds = 0;
+	ClearMoveTarget();
 	SetLifeSpan(bScrap ? 8.0f : 15.0f);
 }
 
 bool ASimCopterGroundAgent::TickAirOperations(float DeltaSeconds)
 {
+	if (bTaserStunned && TaserStunSeconds>0 && !bHandcuffed && !bMissionCarried && !BehaviorCarrier.IsValid())
+	{
+		TaserStunSeconds=FMath::Max(0.f,TaserStunSeconds-FMath::Max(0.f,DeltaSeconds));
+		if (TaserStunSeconds<=0)
+		{
+			bTaserStunned=false;
+			if (!bMissionPatientDead && !IsMedevacVictim() && !bMissionResolutionReported)
+			{
+				bBehaviorActive=bTaserResumeBehavior; bMissionStationary=bTaserResumeStationary;
+				ClearForcedPedestrianFigureClip();
+			}
+		}
+	}
 	const bool bTaserHeldThisFrame = IsVehicleTaserDisabled();
 	VehicleTaserSeconds = FMath::Max(0.0f, VehicleTaserSeconds - FMath::Max(0.0f, DeltaSeconds));
 	if (TickVehicleEscape(DeltaSeconds)) return true;

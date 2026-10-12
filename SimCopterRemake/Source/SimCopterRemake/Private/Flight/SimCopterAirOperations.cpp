@@ -1,7 +1,10 @@
 #include "Flight/SimCopterAirOperations.h"
+#include "Audio/SimCopterAudioSubsystem.h"
+#include "City/SimCopterEffectExposure.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterOnFootPawn.h"
+#include "Ground/SimCopterEnergyTaser.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Ground/SimCopterAmbientVehicles.h"
 #include "Ground/SimCopterParticleFX.h"
@@ -17,6 +20,7 @@
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "ProceduralMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -45,6 +49,24 @@ struct FRecoveryMesh
 	{
 		Box((A+B)*0.5f,FVector(Radius,Radius,FVector::Distance(A,B)*0.5f),Color,FQuat::FindBetweenNormals(FVector::UpVector,(B-A).GetSafeNormal()));
 	}
+	void TaperedBar(const FVector& A, const FVector& B, float StartRadius, float EndRadius, const FLinearColor& Color)
+	{
+		FVector Side, Up; (B-A).GetSafeNormal().FindBestAxisVectors(Side,Up);
+		FVector P[8];
+		for (int32 K=0; K<8; ++K)
+		{
+			const float Radius=(K&4) ? EndRadius : StartRadius;
+			P[K]=((K&4) ? B : A)+Side*((K&1) ? Radius : -Radius)+Up*((K&2) ? Radius : -Radius);
+		}
+		static const int32 Faces[6][4]={{0,2,3,1},{4,5,7,6},{0,1,5,4},{2,6,7,3},{0,4,6,2},{1,3,7,5}};
+		for (const auto& Face:Faces)
+		{
+			const int32 Base=V.Num();
+			const FVector Normal=FVector::CrossProduct(P[Face[1]]-P[Face[0]],P[Face[2]]-P[Face[0]]).GetSafeNormal();
+			for (int32 J=0; J<4; ++J) { V.Add(P[Face[J]]); N.Add(Normal); UV.Add(FVector2D(.5,.5)); C.Add(Color); }
+			I.Append({Base,Base+1,Base+2,Base,Base+2,Base+3});
+		}
+	}
 	void Apply(UProceduralMeshComponent* Mesh, bool bCollision=false)
 	{
 		Mesh->CreateMeshSection_LinearColor(0,V,I,N,UV,C,TArray<FProcMeshTangent>(),bCollision);
@@ -58,11 +80,7 @@ template <typename T> T* ActorIn(UWorld* World)
 
 bool IsRemotePursuitTarget(const ASimCopterGroundAgent* Agent)
 {
-	if (!IsValid(Agent) || Agent->IsActorBeingDestroyed() || Agent->IsHidden() || Agent->HasMissionResolutionReported() ||
-		Agent->IsMissionCarried() || Agent->GetBehaviorCarrier() || Agent->IsInPoliceCustody()) return false;
-	if (Agent->GetAgentKind()==ESimCopterGroundAgentKind::Vehicle)
-		return (Agent->IsCriminalCar() || Agent->IsFleeing()) && !Agent->HasVehicleExploded() && !Agent->IsVehicleTowed();
-	return Agent->IsArrestableSuspect();
+	return SimCopterEnergyTaser::IsTarget(Agent);
 }
 
 FVector RemotePursuitFocus(const ASimCopterGroundAgent* Agent)
@@ -142,6 +160,8 @@ ASimCopterGroundAgent* TraceRemoteTaserTarget(UWorld* World, AActor* Source, con
 
 ASimCopterRecoverySite::ASimCopterRecoverySite()
 {
+	PrimaryActorTick.bCanEverTick=true;
+	PrimaryActorTick.bStartWithTickEnabled=false;
 	Mesh=CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("RecoverySite"));
 	SetRootComponent(Mesh);
 	Mesh->SetCollisionObjectType(ECC_WorldStatic);
@@ -149,6 +169,28 @@ ASimCopterRecoverySite::ASimCopterRecoverySite()
 	Mesh->bUseComplexAsSimpleCollision=true;
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Mat(TEXT("/Game/Materials/M_SimCopterLitVertexColor.M_SimCopterLitVertexColor"));
 	if (Mat.Succeeded()) Material=Mat.Object;
+	WaypointRing=CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("RecoveryWaypointRing"));
+	WaypointRing->SetupAttachment(Mesh);
+	WaypointRing->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WaypointRing->SetCastShadow(false);
+	WaypointRing->SetVisibility(false);
+}
+
+void ASimCopterRecoverySite::SetWaypointActive(bool bActive)
+{
+	bWaypointActive=bActive && SiteKind!=ESimCopterRecoverySite::AutoRepair;
+	WaypointRing->SetVisibility(bWaypointActive);
+	SetActorTickEnabled(bWaypointActive);
+	if (bWaypointActive) Tick(0);
+}
+
+void ASimCopterRecoverySite::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (RingMaterial && bWaypointActive)
+		RingMaterial->SetScalarParameterValue(TEXT("EmissiveNits"),
+			USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld()) *
+			(1.6f+0.3f*FMath::Sin(GetWorld()->GetTimeSeconds()*3.0f)));
 }
 
 void ASimCopterRecoverySite::Configure(ESimCopterRecoverySite Kind, const FVector& Location)
@@ -180,6 +222,22 @@ void ASimCopterRecoverySite::Configure(ESimCopterRecoverySite Kind, const FVecto
 	}
 	for(auto& Vertex:Shape.V) { Vertex.X*=0.72; Vertex.Y*=0.72; }
 	Shape.Apply(Mesh,true); Mesh->SetMaterial(0,Material);
+	// Actual world geometry, visible from above and oblique angles in packaged builds.
+	// Its inner edge matches the delivery radius; collision remains with the service deck.
+	FRecoveryMesh Ring;
+	const FLinearColor RingColor=bHarbor ? FLinearColor(0.05f,0.65f,1) : FLinearColor(1,0.68f,0.04f);
+	for (int32 K=0; K<96; ++K)
+	{
+		const float A=K*2*PI/96, B=(K+1)*2*PI/96;
+		const float Radius=SimCopterAirOperations::RecoveryRadiusCm+6;
+		Ring.Bar(FVector(FMath::Cos(A)*Radius,FMath::Sin(A)*Radius,12),
+			FVector(FMath::Cos(B)*Radius,FMath::Sin(B)*Radius,12),6,RingColor);
+	}
+	Ring.Apply(WaypointRing);
+	RingMaterial=UMaterialInstanceDynamic::Create(LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/Materials/M_SimCopterParticleFX.M_SimCopterParticleFX")),this);
+	WaypointRing->SetMaterial(0,RingMaterial);
+	SetWaypointActive(false);
 	auto* Sign=NewObject<UTextRenderComponent>(this);
 	AddInstanceComponent(Sign); Sign->SetupAttachment(Mesh); Sign->RegisterComponent();
 	Sign->SetRelativeLocation(FVector(0,0,bHarbor?365:215));
@@ -193,13 +251,15 @@ USimCopterAirOperationsComponent::USimCopterAirOperationsComponent()
 	PrimaryComponentTick.bCanEverTick=false; // Pawn orders this after movement and before the view update.
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Mat(TEXT("/Game/Materials/M_SimCopterLitVertexColor.M_SimCopterLitVertexColor"));
 	if (Mat.Succeeded()) Material=Mat.Object;
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> TrailMat(TEXT("/Game/Materials/M_SimCopterParticleFX.M_SimCopterParticleFX"));
+	if (TrailMat.Succeeded()) TaserTrailMaterial=TrailMat.Object;
 }
 ASimCopterHelicopterPawn* USimCopterAirOperationsComponent::Helicopter() const { return Cast<ASimCopterHelicopterPawn>(GetOwner()); }
 bool USimCopterAirOperationsComponent::HasCargo() const { return TowVehicle.IsValid() || BoatIndex!=INDEX_NONE || !CagePeople.IsEmpty(); }
 bool USimCopterAirOperationsComponent::IsCargoToolSelected() const
 {
 	const auto* Heli=Helicopter();
-	return Heli && (Heli->GetActiveTool()==ESimCopterHelicopterTool::TowClamp || Heli->GetActiveTool()==ESimCopterHelicopterTool::CaptureCage);
+	return Heli && Heli->GetActiveTool()==ESimCopterHelicopterTool::CaptureCage;
 }
 void USimCopterAirOperationsComponent::EnsureMesh()
 {
@@ -216,6 +276,12 @@ void USimCopterAirOperationsComponent::EndPlay(const EEndPlayReason::Type Reason
 {
 	EndRemoteTaser();
 	EndPilotRecovery();
+	if (RemoteTaserTrail)
+	{
+		RemoteTaserTrail->GetOwner()->Destroy();
+		RemoteTaserTrail = nullptr;
+		TaserTrailMaterialInstance = nullptr;
+	}
 	if (Reason==EEndPlayReason::Destroyed) ReleaseCargo();
 	Super::EndPlay(Reason);
 }
@@ -235,6 +301,8 @@ FString USimCopterAirOperationsComponent::GetCageReadout() const
 	if (CageFormation < 1) return TEXT("FORMING");
 	if (bCageOpen) return TEXT("OPEN / AUTO");
 	if (CageSeal < 1) return TEXT("SEALING");
+	if (HasBoat()) return TEXT("SEALED / BOAT");
+	if (TowVehicle.IsValid()) return TEXT("SEALED / CAR");
 	return FString::Printf(TEXT("SEALED %d / 4"), CagePeople.Num());
 }
 
@@ -283,31 +351,29 @@ bool USimCopterAirOperationsComponent::HasClearLine(const FVector& From, const F
 void USimCopterAirOperationsComponent::UseCargoTool()
 {
 	if (!IsCargoToolSelected()) return;
-	const bool bWantCage=Helicopter()->GetActiveTool()==ESimCopterHelicopterTool::CaptureCage;
 	if (!Helicopter()->IsToolAvailable(Helicopter()->GetActiveTool())) return;
-	if (HasCargo() && bCage!=bWantCage) { Status=TEXT("Unload the current sling before changing equipment."); return; }
 	EnsureMesh();
-	if (!bDeployed || bCage!=bWantCage)
+	if (!bDeployed)
 	{
-		bCage=bWantCage; bCageOpen=bCage; bDeployed=true; CableLength=140;
+		bCage=true; bCageOpen=true; bDeployed=true; CableLength=140;
 		CageFormation=0; CageSeal=0; CageCaptureDelay=0;
-		CargoLocation=(bCage ? Helicopter()->GetCaptureCageMountTransform().GetLocation() : Helicopter()->GetCargoAnchorWorldLocation())-FVector(0,0,CableLength);
+		CargoLocation=Helicopter()->GetCaptureCageMountTransform().GetLocation()-FVector(0,0,CableLength);
 		CargoVelocity=FVector::ZeroVector;
-		Status=bCage?TEXT("Cage forming from skids. Lower over people; the floor seals automatically."):TEXT("Clamp deployed. Lower onto a stalled car or capsized boat; use to grab.");
+		Status=TEXT("Lower the cage over people, stalled/fleeing cars or rescued boat hulls. The floor seals automatically.");
 	}
 	else if (HasCargo())
 	{
-		if (!TryDeliverCargo()) Status=bCage?TEXT("Raise and hold at the top to board. Deliver prisoners to the police roof. G opens the floor."):TEXT("Carry cars to Auto Repair/Junkyard; boats to Harbor. G opens/releases.");
+		Status=TowVehicle.IsValid() || HasBoat() ? TEXT("Cars: JUNKYARD ring or police roof. Boats: HARBOR. Lower and press OPEN / G to deliver.") : TEXT("Raise and hold at the top to board. Deliver prisoners to the police roof. G opens the floor.");
 	}
 	else if (!TryGrabCargo())
 	{
 		if (CableLength<=145) { bDeployed=false; }
-		else Status=TEXT("No eligible cargo inside the clamp/cage. Move closer or lower the cable.");
+		else Status=TEXT("No eligible cargo inside the cage. Move closer or lower it.");
 	}
 }
 bool USimCopterAirOperationsComponent::TryGrabCargo()
 {
-	if (!bDeployed || !Helicopter()) return false;
+	if (!bDeployed || !bCage || !bCageOpen || HasCargo() || CageCaptureDelay>0 || !Helicopter()) return false;
 	EnsureMesh();
 	if (bCage)
 	{
@@ -324,29 +390,40 @@ bool USimCopterAirOperationsComponent::TryGrabCargo()
 			It->SetForcedPedestrianFigureClip(TEXT("NoMo"));
 			CagePeople.Add(*It);
 		}
-		if (CagePeople.IsEmpty()) return false;
-		bCageOpen=false;
-		Status=FString::Printf(TEXT("Cage closed: %d occupants. Hold UP at the top to board; G opens."),CagePeople.Num());
-		return !CagePeople.IsEmpty();
+		if (!CagePeople.IsEmpty())
+		{
+			bCageOpen=false;
+			Status=FString::Printf(TEXT("Cage closed: %d occupants. Hold UP at the top to board; G opens."),CagePeople.Num());
+			return true;
+		}
 	}
 	if (HasCargo()) return false;
 	ASimCopterGroundAgent* Best=nullptr; float Distance=120;
 	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
 	{
 		const float D=FVector::Distance(It->GetActorLocation(),CargoLocation);
-		if (It->IsTowableVehicle() && !It->IsHidden() && !It->IsVehicleTowed() && D<Distance && HasClearLine(CargoLocation,It->GetActorLocation(),*It)) { Best=*It; Distance=D; }
+		if (It->IsCageRecoverableVehicle() && !It->IsVehicleTowed() && D<Distance && HasClearLine(CargoLocation,It->GetActorLocation(),*It)) { Best=*It; Distance=D; }
 	}
 	if (Best)
 	{
-		TowVehicle=Best; Best->SetVehicleTowed(true); Status=TEXT("Car clamped. Deliver gently to Auto Repair or Junkyard."); return true;
+		TowVehicle=Best; Best->SetVehicleTowed(true); bCageOpen=false;
+		Status=TEXT("Car secured. Floor sealing. Carry to the JUNKYARD ring or police roof, lower and press OPEN / G.");
+		if (auto* System=GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>()) System->RefreshRecoveryWaypoints();
+		return true;
 	}
 	if (auto* Ambient=ActorIn<ASimCopterAmbientVehiclesActor>(GetWorld()); Ambient && Ambient->FindTowableBoat(CargoLocation,170,BoatIndex))
 	{
+		FVector HullLocation;
+		if (!Ambient->GetBoatTowLocation(BoatIndex,HullLocation) || !HasClearLine(CargoLocation,HullLocation,Ambient))
+		{ BoatIndex=INDEX_NONE; return false; }
 		if (!Ambient->SetBoatTow(BoatIndex,true,CargoLocation))
 		{
 			BoatIndex=INDEX_NONE; Status=TEXT("Rescue everyone from the hull before towing it."); return false;
 		}
-		Status=TEXT("Boat clamped. Deliver to the Harbor repair cradle."); return true;
+		bCageOpen=false;
+		Status=TEXT("Boat secured. Floor sealing. Carry to the HARBOR ring, lower and press OPEN / G.");
+		if (auto* System=GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>()) System->RefreshRecoveryWaypoints();
+		return true;
 	}
 	return false;
 }
@@ -355,7 +432,7 @@ void USimCopterAirOperationsComponent::OpenCargo()
 	if (!bDeployed) return;
 	if (TryDeliverCargo()) return;
 	ReleaseCargo(); bCageOpen=bCage;
-	Status=bCage?TEXT("Cage floor open. Occupants released."):TEXT("Tow clamp released.");
+	Status=TEXT("Cage floor open. Cargo released.");
 }
 void USimCopterAirOperationsComponent::ReleaseCargo(bool bOpenCage)
 {
@@ -380,10 +457,57 @@ void USimCopterAirOperationsComponent::ReleaseCargo(bool bOpenCage)
 }
 bool USimCopterAirOperationsComponent::TryDeliverCargo()
 {
-	if (!HasCargo() || bCage || !GetWorld()) return false;
+	if ((!TowVehicle.IsValid() && !HasBoat()) || !GetWorld() || bCageOpen || CageSeal<1) return false;
 	auto* Ops=GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>();
+	auto IsVehicleDropInside=[&](const FVector& Center,double Extent,bool bSquare)
+	{
+		FBox Body;
+		if (!TowVehicle.IsValid() || !TowVehicle->TryGetBodyLocalBoundsCm(Body))
+			return FVector::Dist2D(CargoLocation,Center)<=Extent && FMath::Abs(CargoLocation.Z-Center.Z-70)<=100;
+		// Match UpdateCargo between physics ticks. Judge the visible rotated footprint,
+		// allowing the same short drop onto a police roof as onto a junkyard lift.
+		FTransform Drop=TowVehicle->GetActorTransform();
+		Drop.SetLocation(CargoLocation-FVector(0,0,25));
+		const double BottomHeight=Body.TransformBy(Drop).Min.Z-Center.Z;
+		if (BottomHeight < -70 || BottomHeight > 300) return false;
+		constexpr int32 SamplesPerAxis=9;
+		int32 Inside=0;
+		for (int32 X=0; X<SamplesPerAxis; ++X) for (int32 Y=0; Y<SamplesPerAxis; ++Y)
+		{
+			const FVector Sample=Drop.TransformPosition(FVector(
+				FMath::Lerp(Body.Min.X,Body.Max.X,(X+.5)/SamplesPerAxis),
+				FMath::Lerp(Body.Min.Y,Body.Max.Y,(Y+.5)/SamplesPerAxis),Body.Min.Z))-Center;
+			Inside+=bSquare ? (FMath::Abs(Sample.X)<=Extent && FMath::Abs(Sample.Y)<=Extent) : Sample.SizeSquared2D()<=FMath::Square(Extent);
+		}
+		return Inside>SamplesPerAxis*SamplesPerAxis/2;
+	};
+	FVector PoliceRoof;
+	float RoofHalfExtent=0;
+	int32 RoofX=0,RoofY=0;
+	auto* Road=Ops?Ops->Traffic():nullptr;
+	if (Ops && TowVehicle.IsValid() && (TowVehicle->IsCriminalCar() || TowVehicle->IsTowableVehicle()) &&
+		Road && Road->TryGetPeopleTileCoordinateAtWorldLocation(CargoLocation,RoofX,RoofY) &&
+		Road->GetXbldTileId(RoofX,RoofY)==0xD2 && Road->TryGetBuildingRoofPost(RoofX,RoofY,PoliceRoof,RoofHalfExtent) &&
+		IsVehicleDropInside(PoliceRoof,RoofHalfExtent,true) &&
+		CargoVelocity.Size()<=200)
+	{
+		TowVehicle->SetActorLocation(PoliceRoof+FVector(0,0,65));
+		TowVehicle->CompleteVehicleTow(false); TowVehicle.Reset();
+		bCageOpen=true; CageCaptureDelay=1.5f; BoardHoldSeconds=0;
+		Ops->RefreshRecoveryWaypoints();
+		Status=TEXT("Police station accepted the vehicle. Recovery complete.");
+		return true;
+	}
+	if (Ops) Ops->RefreshRecoveryWaypoints();
 	auto* Site=Ops?Ops->FindRecoverySite(CargoLocation,BoatIndex!=INDEX_NONE):nullptr;
-	if (!Site || FVector::Dist2D(CargoLocation,Site->GetActorLocation())>180 || FMath::Abs(CargoLocation.Z-Site->GetActorLocation().Z-70)>100 || CargoVelocity.Size()>200) return false;
+	if (!Site || !Site->IsWaypointActive() || CargoVelocity.Size()>200) return false;
+	bool bInsideDropZone=FVector::Dist2D(CargoLocation,Site->GetActorLocation())<=SimCopterAirOperations::RecoveryRadiusCm &&
+		FMath::Abs(CargoLocation.Z-Site->GetActorLocation().Z-70)<=100;
+	if (TowVehicle.IsValid() && Site->GetKind()==ESimCopterRecoverySite::Junkyard)
+	{
+		bInsideDropZone=IsVehicleDropInside(Site->GetActorLocation(),SimCopterAirOperations::RecoveryRadiusCm,false);
+	}
+	if (!bInsideDropZone) return false;
 	if (TowVehicle.IsValid())
 	{
 		TowVehicle->SetActorLocation(Site->GetActorLocation()+FVector(0,0,65));
@@ -397,9 +521,36 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 		if (!Ambient->FinishBoatTow(BoatIndex)) return false;
 		BoatIndex=INDEX_NONE;
 	}
+	bCageOpen=true; CageCaptureDelay=1.5f; BoardHoldSeconds=0;
+	Ops->RefreshRecoveryWaypoints();
 	Status=TEXT("Recovery complete. Cargo accepted.");
 	return true;
 }
+FBox USimCopterAirOperationsComponent::GetCageCargoBounds() const
+{
+	FBox Bounds(FVector(-75,-75,-28),FVector(75,75,65));
+	const FTransform CageFrame(FRotator(0,Helicopter()->GetActorRotation().Yaw,0),CargoLocation);
+	FBox Body(ForceInit);
+	if (TowVehicle.IsValid() && TowVehicle->TryGetBodyLocalBoundsCm(Body))
+	{
+		for (int32 K=0; K<8; ++K)
+		{
+			const FVector Corner((K&1)?Body.Max.X:Body.Min.X,(K&2)?Body.Max.Y:Body.Min.Y,(K&4)?Body.Max.Z:Body.Min.Z);
+			const FVector Local=CageFrame.InverseTransformPosition(TowVehicle->GetActorTransform().TransformPosition(Corner));
+			Bounds+=Local-FVector(12,12,12); Bounds+=Local+FVector(12,12,12);
+		}
+	}
+	if (HasBoat())
+		if (const auto* Ambient=ActorIn<ASimCopterAmbientVehiclesActor>(GetWorld()); Ambient && Ambient->GetBoatTowBounds(BoatIndex,Body))
+			for (int32 K=0; K<8; ++K)
+			{
+				const FVector Corner((K&1)?Body.Max.X:Body.Min.X,(K&2)?Body.Max.Y:Body.Min.Y,(K&4)?Body.Max.Z:Body.Min.Z);
+				const FVector Local=CageFrame.InverseTransformPosition(Corner);
+				Bounds+=Local-FVector(12,12,12); Bounds+=Local+FVector(12,12,12);
+			}
+	return Bounds;
+}
+
 void USimCopterAirOperationsComponent::DrawCargo()
 {
 	if (!CargoMesh || !Helicopter()) return;
@@ -407,15 +558,17 @@ void USimCopterAirOperationsComponent::DrawCargo()
 	if (!bDeployed && (!bCage || CageFormation <= 0)) return;
 	FRecoveryMesh Shape;
 	const FLinearColor Steel(0.3f,0.35f,0.4f), Yellow(0.95f,0.65f,0.06f);
-	const FVector Anchor=Helicopter()->GetCargoAnchorWorldLocation();
 	if (bCage)
 	{
 		const FTransform Mount = Helicopter()->GetCaptureCageMountTransform();
 		const FQuat Yaw = FRotator(0, Helicopter()->GetActorRotation().Yaw, 0).Quaternion();
+		const FBox Bounds=GetCageCargoBounds();
+		const float HalfX=FMath::Max(FMath::Abs(Bounds.Min.X),FMath::Abs(Bounds.Max.X));
+		const float HalfY=FMath::Max(FMath::Abs(Bounds.Min.Y),FMath::Abs(Bounds.Max.Y));
 		auto FloorPoint = [&](float X, float Y)
 		{
 			return FMath::Lerp(Mount.TransformPosition(FVector(X,Y,-8)),
-				CargoLocation + Yaw.RotateVector(FVector(X,Y,-28)), double(CageFormation));
+				CargoLocation + Yaw.RotateVector(FVector(X*HalfX/75,Y*HalfY/75,Bounds.Min.Z)), double(CageFormation));
 		};
 		// Telescoping bars emerge directly from the skid rails, never a cable-hung box.
 		for (int32 K=-3; K<=3; ++K) for (float Side : {-75.0f,75.0f})
@@ -429,17 +582,6 @@ void USimCopterAirOperationsComponent::DrawCargo()
 		{
 			Shape.Bar(FloorPoint(-75,Side), FloorPoint(75,Side), 3, Yellow);
 			Shape.Bar(FloorPoint(Side,-75), FloorPoint(Side,75), 3, Yellow);
-		}
-	}
-	else
-	{
-		Shape.Bar(Anchor,CargoLocation+FVector(0,0,15),2,Steel);
-		Shape.Box(CargoLocation+FVector(0,0,20),FVector(32,10,7),Yellow);
-		for (float X : {-32.0f,32.0f})
-		{
-			const float Grip=HasCargo()?0.55f:1.0f;
-			Shape.Bar(CargoLocation+FVector(X,0,20),CargoLocation+FVector(X*Grip,0,-20),5,Steel);
-			Shape.Box(CargoLocation+FVector(X*Grip,0,-20),FVector(10,12,4),Yellow);
 		}
 	}
 	Shape.Apply(CargoMesh);
@@ -462,6 +604,7 @@ void USimCopterAirOperationsComponent::Update(float DeltaSeconds)
 	CageFormation=FMath::FInterpConstantTo(CageFormation,bDeployed && bCage?1.0f:0.0f,DeltaSeconds,2.5f);
 	CageSeal=FMath::FInterpConstantTo(CageSeal,bCageOpen?0.0f:1.0f,DeltaSeconds,3.0f);
 	ShotCooldown=FMath::Max(0.0f,ShotCooldown-DeltaSeconds);
+	UpdateRemoteTaserDischarge(DeltaSeconds);
 	if (bRemoteTaserActive) UpdateRemoteTaser(DeltaSeconds);
 	else if (IsRecoveringPilot()) UpdatePilotRecovery(DeltaSeconds);
 	// Requested helper pacing; remote pursuit and pilot recovery retain their own speeds.
@@ -483,7 +626,9 @@ void USimCopterAirOperationsComponent::Update(float DeltaSeconds)
 	EnsureMesh();
 	CagePeople.RemoveAll([](auto P){return !P.IsValid();});
 	const float MotionInput = bCage && HasCargo() && CageSeal < 1 ? 0.0f : CableInput;
-	CableLength=FMath::Clamp(CableLength-MotionInput*360.0f*DeltaSeconds,140.0f,SimCopterAirOperations::MaxCableCm);
+	// Keep the roof of a vehicle/hull below the skid fittings even when fully raised.
+	const float MinimumCable=TowVehicle.IsValid() || HasBoat() ? FMath::Max(140.0f,float(GetCageCargoBounds().Max.Z)+50) : 140.0f;
+	CableLength=FMath::Clamp(CableLength-MotionInput*360.0f*DeltaSeconds,MinimumCable,SimCopterAirOperations::MaxCableCm);
 	const FVector Anchor=bCage ? Helicopter()->GetCaptureCageMountTransform().GetLocation() : Helicopter()->GetCargoAnchorWorldLocation();
 	const FVector Desired=Anchor-FVector(0,0,CableLength);
 	float Remaining=FMath::Min(DeltaSeconds,0.2f);
@@ -521,12 +666,12 @@ void USimCopterAirOperationsComponent::Update(float DeltaSeconds)
 		}
 	}
 	else BoardHoldSeconds=0;
-	if (bCage && CagePeople.IsEmpty() && CableLength<=141 && CableInput>0.5f)
+	if (bCage && !HasCargo() && CableLength<=141 && CableInput>0.5f)
 	{
 		bDeployed=false;
 		Status=TEXT("Capture cage stowed on skids.");
 	}
-	TryDeliverCargo(); DrawCargo();
+	DrawCargo();
 	if (!Status.IsEmpty()) Helicopter()->SetAirOperationsStatus(Status);
 }
 
@@ -585,7 +730,7 @@ FVector USimCopterAirOperationsComponent::GetRemoteTaserMuzzle() const
 }
 FString USimCopterAirOperationsComponent::GetRemoteTaserReadout() const
 {
-	if (!bRemoteTaserActive) return TEXT("N / R3+Y");
+	if (!bRemoteTaserActive) return TEXT("N / X: Tools");
 	const TCHAR* Target = !RemoteTaserTarget.IsValid() ? TEXT("SEARCHING") :
 		(RemoteTaserTarget->GetAgentKind()==ESimCopterGroundAgentKind::Vehicle ? TEXT("CAR") : TEXT("SUSPECT"));
 	return FString::Printf(TEXT("AUTO ORBIT | %s | %s"),Target,ShotCooldown>0 ? TEXT("RECHARGING") : TEXT("READY"));
@@ -601,12 +746,13 @@ void USimCopterAirOperationsComponent::ToggleRemoteTaser()
 	UpdateRemoteTaserMount();
 	FVector Eye; FRotator View; PC->GetPlayerViewPoint(Eye,View);
 	RemoteTaserFocus=Eye+View.Vector()*2500;
-	RemoteTaserTarget.Reset(); RemoteAimOffset=FVector2D::ZeroVector;
-	RemoteTaserAim=View;
+	RemoteTaserTarget.Reset();
+	RemoteTaserAim=FRotator(FMath::Clamp(View.Pitch,-85.f,85.f),View.Yaw,0);
+	RemotePursuitSpeed=FMath::Min(Heli->VelocityCmPerSec.Size(),Heli->GetMaxForwardSpeedCmPerSec()*
+		SimCopterFixed::ToFloat(Heli->FlightModel.BaseTravelScale)*SimCopterFixed::ToFloat(FSimCopterFlightModel::TravelBoostScale));
 	RemoteTargetSearchSeconds=RemotePursuitPlanSeconds=0;
-	SelectRemoteTaserTarget(true);
+	SelectRemoteTaserTarget();
 	RemoteTaserCamera=GetWorld()->SpawnActor<ACameraActor>(); if (!RemoteTaserCamera) return;
-	RemoteTaserAim=(RemoteTaserFocus-GetRemoteTaserMuzzle()).Rotation();
 	RemoteTaserCamera->GetCameraComponent()->SetFieldOfView(45);
 	bRemoteTaserActive=true;
 	UpdateRemoteTaserMount();
@@ -615,7 +761,7 @@ void USimCopterAirOperationsComponent::ToggleRemoteTaser()
 	PC->HiddenActors.AddUnique(Heli);
 	PC->SetViewTarget(RemoteTaserCamera);
 	SetRemoteTaserCursor(false);
-	Status=TEXT("REMOTE TASER | AUTO ORBIT follows cars and suspects | mouse / right stick aim | click / X / RT fire | hold RMB for cockpit | N / R3+Y exits");
+	Status=TEXT("REMOTE TASER | mouse / right stick aim freely | autopilot follows active suspects | click / A / RT fire | hold RMB for cockpit | N or X then Fly Helicopter returns to flight");
 	Heli->SetAirOperationsStatus(Status);
 }
 void USimCopterAirOperationsComponent::EndRemoteTaser()
@@ -636,11 +782,9 @@ void USimCopterAirOperationsComponent::AimRemoteTaser(float Yaw,float Pitch,floa
 }
 void USimCopterAirOperationsComponent::OffsetRemoteTaserAim(float YawDegrees,float PitchDegrees)
 {
-	RemoteAimOffset.X=FRotator::NormalizeAxis(RemoteAimOffset.X+YawDegrees);
-	// Clamp the actual sight pitch, not a fixed offset from the downward orbit view.
-	// This reaches the same up/down limits from any orbit altitude without input accumulating at the stops.
-	const float BasePitch=(RemoteTaserFocus-RemoteTaserMount->GetComponentLocation()).Rotation().Pitch;
-	RemoteAimOffset.Y=FMath::Clamp(BasePitch+RemoteAimOffset.Y+PitchDegrees,-85.0f,85.0f)-BasePitch;
+	// World-stabilized gimbal: pursuit, aircraft turns and target handoffs never steer the sight.
+	RemoteTaserAim.Yaw=FRotator::NormalizeAxis(RemoteTaserAim.Yaw+YawDegrees);
+	RemoteTaserAim.Pitch=FMath::Clamp(RemoteTaserAim.Pitch+PitchDegrees,-85.0f,85.0f);
 }
 void USimCopterAirOperationsComponent::SetRemoteTaserCursor(bool bVisible)
 {
@@ -664,6 +808,7 @@ void USimCopterAirOperationsComponent::UpdateRemoteTaserControls(float MouseYaw,
 {
 	if (!bRemoteTaserActive) return;
 	auto* PC=Cast<APlayerController>(Helicopter()->GetController()); if (!PC || PC->IsPaused()) return;
+	if (Helicopter()->GetControllerMode()!=ESimCopterControllerMode::None) return;
 	const auto* GamePC=Cast<ASimCopterPlayerController>(PC);
 	if (Helicopter()->IsCheckupMenuOpen() || (GamePC && (GamePC->IsSettingsOpen() || GamePC->IsReplayPanelOpen()))) return;
 	const bool bCursor=PC->IsInputKeyDown(EKeys::RightMouseButton);
@@ -676,11 +821,11 @@ void USimCopterAirOperationsComponent::UpdateRemoteTaserControls(float MouseYaw,
 	AimRemoteTaser(StickYaw*(Settings ? Settings->GetControllerSensitivityX() : 1),
 		-StickPitch*(Settings ? Settings->GetControllerSensitivityY() : 1),DeltaSeconds);
 }
-void USimCopterAirOperationsComponent::SelectRemoteTaserTarget(bool bInitial)
+void USimCopterAirOperationsComponent::SelectRemoteTaserTarget()
 {
 	auto* Previous=RemoteTaserTarget.Get();
 	auto* Best=IsRemotePursuitTarget(Previous) && FVector::DistSquared(Helicopter()->GetActorLocation(),Previous->GetActorLocation())<FMath::Square(9000.f) ? Previous : nullptr;
-	const bool bKeepPrevious=Best!=nullptr && !bInitial;
+	const bool bKeepPrevious=Best!=nullptr;
 	float BestScore=TNumericLimits<float>::Max();
 	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It)
 	{
@@ -703,12 +848,6 @@ void USimCopterAirOperationsComponent::SelectRemoteTaserTarget(bool bInitial)
 	if (Best!=Previous)
 	{
 		RemotePursuitPlanSeconds=0;
-		if (!bInitial)
-		{
-			// A target handoff changes the flight plan without snapping the player's sight.
-			const FRotator Base=(RemoteTaserFocus-RemoteTaserMount->GetComponentLocation()).Rotation();
-			RemoteAimOffset=FVector2D(FRotator::NormalizeAxis(RemoteTaserAim.Yaw-Base.Yaw),RemoteTaserAim.Pitch-Base.Pitch);
-		}
 	}
 }
 FVector USimCopterAirOperationsComponent::FindRemoteTaserPursuitOffset(const FVector& Velocity) const
@@ -747,17 +886,17 @@ void USimCopterAirOperationsComponent::UpdateRemoteTaser(float DeltaSeconds)
 		RemotePursuitPlanSeconds-=DeltaSeconds;
 		if (RemotePursuitPlanSeconds<=0) { RemotePursuitOffset=FindRemoteTaserPursuitOffset(Velocity); RemotePursuitPlanSeconds=.5f; }
 		const FVector Goal=RemoteTaserFocus+Velocity*.4f+RemotePursuitOffset;
-		const float Speed=FMath::Clamp(Velocity.Size2D()+FVector::Distance(Helicopter()->GetActorLocation(),Goal)*1.8f,350.f,5000.f);
-		AdvanceAutopilot(Goal,DeltaSeconds,Speed,true);
+		const float SprintSpeed=Helicopter()->GetMaxForwardSpeedCmPerSec()*
+			SimCopterFixed::ToFloat(Helicopter()->FlightModel.BaseTravelScale)*SimCopterFixed::ToFloat(FSimCopterFlightModel::TravelBoostScale);
+		const float Speed=FMath::Clamp(Velocity.Size2D()+FVector::Distance(Helicopter()->GetActorLocation(),Goal)*1.8f,0.f,SprintSpeed);
+		RemotePursuitSpeed=FMath::FInterpConstantTo(RemotePursuitSpeed,Speed,FMath::Clamp(DeltaSeconds,0.f,.1f),SprintSpeed);
+		AdvanceAutopilot(Goal,DeltaSeconds,RemotePursuitSpeed,true);
 	}
-	else Helicopter()->SetAutopilotTransform(Helicopter()->GetActorLocation(),Helicopter()->GetActorRotation(),DeltaSeconds);
-	const FRotator Facing(0,(RemoteTaserFocus-Helicopter()->GetActorLocation()).Rotation().Yaw,0);
-	Helicopter()->SetActorRotation(Facing);
-	Helicopter()->FlightModel.Heading=SimCopterFixed::WrapAngle(SimCopterFixed::FromFloat(FRotator::ClampAxis(Facing.Yaw)*10));
-	// Keep the target in the helmet sight as the aircraft moves; mouse/stick adjust the sight.
-	RemoteTaserAim=(RemoteTaserFocus-RemoteTaserMount->GetComponentLocation()).Rotation();
-	RemoteTaserAim.Yaw+=RemoteAimOffset.X;
-	RemoteTaserAim.Pitch=FMath::Clamp(RemoteTaserAim.Pitch+RemoteAimOffset.Y,-85.0f,85.0f);
+	else
+	{
+		RemotePursuitSpeed=0;
+		Helicopter()->SetAutopilotTransform(Helicopter()->GetActorLocation(),Helicopter()->GetActorRotation(),DeltaSeconds);
+	}
 	UpdateRemoteTaserMount();
 	if (RemoteTaserCamera) RemoteTaserCamera->SetActorLocationAndRotation(GetRemoteTaserMuzzle(),RemoteTaserAim);
 }
@@ -770,15 +909,185 @@ void USimCopterAirOperationsComponent::FireRemoteTaser()
 	UpdateRemoteTaserMount();
 	const FVector Muzzle=GetRemoteTaserMuzzle();
 	auto* Target=SimCopterAirOperations::TraceRemoteTaserTarget(GetWorld(),Helicopter(),Muzzle,RemoteTaserAim.Vector(),6000,End);
+	bool bHit = false;
 	// Remake-only nonlethal taser. Never dispatch an Apache projectile, damage, or death interaction.
 	if (Target && Target->DisableVehicleWithTaser())
+	{
+		bHit = true;
 		Status=FString::Printf(TEXT("TASER: car disabled for %.0f seconds. Recharging."), SimCopterAirOperations::VehicleTaserDisableSeconds);
+	}
 	else if (Target && Target->StunForArrest())
+	{
+		bHit = true;
 		Status=TEXT("TASER: suspect stunned alive. Retrieve, handcuff and deliver to police.");
+	}
 	else
 		Status=TEXT("TASER: no active suspect or drivable car hit. Recharging.");
 	Helicopter()->SetAirOperationsStatus(Status);
-	SimCopterAirOperations::DrawTaserDischarge(Helicopter()->FindComponentByClass<USimCopterParticleFXComponent>(), Muzzle, End);
+	const bool bPersonContact = Target && Target->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian;
+	DrawRemoteTaserDischarge(Muzzle, End, bHit || bPersonContact);
+	if ((bHit || bPersonContact) && RemoteTaserTrail)
+	{
+		TaserImpactTarget = Target;
+		TaserImpactSeconds = 0.7f;
+		UpdateTaserImpact(0);
+	}
+	if (auto* Audio = USimCopterAudioSubsystem::Get(this))
+	{
+		// Separate voices let the discharge and contact cue play together. Both obey effects volume.
+		Audio->PlayFile2D(TEXT("laser"), SimCopterSound::ESoundDir::Root, 0.8f, true);
+		if (bHit) Audio->PlayFile2D(TEXT("punch3"), SimCopterSound::ESoundDir::Root, 0.9f, true);
+	}
+}
+
+void USimCopterAirOperationsComponent::DrawRemoteTaserDischarge(const FVector& Start, const FVector& End, bool bHit)
+{
+	if (!RemoteTaserTrail)
+	{
+		// The remote camera hides the whole helicopter through PlayerController::HiddenActors.
+		// World-space coordinates alone cannot exempt a helicopter-owned primitive from that
+		// list. Keep both the discharge and body shock on a separate, unattached FX actor.
+		FActorSpawnParameters Params;
+		Params.ObjectFlags |= RF_Transient;
+		Params.Owner = GetOwner();
+		AActor* Effects = GetWorld()->SpawnActor<AActor>(Params);
+		if (!Effects) return;
+		RemoteTaserTrail = NewObject<UProceduralMeshComponent>(Effects, TEXT("RemoteTaserWhiteTrail"));
+		Effects->AddInstanceComponent(RemoteTaserTrail);
+		Effects->SetRootComponent(RemoteTaserTrail);
+		RemoteTaserTrail->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		RemoteTaserTrail->SetCastShadow(false);
+		RemoteTaserTrail->SetCanEverAffectNavigation(false);
+		RemoteTaserTrail->RegisterComponent();
+		RemoteTaserTrail->SetWorldTransform(FTransform::Identity);
+		TaserTrailMaterialInstance = UMaterialInstanceDynamic::Create(TaserTrailMaterial, this);
+		RemoteTaserTrail->SetMaterial(0, TaserTrailMaterialInstance);
+	}
+	RemoteTaserTrail->ClearAllMeshSections();
+	TaserImpactTarget.Reset(); TaserImpactSeconds = 0;
+	const FVector Direction = (End-Start).GetSafeNormal();
+	const FVector Side = Direction.Rotation().RotateVector(FVector::RightVector);
+	const FVector Up = Direction.Rotation().RotateVector(FVector::UpVector);
+	FRecoveryMesh Trail;
+	constexpr int32 Segments = 32;
+	for (int32 Strand = 0; Strand < 2; ++Strand)
+	{
+		const float Sign = Strand == 0 ? -1.0f : 1.0f;
+		// The sight sits between the two scaled muzzle electrodes. Starting both solid
+		// bars at its eye encloses the camera and fills the reticle with a white square.
+		const FVector Electrode = Start + Side*(Sign*2.0f);
+		FVector Previous = Electrode;
+		for (int32 I = 1; I <= Segments; ++I)
+		{
+			const float T = float(I)/Segments;
+			const float Spread = FMath::Sin(T*PI);
+			const FVector Next = FMath::Lerp(Electrode, End, T) + Spread *
+				(Side * (Sign*10.0f + (I%2 ? 5.0f : -5.0f)) + Up * (I%3-1)*5.0f);
+			const float Radius = .18f+T*.8f;
+			if (I == 1) Trail.TaperedBar(Previous, Next, .001f, Radius, FLinearColor::White);
+			else Trail.Bar(Previous, Next, Radius, FLinearColor::White);
+			Previous = Next;
+		}
+	}
+	if (bHit)
+		for (int32 I = 0; I < 8; ++I)
+		{
+			const float Angle = I*PI/4;
+			Trail.Bar(End, End+(Side*FMath::Cos(Angle)+Up*FMath::Sin(Angle))*22, 1.8f, FLinearColor::White);
+		}
+	// The particle material's centre is opaque; constant UVs turn its cards into continuous lines.
+	for (FVector2D& UV : Trail.UV) UV = FVector2D(0.5, 0.5);
+	Trail.Apply(RemoteTaserTrail);
+	RemoteTaserTrail->SetVisibility(true);
+	TaserTrailSeconds = 0.3f;
+	UpdateRemoteTaserDischarge(0);
+}
+
+void USimCopterAirOperationsComponent::UpdateRemoteTaserDischarge(float DeltaSeconds)
+{
+	if (!RemoteTaserTrail || (TaserTrailSeconds <= 0 && TaserImpactSeconds <= 0)) return;
+	TaserTrailSeconds = FMath::Max(0.0f, TaserTrailSeconds-FMath::Max(0.0f, DeltaSeconds));
+	if (TaserTrailSeconds <= 0)
+	{
+		RemoteTaserTrail->ClearMeshSection(0);
+	}
+	UpdateTaserImpact(DeltaSeconds);
+	RemoteTaserTrail->SetVisibility(TaserTrailSeconds > 0 || TaserImpactSeconds > 0);
+	if (TaserTrailSeconds <= 0 && TaserImpactSeconds <= 0) RemoteTaserTrail->ClearAllMeshSections();
+	if (TaserTrailMaterialInstance)
+		TaserTrailMaterialInstance->SetScalarParameterValue(TEXT("EmissiveNits"),
+			USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld())*2);
+}
+
+void USimCopterAirOperationsComponent::UpdateTaserImpact(float DeltaSeconds)
+{
+	TaserImpactSeconds = FMath::Max(0.0f, TaserImpactSeconds-FMath::Max(0.0f, DeltaSeconds));
+	auto* Target = TaserImpactTarget.Get();
+	FBox Body(ForceInit);
+	const bool bPerson = Target && Target->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian;
+	if (IsValid(Target) && !Target->IsActorBeingDestroyed() && !Target->IsHidden())
+	{
+		if (bPerson)
+		{
+			// The original figure changes shape for the stunned pose. Use its current rendered
+			// bounds, not the standing collision capsule, so the electricity stays on the person.
+			if (auto* Figure = Target->FindComponentByClass<UProceduralMeshComponent>(); Figure && Figure->IsVisible())
+			{
+				FBox Pose(ForceInit);
+				for (int32 Section = 0; Section < Figure->GetNumSections(); ++Section)
+					if (const auto* Part = Figure->GetProcMeshSection(Section); Part && Part->bSectionVisible)
+						Pose += Part->SectionLocalBox;
+				if (Pose.IsValid) Body = Pose.TransformBy(Figure->GetComponentTransform().GetRelativeTransform(Target->GetActorTransform()));
+			}
+			if (!Body.IsValid || Body.GetSize().IsNearlyZero())
+			{
+				const float HalfHeight = Target->GetCapsuleHalfHeightCm();
+				const FVector Half(FMath::Max(10.0f,HalfHeight*0.45f),FMath::Max(10.0f,HalfHeight*0.45f),HalfHeight);
+				Body = FBox(-Half, Half);
+			}
+		}
+		else Target->TryGetBodyLocalBoundsCm(Body);
+	}
+	if (TaserImpactSeconds <= 0 || !IsValid(Target) || Target->IsActorBeingDestroyed() || Target->IsHidden() || !Body.IsValid)
+	{
+		TaserImpactSeconds = 0; TaserImpactTarget.Reset();
+		RemoteTaserTrail->ClearMeshSection(1);
+		return;
+	}
+	Body = Body.ExpandBy(5);
+	const float Age = 0.7f-TaserImpactSeconds;
+	const FTransform Transform = Target->GetActorTransform();
+	const FVector Corners[] = {FVector(Body.Min.X,Body.Min.Y,0),FVector(Body.Max.X,Body.Min.Y,0),
+		FVector(Body.Max.X,Body.Max.Y,0),FVector(Body.Min.X,Body.Max.Y,0)};
+	FRecoveryMesh Arcs;
+	for (int32 Ring = 0; Ring < 3; ++Ring)
+	{
+		FVector Previous;
+		for (int32 I = 0; I <= 32; ++I)
+		{
+			// Broken, jagged streamers travel around the actual oriented body, above its paint.
+			const float Phase = FMath::Frac(Age*1.8f + Ring/3.0f + I*0.7f/32)*4;
+			const int32 Side = FMath::FloorToInt(Phase);
+			FVector Point = FMath::Lerp(Corners[Side], Corners[(Side+1)%4], Phase-Side);
+			Point.Z = FMath::Lerp(Body.Min.Z, Body.Max.Z,
+				FMath::Clamp(0.2f+Ring*0.3f+FMath::Sin(I*2.3f+Age*45)*0.1f,0.0f,1.0f));
+			if (bPerson)
+			{
+				// Three broken spiral bolts flicker from feet to head around the visible body.
+				const float T = I/32.0f;
+				const float Angle = (Age*2.4f + Ring/3.0f + T*1.4f)*2*PI;
+				const float Jitter = 1.0f + FMath::Sin(I*2.3f+Age*65)*0.12f;
+				Point = Body.GetCenter() + FVector(FMath::Cos(Angle)*Body.GetExtent().X*Jitter,
+					FMath::Sin(Angle)*Body.GetExtent().Y*Jitter, FMath::Lerp(-Body.GetExtent().Z,Body.GetExtent().Z,T));
+			}
+			Point = Transform.TransformPosition(Point);
+			if (I > 0) Arcs.Bar(Previous, Point, 1.2f, FLinearColor::White);
+			Previous = Point;
+		}
+	}
+	for (FVector2D& UV : Arcs.UV) UV = FVector2D(0.5, 0.5);
+	RemoteTaserTrail->CreateMeshSection_LinearColor(1,Arcs.V,Arcs.I,Arcs.N,Arcs.UV,Arcs.C,TArray<FProcMeshTangent>(),false);
+	RemoteTaserTrail->SetMaterial(1,TaserTrailMaterialInstance);
 }
 bool USimCopterAirOperationsComponent::AdvanceAutopilot(const FVector& Goal,float DeltaSeconds,float Speed,bool bAllowApproachDescent)
 {
@@ -890,6 +1199,9 @@ void USimCopterAirOperationsComponent::SerializeState(FArchive& Ar)
 		SavedCargoNames=MoveTemp(Names); bSavedCargoPending=true;
 		CableLength=FMath::Clamp(CableLength,140.0f,SimCopterAirOperations::MaxCableCm);
 		CableInput=0; CagePanelInput=0;
+		// Old saves can contain a deployed clamp. Reuse its payload in the replacement cage.
+		if (!bCage) bCageOpen=BoatIndex==INDEX_NONE && !SavedCargoNames.ContainsByPredicate([](FName Name){return !Name.IsNone();});
+		bCage=true;
 		CageFormation=bDeployed && bCage?1.0f:0.0f;
 		CageSeal=bCageOpen?0.0f:1.0f;
 		CageCaptureDelay=0;
@@ -905,7 +1217,7 @@ void USimCopterAirOperationsComponent::ResolveSavedCargo()
 	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It)
 	{
 		const int32 Index=SavedCargoNames.IndexOfByKey(It->GetRuntimeSaveIdentityName());
-		if (Index==0 && It->IsTowableVehicle()) { TowVehicle=*It; It->SetVehicleTowed(true); }
+		if (Index==0 && It->IsCageRecoverableVehicle()) { TowVehicle=*It; It->SetVehicleTowed(true); bCageOpen=false; CageSeal=1; }
 		else if (Index>0 && bCage)
 		{
 			const int32 Slot=CagePeople.Num();
@@ -913,5 +1225,6 @@ void USimCopterAirOperationsComponent::ResolveSavedCargo()
 			It->SetForcedPedestrianFigureClip(TEXT("NoMo")); CagePeople.Add(*It);
 		}
 	}
+	if (HasBoat()) { bCageOpen=false; CageSeal=1; }
 	SavedCargoNames.Reset(); DrawCargo();
 }

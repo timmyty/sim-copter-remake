@@ -1,0 +1,64 @@
+{
+  "Date": "2026-10-11",
+  "Changes": [
+    "Police roof drops accept majority footprint overlap and body-bottom height up to 300 cm; original speed/seal/reward guards retained.",
+    "Recovery records no longer reset original dispatch cadence or consume its active mission allowance.",
+    "Ambient stalls attempt every 10 minutes equipped or 15 minutes unequipped, cap at one, and defer to active original work.",
+    "Automatic empty support prefers original jobs; loaded cargo/passengers and manual assignments remain protected.",
+    "SOS survivors take precedence over hull recovery; completed unclaimed hulls yield to new SOS calls."
+  ],
+  "GroundTruth": [
+    ".ghidra-exports/004a6e60.json: seven original families and tier-dependent boat-rescue distribution.",
+    ".ghidra-exports/004b1950.json: the sole CAPBOAT1 slot refuses a new rescue while occupied."
+  ],
+  "Reproduction": {
+    "Report": "Docs/scratchpad/mission-priority/tests-before/index.json",
+    "FailedCases": 2,
+    "FailedAssertions": 16,
+    "Details": [
+      "Two recovery records blocked the next original transport and reset the countdown.",
+      "Elevated off-center police-roof drops left stalled and burglar missions unresolved and unpaid.",
+      "Premature hull recovery stopped the SOS timer and blocked a replacement rescue."
+    ]
+  },
+  "Builds": {
+    "Editor": "Succeeded",
+    "Shipping": "Succeeded",
+    "Wrapper": "RebuildUnrealCpp.bat",
+    "EditorLog": "Docs/scratchpad/mission-priority/build-editor-final.log",
+    "ShippingLog": "Docs/scratchpad/mission-priority/build-shipping.log"
+  },
+  "Regression": {
+    "Succeeded": 54,
+    "SucceededWithWarnings": 2,
+    "Failed": 0,
+    "NotRun": 0,
+    "Report": "Docs/scratchpad/mission-priority/tests-final/index.json",
+    "ExistingWarningCases": [
+      "SimCopter.Missions.PlaneDeckRescue",
+      "SimCopter.Missions.SafePassengerLanding"
+    ],
+    "FixtureCorrection": "Initial expanded run had one newly added test failure because the null world could not spawn its robber; replaced setup with the actual medical-incident creation path and reran all 56 cases successfully."
+  },
+  "Installation": {
+    "InstalledAtUtc": "2026-10-11T22:57:34.4952345Z",
+    "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "24C0C948D31CB599CBA19943559899C6B6C173ABB642233DD47B8750D24E30B8",
+    "PreviousSHA256": "478EF2D4F6466F96D7F6A7F130EB57F10CD5956D8E1E0654036E0EF4DF4F2C9E",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\mission-priority/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "TestsPassed": 56,
+    "TestsWithExistingWarnings": 2,
+    "AssetsChanged": false,
+    "SavesChanged": false,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false,
+    "Pushed": false
+  },
+  "SourceHashes": "Docs/scratchpad/mission-priority/tested-source-hashes.json",
+  "DiffEvidence": "Docs/scratchpad/mission-priority/diffs",
+  "Limitations": [
+    "No interactive flight or on-screen gameplay check.",
+    "Original tier-one rescue rolls remain rooftop-only; boat SOS rolls require tier two or higher and suitable water.",
+    "Player-caused damage retains existing recovery-reward suppression."
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "Date": "2026-10-11",
+  "Change": "Automatic harness patient handoff and repeated pilot following",
+  "BaselineFailedAssertions": [
+    "Expected 'Drop beside the lowered harness attaches the same patient' to be true.",
+    "Expected 'Patient reaches the cabin before the pilot' to be true.",
+    "Expected 'Rescue preserves the living patient in a real seat' to be true.",
+    "Expected 'Second exit follows the distant pilot and lowers again' to be true.",
+    "Expected 'Scenario 1 deploys harness' to be true.",
+    "Expected 'Scenario 1 retrieves pilot' to be true.",
+    "Expected 'Scenario 2 deploys harness' to be true.",
+    "Expected 'Scenario 2 retrieves pilot' to be true."
+  ],
+  "EditorBuild": "Succeeded",
+  "ShippingBuild": "Succeeded",
+  "Passed": 13,
+  "Failed": 0,
+  "Warnings": 0,
+  "Skipped": 0,
+  "Tests": [
+    {
+      "Name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Missions.ParamedicCabinHandoff",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RemoteRecovery.SaveAndObstruction",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.PassengerIdentity",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.RuntimeRegression",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.ShiftRun",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.ShoulderAim",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Safety.ParkedAircraftTraffic",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Winch.CommandResolution",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Winch.Constants",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Winch.RopeEndExchange",
+      "State": "Success"
+    }
+  ],
+  "Source": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPilotRecovery.cpp",
+      "SHA256": "0C2F447E007C19A257DA5DAC6407A517AA69EEB8687BAEA6E127BC407D302C6A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterAirOperations.h",
+      "SHA256": "F6555237C7B0A9DA7F40651815198AA958452872938674BF5B7BBA3CC7C9FC34"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootPawn.cpp",
+      "SHA256": "7F72DDDAA6CF37227C344E20A8F5C77E80AF3F19D06E0BEF2F9D192CDAD5E781"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "SHA256": "66711F17A79B807933378759752FA74DCF721FBD3E9E291E9B140AAF7D6C6D92"
+    }
+  ],
+  "InstalledExecutableSHA256": "FA20B308C9708D39440C662F7DAB9058682414CCDFAC862ADD4AE0658BE4F1A1",
+  "PreviousExecutableSHA256": "B05D0BB72669300A5E4B578F37ABAC955F02A7BAA0A7C55F9F2852B9382BFC64",
+  "Evidence": "Docs/scratchpad/harness-patient-follow/",
+  "Limitations": [
+    "Headless actor regressions; no interactive city playtest.",
+    "Focused suite only; no full-suite rerun.",
+    "Existing engine deprecation and newer MSVC toolchain build warnings remain."
+  ],
+  "AssetsChanged": false,
+  "PublicationCheckoutChanged": false,
+  "Pushed": false
+}

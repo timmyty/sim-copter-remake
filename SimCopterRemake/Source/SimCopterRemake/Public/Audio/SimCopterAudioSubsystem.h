@@ -45,6 +45,8 @@ namespace SimCopterSoundFlags
 	inline constexpr int32 Restart = 2;
 }
 
+enum class ESimCopterTaserSound : uint8 { Charge, Release, Seek, Impact };
+
 /** Decoded PCM for one original WAV, kept so a slot can be re-armed without touching disk. */
 struct FSimCopterPcmClip
 {
@@ -86,6 +88,8 @@ public:
 	// Remake pilot impact cues, independent of NPC voices and obeying the shared master volume.
 	void PlayPilotFallInjury(bool bSevere, const FVector& Location);
 	static FSimCopterPcmClip BuildBoneCrack();
+	static FSimCopterPcmClip BuildTaserSound(ESimCopterTaserSound Kind);
+	UAudioComponent* PlayTaserSound(ESimCopterTaserSound Kind, USceneComponent* Emitter);
 
 	// --- UWorldSubsystem ---
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -317,6 +321,8 @@ private:
 	friend class FSimCopterGortReturnTest;
 	friend class FSimCopterRadioSequentialTest;
 	friend class FSimCopterAudioOverlapTest;
+	friend class FSimCopterVehicleTaserTest;
+	friend class FSimCopterApacheAftermathTest;
 	friend class FSimCopterGameplayPolishTest;
 	/** Runtime state of one of the 130 slots. The UAudioComponent lives in SlotComponents. */
 	struct FSlot

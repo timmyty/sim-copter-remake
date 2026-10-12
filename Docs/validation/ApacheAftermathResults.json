@@ -1,0 +1,244 @@
+{
+  "createdUtc": "2026-10-12T00:32:43.045203+00:00",
+  "localDate": "2026-10-11",
+  "changes": [
+    "Persistent medics report an empty search once; carrying a patient suppresses the line and successful pickup rearms it.",
+    "Injured medics release carried patients and enter state 6 even when their VM was suspended.",
+    "Handheld charge and powered appearance require a current visible active criminal person or vehicle; loss of target immediately returns to standby.",
+    "Hospital and other rooftop occupants fall into rubble as living patients after missile, fire or nuclear collapse; identities and existing medical records remain.",
+    "Missile blasts injure and radially launch nearby people, with upward impulse and collision-aware tumble; landing and repeated hits preserve medical identity.",
+    "New missile/nuclear rooftop injuries suppress completion rewards while previously existing patient credit is retained."
+  ],
+  "baselineEvidence": {
+    "report": "Docs/scratchpad/apache-aftermath/tests-regressions-baseline/index.json",
+    "reproduced": [
+      "8 completed no-victim lines instead of 1",
+      "Injured medic retained carried patient",
+      "Looking away retained charge",
+      "Looking away retained open emitters"
+    ],
+    "notReproduced": "Apache exit charge/fire against a valid visible criminal passed before the change, including machine-gun and missile activity.",
+    "fixtureCorrections": "Earlier diagnostics used an underground target and an invalid paint index; the corrected baseline is authoritative. The older direct-hit weapon fixture also needed Visible=1 for knockback."
+  },
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/apache-aftermath/build-blast-final.log"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/apache-aftermath/build-shipping-blast.log"
+    },
+    "wrapper": "RebuildUnrealCpp.bat"
+  },
+  "headless": {
+    "report": "Docs/scratchpad/apache-aftermath/tests-blast-final/index.json",
+    "passed": 37,
+    "failed": 0,
+    "warningCases": [
+      {
+        "test": "SimCopter.Cheats.CityEffects",
+        "warnings": 17
+      }
+    ],
+    "knownWarnings": "The same 17 static-component attachment warnings in Cheats.CityEffects occur in the earlier aircraft-destruction/tests-final report.",
+    "cases": [
+      {
+        "test": "SimCopter.AircraftDestruction.PilotConversation",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.AircraftDestruction.PlaneControlsAndPropeller",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.AircraftDestruction.ProjectilesAndPopulation",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.AircraftDestruction.WholeCity",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.AirOperations.HelperCruisePacing",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.AirOperations.TaserVisuals",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Apache.AftermathMedicAndTaser",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Apache.AllNinePaintModels",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Apache.MysteryPurchaseAndWeapons",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Apache.OriginalCityMarker",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Cheats.CityEffects",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Effects.ApacheMissionBlastDefaults",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.EnergyTaser.ChargeGeometryAndAudio",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.EnergyTaser.Runtime",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.EnergyTaser.Visuals",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Knockdown.Bounce",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Knockdown.Contact",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Knockdown.Launch",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Knockdown.Recovery",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Knockdown.RestPose",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.MedicalNavigation.DroppedMedics",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.MedicalNavigation.PatientMarkers",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.MedicalNavigation.SteepHillReturn",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.NpcMedical.BandClusterAndSpacing",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.NpcMedical.BandObstacleRoutes",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Passengers.FaceProgram",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Passengers.FallGravity",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Passengers.HeadImages",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Passengers.PortraitRendering",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Passengers.VoiceRates",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.PassengerIdentity",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.RuntimeRegression",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.ShiftRun",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.ShoulderAim",
+        "state": "Success"
+      }
+    ],
+    "renderingLimitation": "Visual-only cases deliberately return success under NullRHI; headless results do not establish rendered appearance.",
+    "wholeCity": "286 buildings destroyed, including 6 essential service buildings; hospital and other-roof falls plus separate nuclear aftermath exercised.",
+    "missileKnockback": "Actual direct hit and ground impact, four radial directions, distance exclusion, repeated blasts, retained medical records, combined collapse and living injured landing."
+  },
+  "offscreenRendering": {
+    "report": "Docs/scratchpad/apache-aftermath/tests-render/index.json",
+    "test": "SimCopter.EnergyTaser.Visuals",
+    "result": "Success",
+    "rhi": "D3D12 SM6",
+    "transformationPixels": 46035,
+    "tealPixels": 2003,
+    "shoulderWeaponPixels": 2382,
+    "captures": "Docs/scratchpad/apache-aftermath/visuals/",
+    "inspection": "Charged and immediately closed appearances inspected; no later changes to taser visuals."
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-12T00:32:42.8676516Z",
+    "Executable": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "13821B34B904C730B0EA558C110E5BB8CC680E250790801613461A6148AD38A6",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\apache-aftermath/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "96A36666F36F8522589A1AC631CCC1E423F5143FC5C550272443B3A2306A9D91",
+    "HeadlessResultsPassed": 37,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false,
+    "Pushed": false
+  },
+  "sourceSha256": {
+    "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCity2000CityActor.cpp": "7282A48E3D3196FDA38796E1E192FE785034B4CC991F12651E5844ED341F3BFA",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterApachePool.cpp": "FA8DC1347F089F7C14DD3A984CF186DD2D7A3F0FD2D9690AD637E4CBAF9F89AA",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterEnergyTaser.cpp": "B1B364C67CC244DAC87E085175EBEBBF79E66DA35018CE4D17FA18BAC9D512EB",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp": "E6D282CF464AEC01D33F0B4DAAE38000BB3B5E9CD9E3A913F83D2B1E09F29D0C",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootAirOperations.cpp": "24BA3B120BE54B61B8C69AAFCE3731B85FC1DEA98C7E775B765B8117983E27F9",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterMissionSystemActor.cpp": "211A22E9E13AF422F4307574ABC2EEA01E1E4945304196D40E5C1F91B112FA3A",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAircraftDestructionTests.cpp": "D296F9D53FEF34A0C76D3112EB81715FAF0941707BF2D1027055909BD69097DB",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterEnergyTaserTests.cpp": "BEC20891AEFBF55BCA57E3BA78AF28991984D17B9ABEDFC7DC84A44E12E46702",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterEnergyTaserVisualTests.cpp": "F7C64EB1F0E4BA6E22565DC2C30F008E06FB3483137B7DC708D87EBA7338D25A",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterAudioSubsystem.h": "C562FA58B27CA72B71AB5D746B52750CC020E90FD53650392AC759F52BB69690",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h": "6C6EFD25521FAB62DC02D206A7F0FC820678573CB7F442F48B4E392A9C1061CD",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterEnergyTaser.h": "5AD1447D5DC6EF9722B8F50EAE9B35364B855335C9B94EB69E9AA58F4EA33A42",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h": "F1966D39A1EE48B92B5C63ADBF2C3A0E315D9B084E1C386BEEF48D299A59FE00",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterOnFootPawn.h": "735A1CC9F6793DE63A4448258BF98C0F82F62C5EF2EEE9C7F0D938DA479FF1B5",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTrafficSystemActor.h": "8A80A0B5DE7757901788BE53EA85EC7C634CA8DA4C576D8CC14FFA2B1066F147",
+    "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystemActor.h": "12A783F5F4D15DB9CFC9BC083FC2D34ADC932B09BC250DF6E271B1097A5EEB52",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterApacheAftermathTests.cpp": "BC7E64E6282D292EAC2F5AA43FE3233267936FA608F65E46433284D80B805A54"
+  },
+  "interactiveGameplayChecked": false,
+  "liveAudioListeningChecked": false,
+  "publicationCheckoutChanged": false,
+  "pushed": false
+}

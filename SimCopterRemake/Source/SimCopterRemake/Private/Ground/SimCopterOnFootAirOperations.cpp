@@ -15,6 +15,9 @@
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Audio/SimCopterAudioSubsystem.h"
+#include "City/SimCopterEffectExposure.h"
+#include "Components/AudioComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 void ASimCopterOnFootPawn::SetAutoRescueAttached(bool bAttached)
 {
@@ -68,35 +71,77 @@ void ASimCopterOnFootPawn::StartTaserAim()
 		FMaxisMeshSection Shape; SimCopterPilotEquipment::BuildTaser(Shape);
 		TaserMesh->CreateMeshSection_LinearColor(0,Shape.Vertices,Shape.Triangles,Shape.Normals,Shape.UVs,Shape.VertexColors,Shape.Tangents,false);
 		TaserMesh->SetMaterial(0,BodyVertexColorMaterial);
+		TaserGlow=UMaterialInstanceDynamic::Create(LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Materials/M_SimCopterParticleFX.M_SimCopterParticleFX")),this);
+		TaserMesh->SetMaterial(1,TaserGlow); TaserMesh->SetMaterial(2,TaserGlow);
 		TaserMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		TaserMesh->SetRelativeLocation(FVector(8,5,7));
 		TaserMesh->SetRelativeScale3D(FVector(0.25));
 	}
 	if(TaserMesh) TaserMesh->SetVisibility(true);
 	UpdateTaserPose(0.0f);
+	UpdateEnergyTaser(0.0f);
 }
 void ASimCopterOnFootPawn::StopTaserAim()
 {
 	bTaserAiming=false;
+	TaserCharge.Update(0,false);
+	StopTaserHum();
 	if(TaserMesh) TaserMesh->SetVisibility(false);
 }
 void ASimCopterOnFootPawn::FireTaser()
 {
-	if(!bTaserAiming || TaserCooldown>0 || !CameraComponent || IsCarryingMissionPerson()) return;
+	if(!bTaserAiming || TaserCooldown>0 || !CameraComponent || !TaserCharge.CanFire() || PilotHealth<=0 || IsCarryingMissionPerson()) return;
+	// Re-evaluate on the click as well as the tick: turning off target cannot release a shot.
+	auto* Target=SimCopterEnergyTaser::FindTarget(GetWorld(),this,CameraComponent->GetComponentLocation(),CameraComponent->GetForwardVector());
+	if (!Target) { UpdateEnergyTaser(0); return; }
+	const FVector Muzzle=TaserMesh->GetComponentTransform().TransformPosition(FVector(14,0,2));
+	auto* Orb=GetWorld()->SpawnActor<ASimCopterTaserOrb>();
+	if (!Orb) return;
 	TaserCooldown=1.5f;
-	FVector End;
-	ASimCopterGroundAgent* Target=SimCopterAirOperations::TracePerson(GetWorld(),this,CameraComponent->GetComponentLocation(),CameraComponent->GetForwardVector(),650,End);
-	const bool Hit=Target && Target->StunForArrest();
-	TaserStatus=Hit?TEXT("Suspect stunned. Walk up to carry automatically."):TEXT("No suspect hit. Taser recharging.");
-	if(auto* Missions=Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(GetWorld(),ASimCopterMissionSystemActor::StaticClass())))
+	Orb->Launch(this,Target,Muzzle,CameraComponent->GetForwardVector());
+	TaserCharge.Consume(); StopTaserHum(); UpdateEnergyTaser(0);
+}
+
+void ASimCopterOnFootPawn::StopTaserHum()
+{
+	if (auto* Audio=USimCopterAudioSubsystem::Get(this)) Audio->StopAttachedVoiceLoop(TaserHum.Get());
+	TaserHum.Reset();
+}
+
+void ASimCopterOnFootPawn::UpdateEnergyTaser(float DeltaSeconds)
+{
+	const bool bCanSight=bTaserAiming && CameraComponent && PilotHealth>0 && !bParachuteDeployed && !bAutoRescueAttached && !IsCarryingMissionPerson();
+	const bool bSighted=bCanSight && SimCopterEnergyTaser::FindTarget(GetWorld(),this,
+		CameraComponent->GetComponentLocation(),CameraComponent->GetForwardVector());
+	TaserCharge.Update(DeltaSeconds,bSighted);
+	TaserEffectPhase+=DeltaSeconds;
+	if (!TaserMesh) return;
+	if (auto* Audio=USimCopterAudioSubsystem::Get(this))
 	{
-		Missions->ShowAirOperationsMessage(TaserStatus);
-		if(auto* FX=Missions->FindComponentByClass<USimCopterParticleFXComponent>())
+		if (bCanSight && TaserCharge.Energy>.001f)
 		{
-			const FVector Muzzle = TaserMesh ? TaserMesh->GetComponentTransform().TransformPosition(FVector(15,0,3)) : CameraComponent->GetComponentLocation();
-			SimCopterAirOperations::DrawTaserDischarge(FX, Muzzle, End);
+			if (!TaserHum.IsValid()) TaserHum=Audio->PlayTaserSound(ESimCopterTaserSound::Charge,TaserMesh);
+			if (TaserHum.IsValid())
+			{
+				TaserHum->SetPitchMultiplier(.7f+TaserCharge.Energy*.5f);
+				TaserHum->SetVolumeMultiplier((.08f+.22f*TaserCharge.Energy)*TaserCharge.Energy*USimCopterAudioSubsystem::VolumeIndexToGain(Audio->GetMasterVolume()));
+			}
 		}
+		else StopTaserHum();
 	}
+	if (!bTaserAiming) return;
+	FMaxisMeshSection Body,Circuits,Ball;
+	SimCopterPilotEquipment::BuildTaser(Body,TaserCharge.Deployment);
+	SimCopterPilotEquipment::BuildTaserCircuits(Circuits,TaserCharge.Deployment,TaserCharge.Energy,TaserEffectPhase);
+	SimCopterPilotEquipment::BuildTaserOrb(Ball,4.f*TaserCharge.Energy*(.97f+.03f*FMath::Sin(TaserEffectPhase*9)),TaserEffectPhase,TaserCharge.Energy);
+	for (auto& V:Ball.Vertices) V+=FVector(14,0,2);
+	const auto Apply=[&](int32 Section,const FMaxisMeshSection& Shape)
+	{
+		if (Shape.Vertices.IsEmpty()) TaserMesh->ClearMeshSection(Section);
+		else TaserMesh->CreateMeshSection_LinearColor(Section,Shape.Vertices,Shape.Triangles,Shape.Normals,Shape.UVs,Shape.VertexColors,Shape.Tangents,false);
+	};
+	Apply(0,Body); Apply(1,Circuits); Apply(2,Ball);
+	if (TaserGlow) TaserGlow->SetScalarParameterValue(TEXT("EmissiveNits"),USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld())*(.08f+TaserCharge.Energy*1.3f));
 }
 bool ASimCopterOnFootPawn::TryCarryDownedPerson()
 {

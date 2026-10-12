@@ -76,8 +76,8 @@ struct SIMCOPTERREMAKE_API FSimCopterCareerCityTransfer
 	int32 Cash = 0;
 
 	// Which of the owned airframes the player was flying. The original parks every owned
-	// helicopter on its own pad (FUN_0047a240); the remake models one, so the active one comes
-	// across and the rest stay on the books through the owned mask. Defaults to the Schweizer -
+	// helicopter on its own pad (FUN_0047a240); the active pawn receives this type and the
+	// rest are recreated from the owned mask at the next airport. Defaults to the Schweizer -
 	// FUN_00407f30's mask 0x10 - which is USimCopterCareerSubsystem::StartingHelicopterTypeIndex,
 	// declared below and asserted equal in the .cpp.
 	UPROPERTY()

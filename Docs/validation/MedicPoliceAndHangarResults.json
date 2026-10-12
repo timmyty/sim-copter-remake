@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-11",
+  "engine": "Unreal Engine 5.8",
+  "editorBuild": "Succeeded",
+  "shippingBuild": "Succeeded",
+  "testsPassed": 35,
+  "testsFailed": 0,
+  "warningCases": [
+    {
+      "test": "SimCopter.Hangar.DismountMenuInput",
+      "warnings": 2
+    }
+  ],
+  "reproduction": {
+    "medic": "Pre-fix continuous 45-degree uphill segment queries failed. The final fixture resumes shipped BHAV 262 after patient pickup; uphill detour, downhill query, 15/60 Hz updates, and two/one/zero free seats pass.",
+    "police": "Five assertions failed before the police changes: one-seat delivery and pursuit/contact/original hold from fifty metres. Final tests also retrieve a disabled suspect at fifty metres and retry after a full cabin frees one seat.",
+    "hangar": "Five assertions failed before the hangar fix: cursor, UI-only mode, NoCapture, and boarding/input ownership behind an open menu. The actual shell and pawn BeginPlay run against a synthetic viewport."
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-11T23:43:12.9620013Z",
+    "Executable": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "96A36666F36F8522589A1AC631CCC1E423F5143FC5C550272443B3A2306A9D91",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\medic-hills/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "24C0C948D31CB599CBA19943559899C6B6C173ABB642233DD47B8750D24E30B8",
+    "HeadlessResultsPassed": 35,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false,
+    "Pushed": false
+  },
+  "interactivePlaytest": false,
+  "sourceControl": "Development folder has no .git. Changes compared with task baseline copies; publication checkout untouched.",
+  "evidence": "Docs/scratchpad/medic-hills/"
+}

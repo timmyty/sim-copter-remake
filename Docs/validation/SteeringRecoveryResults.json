@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-11",
+  "steering": {
+    "validation": "Actual pawn tick, input bindings, forward momentum, swept actor rotation and camera updates checked for both bumpers in all nine models. Every nose turns in the requested direction without losing forward momentum.",
+    "userAssessment": "User believes the RB problem is controller hardware; no steering behavior changed in this follow-up.",
+    "report": "Docs/scratchpad/steering-recovery/reproductions/index.json"
+  },
+  "recovery": {
+    "before": "Docs/scratchpad/steering-recovery/reproductions/index.json",
+    "changes": [
+      "Without a harness, wait until the pilot finishes falling.",
+      "Search around the pilot at a reachable height, rejecting roofs above or below that level.",
+      "Retain a chosen safe site during descent; recheck restored/cached goals and replan unreachable destinations.",
+      "Preserve full-airframe route clearance, obstruction replanning and harness behavior."
+    ],
+    "coverage": "Roof beside a street, long fall, stale roof goal, actual helicopter ticks through descent, existing clear/uneven/blocked landing, repeated harness retrieval and saved recovery.",
+    "reproduced": "A clear rooftop beneath the airborne exit was preferred while the pilot had reached the street. Two assertions failed before the fix."
+  },
+  "builds": {
+    "shipping": "Docs/scratchpad/steering-recovery/build-shipping-final.log",
+    "result": "Succeeded",
+    "development": "Docs/scratchpad/steering-recovery/build-development-final.log",
+    "editor": "Docs/scratchpad/steering-recovery/build-editor-final.log"
+  },
+  "tests": {
+    "warnings": 0,
+    "report": "Docs/scratchpad/steering-recovery/tests-final-recheck/index.json",
+    "firstRunReport": "Docs/scratchpad/steering-recovery/tests-final/index.json",
+    "priorRun": "First broader run passed 45 cases but failed one existing menu routed-input assertion. Full rerun passed all 46 with no menu code changes.",
+    "passed": 46,
+    "failed": 0
+  },
+  "installationStatus": "Installed with the combined fleet/landing update after user saved and closed the game; four executable/symbol files backed up and hash-verified.",
+  "sourceFiles": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h",
+      "SHA256": "002A15B0EAE738D7907EE841A8C26CAE305B7EFEC4AD487CD683AB45A7C3FF4D",
+      "PreviousSHA256": "89DC885B691FC15789E6BB2BCB2448A67CC84F6B3A121F56EC7B2D69EEC30A86"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPilotRecovery.cpp",
+      "SHA256": "7D31E58374E44E8DBC786CD73B2BD43B2F3B590E979AB8123BEE198CA5F55759",
+      "PreviousSHA256": "0C2F447E007C19A257DA5DAC6407A517AA69EEB8687BAEA6E127BC407D302C6A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "SHA256": "DD5560EABAC77BD3AA3BC8DDFDD1CD54301A3B56D7410F56E97836C35B31EF6A",
+      "PreviousSHA256": "58D51ADA18A9AB6C569200845C78EE8AB64988E8597CBFF366923C2C6354473D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterSteeringResponseTests.cpp",
+      "SHA256": "B6D563FA61B86ACE0DAF64759FB88FC4627F2077D96870CBFE386DE030506B0B",
+      "PreviousSHA256": null
+    }
+  ],
+  "interactiveGameplayChecked": false,
+  "physicalControllerChecked": false,
+  "publicationCheckoutChanged": false,
+  "Installation": {
+    "InstalledAtUtc": "2026-10-12T04:19:24.3536922Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "98693EADD65063FCEEC757BAB19E4B2A768582980922396BCB25E249B068D2D4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "55C5C06A0C3CA78B577D720EAB7C05316AD4B2CB753520C9C3046650409DCB65"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "E760689EC3FB63A5B7D15396050B3AACDF054C0F7EE0594D3AF58D0BCFCE4DAD",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "D99B3FEBFF21DEBE48194FC0550381557ADB0C984A4BE209E72444B23F6EDEC1"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "67B417BF61DBE96CD4D17EC1724DDE2378B8F2DD738566930113714B75CD013A",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "2B33F53397AA330DECADAEE61EC4AE7F8CCBA385DCABD30A61A7909CAA6DD8E6"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "EBACF26914F3B14D11852F9F672E1C790013C099BC3E4EE435A47B08E58170EF",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "8E60ACD8A87F9344858D0EE99FC05DC9F5BF4DBAA6410DC69FE08A34A6235B36"
+      }
+    ],
+    "HeadlessPassed": 55,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  }
+}

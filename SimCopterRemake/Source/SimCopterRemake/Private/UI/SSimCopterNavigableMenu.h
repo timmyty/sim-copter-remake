@@ -21,8 +21,15 @@ protected:
 	virtual const FSlateBrush* GetFocusBrush() const override { return nullptr; }
 	virtual void OnControllerSelectionChanged(int32 Index) {}
 	virtual bool IsCapturingControllerBinding() const { return false; }
+	TSharedPtr<SWidget> GetControllerSelection() const { return SelectedControl.Pin(); }
+	void SetControllerSelection(const TSharedPtr<SWidget>& Widget)
+	{
+		SelectedControl = Widget;
+		bEditingControl = false;
+	}
 
 private:
+	friend class FSimCopterEquipmentInteractionTest;
 	TWeakPtr<SWidget> SelectedControl;
 	mutable TMap<const SWidget*, FGeometry> ControlGeometries;
 	bool bEditingControl = false;

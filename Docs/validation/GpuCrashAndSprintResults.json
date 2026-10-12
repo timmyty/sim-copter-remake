@@ -1,0 +1,305 @@
+{
+  "createdUtc": "2026-10-12T02:04:38.403680+00:00",
+  "localDate": "2026-10-11",
+  "changes": [
+    "L3 toggles helicopter travel boost and on-foot running through existing Shift behavior.",
+    "R3+L3 toggles help; sprint status remains visible when help is collapsed.",
+    "Repeats do not toggle, possession/save restore reset sprint, and modal controls retain their gates.",
+    "Installed separate Development diagnostic build with DRED, Aftermath and production NVIDIA DLL selection.",
+    "Development wrapper uses NoHotReload to preserve the installed engine registration ABI."
+  ],
+  "gpuCrash": {
+    "id": "UECC-Windows-E3FBCAF549F716D1D8102498F38A73CF_0001",
+    "localTime": "2026-10-11 20:37:19 CDT",
+    "runtimeSeconds": 230,
+    "gpu": "RTX 4090",
+    "driver": "617.42",
+    "api": "D3D12 SM6",
+    "commandLine": "-nvaftermathall",
+    "aftermathEnabled": true,
+    "dredEnabled": false,
+    "decodedError": "Error_DMA_PageFault",
+    "access": "Read at GPU virtual address 0x0",
+    "shaderType": "Compute",
+    "shaderSizeBytes": 80896,
+    "instructionOffset": "0x1a0",
+    "fingerprint": {
+      "value": "18277261252028549592",
+      "quality": 20,
+      "comparison": "Matches three October 10 dumps on driver 617.14; not a unique shader identity."
+    },
+    "missing": [
+      "shader identity/hash/source mapping",
+      "event markers",
+      "named resource"
+    ],
+    "rootCause": "Unresolved; no rendering fix claimed.",
+    "decodedEvidence": "Docs/scratchpad/gpu-crash-l3/aftermath-decoded.json"
+  },
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/gpu-crash-l3/build-editor-final.log"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/gpu-crash-l3/build-shipping.log"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/gpu-crash-l3/build-diagnostics-final.log"
+    }
+  },
+  "headless": {
+    "report": "Docs/scratchpad/gpu-crash-l3/tests/index.json",
+    "passed": 44,
+    "warningCases": 0,
+    "failed": 0,
+    "note": "HelpPresentation checks icon files headlessly; opt-in rendering was validated separately below. Other opt-in preview rendering is not exercised headlessly.",
+    "cases": [
+      {
+        "test": "SimCopter.Controller.Contexts",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.ContextualHelp",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.FlightRouting",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.HelpDeviceStyle",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.HelpPresentation",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.MenuConfirmCancel",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.MenuOutlineArt",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.MenuRoutedInput",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.MenuSpatialNavigation",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.RadialSelection",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.SprintMode",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Controller.WheelPresentation",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.AltitudeCeiling",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.BaseTravelSpeed",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.CanExitHelicopter",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.CollectiveDrivesEngine",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.CoordinatedTurn",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.DamagedLanding",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.DryRotorSpoolsDown",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.EasyModel",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.EngineHoldArbitration",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.FixedMath",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.FrameRateIndependence",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.LandingRules",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.ObjectCollisionDamage",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.PassengerTransferClearance",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.PitchDrivesSpeed",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.RotorSpoolDown",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.RotorSpoolGate",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.TakeoffPrompt",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.TakeoffRepeat",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.TravelBoostAndTurbo",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.TurbulenceAndDamage",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.Flight.TurbulenceFrameRate",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RemoteRecovery.SaveAndObstruction",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.PassengerIdentity",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.RuntimeRegression",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.ShiftRun",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.RescuePilot.ShoulderAim",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.SaveGame.ArchiveRoundTrip",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.SaveGame.Names",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.SaveGame.QuickSavePersistence",
+        "state": "Success"
+      },
+      {
+        "test": "SimCopter.SaveGame.RestoreState",
+        "state": "Success"
+      }
+    ]
+  },
+  "offscreenHelp": {
+    "report": "Docs/scratchpad/gpu-crash-l3/help-render/index.json",
+    "passed": 1,
+    "failed": 0,
+    "warningCases": 0,
+    "inspected": [
+      "Docs/scratchpad/controller-help-1.png",
+      "Docs/scratchpad/controller-help-2.png"
+    ]
+  },
+  "diagnosticStartup": {
+    "ExitCode": 0,
+    "Development": true,
+    "Dred": true,
+    "Aftermath": true,
+    "Markers": true,
+    "Resources": true,
+    "ShaderDebug": true,
+    "ProductionStreamline": true,
+    "MainMenu": true,
+    "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\gpu-crash-l3/smoke-profile"
+  },
+  "diagnosticStartupLog": "Docs/scratchpad/gpu-crash-l3/diagnostic-startup.log",
+  "startupLogLimitations": [
+    "Streamline reports DLSS frame generation unavailable because OS hardware GPU scheduling is off; saved Frame Generation is Off.",
+    "Existing cooked data lacks CelestialVault MI_StarsStar_EnergyConservative; main-menu startup still succeeds.",
+    "Main-menu smoke test only; no sustained city flight or interactive controller validation."
+  ],
+  "installedShipping": {
+    "InstalledAtUtc": "2026-10-12T01:58:07.1559166Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "B089A656E18DD57DE17B8F4B457150E2FDAB44F29BCF450FB65C127D21C03DF5",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\gpu-crash-l3/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "13821B34B904C730B0EA558C110E5BB8CC680E250790801613461A6148AD38A6"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "7ED4E63F9BA72E9D817E4DE0AB5D67836769AB77EC5CDC03F44DDE38ABB20C98",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\gpu-crash-l3/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "628D494CDDC1F37B3EE4A29D760106EC1BB40755FE6CFF2A45A4F63B211270D3"
+      }
+    ],
+    "HeadlessPassed": 44,
+    "OffscreenPassed": 1,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "installedDiagnostics": [
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+      "SHA256": "06DEFDB5E4D094B159EE77EC9789CDB694A1BB1380FDD52395AA14262760B40E"
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+      "SHA256": "BA5A30EAEE4920CED5C818D752D02AC8EA3954E2FFF37499CFBBEFF8E809304A"
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/Engine/Binaries/ThirdParty/Windows/WinPixEventRuntime/x64/WinPixEventRuntime.dll",
+      "SHA256": "132284F41399E0186BB29C6C2655ABA5403A42793500518B9AB8BFD0B1336A57"
+    }
+  ],
+  "launcher": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/Launch-With-GPU-Diagnostics.cmd",
+  "userSavesOrGraphicsSettingsModified": false,
+  "publicationCheckoutChanged": false,
+  "interactiveGameplayChecked": false
+}

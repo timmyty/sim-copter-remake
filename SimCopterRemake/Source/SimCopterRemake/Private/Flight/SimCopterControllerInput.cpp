@@ -15,6 +15,7 @@ FDispatchSelection GetDispatchSelection(const int32 Slot)
 		{static_cast<int32>(EService::Police), true, TEXT("Police (Chase)")},
 		{100, false, TEXT("Air: Map Mission")},
 		{101, false, TEXT("Air: Automatic")},
+		{RecallAllServiceIndex, false, TEXT("Recall All")},
 	};
 	return Slot >= 0 && Slot < DispatchSlotCount ? Entries[Slot] : FDispatchSelection{INDEX_NONE, false, TEXT("")};
 }
@@ -92,10 +93,10 @@ int32 ResolveRadialIndex(
 		return INDEX_NONE;
 	}
 
-	const int32 SafeCurrent = FMath::Clamp(CurrentIndex, 0, SlotCount - 1);
-	if (Stick.SizeSquared() < FMath::Square(FMath::Max(0.0f, DeadZone)))
+	const int32 SafeCurrent = CurrentIndex >= 0 && CurrentIndex < SlotCount ? CurrentIndex : INDEX_NONE;
+	if (Stick.SizeSquared() <= FMath::Square(FMath::Max(0.0f, DeadZone)))
 	{
-		return INDEX_NONE;
+		return SafeCurrent;
 	}
 
 	// FSceneViewport::OnAnalogValueChanged already negates Gamepad_RightY.

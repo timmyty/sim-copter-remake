@@ -22,3 +22,15 @@ A clean build is ~60 s and ends with `Result: Succeeded`.
 Launching the built game to verify a change: see `simcopter-ingame-verification` notes —
 `-game -windowed`, then drive and screenshot the Slate UI from PowerShell.
 Long build logs belong in `Docs/scratchpad/` (see `agent-workspace-conventions.md`).
+
+## Optional game configurations — October 11, 2026
+
+The wrapper accepts `Shipping` for the playable game or `Development` for GPU
+diagnostics; omitting the argument still builds the Editor. Only the standalone
+Development branch uses `-NoHotReload` instead of `-NoLiveCoding`: the installed
+UE 5.8.3 Development libraries require the default reload-compatible class
+registration layout. Turning Live Coding compilation off only in game modules
+causes a pre-log access violation despite a successful link. The corrected build
+passed packaged D3D12 startup with DRED/Aftermath. See
+[the verified ABI trap](../BuildTroubleshooting.md#standalone-development-registration-crash-2026-10-11)
+and [GPU diagnostics](../GpuCrashAndSprint.md).

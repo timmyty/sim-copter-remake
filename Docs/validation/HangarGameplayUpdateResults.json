@@ -1,0 +1,1916 @@
+{
+  "RecordedAtUtc": "2026-10-11T16:29:21.9164726Z",
+  "Changes": [
+    "Eight warehouse scenery sections, original aircraft geometry, interior lighting and exterior doorway visibility.",
+    "Either Shift key runs the grounded pilot at 2x walking speed with the original run animation and faster footsteps.",
+    "Normal horizontal helicopter travel is 1.3x; existing Shift boost stacks, cheat turbo remains unchanged.",
+    "Arsonists have ten seconds of saved fire-contact protection after ignition, choose an exit and reject fire reentry.",
+    "Remote taser has twin white trails, firing audio, success-only impact audio and animated vehicle electricity.",
+    "Initial island completion spawns three musicians; alternate airport approaches handle obstructed preferred sites.",
+    "Career transfer preserves the pilot-selected aircraft and its capture cage while advancing on foot."
+  ],
+  "Builds": [
+    {
+      "Log": "Docs/scratchpad/hangar-interior/build-final-editor.log",
+      "Result": "Succeeded",
+      "SHA256": "3E1BAD0F3006D50BF52BF7AB4D7F9C57522438F1037C6ED75309263043006E67"
+    },
+    {
+      "Log": "Docs/scratchpad/hangar-interior/build-shipping.log",
+      "Result": "Succeeded",
+      "SHA256": "D81B64382B52985E50D675BB2BDAE68419ABFE581C0553DA9E7329E7043A08BB"
+    }
+  ],
+  "Headless": {
+    "Passed": 52,
+    "PassedWithWarnings": 1,
+    "Failed": 0,
+    "NotRun": 0,
+    "Report": "Docs/scratchpad/hangar-interior/tests/index.json",
+    "Tests": [
+      {
+        "Name": "SimCopter.AircraftDestruction.PilotConversation",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AircraftDestruction.PlaneControlsAndPropeller",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AircraftDestruction.ProjectilesAndPopulation",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AircraftDestruction.WholeCity",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AircraftRoadUpdate.AllCitiesAndAircraft",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AirOperations.HelperCruisePacing",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AirOperations.TaserVisuals",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Career.CityTransition",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Career.FinalCityEndsTheLadder",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Career.OnFootAircraftAndCageTransfer",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Career.WarpAircraftIdentity",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Cheats.OriginalDogAssets",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.City.HangarInterior",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.City.HangarPlacement",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.AltitudeCeiling",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.BaseTravelSpeed",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.CanExitHelicopter",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.CollectiveDrivesEngine",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.CoordinatedTurn",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.DamagedLanding",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.DryRotorSpoolsDown",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.EasyModel",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.EngineHoldArbitration",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.FixedMath",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.FrameRateIndependence",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.LandingRules",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.ObjectCollisionDamage",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.PassengerTransferClearance",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.PitchDrivesSpeed",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.RotorSpoolDown",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.RotorSpoolGate",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.TakeoffPrompt",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.TakeoffRepeat",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.TravelBoostAndTurbo",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.TurbulenceAndDamage",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.Flight.TurbulenceFrameRate",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.NpcMedical.BandClusterAndSpacing",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.NpcMedical.BandObstacleRoutes",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.RescuePilot.PassengerIdentity",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.RescuePilot.RuntimeRegression",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.RescuePilot.ShiftRun",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.RescuePilot.ShoulderAim",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.SaveGame.ArchiveRoundTrip",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.SaveGame.Names",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.SaveGame.QuickSavePersistence",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.SaveGame.RestoreState",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.UI.HangarCatalog",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.UI.HangarParkingRules",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.UI.HangarPurchaseParking",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.UI.HangarShopSellGate",
+        "State": "Success"
+      }
+    ]
+  },
+  "Offscreen": {
+    "Passed": 2,
+    "Failed": 0,
+    "NotRun": 0,
+    "Report": "Docs/scratchpad/hangar-interior/tests-render/index.json",
+    "Tests": [
+      {
+        "Name": "SimCopter.AirOperations.TaserVisuals",
+        "State": "Success"
+      },
+      {
+        "Name": "SimCopter.City.HangarInterior",
+        "State": "Success"
+      }
+    ]
+  },
+  "Warnings": [
+    {
+      "Test": "SimCopter.UI.HangarPurchaseParking",
+      "Messages": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_18.Untitled:PersistentLevel.SimCopterHelicopterPawn_1",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_18.Untitled:PersistentLevel.SimCopterHelicopterPawn_10"
+      ]
+    }
+  ],
+  "Screenshots": [
+    {
+      "Path": "Docs/scratchpad/hangar-interior/outside-0.png",
+      "SHA256": "98EB7868B792E56FA9A2DEDED3C5481EFDBFDCE4C78F8510BB4AFA65ACF540C6"
+    },
+    {
+      "Path": "Docs/scratchpad/hangar-interior/outside-1.png",
+      "SHA256": "66A55D6E6F3BF8F4A3BAD3D3F211A92F8540F6329EFA6A6208B9A6FE80B8682E"
+    },
+    {
+      "Path": "Docs/scratchpad/hangar-interior/outside-2.png",
+      "SHA256": "6FEC70460DA79429D752BB5B82B4C13CEE9C2A9D0083DA450AB9FEB36EF568F8"
+    },
+    {
+      "Path": "Docs/scratchpad/hangar-interior/outside-3.png",
+      "SHA256": "239B1D4AE5764BC2CA0CE686F2DFCA8D590A252A1CF9D8C0B3FDFF7DF4BA94FA"
+    },
+    {
+      "Path": "Docs/scratchpad/hangar-interior/outside-lit.png",
+      "SHA256": "30B9FDC9274992B000026EE146220FC0B95FFCE68EF153F863468196514F9B00"
+    },
+    {
+      "Path": "Docs/scratchpad/hangar-interior/taser-impact.png",
+      "SHA256": "0F03B885B62FD8D75456FF85C00604E3659BB5B1186C074344DDD3744E227341"
+    },
+    {
+      "Path": "Docs/scratchpad/hangar-interior/taser-car-arcs.png",
+      "SHA256": "CE4FF189F988858EB3D04D77EA77AC15D00F1076D8B4971C6747003C8A72FA61"
+    }
+  ],
+  "SourceDiff": "Docs/scratchpad/hangar-interior/source.diff",
+  "SourceComparison": "Unmodified publication checkout d1155f23709136c1bd0ba51cff7c7f4200b2a52f",
+  "SourceFiles": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake.Target.cs",
+      "SHA256": "BF86F313C0D28C6BE4FE1A7257FEF163DE49CC08A6B14E5EE7CD82BC8152C71B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemakeEditor.Target.cs",
+      "SHA256": "2D86D277CE89D3C088D38D3CFD6E427DD3099AE1B81D9767EBF90616EAD43B03"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/SimCopterRemake.Build.cs",
+      "SHA256": "A679ABF5CC6127F51A4A0238A1711780438A62FCD7180D45E9BD4FB9DA62DF16"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/SimCopterRemake.cpp",
+      "SHA256": "9F0FB7519C088A5CC731E0FCEBF3A0E9120D7498CBEDFB2378B3BFD874578C8C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/SimCopterRemake.h",
+      "SHA256": "0D37E860B0DC4E7437E8D630BE91ADC963451D81A1EBFA926862D20F79A294E5"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Audio/SimCopterAudioSubsystem.cpp",
+      "SHA256": "3696F20F8982AAA8CAD74A4584C6B632AD91B8A8FD712D2F50C383220EAE63A0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Audio/SimCopterPilotFallAudio.cpp",
+      "SHA256": "B198ABE3A079E72672704C6938BA72B0B6D49DCEDF12C23BA94C57A3553FBD88"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Audio/SimCopterRadio.cpp",
+      "SHA256": "E64E2C9B930E4F747B903EF61A723A37A2005E44DFBCF6F4AEC221AC0C12AD09"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Audio/SimCopterSoundTable.cpp",
+      "SHA256": "78B5158C4501DBCF93697C065189F9AEFA25B792F384182A5D326ECF6DBD7A15"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCity2000CityActor.cpp",
+      "SHA256": "4793D4A4FE9A91B575DE3518BE63425BF0B2A15583F474D1C6AD6FAFE2333965"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterAirport.cpp",
+      "SHA256": "36004BFBE45EA026B9BB30A69F92CC47F8B2F55E338660C9C6BEDF28A120E8DF"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterCityGeometryRules.cpp",
+      "SHA256": "64AD27D9E57430ABFA8F243C0B2AC98E6D4A0BD689BD5B741839DDED2C50F38D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterCloudTuning.cpp",
+      "SHA256": "AB35AD3EAE36459DDA4A1BFA607022245E175CBC8F0661C1F3F9DA53F0C15793"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterDayNight.cpp",
+      "SHA256": "36A6A41C851AFF87A888627662EC316881C8C11173E0E1EE15136528C300E8A4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterDayNightFog.cpp",
+      "SHA256": "CFF694D5BC2B4E2B5CA375B105B92E2163280A90D41E51E94A8E9E326FFB5F29"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterDayNightLength.cpp",
+      "SHA256": "E4A48757CEEE33BE3B86228BE5727F3264A8E43E79A43F4EAC83AC8135DBB8D1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterDriveIn.cpp",
+      "SHA256": "8C0CC0120B856366E954EF0B6EA04AC0122886996AA31A112D32A097FAC4379F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterDriveInPlacement.cpp",
+      "SHA256": "055636881786A02D22C92554B3EDF63AB7CCCD91A83FA82B1C85A6EF69B7481B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterEffectExposure.cpp",
+      "SHA256": "EE3C768672D162289611606B8B8245665E998DECDE3FEBC4127E9725532DC797"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterHangar.cpp",
+      "SHA256": "FEC699EEA66C881560E8B8F3BCB84F9FCA54C5D0C71436FAAC177E0CDAA1666C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterHangarInterior.cpp",
+      "SHA256": "7B6F97E4DAA27A6FA955786D58BA59F38FF47376C3EA8EAAC7CCAA53452B99E2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterHangarInterior.h",
+      "SHA256": "3F5D158A46D722B62E4E636F624D2BFB734DA64EF1C7EC4425D01B9590DAABBC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterMoonDisc.cpp",
+      "SHA256": "CF0662CB4B9F9573A4C230BD6D833A78FACCA6BD2EFE49E0532A3A02DB833F09"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterRoadDecorations.cpp",
+      "SHA256": "07235E307676BC214BFF1292EC78AC6C3CDA69FE2C4D94EBC7028DE0E411C3B4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterRuntimeStaticMesh.cpp",
+      "SHA256": "354534B1818770AB54FD7FEC10BDB83D1559711B080EEBFC5E5DF2C1F5F896D5"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterSmokeStacks.cpp",
+      "SHA256": "819F50E166E04B07F89C14EB211085925D6F72434324678A8F73D5096AF9E5B1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterStars.cpp",
+      "SHA256": "C4725C8D973BED2C4F3E54CC72B1AD732230610109EFA7E44AE9B545A1E6913D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterStreetLights.cpp",
+      "SHA256": "91A4A14AC1515D28F9B57DBB6FAE6C6610D64CB50B2D72E7F04119ED97BF8DA1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterWindTurbines.cpp",
+      "SHA256": "EAF475DEC1DA7B743A0CB94B7DF8F239EA288C368254EF121B4A000331817ECA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Debug/MaxisMeshDebugActor.cpp",
+      "SHA256": "E025C4AE9CDF5F833613598889412198BABF9A2570938B4D4719B427BB9DCC37"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Debug/SSimCopterHelicopterDebugPanel.cpp",
+      "SHA256": "EEE622669D8079E40A02D3A290D16BF53A6AC1F8E67D39F58D70C293DE90C23C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Debug/SSimCopterHelicopterDebugPanel.h",
+      "SHA256": "F819844E5BEE727781592D27B066DF5BA026BE83B22F79F37E1ED5AEAF9A0BE3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirOperations.cpp",
+      "SHA256": "620C4CF7B8CCB585C239C92EC5509D244008D973AD17AE513CECBA2FE594A379"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirSupport.cpp",
+      "SHA256": "4E87E05559F51D3478CD240034DD52B7DED59C7B61080CEFA5BE11CFC9472705"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterControllerInput.cpp",
+      "SHA256": "87C01D47CD5889677F7E7AC2E7741843FC4B7099A6E842280100D51ADB47366E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterFlightModel.cpp",
+      "SHA256": "E9B9CA2E1BE9DA120B1887827AD6A5322F893664396BF34746EE3C7F6B7E93EA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterAirOperations.cpp",
+      "SHA256": "FF145BCFE99810175D095BA086690DE873B6DF6BDE7EF09B707A8498D9522DC0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterParking.cpp",
+      "SHA256": "899E40D22A05C2BCA279E22DEB0053419D2DBA726FAE00040571C9EE024D9CF4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp",
+      "SHA256": "1F1FE3F703D290E3FEC5376C10703C5D05CE5F2FC25F53B92417DBF468104E9C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPresentation.cpp",
+      "SHA256": "7AAC4DC1998FDFFA775ADB174E24FD6C7DBDF8A2FB0BA501E9B7D431F93F1627"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterRegistry.cpp",
+      "SHA256": "44979A1A7C2E89B0D41C1276E260D27DBDB4FB222BAD7FC5C9686D369E387F25"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPilotRecovery.cpp",
+      "SHA256": "05606CB71C1DB3B23A7346049B0AF1D8838DA8494F4A09287FCB515CA0DBDDE8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPlane.cpp",
+      "SHA256": "DE6400BDC7177A2A036E7F893909502B6B9E3995F941AF1109E94A9FCDF4ACCE"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPlaneParts.cpp",
+      "SHA256": "3BFF9BCC671E195B1B358E0A11DDC3AF83CF797D2AC765C6B6FB7A187FFC7DC9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPreparedHelicopterModel.h",
+      "SHA256": "B984361F76E3E7C674B8BED886120A56EABAFEA90F5E74B3BAF765778DC7D72B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterSpotlight.cpp",
+      "SHA256": "E74D29B2C9720598C5589CF660CD8898FB514A761219E21E1E06D4E9274F7B58"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterTearGas.cpp",
+      "SHA256": "C937064C5A680E19C8DD8CCF53E6696988C080C7DC756DC27EF08EBF5104ECD4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterWaterGameplay.cpp",
+      "SHA256": "473F02E97413331D182A07E3A5D3B2DA295338464059AD032D2135719FFD4421"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterWinch.cpp",
+      "SHA256": "5DDCA365A78E3CBE831CBCCFA575CABEE3C966A36FE7D759E1C13CC362FBB913"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/MaxisMeshLibrary.cpp",
+      "SHA256": "8B5F41019270E8C015E4202B0B33EF8A23E386456946ADE834840052D379FBB0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/MaxisMeshReader.cpp",
+      "SHA256": "8A13BBBB07360C4E2EF0A0305F52E46049962DC67BCEAB6938D8F39868C5EDF0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/MaxisProceduralMeshBuilder.cpp",
+      "SHA256": "D4EE575235D89460F836393C8FBC51EB9D239C8304D6B1B21280D9A639E6DFE9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/MaxisTextureReader.cpp",
+      "SHA256": "D616D04EBD8D98988830B286CB100B0070B72403DCB8194969B59C87C945555D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/MaxisWindowsBitmapReader.cpp",
+      "SHA256": "1D21BDC755D22F5D514D1AC93573BAFF4784F4152CD47FAF63C46C7B757CB0CD"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCity2000Reader.cpp",
+      "SHA256": "776E97C299A53197CFA54F475951ADC4D3319E6258943DCE898EB568BA3138E7"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCopterDougContainer.cpp",
+      "SHA256": "5B79DC2E86880D2B917AA3AD09FB0EBFC7D00B232784FDAA55FF6B822BC43A05"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCopterDougContainerInternal.h",
+      "SHA256": "4DFC7B856491FBABDD68490CDCB5D7350B44B77A9A2BE8E5BDDFBC35547580E9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCopterOriginalGamePaths.cpp",
+      "SHA256": "88C18FBE090C422052F06F6B96A599A5A2E46D554EA94C589354AEFA303FE328"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCopterPeopleCityRules.cpp",
+      "SHA256": "51DEB04B9CF7C088F4AFF0688A9B2B18B0F668083145747FB9F0087184D22BB8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCopterPeopleReader.cpp",
+      "SHA256": "122BDB7316DAA6F590FF87213F685DE9E76667FB8D631D25233463AEF4B89F87"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCopterPrivAnimReader.cpp",
+      "SHA256": "4A255081AF1B64262941B602DC2D8F910EC6E781617352DA5619A76B62024F08"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Formats/SimCopterTweakReader.cpp",
+      "SHA256": "3EFFB1F1F605EAE365F1374A8A815851E1E05C489CA501D4C17979A7CF2041C2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterCareerProgression.cpp",
+      "SHA256": "A081E09ED19C838DA4A61B1E31AD1E0023FE7DEE2DD6D2B6D7847C40FFB6B70D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterCareerSubsystem.cpp",
+      "SHA256": "6BF7A5FD2635968E5213EA07BA54043AC685388E7958DA2C219BD000042B5B17"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterCheats.cpp",
+      "SHA256": "BD455D11CA9FA51B6BD25933D0E34A4523C238828F9EF77D01A367B956F6B517"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterCheckup.cpp",
+      "SHA256": "140907E4B595D1EF2460EC87A3E79E468668D386BE4BC443F661F8A6CAE15138"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterCityIntro.cpp",
+      "SHA256": "5F3E083BFFA264437E00E47CF5A3A6AEF31C05859A3361481A2A92FE6D5176FD"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterCityIntroRoutes.cpp",
+      "SHA256": "D122E8387D9CF0B65A0FDA6D07587672449FAB51E86848555A076686F4F222FC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterGameMode.cpp",
+      "SHA256": "CA5598E8C10B3D1957C2E82194511CB59F2691D1376F0B9429103AEBD000DE97"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterInputDebug.cpp",
+      "SHA256": "8463661993228CC776A4F81899E56F5B4436661067ED29B36A9A76DCBD8AFE03"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterInputDebug.h",
+      "SHA256": "E7612A5BCCDD87FBB6590924417A300133F6289C5D14068EC84AE4285358207B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterKeyboardFocus.cpp",
+      "SHA256": "D193C7603056D1EFFF56A38B8C747C32DDD8F0444D0247122177148B8282E8D5"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterLoadingSubsystem.cpp",
+      "SHA256": "17923BD37AECBFFAF2C22476BA0E7FC3A2BE8823B5004ED264ADEE25399E4AA2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterLowPowerMode.cpp",
+      "SHA256": "879011DEF22C808979FD110989868682752057B3BF37C4A1A86540C605ADE005"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterMacModifierResync.cpp",
+      "SHA256": "71A3FD40CA25334E4E6D605F57226B8B7C119C13F4AFD62FDC9E70C256A17AEB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterMacModifierResync.h",
+      "SHA256": "B9F82DEAEFA4B46AA507D4644AB9A5F196111D262BA3A9BC02EBF2552A3DE326"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterMacWindowFix.cpp",
+      "SHA256": "6E1995FE4582AEA26938E514BFDE5C6BF51F7B187B36E95417D542F889E0CFE8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterMacWindowFix.h",
+      "SHA256": "1791A12BB218E39D637C27F135F366634F1D0972633D64F2DE57781009A9FAB6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterMainMenuGameMode.cpp",
+      "SHA256": "5E5D33ED77F496DE0AECAFB07015B97B773DA2A985741CFA47CA9DC46A5D52D5"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterPlayerCheats.cpp",
+      "SHA256": "566C43120BD39602B0CCB95342C00BED77D37DB57F372536168642D7181D21A2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterPlayerController.cpp",
+      "SHA256": "7667886DC15F3C5CD8A5E8713CAE5BD6179B9AC27D5C85B0339058B36F080537"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterSaveSubsystem.cpp",
+      "SHA256": "6B2EFF69AF7BBC3FE36231D007CB164A20D8B5C74960BE7A788809F58DDD6588"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterSessionSubsystem.cpp",
+      "SHA256": "1A9787C9EA21EC59C76EECBF7595B94485E4E1BE1821BBB762996F6F4E4A84F3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterSettings.cpp",
+      "SHA256": "EE0D4F474E0A4C2DBF14610CD56742742EFE6B756EE6C25B180AE16183C51D27"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterVehicleMaterialSubsystem.cpp",
+      "SHA256": "FCEDFF7C98175D42EA356EDEEC8E9A651C6021C00FE79A1C29E561D5F1918098"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterAmbientVehicles.cpp",
+      "SHA256": "9CBBFEB7F138EABEB297F4D5B16D664F783F9496E3C01B091FFAB6ACFFA9389E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterApachePool.cpp",
+      "SHA256": "0AEAA52CA468A35018AC1DFCE8EA4F4A788F0DABD505DA165865856F58FB168C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterBandNavigation.cpp",
+      "SHA256": "DA3D5159115AD2A72E49012D9702D5393DBD5FA4B2166A3AFDF4ADECEABD8EED"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterBehaviorVM.cpp",
+      "SHA256": "A7931DDB0D4618B258F944E474DEEDAA40B5E21F9D0996E81ED0D02464A3C6B4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterCowGeometry.inl",
+      "SHA256": "FB59D24567C3EAFC0ADB3D1F122BE46EBA223BECB5AED38D98A55CD4BDBBEFEF"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterCriminalCar.cpp",
+      "SHA256": "A44C87FCF06EB15D3DB01C3934C381E0665C6B9E8F526E5DBEE17A43DB3131B9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterDispatch.cpp",
+      "SHA256": "D4C9DA1C5B27FABFD34AB7CF5AB28EF5574D722905A86C763630DE36146CBA2B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterDispatchMarker.cpp",
+      "SHA256": "E5FF373AB7BBC2B934E71A0B1CB726E3EEE36CF89298B4FB7803862612D6851F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterEffectRasterizer.cpp",
+      "SHA256": "D8A3EB5A11076AFFE6EE50E71AE78F6FAEB7A2242E0E5807CACDD3E1E1F5E8F2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterEmergencyCoverage.cpp",
+      "SHA256": "7F16A15E2CD367AC98E8D510D5F55BFB0937B3E5654B18394C068A3F66AD1CD8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterFigureAdjustments.cpp",
+      "SHA256": "BC43BBF60CA691C481A0F7AC0BC1448616CDF6D17940D46D493E1BC9D657BF69"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterFireRenderComponent.cpp",
+      "SHA256": "38BE74778825B38895A0D1A52E4090E74E20BC48DC5B968F5F24F402B5D56FCA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterFlashingLights.cpp",
+      "SHA256": "D8682A5B21D040B83F4A5C105545005A939AFE35137BEA8CF752FDB9111605CE"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp",
+      "SHA256": "DB659BCB84CDE40FE701B5155F0AD707F2E9E66A5E687E3B7BF85B0295581044"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgentAirOperations.cpp",
+      "SHA256": "5C2D536C8A22FEB2B25B21CD8E102E0366E57EC002B7D7B7A5E342771E3C42F9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterInteraction.cpp",
+      "SHA256": "B24EF892214DC1D10D17E8E1CA363946382BE58FD8A708A36E14D1DDABD6D6C5"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootAirOperations.cpp",
+      "SHA256": "4ED1AC146C091EAC7FB713FBB0EF2542EE0F54979AE6B8D5A1DD9D5FE9A66FDD"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootPawn.cpp",
+      "SHA256": "EC3DE5D2F116758DED6F325437F349890C80AFECE98E1B10EACE9D7142758591"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterParticleFX.cpp",
+      "SHA256": "843D27857116CD9AB104A68064560213DC50588053450A17809435A01DAB9260"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterPeopleTrace.cpp",
+      "SHA256": "DF59D45727B912C56199506DEBB989B401A3328706FB64A7405529D3972177E4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterPilotEquipment.cpp",
+      "SHA256": "51016C170337059020D0C9CA465165698F0C112F01BB591EB3BE5FB0545AC90E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterPopulationBody.cpp",
+      "SHA256": "23735CB015E958F20CB1FDC55BD18BB427D56D63F6E82EDB1E7D0FAB91375D22"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterPopulationFigure.cpp",
+      "SHA256": "944C306ED5D6F59BD3714B71F0DBCCAC98F71F0E9B593D19B50C770EF0F9A1F6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterPopulationSprite.cpp",
+      "SHA256": "BAEB46013A10B1BD85C2274DC0B277D53561DD9790B1BAEBA79D4884687881D6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterRescueDeck.cpp",
+      "SHA256": "77F1BC8D068667AE0EB6419DCD2AF82489E87293DEA61BFCF386B46C6865757A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterServicePosts.cpp",
+      "SHA256": "1399EF51BA900AF23C9CF5DBA66796259B5901303E001144F65E373CE4C76AF5"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterTearGasPool.cpp",
+      "SHA256": "920938CC5AFCE634F9DB7276EF1D0284BE90B44126CD6E605936341805909F68"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterTrafficJam.cpp",
+      "SHA256": "9715722B62090B76E4BA86B0AD776FA245CCD321A6581CECB4F288B9D7FAD49B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterTrafficSystemActor.cpp",
+      "SHA256": "B54F6BAC1B8B16133E49B1D3C3D3A319CA10F24FFB6AE990A542173CDA250932"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterUfoMesh.cpp",
+      "SHA256": "2377EFC574BB9076400B57118AF62331F916BD2974522BC9438ABE24F5C0F472"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterMissionSystem.cpp",
+      "SHA256": "40FE09462697D19FB47F64017C03E3277327D327BEE9E2F7D2628918EDFA1719"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterMissionSystemActor.cpp",
+      "SHA256": "0A4208D4DCB52344298CFEA39EF26D67A9A6D26232B768DC83282D326BB2FCDE"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterRiotLog.cpp",
+      "SHA256": "E946897F64DEEAEA74F4D85B154222989F5C68B2658FBC2AE5434B03264F448C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterWitnessBriefing.cpp",
+      "SHA256": "D81B851BAD366D6954B35191E9122291CD88CBD5608E7586BD3AD7F848D8779F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Replay/SimCopterReplayFreeCamera.cpp",
+      "SHA256": "9A8FC345C98DB7CE55A6697741938ED53C62433956BDC88F247C868328F46F41"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Replay/SimCopterReplaySubsystem.cpp",
+      "SHA256": "F2D80465101E4CFFB3EE3B2DB509D239D8AAAF304348FE6CDBCFA3C5A941B00A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Replay/SimCopterReplayTypes.cpp",
+      "SHA256": "05B7BE029CEE6BDE8BD60901528C2850095696D4AF0C3940B51CBF612EFC06C4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/MaxisMeshReaderTests.cpp",
+      "SHA256": "0A0C0FA439A815B4A33185A579D42400E5DDF9B49842523E174C3BCD874C0A59"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/MaxisProceduralMeshBuilderTests.cpp",
+      "SHA256": "4086DC312F143BA2603A48B8FCA57290E33E1B93544CDA7BCF5F3124E22E10BA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCity2000ReaderTests.cpp",
+      "SHA256": "36D00C95C53AFD6AE48941ADF7E2AA22E32E28432A4E92274E9AF77B8DDB2F96"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAircraftDestructionTests.cpp",
+      "SHA256": "6DFFD46F3F331DF497340F71800D431B73BA8B8D2D76F003AB49B26F49853D3D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAircraftRoadUpdateTests.cpp",
+      "SHA256": "1DD80046E5F99076434D4F88D2521A748CEF4C272B8EDFDD43A8603849652A81"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAirOperationsTests.cpp",
+      "SHA256": "6B1F4565E197DC5B6F901CC52CA862731A943CF350C50FD2758FC2F7A7C0365B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAirportTests.cpp",
+      "SHA256": "CBB113A13BC7DC613AC984A3F354D27DB453EECE63E3D7FA9CAD0E39CA4886B6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterApacheShopTests.cpp",
+      "SHA256": "DB65E9A12500F14BE81E2F7C5E8C901D97079B7FD4450A710E3C5543B130738A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAudioTests.cpp",
+      "SHA256": "FA1BEA18AAD54B0D35C1DA67A9A1C8E80422A46E5CF0018F9EC50BFA3A1719EA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterBehaviorVMTests.cpp",
+      "SHA256": "DCCC8F6CC032512734EFDCEC66192BD7CAA6A9E74947A152B2CE43F958024C3A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterBuildingCollisionTests.cpp",
+      "SHA256": "47658A33DF9E8CC6F2604DAE0AA9AFEE541AAE1F5E3095304A0B9E4243130395"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCaptureCageTests.cpp",
+      "SHA256": "57D921A1D705AC1539D56BC84DD0ED76F829E62D09D76EC6142B6BE44FF16FFD"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCareerAircraftTransferTests.cpp",
+      "SHA256": "AE83B92B58392AC7FE0D00DAC53320B2F389A9593B87724D999B9F38BBD3CE4F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCareerTransitionTests.cpp",
+      "SHA256": "01A925C5EAE56042AC8E6CAC443A7AD44689E38A036CD2CFAF92DB2FFD9033A3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCheatTests.cpp",
+      "SHA256": "BE7111ECF01528BBDDC8D1E7391DCB46ED43B7E3D4A0C4E3C37102F3A152D99D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCheckupTests.cpp",
+      "SHA256": "01639C746C7914E7B2F9DDDD8849D17C688D6B8187F6EB3B58082F699E7C666B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCityIntroAccidentTests.cpp",
+      "SHA256": "3E9489C60DB5F403AA9B84EFE9E1BB2CE2D954BF19E9179C81F15322E12AF2CA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCityIntroAudioTests.cpp",
+      "SHA256": "6C4FF9AA9634161319B23274971E21E57E9BCA2D0C3E422947590DEF1A39C15B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCityTests.cpp",
+      "SHA256": "D506B0180601DFEA96CE6102C90A7EA632421ADB62AFC2791151CEC4CEA64AFC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCockpitFrameTests.cpp",
+      "SHA256": "42FEC870BE02F70142CBB99ADAAA369315BA27C7DEA8FA2E86C5287750D371DB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerContextsTests.cpp",
+      "SHA256": "A2F99E84AD9D654A175A79F0A3985345C66B6DE8C2ABC7880ACAA5B406925084"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerHelpTests.cpp",
+      "SHA256": "D965457062F051C9D0CEF7580DC9342108511331F489CC7FA683DB748DA1D312"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerInputTests.cpp",
+      "SHA256": "D9C0778A7EDE71D823FFD5BD13ACC058338553BDD778204D9786A6EB2FB0E022"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerWheelTests.cpp",
+      "SHA256": "198385EB9E4B9287674AD2A512940B4B9C47C84B87185FC6D1FEDB8299965A14"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCowGeometryTests.cpp",
+      "SHA256": "22EDDCC987D2009426FED2775078692947E7977F4F50645337F0D9FF250DAE0B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCriminalCarTests.cpp",
+      "SHA256": "A0CF619F8134AB22D4ADB43494BA969947855D453A9F71612C03D99ACDE28AD9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterDayNightFogTests.cpp",
+      "SHA256": "E5C7A206C42DED034FD2B069D1E6A45A633E5C26F87A765B7F23A1A9E934C7E4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterDayNightLengthTests.cpp",
+      "SHA256": "D0A75FFCB88C91C22F62629202A46E45C8AEDD17B2879A3DF4017C82E8F18066"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterDispatchTests.cpp",
+      "SHA256": "BB4D618C793A54AFE9B1F1833BD340E3145DC6D405BF32D99D5FF8AEB656BD05"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterDriveInAudioTests.cpp",
+      "SHA256": "D247C756E4CA4705F986B325F8CA244DE038789A799E22AE074330D723E19A31"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterDriveInPlacementTests.cpp",
+      "SHA256": "643612EE40B357BADEE1620FDF83F56DA0A6450227E8168FF5B698F4F819CD7D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterDriveInTests.cpp",
+      "SHA256": "31113A8A67406BE3F4D91CA12ABA8594A443F80407FE3658AD4DD88C5E072A88"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterEffectExposureTests.cpp",
+      "SHA256": "5F7C41C9D80154754DDE1167404AC4BEE0B89D2C1C19B4EAC228E7EC46C5ABDB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterEffectsTests.cpp",
+      "SHA256": "A031018E06E00A2C2EEC80E3C046F476ACB2731D5E29840D42D55CB42714BB9B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFigureAdjustmentsTests.cpp",
+      "SHA256": "8B03D2643BFC27145EF95A32314770D35BCC1047DE9539566EED3AC48C475F1E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFlapLayoutTests.cpp",
+      "SHA256": "5CDF08070D9AC374792C6170A82744E251A37342267F641F2BA9C4ACA8151C71"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFlightModelTests.cpp",
+      "SHA256": "3315F0BA1B7D0A4B281C5B2F000BFE6CD997875B4BCA598BCFEA205AF9AB9BDC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFlightPacingTests.cpp",
+      "SHA256": "EBEF02E138C51EA830C6518A4B3C558BA9B4E66F70BEA50E2186620CD21BECD2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFrontEndTests.cpp",
+      "SHA256": "DB5827D64DCC89F5FE49444AE07FAF22B272D9A4BF9A35DFDAED63BCEC0FC8E1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterGameplayPolishTests.cpp",
+      "SHA256": "8E142363B220D41353C247C17084C9FF76830C59A81F40B28CDDA2B67B6CC7B2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterHangarInteriorTests.cpp",
+      "SHA256": "92B2FEFFE38D6E378144AA3D3DA0376419B2507008F7D9663CF69CC381E0B08F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterHangarTests.cpp",
+      "SHA256": "F478E8C391552AD477130B06BAF236FAE9204ECF031993E16AA495DE9268D9E4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterHelicopterContactTests.cpp",
+      "SHA256": "381B540FFDDC924E93B202886DD7E688A1E4BF2D160829EB4C836F5FD0AE0639"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterHelicopterParkingTests.cpp",
+      "SHA256": "BF5DC1274DCA32C15CAF06A69CF980372C8FF92912AD8D303727293FD6021EC8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterHelicopterRegistryTests.cpp",
+      "SHA256": "18FFF166DC6FE3F84BEDD44F86C8241763EB1B20C34C6E87DC8FB146E684B8EC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterIntroTests.cpp",
+      "SHA256": "00FF85A618622B4B10274AFAF28A051784E4B97D35E6CBF6C79F16C77C4B7547"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterKeyboardFocusTests.cpp",
+      "SHA256": "F880DC2022C90AC57D9D4D2B59308E868FA6BFE41A2ADAAF63F5D000894F0EEF"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMapTests.cpp",
+      "SHA256": "AC80995CBBA60A74285AC794285F79935B6C2887979A24898D8A472D07812C8B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMedicRouteTests.cpp",
+      "SHA256": "60CE78CAAF241AA52E2D7A308C925AC47C41F3A155A6862D8E0065021667B642"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMenuNavigationTests.cpp",
+      "SHA256": "E7D86233E09A3280BAED0FF4A02D743AE78AFF345E7471D19C1B6BF5F7E53440"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMenuOutlineTests.cpp",
+      "SHA256": "FFAE149C8A6E629BB05B4876B78B7194423D427E6848FAC3CE85EFF1621ACD18"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMissionImprovementsTests.cpp",
+      "SHA256": "475B334D293D2BEBA9437F3582C64D0DC226105DE4907BF3A9A2DC01ACA37E5D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMissionMarkerLayoutTests.cpp",
+      "SHA256": "96CB111C20F6B11918875C2DCBE4E3B5A176EDF9A1E739309675746CA43DCC52"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMissionSystemTests.cpp",
+      "SHA256": "4852E261D5B0B9C86FCA8527795449FCAAA5100B9C9C7DE43BD67C347E2B3F9C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcAppearanceRenderTests.cpp",
+      "SHA256": "45AA95E6D37B88F61AEDB21BF3A9F81C6F3D1F6FA3DD3F0577188A88625CC46F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcAppearanceTests.cpp",
+      "SHA256": "4E523A38B502D63F7BEB5B93D2370A5326B9ABA4DBAB9B873AB7D5CD1BE04533"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcMedicalTests.cpp",
+      "SHA256": "C4F6DDE7475AB908B85DAFCDD8D45CA69FF1FA7CE66753D411E48417E9F497A2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterOriginalGamePathsTests.cpp",
+      "SHA256": "3B1EC696DF362F2945A9A368571D424D38479A3E36D7FB658AAC224C775D3CC0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterOverheadGeometryTests.cpp",
+      "SHA256": "8E7F7D0D6D5495CA1F635E9EDD662426347DFAB163FE75CEAC79CE781CA6804B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterParamedicHandoffTests.cpp",
+      "SHA256": "6FDC84138B6AC5A8B06FA2011C021204B0FB6702DFE4CA96D7C7B035DC0122EF"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPassengerDisplayTests.cpp",
+      "SHA256": "FA1C89FC4F90E86F88387AAAC40E624824442CAF4B7B1248181CDEE994739E3B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPatientTrafficSafetyTests.cpp",
+      "SHA256": "19EA2A1072B40820C03A5143411A60B828C3828F9B33BAE1D2207443C767732B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPedestrianKnockdownTests.cpp",
+      "SHA256": "222E9DAEB9465B059BD07A3FA07FB073C01D6012290A994B634DA101551672EC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPedestrianMoveCoreTests.cpp",
+      "SHA256": "1485008B6FBAB9161459D0375156128FEBEF7F223570C067A0A62C4CC92B8A07"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPeopleCityRulesTests.cpp",
+      "SHA256": "B6FE101D86AC3D6496983364FF21168DB8A7E94814D0933472DF69F104451603"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPilotRecoverySaveTests.cpp",
+      "SHA256": "797EB6E99E606765BE92A01ED354375789D53DF18AC1423B90EA3054D660066C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPilotRunTests.cpp",
+      "SHA256": "61C855CE71CC455EA110AF51D20C6C7FB7AA8141AD6B0E83748BFB50902BA5DE"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPoliceRoofTests.cpp",
+      "SHA256": "8D6B151021066E9ED34BB0231A5C378C70372190DB655D5C57F4A9B906C862B8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPowerLinePlacementTests.cpp",
+      "SHA256": "09DA74BDB85B78BB8152207CADB0B14AD2379714CC22569E94691967F0E2137F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPrivAnimReaderTests.cpp",
+      "SHA256": "7207E903D1DA99FAC9C6EB28E87B40E482B42F83AC16684A3512A5CEDE7EE7B8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRadioTests.cpp",
+      "SHA256": "D74949864CB7DAD1358C839F0FA1424428681AADA6025333DBF3FB62DB8904B6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "SHA256": "D1DEC7642B05255290D4E368B019A9653E82BAAFC6911D32DC31EF695273B387"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterReplayTests.cpp",
+      "SHA256": "D357588695D991DE772FA251B6813B1186F2FAF9F77621690ECE13147F205323"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRescuePilotTests.cpp",
+      "SHA256": "95A4E29326E47F1AA38EEB2E626850E62AEB87C130DE14356933BDE48A5255F0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRoadDecorationTests.cpp",
+      "SHA256": "BB4F8052A9FDE8C2DFFCD6E5536AE43FAEF3AABEFBC107C3983AC5C58145A5F8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterSaveGameTests.cpp",
+      "SHA256": "0F5B9EC33D54442D5DEA0C1E0E94D9A641E3D33E5EF183335BE166FDCAAA6078"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterServicePostsTests.cpp",
+      "SHA256": "F33F2D11C615BEED560E5A29ED8EB83FDCE257AC8B3BD16E7B73A58BB2BB5512"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterSettingsTests.cpp",
+      "SHA256": "A611D37CB768F68E2A4C84880BE8EF4BE1E71DA419C76B30ED11467D7BF1A4D1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterShoulderAimTests.cpp",
+      "SHA256": "0C6FE64DE998E9217A3BEF5D4C5029227B916CCC86F8BE369039AE121DE4D4F3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterSpotlightTests.cpp",
+      "SHA256": "E87F08AC23C4C23E480234FEB1B1264FCFE2436AAFF0FD8FA2ADDAAFF72A43F6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterStartupCameraTests.cpp",
+      "SHA256": "7339C4057013F14DE0285D4129BF9359DBD3A6A56F43E90BD7E5800950706F89"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterSurfaceShadingTests.cpp",
+      "SHA256": "3A13DE000D547E071568DE57FA5C2277907FC86B0A73CAC05EB69DB998611071"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTakeoffRepeatTests.cpp",
+      "SHA256": "67D79642FF6EB1E7D8C23C84F6D0392468F7F35CEE53857647251BEBCED8AB44"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTaserVisualTests.cpp",
+      "SHA256": "5E79F6D6F052AC843D67F7E764275F755252AECF224EBD9866472D6ACB6A59C4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTearGasTests.cpp",
+      "SHA256": "ABDC80FAD17AC5361927FF9D04294029D2611E6CB4AA7A1E4597E5F7F224528D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTrafficFlowTests.cpp",
+      "SHA256": "88B67EE5E90F7867EFB7CC0475073EFA29E13C3208690A0169E4EB77B496D9C3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTrafficJamTests.cpp",
+      "SHA256": "A4C4BB4AAE4B59A831E84D445CE3DDA44D3E3DAF726C2299786D8088C21F9C04"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTransportClearingsTests.cpp",
+      "SHA256": "FC34F907F906E990898E28F12C5EC60080C9E3A24F4A9616A7DD3778269A77D9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTreeGroundingTests.cpp",
+      "SHA256": "652F48CD9DE8C3A2B83347D83C3AAD139343805B7D594B74DA2C419B75969987"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTunnelTransitTests.cpp",
+      "SHA256": "84636E6EE5F21BE360DA6E23BC8817B8A0E61C10C0CD04500BB90B2CD31CB3E8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTweakReaderTests.cpp",
+      "SHA256": "6DC190BA81E960CB30E6F191DB4C027AD6BC23F445D458DB64C12DA074C2541B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterVehicleTaserTests.cpp",
+      "SHA256": "73417CCC159D18DA796D513E2E57FE96C06F4F462BCC731DE9F56515D114B8AD"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterWaterGameplayTests.cpp",
+      "SHA256": "28A3477CB7A75E876C88890F87E60EEEE5FF8920DDE5F2F0D63460A79E1EA92F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterWaterSupplyTests.cpp",
+      "SHA256": "E09CB81FC3BD49FF82D67BF98DBC5D6C05CAF5ADA06D1E88F6965B2D925702BA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterWinchTests.cpp",
+      "SHA256": "809563C548BC44067B576FC86ED3728E1D8AC5361FCB61B18C30B4193B89C6D0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterWindTurbineTests.cpp",
+      "SHA256": "2E364057541E9A8A3EA3E9D75559DB54C87278FD5FAD260EE205BCB96D48E18C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterWitnessBriefingTests.cpp",
+      "SHA256": "3618B0BB33F6C457FE712C11552E5C8F20F5A01A3E03B3822E632BB1E741DD84"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterControllerHelp.cpp",
+      "SHA256": "9CC002BAB49EB703C9B553351A5029979CF6242A8EC8F0E67C51B6BD71BFB1C6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterFlapLayout.cpp",
+      "SHA256": "9B7D5272D2BCE48DC2C4851239AEB12B65FAEAAA028531C1E7F21B0A2F4BC279"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterFrontEndPage.cpp",
+      "SHA256": "074212E4EE574BED6F9A0927FC338642C10BED6B91B900D7B9B1F77FCB060671"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterFrontEndPage.h",
+      "SHA256": "79F122CD49AD1E23BD173C97B721B0A3A830AABED5407616B2728E34B1D5D8D9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterGortSequence.cpp",
+      "SHA256": "6A0B8F697D1DC341F3E3E082822EC022DD18D67658A72FDFFFF0936952C0A5B6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterGortSequence.h",
+      "SHA256": "F52EB346CAB69FF8375AE84FD3495BD662286DC9C7FF7C944CFE5A9329203732"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterHangarArt.cpp",
+      "SHA256": "064390C4A042E932E017F77865BE09B676928740A5C5E4895A7E962E51D794C8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterHangarShop.cpp",
+      "SHA256": "55841A0421A6FE820B1E25C4C0924E295880D335FFC2864D743E65E1134D1C7D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterMapArt.cpp",
+      "SHA256": "040515E1434F2BEC3104052537613A5C682BBABF6AE216BF21E4B9506BDA84A5"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterMapRaster.cpp",
+      "SHA256": "CA4C06E48C3167E7108221178DF88A1BB17C23DAF89580AC00F30828C2F437CA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterMenuFocusOutline.h",
+      "SHA256": "AD6F4A54C1FACB1D680C6331C02B77DD1C79BD0EEBC86BEEC4350704B9BD0104"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterMissionCatalog.cpp",
+      "SHA256": "FE31B625B9555DF7420DBE2AE9BE5B4C3F388FD084C652BB3771DD0298140993"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterMissionCatalog.h",
+      "SHA256": "94A4F87803C0FF9EF1E9C525100507EAD1EA726406E967423FCDF65B2BF94809"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterMissionMarkerLayout.cpp",
+      "SHA256": "75D25E4ACA8FA70E68DCC02A7813A95CF3099DEDD1792B158248F9105E2642CB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterSegmentedBar.cpp",
+      "SHA256": "D016BCBF836974E43547F8303599A3B2510C3C2F51F965793F590E7E88E07B43"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCareerSelect.cpp",
+      "SHA256": "FAC113AEE5CE49E26293FA1DAD37346B6626213C88A0E12C0ABEE1B01B435070"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCareerSelect.h",
+      "SHA256": "3C4B3CE3D6CBB60E83DB1DFBE9B55EF3BDA5B121E3CD019753148DE042D780A9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheatDialog.cpp",
+      "SHA256": "B0E6B2A37051E97A843D4789DB7F1DEBAC5A9711911D57B74543C7CBE3853E6B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheatDialog.h",
+      "SHA256": "25383F4EA6A729E78BD6870416B9A7D0AC6C1E68E57CC9DB3650B0BEDB4A4464"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheatGuide.cpp",
+      "SHA256": "8B3E593785C12C16E2F20D30861E20BC469DE4026BFA868CE5A0D8CD1058941C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheatGuide.h",
+      "SHA256": "0415AB219EFA3AADF53634A1D579CC5D80FCF459C8D5A4AD2E2F8C100531395A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheckupMenu.cpp",
+      "SHA256": "0D2E6EEA0FB0ACE27F89CFCB95815DD2E7789E6E0508BAF52BFAE879D056200B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheckupMenu.h",
+      "SHA256": "61441D741B7C4D87B1BEAAB3CB14BF49888DDC4ACE1B41D847D452EDCD98DE91"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheckupSlider.cpp",
+      "SHA256": "A1E85928D18F99D17418510108C8004763654A8DDC9A23F18D68F38D6875DCAF"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCheckupSlider.h",
+      "SHA256": "DC8F508B3A312EC5D849FEC0CE0EE03F55AF91BE009600C0E5CD71C28E4F3C90"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCitySettings.cpp",
+      "SHA256": "E83DA23F28F485B7FCB0D2C90CA2BF7AF1E96BAFE48EC4DDED9079BFAEE13D44"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCitySettings.h",
+      "SHA256": "C6BF18135C3BCC813505442047D663564E6814C03825D8D1A40A68F6FF29EB7B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCockpitFrame.cpp",
+      "SHA256": "D87DFF2157B439F47A517D33D776B5A3F968D2330FE2AFD429C3C916C5E5F302"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterCockpitFrame.h",
+      "SHA256": "D67BC7CE3D2EEA7D4BEE63B35E60654E0FCCA24B2E88DFF454561FE0F0A36C29"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControllerHelp.cpp",
+      "SHA256": "AA5613B12CD3CB6E5E347AC35FD2D99457E2D49FA71EE6C6458347A9E8B08069"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControllerHelp.h",
+      "SHA256": "64CF51664D950BC6D80FC9AE8E598FE5C45DA20C4293E71A19A1D862F990A65E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControllerOverlay.cpp",
+      "SHA256": "C4F8531432C02144DF112BF6DB21BF3F19373F959F392976B682EA481AAA25BD"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControllerOverlay.h",
+      "SHA256": "12B305FD2A060D225D81A0A18B54DB158056E4EEF2FBF642B72D18485045EB90"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControlSettings.cpp",
+      "SHA256": "DFCBA9F8BEF70E32BEAF733FC43A4EF687A00034EAAB2BEBF712A6FE0A1B0ACC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControlSettings.h",
+      "SHA256": "3627DCABD7A8632E7F6CD325FE208DAC8CFA4551BAD4E3A1702CFF9CBE7A5E16"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterDashboard.cpp",
+      "SHA256": "4368DD92D6AF6ACCB420D72DA2D9C1541B4CB7F3BC2C0DF7733619E7FE351157"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterDashboard.h",
+      "SHA256": "04CB374EE7B08DAD030007125ADDFDDAE76EE790794696BCA1A47880660F9531"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterGortSequence.cpp",
+      "SHA256": "A2E368A4FED89997A656A3D5F07DE6941E77ADA9410178B28B929151F6215981"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterGortSequence.h",
+      "SHA256": "C7F415245A63D10917767B39BAF7E55E4344D1BD3D03309F070ED3156B384295"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterGraphicsSettings.cpp",
+      "SHA256": "DA27C00FAE847598C14850A21E34ABBA50A8B5EA6B01FBD197AB20BDA685EA50"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterGraphicsSettings.h",
+      "SHA256": "D4BAEC329B1CF40575017E53CD5CAD8EE1E2C04333DE663E67751A28E28ED1CB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterHangarMenu.cpp",
+      "SHA256": "8BC73EEC05BEFFEFB4C21DE89E2E8FD6E8F591D14901B7715423599B26871AED"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterHangarMenu.h",
+      "SHA256": "164278D15E5B5AF0AB879AAB6B39D2E4E12C9D08A45AE7A32760E45F90F7C5ED"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterIntro.h",
+      "SHA256": "9848C966B77DB264AD6D88D345E173A846A57669D8F907203222E272FBE7C445"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMainMenu.cpp",
+      "SHA256": "C16B8D9C1A932EFD62D94C5B41DE32F198340A48C936C5E822CA0F06501E630C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMainMenu.h",
+      "SHA256": "19B8608DE5312CC8685269889436A3B20DE9CC73B8849D20B1676C30F1F5D793"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMapPanel.cpp",
+      "SHA256": "E654EF2453742EB9BE3F50E11A487A8D2B33957E89B60DEBE472F609708F9B39"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMapPanel.h",
+      "SHA256": "D480C59255D619100A259780A16BFE4647857A9414582205A699ED2959708FF2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMegaphoneCarousel.cpp",
+      "SHA256": "702422784696F05FF73ABEC17A8B77DE165AD6BF44AF2F9783479A4B474AA66F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMegaphoneCarousel.h",
+      "SHA256": "10A01B5A97ADA150C95CBA7F49792CEF32BAA0BD8E291D7BC494E8B6A91913BF"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMessageBox.cpp",
+      "SHA256": "2620DFFD860FFE76862631B6A1CAF6A19EE5B1A5E0DF64DDA0E194F85D6F3F21"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMessageBox.h",
+      "SHA256": "C571ACE898D979F78CF327AA60C36F01EA44F3DB7A43B9D62DA99210454A0423"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterNavigableMenu.cpp",
+      "SHA256": "1BE38CBCA5DDD0EAAE81BB987A0867D95494491C01EA43582AF9494C8A48FD34"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterNavigableMenu.h",
+      "SHA256": "0F7545D7FC0EA5100CC3BB01F1DCDA14A6149B675434C26C947D383D429DCDD9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterPlaneControls.cpp",
+      "SHA256": "A2A46650545504C3B2E36286D95F3DC577E27601697ECE27726580F969D40339"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterPlaneControls.h",
+      "SHA256": "B52313ED4A2D753F32876EB2A6810F36C83794071C296CD59E9F823B3265DC0C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterRadialWheel.cpp",
+      "SHA256": "908AA1BCB9A9DC7090AFA287E1413D16EB2C433FCB419DC6C1423D0B4CDFE72B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterRadialWheel.h",
+      "SHA256": "412CF278F0B89B15F8DF5547496A518CDBD9F9D01D30239F9189B93F3803DC80"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterReplayPanel.cpp",
+      "SHA256": "7115DEF3214CCE3D8E116F27010FD1F1B1BEEDD2E65EA7C9955B92FF1777675C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterReplayPanel.h",
+      "SHA256": "3D86EDAAEB23C8BCBC164F8698A3DD42A1BD570B5262C248E2734892B26A570E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterReplayTimeline.cpp",
+      "SHA256": "69AE0C74C54A2EE188F539DBD0DE0ED8B38BB43701353327F14D7CDF14DD3ABB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterReplayTimeline.h",
+      "SHA256": "2C122B634097599F00F78176899646AC52ACBE34D5441CD13F3B417B7033867B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSaveGamePicker.cpp",
+      "SHA256": "18E96F5A8BAFE6FF030A6AA51DFCD6D2580BEFD8E139923C49E852882863C416"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSaveGamePicker.h",
+      "SHA256": "A29F0B0E52DF5D28BC8598E7B18918065D202F729AFFF299E0EB910E07DA5A02"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSaveNameDialog.cpp",
+      "SHA256": "5D2A2516E1904268ADD05A3FC3B011ECD68945053470F86EFF9F0853C144312C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSaveNameDialog.h",
+      "SHA256": "9771124FE34637C447DF3F0FBBEFF2FB633A33268F3C4E4A82B0A0B3BE03BA47"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSettingsMenu.cpp",
+      "SHA256": "A9D7571FC9EADAB38B1ACF39FD7BEE905469817C5F1CC194E0FCFB8D0990BB9F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSettingsMenu.h",
+      "SHA256": "F48E27620110A009C80AEAFE50F893B3AA82A037BBBC9A2FF2CACD8B86A7A112"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSoundSettings.cpp",
+      "SHA256": "61CE12435D29C42434C07CC7D9CCF1CD25691C331A101CE0D8B0D1CB24AF8694"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterSoundSettings.h",
+      "SHA256": "FB1452776BA287ACE6AABB37D1F7F5A50651E649BFB5F02574C11F9CA0A6071C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterToolFlaps.cpp",
+      "SHA256": "451CBF6DCD86CEDAD76023207621069457D7042CFDA1E2A1F7050C1A1C1548EE"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterToolFlaps.h",
+      "SHA256": "4C09D919A4C3F6B6226F94E02B0F720B9B6AD65C6D664492EBC8873D56E0A821"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterToolGlow.h",
+      "SHA256": "2F902DCEA9E534659BDEA0E5E050A9698722E4F905168F513473E681AB3403AB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterUserCityPicker.cpp",
+      "SHA256": "D845CF9981017CE0D7BDF93D05E499F4E621547193241FA3D35D90722DCE1212"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterUserCityPicker.h",
+      "SHA256": "2E8611718EC6A64B0DC44F87CA45D0A3D4CA754640BB2F5108CEF5571D1BC40F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/SimCopterCollisionChannels.h",
+      "SHA256": "F45371F13564D4ADCF7A9DAAA2414DAEC9D1F1A46CF123B32B51BAC9E3395E85"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterAudioSubsystem.h",
+      "SHA256": "BB8D24936EA2A6C5CF3DD880F98F2A8E92764DD11EBFCCD1178FCC22B8A31F3E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterRadio.h",
+      "SHA256": "34F7427ACC78363AC77BCA3577D4307768D37C17A78CF6DB357894227526C6BE"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterSoundTable.h",
+      "SHA256": "BF354F1710CEC03B5B1F7185E1A4BEE2DCC9F28002360EE4660C6EAF1EA98370"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCity2000CityActor.h",
+      "SHA256": "2BA816D0179B5D9995A2B09F6FD3B61053D9CADF17520EC8051C3998543A5739"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterAirport.h",
+      "SHA256": "6BE54F2C1F7AD1602AA3E7E810630C8C6F650F96DB8720133C1D83AC78738517"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterCityGeometryRules.h",
+      "SHA256": "75659C92F9E459B49C0D940B7D8AD1F9E6EAE4D21EFD4887A8675B0FAE23EFB2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterCloudTuning.h",
+      "SHA256": "8ACD037C9CC4224CF5BCFD9C96ADD697A48A4B57AC7E0D9B0C3E39034118DD6F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterDayNight.h",
+      "SHA256": "0012074F9DD2A4D53B96AFFD46601B4946BF9BC6ABAE2C145345DA7C4B62DF77"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterDayNightFog.h",
+      "SHA256": "02DF2C01E12FC586D0D81E6BD917B7F07005D4E1FE05148B3468B236DEAD578C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterDayNightLength.h",
+      "SHA256": "702E145D8CDF7B612CA7FA874CE8B2A412D0E167B9C51E9F7A80BE2E82EF885B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterDriveIn.h",
+      "SHA256": "0A80FF25A58BED03EDA188E070AAAA5957AF7526AE3FDE779CA5130974155A2A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterDriveInPlacement.h",
+      "SHA256": "192641C666722C489160E60799C80B42894140FF5909B4CA0D3102AC5F66E3A3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterEffectExposure.h",
+      "SHA256": "008D7EA69525B2DD1847A1228A401DA6329EEF895655396DB3E10CFD9B5CC202"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterHangar.h",
+      "SHA256": "3D2E3BA12851420ED7112B8B8513093C8FD34991F1CC71822A59D264F6593934"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterMoonDisc.h",
+      "SHA256": "54592AAC2E56D604EF65824AEDD47936416CF78885ECCBF4CC2610DDE1ABD770"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterPowerLinePlacement.h",
+      "SHA256": "4DD85A423FA2DFD60067C7311103ACC888211A51F5387982D454A4E82ED9D73E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterRoadDecorations.h",
+      "SHA256": "5C2E5D4B81510D140ADD3A90AEDD82DECB36F55584F58DEF0DA605A03B243B86"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterRuntimeStaticMesh.h",
+      "SHA256": "A3815E65F90B6FC0FD9FA6BE6D7AFF3E40A6207D1AF4AE4B81E069050AE4FB5F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterSmokeStacks.h",
+      "SHA256": "E8D213A5BD2B4044CDF87EEC0F44586BFAD2FE3ECA2830229A0D114917768E89"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterStars.h",
+      "SHA256": "F18D779EE6EF0E2542147B4517FEC4E5E4CDFD00848A81149FB29A0EC75646B4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterStreetLights.h",
+      "SHA256": "E2A7C5CA5E61627E2A591400B63B58545FEF14DF9F26E4E6DB65B4697C7D70E9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterTreeGrounding.h",
+      "SHA256": "7F17C5BA01FA8775F78D876BD2E5D821F932BD7EF05319FB15DCA9928306587E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterTunnel.h",
+      "SHA256": "FF75EB442A5F5EE29CBB94739914C1611E1A16AF5A3F1D5CC7B2EC5216AC7E02"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Debug/MaxisMeshDebugActor.h",
+      "SHA256": "FA893B5C58D94474D15A065E8F71CBC7516826EF85677A85461AD3DB5405E20B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterAirOperations.h",
+      "SHA256": "113DAF27BBE55F9D4CD752663FA5EC24FFD69AC96BACB93E4E1BC307A6E6C500"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterControllerInput.h",
+      "SHA256": "5202A946B8D1B8CB6EDC07363DAEB4809F548757C2C4E0041F5D911D92B3E93C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterFlightModel.h",
+      "SHA256": "9DBE6840C9FC3D035AD44AE12C4027C92F3A9D99AF4C16F233E73C6A36F21C31"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterParking.h",
+      "SHA256": "24F2960DC2849CFBE567B85097863786F105E4AB48D3A41CDAFAEF65021E757D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h",
+      "SHA256": "81685DF7B88F36A8B8B6EC0AD3111538749449120EB931E26372604E9C63D695"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPresentation.h",
+      "SHA256": "8099EA11CB3A926D19C0DAD1C1B695E543CEAF501CA6FDBBA2D1B7D0FD5BA888"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterRegistry.h",
+      "SHA256": "E3BEBE587797D70D5382D20DBE57DBC25E64754CC0F1805B23FF6D5C91378F24"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterPlaneParts.h",
+      "SHA256": "9AFFA82B627FA54BD7B4DD994797E5E0AF9C15D7A5204B9BF2A5C84DA55F3FE9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterSpotlight.h",
+      "SHA256": "5B02480A8872E62FBF667B152642F00CC58F82A02692B8056108C8CFACB9FCFE"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterTearGas.h",
+      "SHA256": "13F7FE983F75D42A59E51D02EEC55E1F1F17B2B9E2F5D91B05141E4E1801776F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterWaterGameplay.h",
+      "SHA256": "CE74AB78CCADD7E277F75E8471DDA4CF84CD4324BB43169AA2FDE2FE327D15A3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterWinch.h",
+      "SHA256": "AABFEAC02EB2B4368397BF59830F968F0D1B9B38EA119BF54CC9F67EE103D6A9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/MaxisMeshLibrary.h",
+      "SHA256": "FD8404AC4EF2DF4A511EE48CFA4929E20A74B89E1F45198FAA4BD69E6E7F523F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/MaxisMeshReader.h",
+      "SHA256": "CE615D13187B57F3FD3062CA657F5A1516F190C10AB4D38F503BBACF941F549D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/MaxisProceduralMeshBuilder.h",
+      "SHA256": "1F554626469803E7FFF12804ACBD98FE8C9E4483266FCE7333ADD07D533A757A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/MaxisTextureReader.h",
+      "SHA256": "9A3C70BEFD3E1109E55AEC17B38420E7AB830FB63C8E813CFAADCE4158CC78C1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/MaxisWindowsBitmapReader.h",
+      "SHA256": "CFBDFD86835B409CA951CE5A94C149A3E128FEB390FC886E78F9FC0544C71B1A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/SimCity2000Reader.h",
+      "SHA256": "B332A010CC27A556B556966148439C888F32139CD0FEDC5749DC0962484B0E4A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/SimCopterOriginalGamePaths.h",
+      "SHA256": "95E8521A69E47D8B9A9C382225B03953B2D910B10A1EC0B7BC81681FF98CDA50"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/SimCopterPeopleCityRules.h",
+      "SHA256": "BF4F252F8FA5AC927A9ABC12B01711F87AB1DBA993B8BAE1B3C708C8E3A88B4B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/SimCopterPeopleReader.h",
+      "SHA256": "93AB12D177760B4EA980C8621F80A1619622524155CB9A56E81A440DDA1664BB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/SimCopterPrivAnimReader.h",
+      "SHA256": "14432AA20101821B4AFB94CB54CF9855FDB244C3E6508E56DB378F612EF219A1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Formats/SimCopterTweakReader.h",
+      "SHA256": "2949037028D60716805C0C2F1BCD8F3CBCFB7AF471588788274BE4A084261D76"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterCareerProgression.h",
+      "SHA256": "DA7CFAE663CDE3E771D8AD66EA8BA3A97FF5E6300FD4475F5BE03C1E5EB6146C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterCareerSubsystem.h",
+      "SHA256": "9DAADEA39AE7CD5D505EF9CF6A159787382905A2E378DCFC4CE87369BF1E0D12"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterCheats.h",
+      "SHA256": "5CB563715CC904A3C5E27776ADA8DFA4F18848CC20F9113859938CAA4BCC8ED1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterCheckup.h",
+      "SHA256": "6D65FBC478A48096C0F7731C8675DEA76A26475110618789B5149069030D7917"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterCityIntro.h",
+      "SHA256": "1981510DA21F80DD40E026505CB05C497A84E0B66A43E8EBDEFDDBEC381C47E0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterGameMode.h",
+      "SHA256": "A084572EA32CD598B9BB25FDA84A723076EC3100D3EF7287531CC9C17463CC84"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterKeyboardFocus.h",
+      "SHA256": "368A8065725E57FB9E3E9E8F4C0A7928D4773433474B6BC2B96347E3C23E59EC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterLoadingSubsystem.h",
+      "SHA256": "FB9F63DCE3AF0098B3A305C3E69AC0CE691831BCBDE5D4A483DB0B6C71C8695A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterLowPowerMode.h",
+      "SHA256": "7D905C41CC903E45B7BC4F3EB50C383F9CCADDF3E6D22602BE845C5CD670F885"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterMainMenuGameMode.h",
+      "SHA256": "BA417C019ECF058BB08822765FB1AA1AAAB28B68C5C1BAF0EEA1CA02360145C0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterPlayerController.h",
+      "SHA256": "EA36F6E21411447BDAC04B5FCF5D7EBAF17E087C64EE4B2FF2EC33A49C601160"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterSaveSubsystem.h",
+      "SHA256": "51BABC1C279AB708FA0447166DE6B3CAAE0D0F7271EBF5320980929238D13BEA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterSessionSubsystem.h",
+      "SHA256": "0957ACFF9011790629569C0B861081D28D304F9FEF9D8085DCCD1F0128E28B0C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterSettings.h",
+      "SHA256": "79068C1C06D48F8E353216C0AF9D85ECA5ECD021455B131FA0C29B57E9EB2250"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterVehicleMaterialSubsystem.h",
+      "SHA256": "8A4FBB042261997FDE301BC75A2F72A67B3B6DDD7F36974B06C55DC0D5EA7561"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterAmbientVehicles.h",
+      "SHA256": "7257DE7F9355775474E41B8604263DEC65C01F0E512FC3CE18FF5759552BAA4D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterApachePool.h",
+      "SHA256": "8EA5E557454B48A38D2F6294DB184389AFDD162A22A01E4643EE59D318B18FFF"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterBandNavigation.h",
+      "SHA256": "A131112325FD585CE28A4775824480979C87D603D3057BFDA7D2AB429E7D2A78"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterBehaviorVM.h",
+      "SHA256": "C01C0B3701ACAEEF196B9A78A3A11E335792A429FC7DF3B400B0D80AE4F723E6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterCriminalCar.h",
+      "SHA256": "E8F4CF43E471CA562C134C66857FABC923868D9CF933469B90FF1EF5F64E9A81"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterDispatch.h",
+      "SHA256": "5C2857AF0CC4FB8FD4CC52F7499B2BA9AFCA22ADDAC81E7C6B216D024173F0E7"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterDispatchMarker.h",
+      "SHA256": "5EF135C33F53036277DB03AB39071AB37EDEE5E84D3A7410A2FC96E785BA729A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterEffectFX.h",
+      "SHA256": "A4AC8EAB33EAFCEF027CBE67B476BFB9C3F8998937BAE65B763FF877BAE4CA2B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterEffectRasterizer.h",
+      "SHA256": "FAEB5CA889F05C3A3609AD47FC176F0551C8EDB33FBBBE7E2CD2E36FFFB267CC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterFigureAdjustments.h",
+      "SHA256": "33B9FD0FCC23732ABF1A82F4B5121889DD7CAE407942C03CFE497CB24C30A9E7"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterFireRenderComponent.h",
+      "SHA256": "71ED218E9B89750DC1219DC5D40358C137CBA5248D356452AA679F4E75A0C79C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterFlashingLights.h",
+      "SHA256": "681B21AEF9332A2BB0BC8F54A9674CEA3A105D94A5EC06EAB66C86196DAFFB57"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h",
+      "SHA256": "65B658931422EA047E8B6F1FFD2B304920B9DAB576E45388D65623BCEEEE042D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterInteraction.h",
+      "SHA256": "EA55A007EACCD45881EAF47E838FBD030A344A06B4C49FF3702413C87D45085F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterOnFootPawn.h",
+      "SHA256": "1728607CBD8A3849983B8F19F5C9FEDB57C49A396AB67AE349D03A343DFE95AD"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterParticleFX.h",
+      "SHA256": "84A9D90007D3EBE4675879CCC48F4C97BC469EAB9916C7DA1F7A6DD0615A1CB7"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterPeopleTrace.h",
+      "SHA256": "825421809AA825A0914EDB0DC5C19A99A074419642347A10138C00F6D0CE59AC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterPilotEquipment.h",
+      "SHA256": "FBFDEC7BA4D85A07DA9B79E134BD39F75075AE51DFAC363C2D0A2F4E2D53BD59"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterPopulationBody.h",
+      "SHA256": "932BEA55DFB9F9590536D6DC2EA35E725D286884405A7EFF019023C4073DCB5E"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterPopulationFigure.h",
+      "SHA256": "D51B4AD1C07B94235A265E82F45763AE42A6E557E66E7AA2776DC817D4B1A9E4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterPopulationSprite.h",
+      "SHA256": "758FE208B337A909D390292C3713D102609BFC0A0AAECE0312F5A4F429928C44"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterRescueDeck.h",
+      "SHA256": "A15B38700D91737F083AB002E29A087B375C0D507C0B1D8CD54F582B7EAE74B4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTearGasPool.h",
+      "SHA256": "DFF14B8CF3BCBF6F3C73D48412E3DBC42155AE06CC9E55E6478DE0BF88DF136D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTrafficJam.h",
+      "SHA256": "B241E8D54EAC9501A569B8409998CA06F0FB6CB0CFA21A55F0043CDF4216DB55"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTrafficSystemActor.h",
+      "SHA256": "44D79D2773FEDAC4C083ACB97DE1B46C40C4DB35A2F25E83125A3BAD2884A895"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterUfoMesh.h",
+      "SHA256": "0B1F8C87159021E395A414898B399396969EFAE63C889A9DE432DB7B619867AB"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystem.h",
+      "SHA256": "71AA71A9059678E2149626678C0458AEE241B0D157AF625805345EA8D5093C11"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystemActor.h",
+      "SHA256": "109BD05315FFEF5CDD57DCE01CE2CA53996058413F8E770CD2CAA62918DAD863"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterRiotLog.h",
+      "SHA256": "B9FE22FC0ADCC0F56A1D13F284A4B84AEC4613794262A7A839901B738586BB30"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterWitnessBriefing.h",
+      "SHA256": "F88E73F49BEF7302613C5BDB64728C622BB635D090FD77A4CE557D514ADAA0D1"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Replay/SimCopterReplayFreeCamera.h",
+      "SHA256": "0A684DAF18966CF275F7A36333016F8199307B0FA4A33AF42F4E2A7F0A139843"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Replay/SimCopterReplayRecordable.h",
+      "SHA256": "A3A8E8135665AEDCDA6896EE47D641B02ACB5B21E2D23D5A419403F8C36B3A12"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Replay/SimCopterReplaySubsystem.h",
+      "SHA256": "FCEB5282D39C29E2DFFDEA991ED07012282E11382FC6940314EAD6C58EC752A6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Replay/SimCopterReplayTypes.h",
+      "SHA256": "712DC212B442B2D460D87F08C857ECCB2A2BA16C5F0FA463485C9D6F04E3E76A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterControllerHelp.h",
+      "SHA256": "192049F02A52A567C0DE961A96DE0F1318F225AC48E7EAB6EAAD6031C74D45F6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterFlapLayout.h",
+      "SHA256": "AC4077CB283CEC7C41E800885F9FF5DE28086721CF19DA2A1A91A013F8677957"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterHangarArt.h",
+      "SHA256": "E2650D7C159A339A551AF57436EFC1978E94CCD02FDF3552C67218EB5C81E81F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterHangarShop.h",
+      "SHA256": "3D714AA8EA1D3F44614952B55D61A4986F98BF07D88121823A92634EE865F6A9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterMapArt.h",
+      "SHA256": "738B8849FD0E6D9FB5D863673DA40082A7C5A57F767B4660A253D5D65FB3944D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterMapRaster.h",
+      "SHA256": "A56C821AAF03B5764DE86245EED20D2BFD16B2D34FC9CEF98E7351038389CF68"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterMissionMarkerLayout.h",
+      "SHA256": "1FE974999BA4F386429E7C7A5A3EAC10FA821DC17F32B22AEE9615BBBD130BCC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterSegmentedBar.h",
+      "SHA256": "FA31A7CD96FE3200BB1AED089E896420706AB37463D0DACB2720E3BCEA26BBA4"
+    }
+  ],
+  "Installation": {
+    "InstalledAtUtc": "2026-10-11T16:29:21.6558442Z",
+    "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SHA256": "CA5039C3A3600443B8E47BAEFCA58A8519825D822C12BFC8D49E15FAC8F701E5",
+    "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\hangar-interior/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+    "PreviousSHA256": "86BFC36D519A23A28CA10FD29CFCAF0B5AA24A8B5F3CAF060C09DBFBAED3C399",
+    "TestsPassed": 53,
+    "RenderTestsPassed": 2,
+    "ChangedFiles": 1,
+    "AssetsChanged": false,
+    "InteractiveGameplayChecked": false
+  },
+  "InteractiveGameplayChecked": false,
+  "ListeningCheckPerformed": false,
+  "PublicationCheckoutChanged": false,
+  "Pushed": false
+}

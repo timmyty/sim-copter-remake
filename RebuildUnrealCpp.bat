@@ -8,13 +8,20 @@ set "PROJECT_FILE=%REPO_ROOT%SimCopterRemake\SimCopterRemake.uproject"
 set "BUILD_SCRIPT=%UE_ROOT%\Engine\Build\BatchFiles\Build.bat"
 set "BUILD_TARGET=SimCopterRemakeEditor"
 set "BUILD_CONFIG=Development"
+set "BUILD_RELOAD_FLAGS=-NoLiveCoding"
 
-rem Optional Shipping build verifies the game target used by packaging.
+rem Optional game targets: Shipping for play, Development for GPU diagnostics.
 if /I "%~1"=="Shipping" (
     set "BUILD_TARGET=SimCopterRemake"
     set "BUILD_CONFIG=Shipping"
+) else if /I "%~1"=="Development" (
+    set "BUILD_TARGET=SimCopterRemake"
+    set "BUILD_CONFIG=Development"
+    rem Installed Development engine libraries require WITH_LIVE_CODING's registration layout.
+    rem Disable hot-reload build mode without changing that ABI. Editor/Shipping retain NoLiveCoding.
+    set "BUILD_RELOAD_FLAGS=-NoHotReload"
 ) else if not "%~1"=="" (
-    echo Usage: RebuildUnrealCpp.bat [Shipping]
+    echo Usage: RebuildUnrealCpp.bat [Shipping^|Development]
     set "EXIT_CODE=1"
     goto :finish
 )
@@ -33,7 +40,7 @@ if not exist "%PROJECT_FILE%" (
     goto :finish
 )
 
-call "%BUILD_SCRIPT%" %BUILD_TARGET% Win64 %BUILD_CONFIG% -Project="%PROJECT_FILE%" -WaitMutex -NoLiveCoding
+call "%BUILD_SCRIPT%" %BUILD_TARGET% Win64 %BUILD_CONFIG% -Project="%PROJECT_FILE%" -WaitMutex %BUILD_RELOAD_FLAGS%
 set "EXIT_CODE=%ERRORLEVEL%"
 
 :finish

@@ -53,7 +53,6 @@ const FSimCopterEquipmentDefinition EquipmentRows[] = {
 	{ ESimCopterHelicopterTool::RescueHarness, 0x04, 2,  800, TEXT("Rescue Harness"),      0x2ab },
 	{ ESimCopterHelicopterTool::TearGas,       0x08, 3, 2500, TEXT("Tear Gas Launcher"),   0x2ac },
 	{ ESimCopterHelicopterTool::WaterCannon,   0x10, 4, 1500, TEXT("Water Cannon"),        0x2a9 },
-	{ ESimCopterHelicopterTool::TowClamp, 0x20, 5, 1200, TEXT("Tow Clamp"), 0 },
 	{ ESimCopterHelicopterTool::CaptureCage, 0x40, 6, 1800, TEXT("Capture Cage"), 0 },
 };
 
@@ -73,7 +72,7 @@ const TCHAR* const ToolNames[] = {
 	TEXT("Tear Gas"),
 	TEXT("Apache Missile"),
 	TEXT("Apache Machine Gun"),
-	TEXT("Tow Clamp"),
+	TEXT("Capture Cage"), // Legacy saved selection.
 	TEXT("Capture Cage"),
 };
 

@@ -1895,9 +1895,22 @@ void ASimCopterAmbientVehiclesActor::UpdateBoat(FSimCopterAmbientBoat& Boat, con
 		else SetBoatMeshTransform(Boat,Boat.World,FRotator::ZeroRotator);
 		return;
 	}
-	if (Boat.bVisible && Boat.ObjectId == SimCopterAmbientVehicles::CapsizedBoatObjectId && Boat.TowEventId == INDEX_NONE)
-		if (auto* M = Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(this, ASimCopterMissionSystemActor::StaticClass())))
-			Boat.TowEventId = M->CreateMissionAt(Boat.Tile.X, Boat.Tile.Y, SimCopterMissions::TYPE_BoatTow);
+	if (Boat.bVisible && Boat.ObjectId == SimCopterAmbientVehicles::CapsizedBoatObjectId)
+	{
+		UpdateBoatRiders(Boat);
+		if (auto* M = ResolveMissionSystem())
+		{
+			// SOS survivors take precedence. Older saves may already have a premature
+			// tow job; retire it without a penalty and let the original rescue clock run.
+			if (!BoatRiders.IsEmpty() && Boat.TowEventId != INDEX_NONE)
+			{
+				M->PostMissionEvent(SimCopterMissions::EVT_SetCategory,Boat.TowEventId,SimCopterMissions::CAT_ExpireSilently,true);
+				Boat.TowEventId=INDEX_NONE;
+			}
+			else if (BoatRiders.IsEmpty() && Boat.TowEventId == INDEX_NONE)
+				Boat.TowEventId = M->CreateMissionAt(Boat.Tile.X, Boat.Tile.Y, SimCopterMissions::TYPE_BoatTow);
+		}
+	}
 	if (Boat.bTowAttached) { SetBoatMeshTransform(Boat, Boat.World, FRotator::ZeroRotator); return; }
 	if (Boat.bVisible && Boat.TowEventId != INDEX_NONE)
 	{
@@ -2402,17 +2415,27 @@ bool ASimCopterAmbientVehiclesActor::TryActivateBoatRescue(
 		return Spawned > 0;
 	}
 
-	// FUN_004b1950 uses boat slot 0 (CAPBOAT1) and fails outright when it is already out.
+	// FUN_004b1950 uses boat slot 0 (CAPBOAT1). Optional hull recovery must not
+	// reserve that original SOS slot forever after the rescue is complete.
 	FSimCopterAmbientBoat& Boat = Boats[0];
 	if (Boat.bVisible)
 	{
-		return false;
+		UpdateBoatRiders(Boat);
+		if (Boat.bTowAttached || Boat.RepairDisplaySeconds > 0 || !BoatRiders.IsEmpty() || IsMissionEventActive(Boat.EventId)) return false;
 	}
 
-	if (!PlaceBoatNearTile(Boat, FIntPoint(TileX, TileY), BoatPlacementRings))
+	// Preserve the existing recovery when the new call has no suitable open water.
+	FSimCopterAmbientBoat Replacement = Boat;
+	if (!PlaceBoatNearTile(Replacement, FIntPoint(TileX, TileY), BoatPlacementRings))
 	{
 		return false;
 	}
+	if (Boat.TowEventId != INDEX_NONE)
+		if (auto* M = ResolveMissionSystem())
+			M->PostMissionEvent(SimCopterMissions::EVT_SetCategory,Boat.TowEventId,SimCopterMissions::CAT_ExpireSilently,true);
+	Boat = Replacement;
+	Boat.TowEventId = INDEX_NONE;
+	Boat.RepairDisplaySeconds = 0;
 
 	Boat.EventId = EventId;
 	Boat.MissionTimerSeconds = TimerSeconds;
@@ -3209,6 +3232,18 @@ bool ASimCopterAmbientVehiclesActor::GetBoatTowLocation(int32 Index,FVector& Loc
 {
 	if(Index<0 || Index>=SimCopterAmbientVehicles::BoatSlots || !Boats[Index].bVisible) return false;
 	Location=Boats[Index].World; return true;
+}
+bool ASimCopterAmbientVehiclesActor::GetBoatTowBounds(int32 Index,FBox& OutBounds) const
+{
+	if (Index<0 || Index>=SimCopterAmbientVehicles::BoatSlots || !Boats[Index].bVisible || !Boats[Index].Mesh) return false;
+	OutBounds=Boats[Index].Mesh->Bounds.GetBox();
+	return OutBounds.IsValid != 0;
+}
+bool ASimCopterAmbientVehiclesActor::HasRecoverableBoat() const
+{
+	for (const auto& Boat : Boats)
+		if (Boat.bVisible && Boat.RepairDisplaySeconds<=0 && Boat.ObjectId==SimCopterAmbientVehicles::CapsizedBoatObjectId) return true;
+	return false;
 }
 bool ASimCopterAmbientVehiclesActor::FinishBoatTow(int32 Index)
 {

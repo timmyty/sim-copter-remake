@@ -1,0 +1,234 @@
+{
+  "version": "v1.0.8",
+  "verified_at_utc": "2026-10-12T06:12:55.965915+00:00",
+  "baseline_commit": "d1155f2",
+  "source_verification": {
+    "file_count": 427,
+    "source_publication_match": true,
+    "normalized_source_sha256": "90896f47405d8e56dc57d7f8e18766298a76493b321e5640bb820c0aa90757c8"
+  },
+  "builds": [
+    {
+      "target": "editor",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.8/build-editor.log",
+      "log_sha256": "2dc4890cdfd74e02d74fea3b3ca9287cbf261b1c2706ba711f504bda5e0ff1c5"
+    },
+    {
+      "target": "shipping",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.8/build-shipping.log",
+      "log_sha256": "dcd0daf255dc381f28661b09d8e9f80a8cf370966a669a3a2e13fa6b16dbc911"
+    },
+    {
+      "target": "development",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.8/build-development.log",
+      "log_sha256": "45e712ed2e52e2363732d899aae4536e57fd200dba4cdaeb1b0d30aebe5ec10e"
+    }
+  ],
+  "tests": [
+    {
+      "mode": "Complete SimCopter suite, NullRHI, isolated profile, MultiprocessSaveConfig",
+      "counts": {
+        "succeeded": 440,
+        "succeededWithWarnings": 20,
+        "failed": 3,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 206.98121643066406,
+      "failures": [
+        {
+          "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+          "messages": [
+            "Expected 'Finds flat land ALTM sample' to be not null.",
+            "Expected 'Finds water ALTM sample' to be not null.",
+            "Expected 'Finds sloped ALTM sample' to be not null."
+          ]
+        },
+        {
+          "test": "SimCopter.RescuePilot.RuntimeRegression",
+          "messages": [
+            "Expected 'Recovery lands on clear ground without destroying aircraft' to be true."
+          ]
+        },
+        {
+          "test": "SimCopter.UI.FlapLayout",
+          "messages": [
+            "Expected 'The four flaps between them cover every career equipment bit' to be 95, but it was 31."
+          ]
+        }
+      ],
+      "warnings": [
+        {
+          "test": "SimCopter.Cheats.CityEffects",
+          "warnings": 17
+        },
+        {
+          "test": "SimCopter.Cheats.GortOriginalAssets",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.City.BuildingDemolition",
+          "warnings": 34
+        },
+        {
+          "test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Hangar.DismountMenuInput",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Missions.PlaneDeckRescue",
+          "warnings": 11
+        },
+        {
+          "test": "SimCopter.Missions.SafePassengerLanding",
+          "warnings": 12
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city19",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city22",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city24",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city25",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city26",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city27",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city28",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city29",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.rio",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Traffic.TunnelTransit",
+          "warnings": 4
+        },
+        {
+          "test": "SimCopter.UI.HangarPurchaseParking",
+          "warnings": 3
+        },
+        {
+          "test": "SimCopter.Water.SupplyGeometry",
+          "warnings": 11
+        }
+      ],
+      "report": "Docs/scratchpad/release-v1.0.8/tests-full/index.json",
+      "report_sha256": "048193d97bf12591320f0642d4db5ab5503a91306570aa7946797258e4b4351f"
+    },
+    {
+      "mode": "Focused D3D12 RenderOffscreen, NoSound; final screenshot fixtures",
+      "counts": {
+        "succeeded": 8,
+        "succeededWithWarnings": 0,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 10.21726131439209,
+      "failures": [],
+      "warnings": [],
+      "report": "Docs/scratchpad/release-v1.0.8/tests-render-final/index.json",
+      "report_sha256": "057e3bf63d9e752185672c7de671c1930ceaabc0166ae6d28bfac4e210e9ce88"
+    },
+    {
+      "mode": "RescuePilot and RemoteRecovery headless cases after advancing character movement in the legacy landing fixture",
+      "counts": {
+        "succeeded": 6,
+        "succeededWithWarnings": 0,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 0.9569724798202515,
+      "failures": [],
+      "warnings": [],
+      "report": "Docs/scratchpad/release-v1.0.8/tests-fixture/index.json",
+      "report_sha256": "0cba1503218b5b3ec9500afc5b0b6e708d4fcea1f7e85219624cb13872cd1dc4"
+    }
+  ],
+  "runtime": {
+    "files": 915,
+    "bytes": 2352726702,
+    "nonufs_verified": 903,
+    "maps": 45,
+    "kinv_tracks": 21,
+    "drive_in_movies": 2,
+    "flyover_soundtracks": 30,
+    "shipping_sha256": "e91a899cb2891ca37d9780a0f56e36184c192aeb1bb3c459cb99d0b8c0e43c15"
+  },
+  "startup": {
+    "launcher_exited": false,
+    "launcher_pid": 47260,
+    "limitation": "Checks bootstrap and startup survival only; no visible rendering or gameplay check.",
+    "mode": "NullRHI, unattended, no audio, isolated user directory",
+    "children": [
+      {
+        "pid": 15832,
+        "cpu_seconds": 11.28125,
+        "window_handle": 0,
+        "path": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.8\\SimCopterRemake-v1.0.8-Windows-x64\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "working_set_bytes": 686891008
+      }
+    ],
+    "seconds": 30.5813723
+  },
+  "screenshots": [
+    {
+      "path": "Docs/screenshots/capture-cage-car-v1.0.8.png",
+      "sha256": "7575e694fc5a4534b519f1e075660a09889683337827c1e946d3cd72abe560dc"
+    },
+    {
+      "path": "Docs/screenshots/cheat-guide-v1.0.8.png",
+      "sha256": "50b538199aece08cd111000caa08e95ac1307e13b36c3052725f5c3f1e0166e9"
+    },
+    {
+      "path": "Docs/screenshots/cheat-menu-v1.0.8.png",
+      "sha256": "2ec37bf4f6819cf933b70350c5dc0400daf6a41e9658551edde0a6ec7f67bee7"
+    },
+    {
+      "path": "Docs/screenshots/hangar-v1.0.8.png",
+      "sha256": "c53cabbfd08d6e49228a6a97927fd1e4ebb8736937bf9765d098112a53b5df22"
+    }
+  ],
+  "assembly": "Fresh staging with the current Shipping and Development executable builds and unchanged verified cooked/runtime assets; no recook.",
+  "archive_gate": "Verify every decompressed ZIP entry against staging SHA-256, then require matching GitHub uploaded asset digests.",
+  "receipt_location": "Docs/scratchpad/release-v1.0.8/",
+  "limitations": [
+    "Two pre-existing ReferenceCity fixture and FlapLayout mask expectation failures remain; removal of the retired clamp bit changes the expected full mask from 127 to 95, while the old four-panel fixture still yields 31.",
+    "The broad run initially passed 460/463. Its additional rescue landing failure came from a legacy fixture that never advanced the falling pilot. The fixture now ticks character movement, and related cases were rebuilt and rerun. Gameplay code did not change.",
+    "NullRHI visual-only cases are no-ops; focused D3D12 tests exercise rendering separately.",
+    "Preview-only lighting was finalized after the broad run and validated in the focused render run.",
+    "No interactive gameplay, physical-controller or listening test.",
+    "Recurring GPU compute crash remains unresolved."
+  ]
+}

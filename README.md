@@ -1,95 +1,112 @@
 # SimCopter Remake — Timmyty gameplay fork
 
-This customized version builds on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
-and [wyozi's fork](https://github.com/wyozi/sim-copter-remake). Their commit history and authorship are retained.
+Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet in
+the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
+behavior with new tools, on-foot rescue work and modern controls.
 
-**This fork adds its own gameplay alongside restored original behavior.** Nonlethal
-police tasers, an AI helper pilot, capture equipment, expanded medical response,
-parachuting and revised airplane controls are deliberate additions. Airborne
-police tasers are fictional gameplay, not authentic 1996 SimCopter equipment.
+**[Download v1.0.8 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.8.md) · [Controller guide](Docs/ControllerSupport.md) ·
+[All changes](Docs/ForkChanges.md)
 
-The **v1.0.7 Windows download** includes smarter intersection traffic, current-city
-helper unlocks, normal Shift flight boost, remote tasers, automatic landing,
-capture cage controls, improved medic routing and all earlier updates.
+Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
+and [wyozi's fork](https://github.com/wyozi/sim-copter-remake), preserving their
+history and authorship. The capture cage, police tasers, AI helper and expanded
+recovery systems are deliberate additions to the remake.
 
-## What this fork adds
+## Start playing
 
-- **Consistent people and visible cabin occupants.** A person's body, hair,
-  head and clothing match across walking, helicopter seating and the passenger
-  portraits. Every flyable aircraft has the actual pilot appearance, and saved
-  passengers retain their identity. Original speed reactions, impact flinches,
-  patient expressions and voices remain active. A medic accompanying a living
-  patient visibly works with gloved hands in the portrait until the patient
-  leaves or dies. The original medic benefit slows deterioration; it does not
-  heal patients or make them immortal. [NPC appearance and care](Docs/NpcAppearance.md).
-- **Expanded rescue and medical operations.** Survivors stand on moving wrecks;
-  passengers use separate clear exit positions and wait when blocked. Walk up
-  to eligible patients, stunned suspects or recoverable bodies to carry them.
-  Hospital ground medics accept patients from landed helicopters, your arms or
-  nearby ground drops. Trauma crews reserve patients, injury-generated calls
-  move to reachable outdoor ground, and ambulances recover deceased NPCs.
-  [Medical operations](Docs/NpcMedicalAndHelicopterUpdate.md).
-- **Police tools, cargo recovery and helper aircraft.** Use a nonlethal taser
-  from the shoulder aiming view or a helicopter's nose-mounted remote weapon, then
-  handcuff and deliver living suspects for arrest credit. The cockpit's AIM TASER
-  button starts automatic pursuit without an officer aboard. Towing clamps, a four-person capture cage,
-  repair/junkyard/harbor destinations and an unlockable helper pilot expand
-  recovery work. Helpers unlock after graduating the current city, fly at a reduced
-  cruise speed, transport actual cargo and people, and respect safer
-  pickup, landing and delivery clearances. [Controls and air operations](Docs/AirOperations.md).
-- **More aircraft and revised flight presentation.** Fly Transport airplanes
-  with independent pitch and throttle, spinning propellers, retractable landing
-  gear and dashboard speed/gear controls. Helicopters have catalog-matched paint,
-  cabin glazing, corrected equipment views and the hidden Apache encounter.
-  Normal Shift adds 30% horizontal speed with steeper tilt, while cheat turbo keeps
-  its existing speed. Exiting in flight lets the helicopter find a nearby safe landing
-  or use a purchased rescue harness; the pilot has fall damage
-  and a visible deployable parachute. The retractable cockpit wiring panel is
-  restored, and career warps retain the selected aircraft.
-  [Airplane controls](Docs/AircraftAndDestruction.md) and [pilot equipment](Docs/RescuePilotFixes.md).
-- **City flyovers and a more active city.** Thirty city-specific introductions
-  adapt the original full-length tours, with their soundtracks, close aircraft
-  passes, animated wind turbines and skippable playback. Traffic chooses less
-  congested intersection exits and can briefly phase through other stuck cars. It avoids parked
-  helicopters; helicopter/car impacts can start accidents with escaping occupants
-  and a short explosion fuse. Fire announcements are limited during bursts, and
-  victory bands use larger, spaced formations. Apache weapons damage vehicles,
-  injure pedestrians and can collapse complete building footprints.
-  [Flyover details](Docs/OriginalCityIntroRoutes.md) and [collision/damage rules](Docs/AircraftAndDestruction.md).
-- **Cheats, movies and music.** Original cheat entry and effects return with a
-  20-code pause-menu guide, synchronized Gort dialogue and restored UFO effects.
-  Drive-ins on all 45 bundled maps show the enlarged original movie or HSI, with
-  positional audio at each theater and minimap cinema logos. The KINV station adds
-  21 Invoke the Revoked tracks; station choice, seek position and volume persist.
-  Fresh radio preferences use Rock/KROC. [Cheat guide](Docs/CheatCodes.md),
-  [drive-in audio](Docs/DriveInLocalizedAudio.md) and [KINV](Docs/InvokeRadio.md).
-- **Everyday improvements.** Automatic pause on focus loss, Continue-first menus,
-  hangar-based level advancement, clearer controller menus, corrected witness
-  photographs, a low-fuel warning, quieter emergency sirens and compatible save
-  migrations support the expanded gameplay. [Complete changes](Docs/ForkChanges.md).
+1. Download **`SimCopterRemake-v1.0.8-Windows-x64.zip`** from the latest release.
+2. Extract the **entire ZIP** and run **`SimCopterRemake.exe`** in the extracted folder.
+3. Choose **New Career Game** or **New User Game**, then select a city.
 
-The flyovers are authored adaptations of the original footage, not recovered
-camera tracks. This remains an evolving remake: the [validation report](Docs/ForkValidation.md)
-records automated coverage, known failures and limits; no manual flight or
-listening test is claimed for v1.0.7.
+Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the launcher.
+Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
+`Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
 
-- [All changes, departures from the original, and credits](Docs/ForkChanges.md)
-- [Complete file inventory and inherited commits](Docs/ForkFileInventory.md)
-- [Build and dependency instructions](Docs/ForkBuild.md)
-- [Current validation results and known limitations](Docs/ForkValidation.md)
-- [Gameplay controls and air operations](Docs/AirOperations.md)
+## A rebuilt hangar and a fleet that stays yours
 
-To build from source, use Git LFS when cloning: custom music, prepared MP4 videos, textures, Unreal assets and
-the Windows icon are included through LFS. Supply your original game data and the required Unreal/NVIDIA
-build dependencies locally. To play, use the packaged Windows download below.
+[![Revamped hangar: skylights, steel trusses, workshop, office and parked aircraft](Docs/screenshots/hangar-v1.0.8.png)](Docs/screenshots/hangar-v1.0.8.png)
 
-## Launching a Windows build
+Walk into the airport's rebuilt hangar, with tall gridded windows, roof trusses,
+skylights, a rear office and stairs, workshop furniture and parked aircraft.
+The equipment page identifies the selected helicopter and previews its fittings.
+Purchases apply across your owned fleet, and every owned helicopter follows you
+to the next city's airport. The victory band stays around the hangar base.
+[Hangar details](Docs/HangarReferenceMatch.md) · [Fleet restoration](Docs/CareerFleetRestoration.md)
 
-1. Download **`SimCopterRemake-v1.0.7-Windows-x64.zip`** from the [latest release](https://github.com/timmyty/sim-copter-remake/releases/latest), extract the entire ZIP, and double-click **`SimCopterRemake.exe`** in the extracted folder. No Unreal Editor or source build is needed.
-2. Keep `Engine`, `SimCopter`, `SimCopterRemake`, and `DriveInVideos` beside the launcher.
-3. Choose **New Career Game** or **New User Game**, then select a city to begin.
+## Trap and recover a car with the capture cage
 
-If Windows reports a missing Visual C++ runtime, run the included `Engine/Extras/Redist/en-us/vc_redist.x64.exe`, then launch again.
+[![A helicopter's deployed capture cage holds a car above its sealed floor](Docs/screenshots/capture-cage-car-v1.0.8.png)](Docs/screenshots/capture-cage-car-v1.0.8.png)
+
+The cage replaces the tow clamp and can recover a stalled, fleeing or taser-disabled
+car, or an eligible boat hull after its passengers are rescued. Lower it over the
+target: the floor seals automatically around captured cargo. Raise the cage, fly
+to the appropriate recovery site, then lower and open it over the lit drop zone.
+Take cars to a junkyard, boats to a harbor, or a captured criminal vehicle to a
+police roof. The minimap marks the relevant destination while you carry cargo.
+
+The cockpit flap has **LOWER**, **RAISE** and **OPEN** controls. The cage also
+retains its four-person capacity; one vehicle or hull occupies it by itself.
+[Capture and delivery controls](Docs/CaptureCage.md)
+
+## Cheat Codes, explained in the pause menu
+
+| Find the guide in the pause menu | Browse the codes and their effects |
+| --- | --- |
+| [![Pause menu with the Cheat Codes entry highlighted](Docs/screenshots/cheat-menu-v1.0.8.png)](Docs/screenshots/cheat-menu-v1.0.8.png) | [![Cheat Codes guide showing code names, effects and navigation](Docs/screenshots/cheat-guide-v1.0.8.png)](Docs/screenshots/cheat-guide-v1.0.8.png) |
+
+Highlight the blank plate above **Continue** to reveal **Cheat Codes**. The guide
+covers 20 commands with scrolling, keyboard and controller navigation. Resume
+the game and press **Ctrl + Alt + X** to enter a code. The original UFO effects,
+Gort dialogue, money cheats and drive-in movie commands are included.
+[Full cheat guide](Docs/CheatCodes.md)
+
+These screenshots are direct Unreal captures of the current hangar, gameplay
+components and menu widgets. The cage scene uses a neutral demonstration floor;
+it shows an actual captured car and sealed cage state.
+
+## More in v1.0.8
+
+| Area | What changed |
+| --- | --- |
+| **Police and tasers** | Animated handheld energy taser, visible remote discharge, full-turn remote aiming and 16-second vehicle stuns. Officers retrieve stunned suspects; restrained suspects no longer accrue escape penalties. |
+| **Pilot recovery** | Automatic landing waits for the pilot to reach the ground and chooses a reachable nearby surface. A purchased harness can receive a carried patient on approach, then recover the pilot. |
+| **Medical response** | Medics route across steep terrain, reserve separate patients and report an empty search. Rooftop casualties fall with demolished buildings; service crews remain available. |
+| **Controllers** | X opens Tools/Dispatch, Y boards or exits, A confirms, and L3 toggles Sprint Mode. Minimap chords, contextual help and hangar menu focus are improved. |
+| **Career and airport** | Fleet-wide equipment, restored parked purchases after graduation, clearer equipment selection, and a band that remains on the base. Recovery jobs no longer consume original mission slots. |
+| **Rendering and diagnostics** | Clearer taser effects, corrected construction-lot surfaces and a separate GPU diagnostic launcher. The reported GPU compute fault remains under investigation. |
+
+[Detailed release notes](Docs/Releases/v1.0.8.md) explain the changes and their
+validation. For GPU crash investigation, `Launch-With-GPU-Diagnostics.cmd` starts
+the included Development executable with extra diagnostics; the normal launcher
+continues to use Shipping. [Diagnostic guide](Docs/GpuCrashAndSprint.md)
+
+## More to explore
+
+- **45 maps and 30 city introductions**, plus imported `.sc2` cities, day/night
+  lighting, animated turbines and the original mission types.
+- **Helicopters and Transport airplanes**, visible cabin occupants, catalog paint,
+  a hidden Apache encounter, parachutes and on-foot carrying/rescue.
+- **An AI helper pilot**, unlocked by graduating the current city, that transports
+  real passengers and cargo through the same recovery rules.
+- **Living cities**, with lane-aware traffic, congestion handling, accidents,
+  emergency crews, building damage and spaced victory formations.
+- **Original radio stations plus KINV**, with 21 Invoke the Revoked tracks,
+  retained radio settings, and two supplied drive-in movies with positional audio.
+
+[Air operations](Docs/AirOperations.md) · [Medical gameplay](Docs/NpcMedicalAndHelicopterUpdate.md) ·
+[Aircraft and destruction](Docs/AircraftAndDestruction.md) · [Radio and music](Docs/InvokeRadio.md)
+
+## Building and validation
+
+Use **Git LFS** when cloning: music, prepared videos, textures and Unreal assets
+use LFS. Supply the original game data and the required Unreal/NVIDIA build
+dependencies locally, then use `RebuildUnrealCpp.bat`.
+[Build instructions](Docs/ForkBuild.md) · [File inventory](Docs/ForkFileInventory.md)
+
+This remains an evolving remake. See the [current validation report](Docs/ForkValidation.md)
+for automated results, screenshot checks and known limitations. Release testing
+does not claim a manual flight, controller or listening session.
 
 ## Original upstream project overview
 

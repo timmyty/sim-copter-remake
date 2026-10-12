@@ -2,6 +2,7 @@
 
 #include "SSimCopterMapPanel.h"
 #include "Ground/SimCopterOnFootPawn.h"
+#include "Ground/SimCopterGroundAgent.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "City/SimCity2000CityActor.h"
@@ -9,6 +10,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterAirOperations.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Missions/SimCopterMissionSystem.h"
 #include "Missions/SimCopterMissionSystemActor.h"
@@ -327,6 +329,28 @@ bool SSimCopterMapPanel::BuildFrame(FSimCopterMapFrame& OutFrame)
 		OutFrame.CurrentMission = OutFrame.Missions.IsValidIndex(FocusIndex) ? FocusIndex : INDEX_NONE;
 	}
 
+	if (const auto* Recovery=Helicopter->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
+		for (auto Site:Recovery->GetSites())
+		{
+			if (!Site.IsValid() || Helicopter->IsFixedWingAircraft()) continue;
+			FSimCopterMapRecoveryWaypoint Waypoint;
+			if (!TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Site->GetActorLocation(),Waypoint.Tile.X,Waypoint.Tile.Y)) continue;
+			Waypoint.bHarbor=Site->GetKind()==ESimCopterRecoverySite::Harbor;
+			Waypoint.bActive=Site->IsWaypointActive();
+			const auto* Cargo=Helicopter->GetAirOperations();
+			Waypoint.bCargoDestination=Waypoint.bHarbor ? Cargo->HasBoat() : Cargo->GetTowVehicle()!=nullptr;
+			OutFrame.RecoveryWaypoints.Add(Waypoint);
+		}
+
+	if (Helicopter->GetMissionPassengerSlots().ContainsByPredicate([](const auto& Slot)
+		{ const auto* Person = Slot.Person.Get(); return Person && Person->IsHandcuffed() &&
+			!Person->IsMedevacVictim() && !Person->IsMissionPatientDead() && !Person->HasMissionResolutionReported(); }))
+	{
+		FVector Roof;
+		const auto* Recovery = Helicopter->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>();
+		if (Recovery && Recovery->FindServiceRoof(0xD2,Helicopter->GetActorLocation(),Roof))
+			TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Roof,OutFrame.PoliceDestination.X,OutFrame.PoliceDestination.Y);
+	}
 	TArray<ASimCopterTrafficSystemActor::FServiceVehicleView> Vehicles;
 	TrafficSystem->GetActiveServiceVehicles(Vehicles);
 	OutFrame.ServiceBlips.Reserve(Vehicles.Num());
@@ -396,9 +420,12 @@ void SSimCopterMapPanel::RefreshMissionLabel(const FSimCopterMapFrame& Frame)
 	{
 		return;
 	}
-	const FString Name = Frame.Missions.IsValidIndex(Frame.CurrentMission)
+	FString Name = Frame.Missions.IsValidIndex(Frame.CurrentMission)
 		? Frame.Missions[Frame.CurrentMission].Name
 		: FString();
+	for (const auto& Waypoint:Frame.RecoveryWaypoints) if (Waypoint.bCargoDestination)
+		Name=Waypoint.bHarbor ? TEXT("HARBOR - OPEN / G") : TEXT("JUNKYARD - OPEN / G");
+	if (Frame.PoliceDestination.X != INDEX_NONE) Name = TEXT("POLICE STATION");
 	MissionLabel->SetText(FText::FromString(Name));
 }
 
@@ -543,6 +570,12 @@ void SSimCopterMapPanel::ReleaseButton(const int32 ButtonIndex, const bool bInsi
 	}
 
 	RefreshButtonBrushes();
+}
+
+void SSimCopterMapPanel::ActivateButton(const SimCopterMap::EButton Button)
+{
+	PressButton(static_cast<int32>(Button));
+	ReleaseButton(static_cast<int32>(Button), true);
 }
 
 void SSimCopterMapPanel::ZoomIn()

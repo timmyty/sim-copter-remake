@@ -1,0 +1,26 @@
+{
+  "InstalledAtUtc": "2026-10-11T16:44:08.6287115Z",
+  "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+  "SHA256": "EA8A74396BAD460561535E2990AE5EEF7AED66730114C6C7B303380370A3656E",
+  "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\pedestrian-taser-shock/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+  "PreviousSHA256": "CA5039C3A3600443B8E47BAEFCA58A8519825D822C12BFC8D49E15FAC8F701E5",
+  "TestsPassed": 9,
+  "RenderTestsPassed": 1,
+  "ChangedFiles": 1,
+  "AssetsChanged": false,
+  "InteractiveGameplayChecked": false,
+  "Changes": "Helicopter taser hits wrap pedestrians in animated white electrical arcs for 0.7 seconds, following their visible pose and transform. Existing stun, damage, arrest and sound behavior is retained.",
+  "HeadlessReport": "Docs/scratchpad/pedestrian-taser-shock/tests/index.json",
+  "RenderReport": "Docs/scratchpad/pedestrian-taser-shock/tests-render/index.json",
+  "SourceDiff": "Docs/scratchpad/pedestrian-taser-shock/source.diff",
+  "Builds": [
+    "Docs/scratchpad/pedestrian-taser-shock/build-editor.log",
+    "Docs/scratchpad/pedestrian-taser-shock/build-shipping.log"
+  ],
+  "Screenshots": [
+    "Docs/scratchpad/pedestrian-taser-shock/pedestrian-NoMo.png",
+    "Docs/scratchpad/pedestrian-taser-shock/pedestrian-Inju.png"
+  ],
+  "PublicationCheckoutChanged": false,
+  "Pushed": false
+}

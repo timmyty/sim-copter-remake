@@ -2,12 +2,80 @@
 
 #include "City/SimCopterAirport.h"
 #include "City/SimCopterHangar.h"
+#include "Ground/SimCopterOnFootPawn.h"
+#include "Flight/SimCopterHelicopterPawn.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/LocalPlayer.h"
+#include "Game/SimCopterPlayerController.h"
+#include "Slate/SceneViewport.h"
+#include "Widgets/SViewport.h"
+#include "Widgets/SOverlay.h"
+#include "Misc/ScopeExit.h"
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Flight/SimCopterHelicopterRegistry.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Game/SimCopterCareerSubsystem.h"
 #include "Misc/AutomationTest.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterHangarInputTransitionTest, "SimCopter.Hangar.DismountMenuInput",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterHangarInputTransitionTest::RunTest(const FString& Parameters)
+{
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
+		.CreateNavigation(false).CreateAISystem(false);
+	auto* World = UWorld::CreateWorld(EWorldType::Game,false,NAME_None,nullptr,true,ERHIFeatureLevel::Num,&Init);
+	auto& Context = GEngine->CreateNewWorldContext(EWorldType::Game);
+	Context.SetCurrentWorld(World);
+	auto* PreviousViewport = GEngine->GameViewport.Get();
+	auto* Viewport = NewObject<UGameViewportClient>(GEngine);
+	auto Widget = SNew(SViewport);
+	auto SceneViewport = Viewport->CreateViewport(Widget);
+	Viewport->SetViewport(&SceneViewport.Get());
+	Viewport->SetViewportOverlayWidget(nullptr,SNew(SOverlay));
+	Context.GameViewport = Viewport;
+	GEngine->GameViewport = Viewport;
+	ON_SCOPE_EXIT
+	{
+		GEngine->GameViewport = PreviousViewport;
+		Viewport->SetViewport(nullptr);
+		GEngine->DestroyWorldContext(World);
+		World->DestroyWorld(false);
+	};
+	auto* Controller = World->SpawnActor<ASimCopterPlayerController>();
+	World->AddController(Controller);
+	auto* LocalPlayer = NewObject<ULocalPlayer>(GEngine);
+	LocalPlayer->ViewportClient = Viewport;
+	Controller->Player = LocalPlayer;
+	auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
+	auto* OnFoot = World->SpawnActor<ASimCopterOnFootPawn>();
+	OnFoot->bFindOrSpawnParkedHelicopterOnBeginPlay = false;
+	OnFoot->SetParkedHelicopter(Heli);
+	Controller->Possess(OnFoot);
+	auto* Hangar = World->SpawnActor<ASimCopterHangar>();
+	Hangar->OpenShell(Controller);
+	TestTrue(TEXT("Actual hangar shell opens"),Hangar->IsShellOpen());
+	TestTrue(TEXT("Menu starts with visible cursor and UI input"),Controller->bShowMouseCursor && Viewport->IgnoreInput());
+	// Auto-possession and initial ground snapping can open the overlap menu during
+	// a dismount spawn, before the pawn finishes its BeginPlay input setup.
+	OnFoot->DispatchBeginPlay();
+	TestTrue(TEXT("Late pawn initialization preserves menu cursor"),Controller->bShowMouseCursor);
+	TestTrue(TEXT("Late pawn initialization preserves UI-only input"),Viewport->IgnoreInput());
+	TestEqual(TEXT("Hangar keeps mouse capture released"),Viewport->GetMouseCaptureMode(),EMouseCaptureMode::NoCapture);
+	Hangar->CloseShell();
+	TestFalse(TEXT("Closing hangar restores gameplay input"),Viewport->IgnoreInput());
+	TestFalse(TEXT("Closing hangar hides on-foot cursor"),Controller->bShowMouseCursor);
+	Hangar->OpenShell(Controller);
+	OnFoot->TryEnterHelicopter(1000);
+	TestTrue(TEXT("Boarding cannot steal control behind open hangar"),Controller->GetPawn()==OnFoot);
+	TestTrue(TEXT("Menu remains UI-only after nearby boarding attempt"),Viewport->IgnoreInput());
+	Hangar->CloseShell();
+	OnFoot->SetActorLocation(Heli->GetActorLocation());
+	OnFoot->TryEnterHelicopter(1000);
+	TestTrue(TEXT("Boarding works again after closing menu"),Controller->GetPawn()==Heli);
+	return true;
+}
 #include "Missions/SimCopterMissionSystem.h"
 #include "UI/SimCopterHangarArt.h"
 #include "UI/SimCopterHangarShop.h"
@@ -133,10 +201,9 @@ bool FSimCopterHangarCatalogTest::RunTest(const FString& Parameters)
 			ESimCopterHelicopterTool::TearGas,
 			ESimCopterHelicopterTool::WaterCannon,
 			ESimCopterHelicopterTool::RescueHarness,
-			ESimCopterHelicopterTool::TowClamp,
 			ESimCopterHelicopterTool::CaptureCage,
 		};
-		const int32 ExpectedIndices[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 5, 6 };
+		const int32 ExpectedIndices[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 6 };
 
 		for (int32 Row = 0; Row < SimCopterHangarShop::UpgradeRowCount; ++Row)
 		{

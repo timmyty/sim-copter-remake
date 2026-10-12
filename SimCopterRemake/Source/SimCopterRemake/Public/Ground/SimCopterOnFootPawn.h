@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Ground/SimCopterPopulationFigure.h"
+#include "Ground/SimCopterEnergyTaser.h"
 #include "Replay/SimCopterReplayRecordable.h"
 #include "SimCopterOnFootPawn.generated.h"
 
@@ -32,6 +33,12 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterShoulderAimTest;
 	friend class FSimCopterNpcAppearanceTest;
+	friend class FSimCopterPilotRunTest;
+	friend class FSimCopterControllerSprintTest;
+	friend class FSimCopterEnergyTaserTest;
+	friend class FSimCopterApacheAftermathTest;
+	friend class FSimCopterEnergyTaserVisualTest;
+	friend class FSimCopterHangarInputTransitionTest;
 
 public:
 	ASimCopterOnFootPawn();
@@ -137,6 +144,10 @@ protected:
 	// still, but that is deliberately not matched.
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Movement", meta = (ClampMin = "1.0"))
 	float WalkSpeedCmPerSec = 270.0f;
+
+	// Remake on-foot Shift control; the original superpower dog keeps its own 20x speed.
+	UPROPERTY(EditAnywhere, Category = "SimCopter|Movement", meta = (ClampMin = "1.0"))
+	float RunSpeedScale = 2.0f;
 
 	// Side-step speed as a fraction of WalkSpeedCmPerSec. Strafing at full walk speed reads as a
 	// skate; halving it keeps sideways movement usable for lining up a pickup without it
@@ -300,6 +311,12 @@ private:
 	void StartTaserAim();
 	void StopTaserAim();
 	void FireTaser();
+	void UpdateEnergyTaser(float DeltaSeconds);
+	void StopTaserHum();
+	SimCopterEnergyTaser::FCharge TaserCharge;
+	float TaserEffectPhase=0;
+	TWeakObjectPtr<UAudioComponent> TaserHum;
+	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> TaserGlow;
 	bool TryCarryDownedPerson();
 	void UpdateAirOperations(float DeltaSeconds);
 	bool bTaserAiming = false;

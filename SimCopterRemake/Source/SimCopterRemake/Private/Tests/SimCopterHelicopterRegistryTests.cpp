@@ -186,11 +186,12 @@ bool FSimCopterEquipmentTableTest::RunTest(const FString& Parameters)
 		{ ESimCopterHelicopterTool::RescueHarness, 0x04,  800,  600, 0x2ab },
 		{ ESimCopterHelicopterTool::TearGas,       0x08, 2500, 1875, 0x2ac },
 		{ ESimCopterHelicopterTool::WaterCannon,   0x10, 1500, 1125, 0x2a9 },
-		{ ESimCopterHelicopterTool::TowClamp, 0x20, 1200, 900, 0 },
 		{ ESimCopterHelicopterTool::CaptureCage, 0x40, 1800, 1350, 0 },
 	};
 
-	TestEqual(TEXT("seven purchasable tools"), SimCopterHelicopterRegistry::GetEquipment().Num(), 7);
+	TestEqual(TEXT("six purchasable tools"), SimCopterHelicopterRegistry::GetEquipment().Num(), 6);
+	TestNull(TEXT("Retired clamp is absent from the catalog"),SimCopterHelicopterRegistry::FindEquipment(ESimCopterHelicopterTool::TowClamp));
+	TestEqual(TEXT("Legacy clamp upgrades to cage, retaining all other purchases"),SimCopterHelicopterRegistry::NormalizeEquipmentMask(0x3f),0x5f);
 
 	int32 UnionMask = 0;
 	for (const FExpected& Row : Expected)

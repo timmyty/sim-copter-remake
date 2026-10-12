@@ -1,0 +1,160 @@
+{
+  "date": "2026-10-11",
+  "changes": [
+    "Clicked equipment remains selected when the pointer crosses other items.",
+    "A on an item selects Buy/Sell/Done, a new press activates, B returns to the item, held repeats cannot transact.",
+    "Purchases and sales affect the owned fleet; subsequent deliveries and discovered Apache inherit equipment. Successful load repairs legacy per-airframe mismatch without refilling existing ammunition.",
+    "Remove obsolete LB+RB wheel chord and latched steering suppression; X retains Tools/Dispatch."
+  ],
+  "originalEvidence": "FUN_0042d840: one career +0x48 equipment mask; Docs/memory/simcopter-heli-tools-models.md",
+  "regressionEvidence": {
+    "normalCruise": "72 model/direction/stick/Sprint combinations passed before and after. The overlapping-bumper latch was reproduced, but the exact physical-controller scenario reported by the user was not established.",
+    "bumperBefore": "Docs/scratchpad/equipment-controls/bumper-before/index.json",
+    "menuAndFleetBefore": "Docs/scratchpad/equipment-controls/tests-before-safe/index.json",
+    "menuAndFleetFailedAssertions": 12,
+    "bumperFailedAssertions": 4
+  },
+  "builds": {
+    "development": "Docs/scratchpad/equipment-controls/build-development-layout.log",
+    "notes": "One intermediate compile failed for a missing include; corrected before final validation. Existing engine deprecation warnings remain.",
+    "editor": "Docs/scratchpad/equipment-controls/build-editor-layout.log",
+    "result": "Succeeded",
+    "shipping": "Docs/scratchpad/equipment-controls/build-shipping-layout.log"
+  },
+  "headless": {
+    "passed": 58,
+    "warnings": "Existing missing optional hangar art and contextless purchase-fixture DestroyActor warnings.",
+    "report": "Docs/scratchpad/equipment-controls/tests-final/index.json",
+    "scope": "Controller, flight, air operations, cage, hangar, equipment, save and career; visual-only branches skip rendering under NullRHI.",
+    "warningCases": 2,
+    "failed": 0
+  },
+  "offscreen": {
+    "previews": "Docs/scratchpad/equipment-controls/previews",
+    "passed": 2,
+    "inspection": "Cannon/harness inspected initially; clipped hint corrected; final cage page inspected. Final change after headless suite only moves/enlarges hint bounds; both equipment tests rerun with D3D12.",
+    "report": "Docs/scratchpad/equipment-controls/render-layout/index.json",
+    "failed": 0,
+    "rhi": "D3D12 (SM6)"
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-12T03:26:10.74335Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "55C5C06A0C3CA78B577D720EAB7C05316AD4B2CB753520C9C3046650409DCB65",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\equipment-controls/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "2AB436EAFDC84B2FB51FDE584E69ED3772881E2977FE0C2DF423E44B3CCCA7A5"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "D99B3FEBFF21DEBE48194FC0550381557ADB0C984A4BE209E72444B23F6EDEC1",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\equipment-controls/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "B6FE9EFBAE81A31C19DC0D9FDDDCBD6AA14F1ABFF0637FDC93BBD51C0B82BA4F"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "2B33F53397AA330DECADAEE61EC4AE7F8CCBA385DCABD30A61A7909CAA6DD8E6",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\equipment-controls/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "594429A31C0645A9063649746C4BC0B3F5B0114D2ADE7CE606F5EAE2693D7E13"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "8E60ACD8A87F9344858D0EE99FC05DC9F5BF4DBAA6410DC69FE08A34A6235B36",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\equipment-controls/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "0933798EA12D1C6500902CEBA7E2AC23FA61C7C58A0A5F9BBEE0C13386E4AC90"
+      }
+    ],
+    "HeadlessPassed": 58,
+    "OffscreenPassed": 2,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "sourceFiles": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterHangarMenu.cpp",
+      "SHA256": "ABA4183A9A233DAC88CF3145BA38D17305CC0B5D4216A0D8EF5B65A3230F445F",
+      "PreviousSHA256": "2657030C3E76CDB30FC2F1A6A5191AD209723134853BE80C4575AF68DC6032E6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterHangarMenu.h",
+      "SHA256": "0077023962EE3AD22626DD67E6D4D58433A0774CD0AFD0941FD1B5478A60EEF8",
+      "PreviousSHA256": "C75D8879A9DCF5AA11BDCB268CFD0E0498EB5829520E33471476EEA72C1835AA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterNavigableMenu.h",
+      "SHA256": "0ADE07549D773BD6095F9EC89B55A7B77BA70677BE77A7666EDDF41FA4B231EE",
+      "PreviousSHA256": "0F7545D7FC0EA5100CC3BB01F1DCDA14A6149B675434C26C947D383D429DCDD9"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterHangarShop.cpp",
+      "SHA256": "488A86100C690882426C3897A5CE3B1A16366E561FE3460C113A42A499B50CF5",
+      "PreviousSHA256": "C59F744362F431CC1EA51BA0539680B7715C12528F007D970B041AAC08581AAC"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterParking.cpp",
+      "SHA256": "1BA03C7E089D0A36B88FD4F043D00A0EF2DFCA8C715B760FA63494FDCCBDFF15",
+      "PreviousSHA256": "899E40D22A05C2BCA279E22DEB0053419D2DBA726FAE00040571C9EE024D9CF4"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterParking.h",
+      "SHA256": "98507DD856F9736ACE848B77AF32ABB3BFD685F097E484758933FB8F4574C788",
+      "PreviousSHA256": "24F2960DC2849CFBE567B85097863786F105E4AB48D3A41CDAFAEF65021E757D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp",
+      "SHA256": "58A320E3DCB994CAFB74064C0442FEF78735164F4351B222084A5F7ED7347CA2",
+      "PreviousSHA256": "2DB594F46B115E4F53375C918EB041F39AC656B1DAB2F1ADD63D5A8AC4436D3A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h",
+      "SHA256": "89DC885B691FC15789E6BB2BCB2448A67CC84F6B3A121F56EC7B2D69EEC30A86",
+      "PreviousSHA256": "B4053A54E47FBA68FBEC5BBEB4261A740B2B6F9B9DCBBD728E57E95750D9C967"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterSaveSubsystem.cpp",
+      "SHA256": "7BB540AFEFB11E352EF0B4112963EEB695E1B9F4BE05A99D91C5EF5410E0AA87",
+      "PreviousSHA256": "6B2EFF69AF7BBC3FE36231D007CB164A20D8B5C74960BE7A788809F58DDD6588"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterEquipmentPageTests.cpp",
+      "SHA256": "6BCB6C2F14A2A5B6E4AC4CA47EB15CA0D9DDF4F85F72FC9FA3FA707128C69F71",
+      "PreviousSHA256": "E3258D79059A92AC4F18E93F0399A28CAC668AC17265D204C2F4667ABF6A5687"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterHelicopterParkingTests.cpp",
+      "SHA256": "B0A1827A2C28B9126D84448FDF13EC292438F6FB4E2A90A28D20A820C7F4617E",
+      "PreviousSHA256": "BF5DC1274DCA32C15CAF06A69CF980372C8FF92912AD8D303727293FD6021EC8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerContextsTests.cpp",
+      "SHA256": "49AB84FCE89ACB1EF59C0C09548CF00664DBA87EE90FA71A576062244668AB05",
+      "PreviousSHA256": "CE4AD4D80E144ADA2768D2A794487D790606BF63C8C9C0C08E2B58DBF767149B"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterAirOperations.cpp",
+      "SHA256": "E20853B553DD5D9BAC0B11786F4A7C7DF47FF006FC7A169910C7AF1D584C0859",
+      "PreviousSHA256": "FF145BCFE99810175D095BA086690DE873B6DF6BDE7EF09B707A8498D9522DC0"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterAirOperationsTests.cpp",
+      "SHA256": "199A2C52A4EB19041444F797953921608A4C6978998CE6BE4CBF9243C977CD36",
+      "PreviousSHA256": "7A97D8B39516C4490710D0A1542F32722BADEF365978B522D0522069BC7A19A2"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterSaveSubsystem.h",
+      "SHA256": "CD19E0E47F1ED937687991536812A281D76F15E8F349D6E4724763365D40A603",
+      "PreviousSHA256": "51BABC1C279AB708FA0447166DE6B3CAAE0D0F7271EBF5320980929238D13BEA"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFleetEquipmentTests.cpp",
+      "SHA256": "3B622CAAE96690BDBC1080A1BB31EA9DD1ECC9F12D57586E15064A03B12B6664",
+      "PreviousSHA256": null
+    }
+  ],
+  "priorRequestedChanges": "Existing equipment previews, +/-85 degree walking look, airport victory band persistence and short junkyard drops preserved.",
+  "interactiveGameplayChecked": false,
+  "physicalControllerChecked": false,
+  "publicationCheckoutChanged": false
+}

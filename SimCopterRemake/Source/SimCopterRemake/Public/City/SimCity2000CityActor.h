@@ -78,6 +78,7 @@ class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterCityTourRenderTest;
@@ -228,6 +229,7 @@ public:
 
 private:
 	friend class FSimCopterCityBuildingDemolitionTest;
+	friend class FSimCopterConstructionLotTest;
 	friend class FSimCopterPatientPlacementTest;
 	friend class FSimCopterPatientCityPlacementTest;
 	friend class FSimCopterSafePassengerLandingTest;

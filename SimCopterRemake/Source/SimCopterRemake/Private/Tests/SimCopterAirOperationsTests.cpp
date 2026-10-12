@@ -3,6 +3,7 @@
 #include "Misc/Paths.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "Engine/GameInstance.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraActor.h"
@@ -65,17 +66,17 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestTrue(TEXT("No ambient stalled car is due before 15 minutes"),FMath::IsNearlyEqual(System->StalledCarSeconds,1.0f));
  System->UpdateStalledCars(6.0f);
  TestEqual(TEXT("Rare stalled-car interval rearms after 15 minutes"),System->StalledCarSeconds,150.0f);
- Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::TowClamp,true);
- TestTrue(TEXT("Purchased clamp is available on the helicopter"),Heli->IsToolAvailable(ESimCopterHelicopterTool::TowClamp));
- TestTrue(TEXT("Buying the tow clamp enables the normal mission rate"),System->CanPlayerTow());
- System->UpdateStalledCars(149.0f);
- TestEqual(TEXT("Equipped timer advances at normal speed"),System->StalledCarSeconds,1.0f);
+ Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::CaptureCage,true);
+ TestTrue(TEXT("Purchased cage is available on the helicopter"),Heli->IsToolAvailable(ESimCopterHelicopterTool::CaptureCage));
+ TestTrue(TEXT("Buying the cage enables towing"),System->CanPlayerTow());
+ System->UpdateStalledCars(596.0f);
+ TestEqual(TEXT("Equipped stalls wait ten minutes instead of two and a half"),System->StalledCarSeconds,1.0f);
  auto* ParkedPilot=World->SpawnActor<ASimCopterOnFootPawn>(); ParkedPilot->SetParkedHelicopter(Heli); PC->Possess(ParkedPilot);
  TestTrue(TEXT("Walking away from an equipped helicopter retains towing capability"),System->CanPlayerTow());
  PC->Possess(Heli); ParkedPilot->Destroy();
- Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::TowClamp,false);
+ Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::CaptureCage,false);
  System->UpdateStalledCars(3.0f);
- TestTrue(TEXT("Selling the clamp slows an already pending mission"),FMath::IsNearlyEqual(System->StalledCarSeconds,0.5f));
+ TestTrue(TEXT("Selling the cage slows an already pending mission"),FMath::IsNearlyEqual(System->StalledCarSeconds,0.5f));
  System->StalledCarSeconds=150.0f;
 
  Heli->ControllerLeftBumperPressed();
@@ -83,18 +84,21 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestTrue(TEXT("LB reaches flight yaw controls"),Heli->BuildFlightInputs().bTurnLeftKey);
  Heli->ControllerRightBumperPressed();
  TestFalse(TEXT("Both bumpers suspend turning"),Heli->BuildFlightInputs().bTurnLeftKey || Heli->BuildFlightInputs().bTurnRightKey);
- TestTrue(TEXT("Both bumpers open Tools without R3"),Heli->ControllerMode==ESimCopterControllerMode::ToolWheel);
- Heli->ControllerEnterExitPressed();
- TestTrue(TEXT("Y switches to Dispatch"),Heli->ControllerMode==ESimCopterControllerMode::DispatchWheel);
+ TestTrue(TEXT("Both bumpers leave the tools wheel closed"),Heli->ControllerMode==ESimCopterControllerMode::None);
  Heli->ControllerLeftBumperReleased();
- TestTrue(TEXT("Releasing either bumper closes wheel"),Heli->ControllerMode==ESimCopterControllerMode::None);
- TestFalse(TEXT("Remaining held bumper cannot cause an unexpected turn"),Heli->BuildFlightInputs().bTurnRightKey);
+ TestTrue(TEXT("Remaining RB resumes turning without slowing or repressing"),Heli->BuildFlightInputs().bTurnRightKey);
  Heli->ControllerRightBumperReleased(); Heli->ControllerRightBumperPressed();
  TestTrue(TEXT("Fresh RB turns right"),Heli->BuildFlightInputs().bTurnRightKey);
  Heli->ControllerLeftBumperPressed();
- TestTrue(TEXT("Reverse press order opens same wheel"),Heli->ControllerMode==ESimCopterControllerMode::ToolWheel);
- Heli->ControllerCancelPressed(); Heli->ControllerRightBumperReleased(); Heli->ControllerLeftBumperReleased();
- TestTrue(TEXT("Cancel and chord release leave menus closed"),Heli->ControllerMode==ESimCopterControllerMode::None);
+ TestTrue(TEXT("Reverse press order also leaves wheels closed"),Heli->ControllerMode==ESimCopterControllerMode::None);
+ Heli->ControllerRightBumperReleased();
+ TestTrue(TEXT("Remaining LB resumes turning"),Heli->BuildFlightInputs().bTurnLeftKey);
+ Heli->ControllerLeftBumperReleased(); Heli->ControllerOptionsPressed();
+ TestTrue(TEXT("X opens Tools"),Heli->ControllerMode==ESimCopterControllerMode::ToolWheel);
+ Heli->ControllerOptionsPressed();
+ TestTrue(TEXT("X switches to Dispatch"),Heli->ControllerMode==ESimCopterControllerMode::DispatchWheel);
+ Heli->ControllerCancelPressed();
+ TestTrue(TEXT("B closes the wheel"),Heli->ControllerMode==ESimCopterControllerMode::None);
  TestEqual(TEXT("Map mission helper dispatch entry"),SimCopterControllerInput::GetDispatchSelection(4).ServiceIndex,100);
  TestFalse(TEXT("Helper locked before a passed level"),System->OrderSupport(1,true));
 
@@ -178,13 +182,16 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  const FVector Near(40,0,10),Far(-100,0,10);
  TestTrue(TEXT("Hit side geometry visibly dents"),!SimCopterAirOperations::DentVertex(Near,Near,FVector::ZeroVector).Equals(Near));
  TestTrue(TEXT("Far side retains body shape"),SimCopterAirOperations::DentVertex(Far,Near,FVector::ZeroVector).Equals(Far));
- auto* Yard=World->SpawnActor<ASimCopterRecoverySite>(); Yard->Configure(ESimCopterRecoverySite::AutoRepair,FVector(2500,2500,0)); System->Sites.Add(Yard);
+ auto* Yard=World->SpawnActor<ASimCopterRecoverySite>(); Yard->Configure(ESimCopterRecoverySite::Junkyard,FVector(2500,2500,0)); System->Sites.Add(Yard);
  auto* HealthyCar=World->SpawnActor<ASimCopterGroundAgent>(); HealthyCar->AgentKind=ESimCopterGroundAgentKind::Vehicle; HealthyCar->SetOwner(Traffic);
  System->StartStalledCar(false);
  TestFalse(TEXT("Unequipped player receives no second ambient stalled car"),HealthyCar->IsTowableVehicle());
+ System->StartStalledCar(true);
+ TestFalse(TEXT("Equipped player also receives at most one ambient stalled car"),HealthyCar->IsTowableVehicle());
  HealthyCar->Destroy();
- Ops->bCage=false; Ops->bDeployed=true; Ops->CargoLocation=Car->GetActorLocation();
- TestTrue(TEXT("Clamp grabs stalled vehicle"),Ops->TryGrabCargo());
+ Ops->bCage=true; Ops->bCageOpen=true; Ops->CageCaptureDelay=0; Ops->bDeployed=true; Ops->CargoLocation=Car->GetActorLocation();
+ TestTrue(TEXT("Cage grabs stalled vehicle"),Ops->TryGrabCargo());
+ Ops->CageSeal=1;
  TestTrue(TEXT("Car suspends road movement while slung"),Car->IsVehicleTowed());
  Ops->CargoLocation=Yard->GetActorLocation()+FVector(0,0,70); Ops->CargoVelocity=FVector::ZeroVector;
  TestTrue(TEXT("Yard accepts gently delivered vehicle"),Ops->TryDeliverCargo());
@@ -204,7 +211,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Ambient->Boats[0].World=FVector(8000,8000,0);
  Ambient->Boats[0].TowEventId=Missions->CreateMissionAt(70,70,TYPE_BoatTow);
  int32 BoatIndex=INDEX_NONE;
- TestTrue(TEXT("Capsized hull is clamp eligible"),Ambient->FindTowableBoat(FVector(8000,8000,0),150,BoatIndex));
+ TestTrue(TEXT("Capsized hull is cage eligible"),Ambient->FindTowableBoat(FVector(8000,8000,0),150,BoatIndex));
  Ambient->SetBoatTow(BoatIndex,true,FVector(8000,8000,1500));
  Ambient->UpdateBoat(Ambient->Boats[0],1);
  TestEqual(TEXT("Towed hull keeps sling height above water"),Ambient->Boats[0].World.Z,1500.0);
@@ -219,7 +226,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  auto* ServiceCar=World->SpawnActor<ASimCopterGroundAgent>(); ServiceCar->SetOwner(Traffic);
  ServiceCar->AgentKind=ESimCopterGroundAgentKind::Vehicle; ServiceCar->SetActorLocation(FVector(3500,3500,25)); ServiceCar->SetVehicleStalled(false);
  Ops->ReleaseCargo(); Ops->bDeployed=false; Ops->bCage=false; Ops->SetSupportAircraft(true);
- Heli->SetDebugToolGrant(ESimCopterHelicopterTool::TowClamp,true);
+ Heli->SetDebugToolGrant(ESimCopterHelicopterTool::CaptureCage,true);
  System->SupportHelicopter=Heli; System->AssignedEvent=ServiceCar->GetTowMissionId(); System->bAutomatic=false;
  System->SupportHome=FVector(3500,3500,600); Heli->SetActorLocation(System->SupportHome);
  for(int32 K=0;K<1200 && !ServiceCar->HasMissionResolutionReported();++K) { System->UpdateSupport(0.05f); Ops->Update(0.05f); }
@@ -253,7 +260,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
   TestTrue(TEXT("Remote camera originates at the nose weapon"),Ops->RemoteTaserCamera->GetActorLocation().Equals(Ops->GetRemoteTaserMuzzle(),.1));
   TaserTarget->CurrentVelocityCmPerSec=FVector(120,80,0);
   TaserTarget->ExternalVelocityCmPerSec=FVector(90,30,0);
-  Ops->RemoteTaserAim=(TaserTarget->GetActorLocation()-Ops->RemoteTaserCamera->GetActorLocation()).Rotation(); Ops->FireRemoteTaser();
+  Ops->RemoteTaserAim=(TaserTarget->GetActorLocation()-Ops->RemoteTaserMount->GetComponentLocation()).Rotation(); Ops->FireRemoteTaser();
   TestTrue(TEXT("Aimed taser hit incapacitates suspect"),TaserTarget->IsTaserStunned());
   TestFalse(TEXT("Taser leaves suspect alive"),TaserTarget->IsMissionPatientDead());
   TestEqual(TEXT("Taser does not subtract health"),TaserTarget->GetBehaviorAttribute(EBhavAttr::MedevacHealth),100);
@@ -314,8 +321,12 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Ops->ToggleRemoteTaser(); TestFalse(TEXT("Leaving taser restores manual piloting"),Ops->IsAIPiloted());
  auto* ArrestTarget=Person(12,FVector(6000,6000,24));
  auto* Pilot=World->SpawnActor<ASimCopterOnFootPawn>();
+ Pilot->SetActorLocation(FVector(5500,6000,24));
  Pilot->CameraComponent->SetWorldLocationAndRotation(FVector(5500,6000,24),FRotator::ZeroRotator);
- Pilot->StartTaserAim(); Pilot->FireTaser();
+ Pilot->StartTaserAim(); Pilot->UpdateEnergyTaser(.7f); Pilot->FireTaser();
+ TestFalse(TEXT("On-foot orb does not stun before arrival"),ArrestTarget->IsInPoliceCustody());
+ for (TActorIterator<ASimCopterTaserOrb> It(World);It;++It)
+  for (int32 Frame=0;Frame<100 && !It->HasImpacted();++Frame) It->Tick(.01f);
  TestTrue(TEXT("On-foot aimed taser hits suspect"),ArrestTarget->IsInPoliceCustody());
  TestFalse(TEXT("On-foot taser leaves suspect alive"),ArrestTarget->IsMissionPatientDead());
  TestEqual(TEXT("On-foot taser preserves health"),ArrestTarget->GetBehaviorAttribute(EBhavAttr::MedevacHealth),100);
@@ -397,6 +408,22 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  System->AssignedEvent=INDEX_NONE; System->bAutomatic=true; System->bReturning=false;
  System->UpdateSupport(0.05f);
  TestEqual(TEXT("Automatic helper never treats Base Location as a mission"),System->AssignedEvent,INDEX_NONE);
+
+ const int32 NearbyRecovery=Missions->CreateMissionAt(64,64,TYPE_VehicleTow);
+ const int32 OriginalJob=Missions->MissionSystem.CreateIncidentMedevacAt(20,20);
+ TestTrue(TEXT("Original dispatch fixture creates a medical incident"),OriginalJob!=INDEX_NONE);
+ System->AssignedEvent=NearbyRecovery;
+ System->UpdateSupport(0);
+ TestEqual(TEXT("Automatic helper prefers original work over a nearby unladen tow assignment"),System->AssignedEvent,OriginalJob);
+ System->bAutomatic=false; System->AssignedEvent=NearbyRecovery;
+ System->UpdateSupport(0);
+ TestEqual(TEXT("Manual recovery assignment remains respected"),System->AssignedEvent,NearbyRecovery);
+ auto* WaitingCar=World->SpawnActor<ASimCopterGroundAgent>(); WaitingCar->AgentKind=ESimCopterGroundAgentKind::Vehicle; WaitingCar->SetOwner(Traffic);
+ System->StartStalledCar(true);
+ TestFalse(TEXT("Original active work defers ambient breakdowns"),WaitingCar->IsTowableVehicle());
+ WaitingCar->Destroy();
+ Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
+ System->AssignedEvent=INDEX_NONE;
 
  // End-to-end helper flight: collect a fragile patient, clear a real blocking building,
  // descend onto a hospital roof, and deliver the same living actor without penalties.

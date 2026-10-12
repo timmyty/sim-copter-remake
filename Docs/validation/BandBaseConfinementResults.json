@@ -1,0 +1,121 @@
+{
+  "RecordedAtUtc": "2026-10-12T05:39:07.4518373Z",
+  "RootCause": "The remake followed the listener up to four tiles beyond an airport pad; formation slots, placement fallbacks and route probes had no base perimeter.",
+  "Changes": [
+    "Confine standing slots and routes to the airport 4x4 footprint with capsule clearance, using the same rotated/scaled pad basis as the hangar.",
+    "Follow the listener only while on the base; otherwise gather at the nearest airport pad.",
+    "Search safe, spaced alternatives on the apron for large rosters or blocked formation slots.",
+    "Start formation guidance on spawn and permit outside stragglers to walk inward. Original BHAV music, speed and medical-state release retained."
+  ],
+  "BeforeFix": {
+    "Report": "Docs/scratchpad/band-base/reproduction/index.json",
+    "FailedAssertions": 19
+  },
+  "Builds": {
+    "Result": "Succeeded",
+    "Development": "Docs/scratchpad/band-base/build-development-final.log",
+    "Shipping": "Docs/scratchpad/band-base/build-shipping-final.log",
+    "Wrapper": "RebuildUnrealCpp.bat",
+    "Editor": "Docs/scratchpad/band-base/build-editor-final.log"
+  },
+  "Tests": {
+    "Failed": 0,
+    "Passed": 21,
+    "Reports": [
+      "Docs/scratchpad/band-base/tests-final/index.json",
+      "Docs/scratchpad/band-base/tests-airport/index.json"
+    ],
+    "Coverage": [
+      "Three formations with the listener beyond all four sides and across town.",
+      "All 57 spawn locations and formation targets stay within the base.",
+      "Outward path/standing rejection, real marching ticks and inward straggler return.",
+      "Rotated, nonuniformly scaled and fallback-airport footprint calculations.",
+      "Existing cluster movement/cadence, neighbor spacing, parked-aircraft routes and injury release.",
+      "Medical navigation, people, save round trips and airport placement rules."
+    ],
+    "Warnings": 0
+  },
+  "SourceFiles": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterBandNavigation.h",
+      "SHA256": "D111AD0DB815921FFEB840EC1BD70C67E40CC69AA95F2B84AF3DD49D6471FAEE",
+      "PreviousSHA256": "1127DAF07F7339D779DBA84D07E9BE950161D681F490A77CB8170587E314B51F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterBandNavigation.cpp",
+      "SHA256": "D1735E61E8957B6FB72AFCD27EE013D8E87DD0F452301E931E1CBDA0EFD9C246",
+      "PreviousSHA256": "ADD5341597A3318E8D00BA22E6FB0ED5BB75E7A39D1208189BA16A69E93A2087"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp",
+      "SHA256": "9CEC66A4AA3CA2200FAB98460BBE9C383ABEF2151EA156B1B48EA347F275E4FE",
+      "PreviousSHA256": "E6D282CF464AEC01D33F0B4DAAE38000BB3B5E9CD9E3A913F83D2B1E09F29D0C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Missions/SimCopterMissionSystemActor.cpp",
+      "SHA256": "DF8A43F8BA3C13E9A0028A1F7101DF9A8992CF135875BEA442C7F27BC218516D",
+      "PreviousSHA256": "3E1EDE70358E2CAC30CD39579DCCB31C3292ABFCDCA9673B55FBAF11EEF3F7E3"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterNpcMedicalTests.cpp",
+      "SHA256": "AFBD27F5D3DB3596FA9F28D54600D5137DC46874B87F18652DAC090F76334FBC",
+      "PreviousSHA256": "AC4A0CD813728F003B2B1BBE6E3E905E522680954ACDB616B2DF19BDE9A4F1EE"
+    }
+  ],
+  "Binaries": [
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+      "SHA256": "E91A899CB2891CA37D9780A0F56E36184C192AEB1BB3C459CB99D0B8C0E43C15"
+    },
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+      "SHA256": "87462F7D70901B4F86514466340AE2F5866B7223B061DC2C6BDFBD7ABA5373B7"
+    },
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+      "SHA256": "B8E7837B25D93D3F2E966721A1F66B3C541D19B06A187B21CB3F4C7997590FEC"
+    },
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+      "SHA256": "F41D69DC54D6B904A5C41F32CFD823F57BB04EFAE350A2D5924260E439123FF4"
+    }
+  ],
+  "InstallationStatus": "Installed both executables and symbols with hash-verified backups.",
+  "Installer": "Docs/scratchpad/band-base/install-update.ps1",
+  "InteractiveGameplayChecked": false,
+  "MusicListeningChecked": false,
+  "PublicationCheckoutChanged": false,
+  "Installation": {
+    "InstalledAtUtc": "2026-10-12T05:40:08.9449895Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "E91A899CB2891CA37D9780A0F56E36184C192AEB1BB3C459CB99D0B8C0E43C15",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\band-base/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "98693EADD65063FCEEC757BAB19E4B2A768582980922396BCB25E249B068D2D4"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "87462F7D70901B4F86514466340AE2F5866B7223B061DC2C6BDFBD7ABA5373B7",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\band-base/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "E760689EC3FB63A5B7D15396050B3AACDF054C0F7EE0594D3AF58D0BCFCE4DAD"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "B8E7837B25D93D3F2E966721A1F66B3C541D19B06A187B21CB3F4C7997590FEC",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\band-base/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "67B417BF61DBE96CD4D17EC1724DDE2378B8F2DD738566930113714B75CD013A"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "F41D69DC54D6B904A5C41F32CFD823F57BB04EFAE350A2D5924260E439123FF4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\band-base/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "EBACF26914F3B14D11852F9F672E1C790013C099BC3E4EE435A47B08E58170EF"
+      }
+    ],
+    "HeadlessPassed": 21,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  }
+}

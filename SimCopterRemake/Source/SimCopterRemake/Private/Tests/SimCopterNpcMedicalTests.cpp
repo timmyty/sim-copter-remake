@@ -76,6 +76,38 @@ bool FSimCopterNpcMedicalTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Steps crossing flames are blocked even if endpoint is clear"), Missions->ShouldAvoidFireStep(FVector(300,-200,0), FVector(700,-200,0)));
 	TestFalse(TEXT("Roof-height flame does not burn street below"), Missions->IsPedestrianFireHazard(FVector(500,-200,-100)));
 	TestFalse(TEXT("A person caught in newly ignited fire may move out"), Missions->ShouldAvoidFireStep(FVector(500,-200,0), FVector(700,-200,0)));
+	TestTrue(TEXT("Fire margin is not permission to walk back into flames"), Missions->ShouldAvoidFireStep(FVector(575,-200,0), FVector(530,-200,0)));
+	TestTrue(TEXT("Escape cannot cross through the centre to the opposite side"), Missions->ShouldAvoidFireStep(FVector(550,-200,0), FVector(300,-200,0)));
+	TestFalse(TEXT("Escape toward the nearest safe edge is allowed"), Missions->ShouldAvoidFireStep(FVector(550,-200,0), FVector(620,-200,0)));
+	auto* Arsonist = Person(11, FVector(500,-200,0));
+	Arsonist->ThrowProjectileAtSelection(Arsonist->BehaviorContext, false, true);
+	TestEqual(TEXT("Lighting a firebomb starts ten seconds of fire protection"), Arsonist->ArsonFireGraceSeconds, 10.0f);
+	Arsonist->Tick(0);
+	TestFalse(TEXT("Own ignition does not immediately injure the arsonist"), Arsonist->IsMedevacVictim());
+	TestTrue(TEXT("Arsonist chooses an escape route while lighting the fire"), Arsonist->IsAvoidanceMoveActive());
+	TestFalse(TEXT("Escape target lies outside flames and their safety margin"), Missions->IsPedestrianFireHazard(
+		Arsonist->AvoidanceMoveTargetLocation-FVector(0,0,Arsonist->GetCapsuleHalfHeightCm()),40));
+	const FVector ArsonStart = Arsonist->GetActorLocation();
+	Arsonist->UpdateMovement(.5f);
+	TestTrue(TEXT("Arsonist moves away during the grace period"), FVector::Dist2D(ArsonStart,Arsonist->GetActorLocation()) > 1);
+	Arsonist->bMissionStationary = true; // Keep this one in the hazard to check finite protection.
+	Arsonist->SetActorLocation(ArsonStart);
+	Arsonist->bBehaviorActive = false;
+	Arsonist->Tick(9.9f);
+	TestFalse(TEXT("Protection lasts almost ten seconds"), Arsonist->IsMedevacVictim());
+	TArray<uint8> ArsonSave;
+	TestTrue(TEXT("Remaining fire protection saves"), Arsonist->CaptureRuntimeSaveState(ArsonSave));
+	Arsonist->ArsonFireGraceSeconds = 10;
+	TestTrue(TEXT("Remaining fire protection restores"), Arsonist->RestoreRuntimeSaveState(ArsonSave));
+	TestTrue(TEXT("Load cannot renew the ten-second window"), Arsonist->ArsonFireGraceSeconds < .11f);
+	// This synthetic world has no physical floor; put the saved body back in the test fire.
+	Arsonist->SetActorLocation(FVector(500,-200,Arsonist->GetCapsuleHalfHeightCm()));
+	TestTrue(TEXT("Expiry fixture is in physical fire contact"),Missions->IsPedestrianFireHazard(Arsonist->GetActorLocation()-FVector(0,0,Arsonist->GetCapsuleHalfHeightCm())));
+	Arsonist->bBehaviorActive = true; // The real medical conversion hands control to the patient's VM.
+	Arsonist->Tick(.11f);
+	TestEqual(TEXT("Grace expires after ten seconds of simulation time"),Arsonist->ArsonFireGraceSeconds,0.0f);
+	TestTrue(TEXT("An arsonist still trapped in fire is vulnerable after expiry"), Arsonist->IsMedevacVictim());
+	Arsonist->Destroy();
 	auto* BurnVictim = Person(0, FVector(500,-200,0));
 	BurnVictim->Tick(0);
 	TestTrue(TEXT("Physical fire contact creates medical victim"), BurnVictim->IsMedevacVictim());
@@ -308,6 +340,35 @@ bool FSimCopterBandCelebrationTest::RunTest(const FString& Parameters)
 	Missions->MissionSystem.Initialize(nullptr, 1);
 	FVector Center;
 	TestTrue(TEXT("Airport pad is available"), Traffic->TryGetAirportPadWorldLocation(0, Center));
+	TestTrue(TEXT("First-island completion data loads"),Missions->MissionSystem.LoadCareerData(
+		FPaths::ProjectDir()/TEXT("../Reference/SimCopterOriginalGame/tweak/career.twk")));
+	Missions->MissionSystem.SelectCareerCity(0); Missions->MissionSystem.BeginSession();
+	Missions->SessionMode=ESimCopterMissionSessionMode::CityJobs;
+	Missions->MissionSystem.AddScore(Missions->MissionSystem.GetCareerCity().PointsNeeded);
+	TestTrue(TEXT("Reaching the initial island's score triggers completion"),Missions->MissionSystem.CheckLevelCompletion());
+	Missions->ProcessLevelCompleteLanding(0);
+	TestEqual(TEXT("First-island completion spawns three musicians from an empty roster"), Missions->MarchingBandAgents.Num(), 3);
+	// Reproduce a final job completed across town: the traffic tick runs before the return
+	// flight. The band has no event ID, but must not be discarded as ambient pedestrians.
+	const auto AirportBand=Missions->MarchingBandAgents;
+	const FVector DistantJob=Center+FVector(20000,0,0);
+	Traffic->PruneAgentArray(Traffic->PedestrianAgents,DistantJob);
+	for (auto Weak : AirportBand)
+		TestTrue(TEXT("Airport musician survives distant final-job population cleanup"),Weak.IsValid() && !Weak->IsActorBeingDestroyed());
+	// Existing saves/running cities may already have lost their band. The completed flag
+	// must not prevent replacement; retain valid members and retry only the missing seats.
+	if (AirportBand.Num()>0 && AirportBand[0].IsValid()) AirportBand[0]->Destroy();
+	Missions->UpdateMarchingBandApproach(Center,0);
+	Missions->NextMarchingBandSpawnTime=0;
+	Missions->ProcessLevelCompleteLanding(0);
+	TestEqual(TEXT("Returning to the airport repairs an already-spawned incomplete band"),Missions->MarchingBandAgents.Num(),3);
+	int32 RepairedLeaders=0;
+	for (auto Weak : Missions->MarchingBandAgents)
+		if (Weak.IsValid() && !Weak->IsActorBeingDestroyed()) RepairedLeaders+=Weak->GetBehaviorAttribute(EBhavAttr::State)==17;
+	TestEqual(TEXT("Repaired greeting includes the original marching-music leader"),RepairedLeaders,1);
+	Missions->MarchingBandLastPhase=INDEX_NONE;
+	for (auto Weak : Missions->MarchingBandAgents) if (auto* Agent=Weak.Get()) Agent->Destroy();
+	Missions->MarchingBandAgents.Reset(); Missions->bMarchingBandSpawned=false; Missions->NextMarchingBandSpawnTime=0;
 	for (int32 I = 0; I < 8; ++I)
 	{
 		auto* Agent = World->SpawnActor<ASimCopterGroundAgent>();
@@ -317,9 +378,9 @@ bool FSimCopterBandCelebrationTest::RunTest(const FString& Parameters)
 		Missions->MarchingBandAgents.Add(Agent);
 	}
 	Missions->SpawnMarchingBandAtAirport();
-	TestEqual(TEXT("An old eight-person first-city save restores the original five"), Missions->MarchingBandAgents.Num(), 5);
+	TestEqual(TEXT("An old first-city save restores the requested three musicians"), Missions->MarchingBandAgents.Num(), 3);
 	Missions->SpawnMarchingBandAtAirport();
-	TestEqual(TEXT("Repeated initialization does not duplicate musicians"), Missions->MarchingBandAgents.Num(), 5);
+	TestEqual(TEXT("Repeated initialization does not duplicate musicians"), Missions->MarchingBandAgents.Num(), 3);
 	const FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Reference/SimCopterOriginalGame"));
 	TestTrue(TEXT("Original career data loads"), Missions->MissionSystem.LoadCareerData(Root / TEXT("tweak/career.twk")));
 	TestTrue(TEXT("Last city can be selected"), Missions->MissionSystem.SelectCareerCity(29));
@@ -327,9 +388,19 @@ bool FSimCopterBandCelebrationTest::RunTest(const FString& Parameters)
 	Missions->NextMarchingBandSpawnTime = 0;
 	Missions->SpawnMarchingBandAtAirport();
 	TestEqual(TEXT("Last city restores all 57 original musicians"), Missions->MarchingBandAgents.Num(), 57);
+	for (auto Weak : Missions->MarchingBandAgents)
+	{
+		const FVector Location = Weak->GetActorLocation();
+		TestTrue(TEXT("Even the largest band spawns entirely on the base"),
+			FMath::Abs(Location.X) < 800 && FMath::Abs(Location.Y) < 800);
+	}
 	int32 Leaders = 0;
 	for (auto Weak : Missions->MarchingBandAgents) Leaders += Weak->GetBehaviorAttribute(EBhavAttr::State) == 17;
 	TestEqual(TEXT("Restoring the roster preserves one music leader"), Leaders, 1);
+	// Exercise free formation changes with room on the approach side. The old fixture
+	// put the listener at an outer pad and expected musicians to walk past the perimeter.
+	Center = FVector(-400, 0, 0);
+	Missions->MarchingBandApproachDirection = FVector::ForwardVector;
 	Missions->UpdateMarchingBandApproach(Center, 0);
 	TArray<FVector> Targets;
 	for (auto Weak : Missions->MarchingBandAgents)
@@ -422,11 +493,68 @@ bool FSimCopterBandCelebrationTest::RunTest(const FString& Parameters)
 	Helicopter->AddActorWorldOffset(FVector(0,0,1000));
 	TestTrue(TEXT("An aircraft overhead does not obstruct the ground route"), Musician->CanWalkBandSegment(RouteStart, RouteEnd));
 	Helicopter->Destroy();
+	// The airport in this fixture covers [-800,800] on both world axes. A listener
+	// just outside it used to drag the entire greeting into the surrounding city.
+	for (const FVector Player : {FVector(1800,600,0), FVector(-1800,600,0),
+		FVector(0,1800,0), FVector(0,-1800,0), DistantJob})
+	{
+		for (int32 Shape = 0; Shape < 3; ++Shape)
+		{
+			Missions->UpdateMarchingBandApproach(Player, 10);
+			bool bAllAtBase = true;
+			for (auto Weak : Missions->MarchingBandAgents)
+			{
+				const FVector Target = Weak->BandFormationTarget;
+				bAllAtBase &= FMath::Abs(Target.X) < 800 && FMath::Abs(Target.Y) < 800;
+			}
+			TestTrue(TEXT("Every formation stays on the hangar base when the player leaves"), bAllAtBase);
+		}
+	}
+	Musician->BandListenerClearance = 0;
+	Musician->BandNeighbors.Reset();
+	const FVector InsideEdge(700, 0, BodyZ), OutsideEdge(900, 0, BodyZ);
+	TestFalse(TEXT("Band paths cannot leave the base perimeter"), Musician->CanWalkBandSegment(InsideEdge, OutsideEdge));
+	TestFalse(TEXT("An outside point cannot become a standing slot"), Musician->CanWalkBandSegment(OutsideEdge, OutsideEdge));
+	TestTrue(TEXT("A musician displaced outside may walk back toward the base"),
+		Musician->CanWalkBandSegment(OutsideEdge, FVector(850,0,BodyZ)));
+	TestFalse(TEXT("A displaced musician cannot stray farther"),
+		Musician->CanWalkBandSegment(OutsideEdge, FVector(950,0,BodyZ)));
+	Musician->SetActorLocation(InsideEdge);
+	Musician->SetBandFormationTarget(OutsideEdge, 0, true);
+	Musician->BandPath.Reset(); Musician->bBandPathAttempted = false;
+	for (int32 Tick = 0; Tick < 50; ++Tick) Musician->UpdateMovement(0.1f);
+	TestTrue(TEXT("Actual marching steps stay inside even with an obsolete outside target"), Musician->GetActorLocation().X < 800);
+	Musician->SetActorLocation(OutsideEdge);
+	Musician->SetBandFormationTarget(InsideEdge, 180, true);
+	Musician->BandPath.Reset(); Musician->bBandPathAttempted = false;
+	for (int32 Tick = 0; Tick < 50; ++Tick) Musician->UpdateMovement(0.1f);
+	TestTrue(TEXT("An old saved straggler physically returns to the base"), Musician->GetActorLocation().X < 800);
 	Musician->SetBandFormationTarget(Resolved, 180, true);
 	Musician->BehaviorContext.ResetToState(6);
 	Musician->UpdateMovement(0);
 	TestFalse(TEXT("An injury immediately releases formation control"), Musician->bBandFormationActive);
 	TestFalse(TEXT("Patient no longer has a celebration target"), Musician->bHasBandCelebrationTarget);
+	// Reuse the hangar's airport basis, including transformed and off-map fallback bases.
+	Traffic->ActiveCityToWorldTransform = FTransform(FRotator(0,37,0), FVector(4300,-700,120), FVector(1.5,0.8,1));
+	for (const FIntPoint Origin : {FIntPoint(62,62), FIntPoint(128,128)})
+	{
+		Traffic->AirportOriginTile = Origin;
+		SimCopterBandNavigation::FBaseArea Base;
+		TestTrue(TEXT("Rotated and fallback airport boundaries resolve"), SimCopterBandNavigation::TryGetBaseArea(Traffic, Base));
+		for (int32 PadIndex = 0; PadIndex < 12; ++PadIndex)
+		{
+			FVector Pad;
+			Traffic->TryGetAirportPadWorldLocation(PadIndex, Pad);
+			TestTrue(TEXT("Every transformed airport pad remains in bounds"), Base.Contains(Pad));
+		}
+		for (const FVector Direction : {Base.AxisX, -Base.AxisX, Base.AxisY, -Base.AxisY})
+		{
+			const FVector Outside = Base.Center + Direction * 3000;
+			TestFalse(TEXT("Rotated perimeter excludes the surrounding city"), Base.Contains(Outside));
+			TestTrue(TEXT("Clamped targets include body clearance"), Base.Contains(Base.Clamp(Outside, 30), 30));
+			TestFalse(TEXT("Path cannot leave a rotated base"), Base.AllowsStep(Base.Center, Outside, 30));
+		}
+	}
 	GEngine->DestroyWorldContext(World); World->DestroyWorld(false);
 	return true;
 }

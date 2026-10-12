@@ -13,6 +13,72 @@
 
 namespace SimCopterHelicopterParking
 {
+TArray<ASimCopterHelicopterPawn*> GetPlayerFleet(const UObject* WorldContext, const USimCopterCareerSubsystem* Career)
+{
+	TArray<AActor*> Actors;
+	UGameplayStatics::GetAllActorsOfClass(WorldContext,ASimCopterHelicopterPawn::StaticClass(),Actors);
+	TArray<ASimCopterHelicopterPawn*> Fleet;
+	for (AActor* Actor:Actors)
+	{
+		auto* Aircraft=CastChecked<ASimCopterHelicopterPawn>(Actor);
+		if (!Aircraft->IsActorBeingDestroyed() && !Aircraft->IsSupportAircraft() && !Aircraft->IsFixedWingAircraft() &&
+			(!Career || !Career->IsCareerOpen() || Career->OwnsHelicopter(Aircraft->GetHelicopterTypeIndex())))
+			Fleet.Add(Aircraft);
+	}
+	return Fleet;
+}
+
+int32 GetFleetEquipmentMask(const UObject* WorldContext, const USimCopterCareerSubsystem* Career)
+{
+	int32 Mask=0;
+	for (const auto* Aircraft:GetPlayerFleet(WorldContext,Career)) Mask|=Aircraft->GetEquipmentState().CareerEquipmentMask;
+	return SimCopterHelicopterRegistry::NormalizeEquipmentMask(Mask);
+}
+
+void SynchronizeFleetEquipment(const UObject* WorldContext, const USimCopterCareerSubsystem* Career)
+{
+	// SCHOOK: FUN_0042d840 writes one career +0x48 mask. Older remake saves wrote it
+	// only on the active pawn; retain their purchases while repairing the other airframes.
+	const int32 Mask=GetFleetEquipmentMask(WorldContext,Career);
+	for (auto* Aircraft:GetPlayerFleet(WorldContext,Career))
+		for (const auto& Item:SimCopterHelicopterRegistry::GetEquipment())
+			if ((Mask & Item.CareerBit) && !Aircraft->GetEquipmentState().HasCareerBit(Item.CareerBit))
+				Aircraft->SetCareerEquipmentOwned(Item.Tool,true);
+}
+
+void EnsureOwnedFleet(ASimCopterHangar* Hangar, const USimCopterCareerSubsystem* Career)
+{
+	if (!Hangar || !Career || !Career->IsCareerOpen()) return;
+	// SCHOOK: FUN_0047a240 walks career +0x44 and places every owned type through
+	// FUN_0048b000 / FUN_00484790. The active pawn alone cannot represent that fleet.
+	// Run after saved actors are restored: old saves can retain ownership without an actor,
+	// whereas a complete save must keep each aircraft's exact transform and runtime state.
+	SynchronizeFleetEquipment(Hangar, Career);
+	auto Fleet = GetPlayerFleet(Hangar, Career);
+	auto* Source = ResolveCurrentAircraft(Hangar);
+	if (!Fleet.Contains(Source)) Source = Fleet.IsEmpty() ? nullptr : Fleet[0];
+	for (const auto& Definition : SimCopterHelicopterRegistry::GetDefinitions())
+	{
+		const int32 Type = Definition.InternalTypeIndex;
+		if (!Career->OwnsHelicopter(Type) || Fleet.ContainsByPredicate([Type](const ASimCopterHelicopterPawn* Aircraft)
+			{ return Aircraft->GetHelicopterTypeIndex() == Type; })) continue;
+		FString Error;
+		if (auto* Aircraft = SpawnOnFreePad(Hangar, Source, Type, Error, /*bIncludeCornerPads=*/true))
+		{
+			if (Source)
+				Aircraft->ApplyCareerCityTransfer(Type, Source->GetEquipmentState().CareerEquipmentMask,
+					Source->GetEquipmentState().CareerTearGasRounds);
+			Fleet.Add(Aircraft);
+			if (!Source) Source = Aircraft;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SimCopter airport: could not restore owned %s: %s"),
+				*Definition.DisplayName, *Error);
+		}
+	}
+}
+
 ASimCopterHelicopterPawn* ResolveCurrentAircraft(const UObject* WorldContext)
 {
 	APawn* Player = UGameplayStatics::GetPlayerPawn(WorldContext, 0);
@@ -126,7 +192,8 @@ bool OverlapsParkedAircraft(const FBox& Candidate, const TArray<FBox>& Occupants
 }
 
 ASimCopterHelicopterPawn* SpawnOnFreePad(
-	ASimCopterHangar* Hangar, ASimCopterHelicopterPawn* Existing, const int32 TypeIndex, FString& OutError)
+	ASimCopterHangar* Hangar, ASimCopterHelicopterPawn* Existing, const int32 TypeIndex, FString& OutError,
+	const bool bIncludeCornerPads)
 {
 	UWorld* World = Hangar != nullptr ? Hangar->GetWorld() : nullptr;
 	ASimCopterTrafficSystemActor* Traffic = World != nullptr ? Cast<ASimCopterTrafficSystemActor>(
@@ -141,12 +208,15 @@ ASimCopterHelicopterPawn* SpawnOnFreePad(
 	for (int32 Index = 0; Index < SimCopterAirport::PadCount; ++Index)
 	{
 		FVector Surface;
-		if (IsHangarPad(Index) && Traffic->TryGetAirportPadWorldLocation(Index, Surface))
+		if ((IsHangarPad(Index) || bIncludeCornerPads) && Traffic->TryGetAirportPadWorldLocation(Index, Surface))
 		{
 			Pads.Add({Index, Surface});
 		}
 	}
 	SortByDoorDistance(Pads, Hangar->GetDoorWorldLocation());
+	// Reserve corners as overflow for city entry, retaining the shop's near-door preference.
+	if (bIncludeCornerPads)
+		Pads.StableSort([](const FPad& A, const FPad& B) { return IsHangarPad(A.Index) && !IsHangarPad(B.Index); });
 	double TileSize = TNumericLimits<double>::Max();
 	for (int32 A = 0; A < Pads.Num(); ++A)
 	{
@@ -191,6 +261,13 @@ ASimCopterHelicopterPawn* SpawnOnFreePad(
 		return nullptr;
 	}
 	NewAircraft->ResetAircraft();
+	if (Existing && !Existing->IsSupportAircraft())
+	{
+		// Delivery must copy even absent bits: BeginPlay's starter bucket/megaphone
+		// must not reintroduce equipment the player has already sold.
+		for (const auto& Item:SimCopterHelicopterRegistry::GetEquipment())
+			NewAircraft->SetCareerEquipmentOwned(Item.Tool,Existing->GetEquipmentState().HasCareerBit(Item.CareerBit));
+	}
 	for (const FPad& Pad : Pads)
 	{
 		bool bTileOccupied = false;
