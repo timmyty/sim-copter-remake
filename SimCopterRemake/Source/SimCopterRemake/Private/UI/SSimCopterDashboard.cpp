@@ -140,17 +140,41 @@ public:
 		const auto* Person=Heli->GetMissionPassengerSlots()[SlotIndex].Person.Get();
 		if(!Person || !Person->IsHandcuffed()) return Painted;
 		const FVector2f Size=Geometry.GetLocalSize();
-		const float Radius=Size.X*0.16f, Y=Size.Y*0.79f;
-		for(float X : {Size.X*0.27f,Size.X*0.73f})
+		const float Stroke=FMath::Max(1.0f,Size.X*0.035f);
+		auto Line=[&](const TArray<FVector2f>& Points,int32 Z,const FLinearColor& Color,float Width)
 		{
-			TArray<FVector2f> Ring;
-			for(int32 K=0;K<=20;++K) { const float A=K*2*PI/20; Ring.Add(FVector2f(X+FMath::Cos(A)*Radius,Y+FMath::Sin(A)*Radius)); }
-			FSlateDrawElement::MakeLines(Elements,Painted+1,Geometry.ToPaintGeometry(),Ring,ESlateDrawEffect::None,FLinearColor::Black,true,4);
-			FSlateDrawElement::MakeLines(Elements,Painted+2,Geometry.ToPaintGeometry(),Ring,ESlateDrawEffect::None,FLinearColor(0.8f,0.9f,1),true,2);
+			FSlateDrawElement::MakeLines(Elements,Painted+Z,Geometry.ToPaintGeometry(),Points,ESlateDrawEffect::None,Color,true,Width);
+		};
+		// Bars stay translucent so the captured person's face remains identifiable.
+		for (float X:{0.16f,0.39f,0.62f,0.85f})
+		{
+			Line({FVector2f(Size.X*X,1),FVector2f(Size.X*X,Size.Y-1)},1,FLinearColor(0.015f,0.025f,0.035f,.8f),Stroke*1.8f);
+			Line({FVector2f(Size.X*X-Stroke*.35f,1),FVector2f(Size.X*X-Stroke*.35f,Size.Y-1)},2,FLinearColor(.5f,.6f,.68f,.7f),Stroke*.55f);
 		}
-		TArray<FVector2f> Chain={FVector2f(Size.X*0.43f,Y),FVector2f(Size.X*0.57f,Y)};
-		FSlateDrawElement::MakeLines(Elements,Painted+2,Geometry.ToPaintGeometry(),Chain,ESlateDrawEffect::None,FLinearColor::White,true,2);
-		return Painted+2;
+		for (float Y:{.08f,.93f}) Line({FVector2f(1,Size.Y*Y),FVector2f(Size.X-1,Size.Y*Y)},2,FLinearColor(.22f,.28f,.33f,.85f),Stroke);
+		auto MetalLoop=[&](FVector2f Centre,float RX,float RY,float Tilt,float Width)
+		{
+			TArray<FVector2f> Points;
+			for (int32 K=0;K<=32;++K)
+			{
+				const float A=K*2*PI/32, X=FMath::Cos(A)*RX, Y=FMath::Sin(A)*RY;
+				Points.Add(Centre+FVector2f(X*FMath::Cos(Tilt)-Y*FMath::Sin(Tilt),X*FMath::Sin(Tilt)+Y*FMath::Cos(Tilt)));
+			}
+			Line(Points,3,FLinearColor(.02f,.035f,.05f),Width+Stroke*1.2f);
+			Line(Points,4,FLinearColor(.82f,.89f,.96f),Width);
+		};
+		// Angled wrist cuffs, rectangular ratchet housings and three interlocking links.
+		for (float Side:{-1.0f,1.0f})
+		{
+			const FVector2f Centre(Size.X*(.5f+Side*.26f),Size.Y*.73f);
+			MetalLoop(Centre,Size.X*.145f,Size.Y*.17f,Side*.27f,Stroke*1.3f);
+			const float X=Size.X*(.5f+Side*.125f), Y=Size.Y*.66f;
+			Line({FVector2f(X,Y),FVector2f(X,Size.Y*.77f)},4,FLinearColor(.92f,.96f,1),Stroke*2);
+			Line({FVector2f(X,Y+Stroke),FVector2f(X,Y+Stroke*2)},5,FLinearColor(.08f,.13f,.19f),Stroke*.7f);
+		}
+		for (int32 K=-1;K<=1;++K)
+			MetalLoop(FVector2f(Size.X*(.5f+K*.075f),Size.Y*(K==0?.76f:.735f)),Size.X*.055f,Size.Y*.043f,K*.35f,Stroke*.65f);
+		return Painted+5;
 	}
 	virtual FReply OnMouseButtonDown(const FGeometry&, const FPointerEvent& MouseEvent) override
 	{

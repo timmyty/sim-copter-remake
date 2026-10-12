@@ -31,8 +31,11 @@ or re-entering their getaway car can transfer the pursuit between car and person
 The aircraft matches target speed, leads movement, and chooses a nearby trailing,
 side or elevated vantage with a clear firing line. Full-airframe sweeps still govern
 travel. If a target has no clear vantage, it makes a bounded climb and retries;
-with no target it holds position and searches. The sight follows the target while
-retaining manual gimbal offsets. Mouse travel is independent of frame duration and
+with no target it holds position and searches. The later [energy taser and free-aim
+update](EnergyTaserAndFreeAim.md) keeps the sight under the player's control in world
+space, independent of pursuit, and caps gradual approaches at normal sprint speed.
+Generic fleeing traffic and getaway cars with completed crime events are excluded.
+Mouse travel is independent of frame duration and
 uses the profile's X/Y sensitivity; the right stick remains a time-based rate.
 
 ## Dropped people and standby medic
@@ -49,9 +52,23 @@ preventing several posted medics from all taking standby seats. Existing patient
 unloading takes priority, and additional medics retain the waiting-patient policy.
 The normal physical approach, available-seat and boarding-height gates still apply.
 
+## Pilot-level landing after an airborne exit — October 11, 2026
+
+Without a rescue harness, recovery now waits for the pilot to finish falling,
+then searches for clear ground near the pilot. Landing candidates must be at a
+reachable height: a safe roof under the helicopter is rejected when the pilot
+has fallen to the street. The approach still checks the full airframe for
+obstructions and retains its selected spot while descending. If no safe spot is
+available, it holds and retries.
+
+The earlier search centered on the airborne exit and preferred the surface
+directly below the aircraft. A regression reproduced it parking on a roof above
+the pilot. Evidence and installed-file hashes are in
+[the steering and recovery results](validation/SteeringRecoveryResults.json).
+
 ## Temporary vehicle disable — October 11, 2026
 
-A helicopter taser hit stops a drivable car for eight seconds. Another hit after
+A helicopter taser hit now stops a drivable car for sixteen seconds (doubled by the cage recovery update). Another hit after
 the normal recharge refreshes that duration. The car keeps its route and resumes
 driving when the timer expires; traffic impulses, separation and blocked-road
 recovery cannot move it during the stop. Hits include the vehicle's rotated body
@@ -97,6 +114,41 @@ again and lifts the pilot into the cockpit. With no carried person it lifts the
 pilot directly. Passenger capacity and obstruction checks can hold the rescue;
 people are not dropped to clear a seat. Save payload version 4 retains a pilot
 attached to the harness and reads previous pilot versions.
+
+Walk up to the lowered automatic rescue harness while carrying a patient to load
+them automatically within arm's reach. No button press or exact overhead alignment
+is needed. A full cabin or intervening obstacle keeps the patient in your arms until
+the handoff is possible. The real patient transfers into a cabin seat before the
+harness returns for the pilot. **G / controller X** remains an optional handoff at
+the harness and the ground-drop control elsewhere.
+
+Every airborne exit starts recovery again. Equipped aircraft switch to harness
+recovery when the landing surface is unsuitable, no support is found below them,
+or an obstruction blocks the descent to otherwise suitable ground. Walking beyond
+18 metres no longer prevents the aircraft from approaching the pilot; the cable's
+18-metre limit still bounds its vertical length. Aircraft and cable collision checks
+remain active.
+
+Validation for this follow-up: the original code failed eight assertions covering
+patient placement, patient-first boarding, repeat retrieval, distant following and
+blocked descent. The fixed Editor and Shipping builds succeeded; all 13 focused
+headless tests passed without test warnings or skips. Additional checks cover a
+full cabin, an unsupported aircraft footprint beside a ledge, automatic patient
+pickup, rescue save/resume and blocked cable recovery. The local Windows game
+executable was backed up, replaced and SHA-256 verified. No interactive city
+playtest or publication checkout update was performed. Evidence:
+[Harness patient and follow results](validation/HarnessPatientFollowResults.json),
+with detailed logs and installation receipt in `Docs/scratchpad/harness-patient-follow/`.
+
+The subsequent walk-up update reproduces the missing proximity handoff with two
+failing baseline assertions. The same real-pawn test now passes without a button
+press or an aircraft update between approaching and loading. It also checks
+out-of-reach refusal, cabin capacity, an intervening obstacle and automatic retry
+after clearance. Editor and Shipping builds succeeded and all 13 focused tests
+passed without warnings or skips. The local executable was backed up and
+hash-verified after replacement; no interactive city playtest was performed.
+[Walk-up results](validation/HarnessWalkUpResults.json) and detailed evidence in
+`Docs/scratchpad/harness-walk-up/`.
 
 Damaging dry falls play an original pain grunt. Falls of at least 18 m additionally
 play a short generated bone-crack cue. Water and sufficiently slowed parachute

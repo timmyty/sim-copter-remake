@@ -35,3 +35,29 @@ Unreal caches and `%ProgramData%\Epic\UnrealBuildAccelerator`.
 Do not delete old traces, reinstall .NET, alter engine source, or disable the workspace sandbox
 for this failure. Grant the build invocation its required access. An ordinary terminal build
 already has that access and continues to use the wrapper normally.
+
+## Standalone Development registration crash (2026-10-11)
+
+`RebuildUnrealCpp.bat Development` builds a diagnostic game executable alongside
+the Shipping target. With the installed UE 5.8.3 engine, do not pass
+`-NoLiveCoding` to this standalone Development build: its precompiled engine
+libraries retain the default `WITH_LIVE_CODING=1` and hence `WITH_RELOAD=1`.
+Changing only the game/plugin modules to `WITH_RELOAD=0` changes
+`FClassReloadVersionInfo` and compiled-in class-registration structure layouts.
+
+The mismatched build linked successfully, then failed before logging in
+`TDeferredRegistry<TRegistrationInfo<UClass,FClassReloadVersionInfo>>::AddRegistration`
+while registering DLSS classes (write access violation at address `0x10`).
+This was a build ABI mismatch, unrelated to the user's GPU flight crash.
+
+The wrapper's Development game branch now passes `-NoHotReload` instead. It
+disables hot-reload build mode while preserving the installed libraries' class
+layout. Editor and Shipping branches keep `-NoLiveCoding`. Build with the editor
+closed through the wrapper; do not alter the installed engine source. The rebuilt
+diagnostic executable passed a packaged offscreen D3D12 main-menu startup and
+clean exit with DRED and Aftermath enabled.
+
+Ground truth: UnrealBuildTool `Configuration/Rules/TargetRules.cs` and
+`Configuration/Descriptors/TargetDescriptor.cs`, `Core/Public/Misc/Build.h`, and
+`CoreUObject/Public/UObject/UObjectBase.h`. Debug-event capture, successful build
+log and startup log are under `Docs/scratchpad/gpu-crash-l3/`.

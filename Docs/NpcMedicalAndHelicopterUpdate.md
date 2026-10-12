@@ -145,3 +145,77 @@ No commit, push, or interactive gameplay/visual check was performed.
 
 Evidence: `Docs/scratchpad/patient-markers-medic-paths/` and
 [validation results](validation/PatientMarkersMedicRoutesResults.json).
+
+## Band confinement to the hangar base — October 12, 2026
+
+The greeting now stays inside the airport's four-by-four-tile footprint, with a
+body-width margin. Previously the listener could draw the band up to four tiles
+beyond an airport pad, and formation offsets and stand-location retries extended
+it farther. Both destination selection and every walking/pathfinding segment now
+respect the base. The boundary uses the same three-pad basis as hangar placement,
+so it follows translated, rotated and scaled cities rather than world axes.
+
+Musicians follow the player while on the base and gather at the nearest pad when
+the player leaves. Large rosters and blocked slots search spaced, physically clear
+alternatives on the apron. Newly spawned members immediately receive guidance;
+outside stragglers can walk inward without teleporting. Original BHAV 443/444
+music, march speed, formation cadence and injury/carry release remain intact.
+The original airport-spawn evidence is FUN_004c2a20/004c29d0; confinement is the
+requested remake adaptation, not a claim about the original behavior.
+
+Nineteen assertions reproduced the unrestricted movement before the correction.
+All 21 focused headless tests pass, including the 57-member roster, every formation
+with listeners beyond each side, actual outward/return walking, aircraft avoidance,
+medical navigation, saves, and airport/people rules. Existing formation fixtures
+were moved onto the base so their movement/cadence assertions still exercise free
+space. Rotated/scaled and fallback-airport boundary calculations are also covered.
+Editor, Shipping and Development wrapper builds succeeded. Both installed
+executables and symbols were backed up, replaced after the user closed the game,
+and hash-verified. No interactive gameplay or listening check was performed.
+
+[Validation and installation](validation/BandBaseConfinementResults.json).
+Evidence and rollback copies: `Docs/scratchpad/band-base/`.
+
+## Airport victory band retention — October 11, 2026
+
+Completing the score requirement across town could spawn the airport band and
+immediately lose it: ambient traffic cleanup removed the distant musicians,
+whose mission-event ID is empty, while the band's completed-spawn flag prevented
+replacement. Musician states 17/18 are now exempt from ambient distance cleanup.
+The airport roster is rechecked once per second, reusing survivors and filling
+missing places, including a missing leader.
+
+The band still spawns at the airport and greets the returning player there.
+Landing elsewhere does not move its greeting site. Existing approach, audio,
+safe-placement, and progression rules are retained: Islandtown starts with three,
+the next cities have five and six, and the final city's roster reaches 57. This
+also repairs an already-completed saved city when its musicians are missing.
+
+`SimCopter.NpcMedical.BandClusterAndSpacing` reproduces the original distance-cull
+failure and lost-leader recovery before exercising existing formation/roster
+checks. The regression now passes. This validates spawning and retention, not
+an interactive music/listening session. Evidence is in
+`Docs/scratchpad/equipment-preview/` and
+[the combined results](validation/EquipmentPreviewAndAirportRecoveryResults.json).
+
+## Steep-hill patient return — October 11, 2026
+
+The physical route planner used the live medic's feet height when probing every
+distant point, and compared a 35 cm horizontal sample against the five-unit climb
+limit. Continuous steep ground could therefore look impassable. Route probes now
+advance from the preceding supported height in smaller increments, and A* retains
+each node's supported elevation through detours and path smoothing. The same
+planner serves deployed officers and the band; wall, overhead, water, fire and
+per-step climb checks remain enabled.
+
+The regression carries the actual patient through shipped BHAV 262 up a ten-metre,
+45-degree hill, including a wall detour. Two free seats admit patient and medic;
+one admits the patient alone. A full cabin cannot overfill or destroy the patient;
+the original medic program may set the patient down. Downhill probing and 15/60 Hz
+updates are covered. No movement-speed increase or teleport was added for medics.
+
+Editor and Shipping builds and all 35 selected headless tests passed. One hangar
+fixture reports two existing missing optional flap-art warnings. The executable
+was installed with backup and hash verification. No interactive playtest or
+publication checkout update was performed. See
+[combined results](validation/MedicPoliceAndHangarResults.json).

@@ -117,12 +117,26 @@ bool FSimCopterPurchaseParkingTest::RunTest(const FString& Parameters)
 			}
 		}
 		TestTrue(TEXT("Delivery is on one of the eight hangar pads"), bOnPurchasePad);
+		TestTrue(TEXT("Buy a harness after buying the helicopter"),SimCopterHangarShop::BuyUpgrade(Shop,4,Message));
+		TestTrue(TEXT("Newly bought helicopter receives the fleet harness"),Bought->IsToolAvailable(ESimCopterHelicopterTool::RescueHarness));
+		TestTrue(TEXT("Original helicopter also receives the harness"),Current->IsToolAvailable(ESimCopterHelicopterTool::RescueHarness));
+		auto OtherShop=Shop; OtherShop.Helicopter=Bought;
+		TestTrue(TEXT("New helicopter reports the existing purchase"),SimCopterHangarShop::GetUpgradeRowState(OtherShop,4).bOwned);
+		TestTrue(TEXT("Sell from the other helicopter"),SimCopterHangarShop::SellUpgrade(OtherShop,4,Message));
+		TestFalse(TEXT("Sale removes harness from original helicopter too"),Current->GetEquipmentState().HasCareerBit(4));
+		TestTrue(TEXT("Buy cannon while other helicopter is active"),SimCopterHangarShop::BuyUpgrade(OtherShop,3,Message));
+		TestTrue(TEXT("Other active helicopter upgrades the whole fleet"),Current->IsToolAvailable(ESimCopterHelicopterTool::WaterCannon));
 	}
 	TestTrue(TEXT("Selling the new airframe succeeds"), SimCopterHangarShop::SellHelicopter(Shop, 1, Message));
 	Aircraft.Reset();
 	UGameplayStatics::GetAllActorsOfClass(World, ASimCopterHelicopterPawn::StaticClass(), Aircraft);
 	TestEqual(TEXT("Sold aircraft is removed"), Aircraft.Num(), 1);
 	TestTrue(TEXT("Selling another aircraft preserves the original"), Current->GetActorTransform().Equals(Before));
+	TestTrue(TEXT("Replacement airframe can be bought"),SimCopterHangarShop::BuyHelicopter(Shop,1,Message));
+	Aircraft.Reset(); UGameplayStatics::GetAllActorsOfClass(World,ASimCopterHelicopterPawn::StaticClass(),Aircraft);
+	for (AActor* Actor:Aircraft) if (Actor!=Current)
+		TestTrue(TEXT("Later purchases inherit already-owned cannon"),CastChecked<ASimCopterHelicopterPawn>(Actor)->IsToolAvailable(ESimCopterHelicopterTool::WaterCannon));
+	SimCopterHangarShop::SellHelicopter(Shop,1,Message);
 	// Fill each of the eight candidate tiles. Failure must leave cash, ownership and actor count alone.
 	for (int32 Index = 0; Index < SimCopterAirport::PadCount; ++Index)
 	{

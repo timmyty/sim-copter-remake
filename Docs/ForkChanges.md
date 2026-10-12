@@ -5,6 +5,21 @@ of [JamesIV4/sim-copter-remake](https://github.com/JamesIV4/sim-copter-remake), 
 on [wyozi's version](https://github.com/wyozi/sim-copter-remake/tree/25d81802b065eac5fee1dbd74afb75d1e59004e8).
 Original authorship and commit history are retained.
 
+## October 12 combined gameplay release v1.0.8
+
+This release collects the completed hangar reconstruction and equipment previews,
+cage car/boat recovery and police-roof deliveries, animated energy taser and remote
+aiming, custody-aware crime timers, medical hill routing and destruction aftermath,
+automatic pilot landing and harness patient handoff, fleet-wide equipment and
+graduation restoration, controller sprint/map/help changes, and victory-band base
+confinement. The revised README adds four actual Unreal screenshots showing the
+hangar, a car in the sealed cage, the pause-menu entry and the Cheat Codes guide.
+
+[Release notes](Releases/v1.0.8.md) explain the behavior and included Windows
+diagnostic launcher. [Combined validation](validation/WindowsRelease108Results.json)
+records build, regression, screenshot and package-startup evidence. The existing
+GPU compute crash remains unresolved.
+
 ## October 11 combined gameplay release v1.0.7
 
 This release gathers all completed changes since v1.0.6: intelligent traffic and

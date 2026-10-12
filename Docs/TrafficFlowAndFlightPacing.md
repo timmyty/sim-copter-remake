@@ -24,6 +24,8 @@ Without the cheat, either Shift key increases player helicopter horizontal trave
 
 ## Verification
 
+October 11 controller follow-up: L3 now toggles the same sprint request in helicopters and on foot. R3+L3 controls help; input state resets on boarding, exiting and save restoration. See [Sprint Mode](GpuCrashAndSprint.md#sprint-controls).
+
 Automated coverage includes same-lane, opposing and crossing traffic; bridge separation; recovery despite jitter; phase expiry and protected stops; congestion-aware junctions and dead ends; a four-car crossing at two update rates; ordinary Shift speed/tilt and release at two update rates in both flight models; unchanged turbo; actual helper movement; and graduation/reentry eligibility.
 
 Build and test evidence is kept in `Docs/scratchpad/traffic-flow/`. Final results are recorded in `Docs/validation/TrafficFlowAndFlightPacingResults.json`. No interactive playtest is claimed.

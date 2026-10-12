@@ -196,4 +196,111 @@ bool FSimCopterMedicRouteTest::RunTest(const FString& Parameters)
 		*ProgramMedic->GetActorLocation().ToString(), *GetNameSafe(ProgramPatient->GetBehaviorCarrier())));
 	return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMedicHillTest, "SimCopter.MedicalNavigation.SteepHillReturn",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterMedicHillTest::RunTest(const FString& Parameters)
+{
+	const FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Reference/SimCopterOriginalGame"));
+	auto Model = MakeShared<FPeopleBehaviorModel>();
+	FString Error;
+	if (!TestTrue(TEXT("Original people programs load"), FSimCopterPeopleReader::LoadFromFile(FSimCopterPeopleReader::ResolvePeoplePath(Root), *Model, Error))) return false;
+	for (const int32 SeatsFree : {2, 1, 0})
+	{
+		auto* World = CreateMedicalWorld();
+		ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+		MedicalBox(World, FVector(-2750,0,-20), FVector(2250,2000,20));
+		// A continuous 45-degree hill rises ten metres to a level helicopter clearing.
+		auto* Ramp = MedicalBox(World, FVector(14.142136,0,485.857864), FVector(707.106781,2000,20));
+		Ramp->SetActorRotation(FRotator(45,0,0));
+		MedicalBox(World, FVector(2750,0,980), FVector(2250,2000,20));
+		auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+		Traffic->ActiveTileSize = 400;
+		Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
+		Traffic->TileCenterWorldZ.Init(0, FSimCity2000City::TileCount);
+		Traffic->WaterTileFlags.Init(0, FSimCity2000City::TileCount);
+		Traffic->XbldTileIds.Init(0x1d, FSimCity2000City::TileCount);
+		auto Person = [&](int32 State, const FVector& At)
+		{
+			auto* Agent = World->SpawnActor<ASimCopterGroundAgent>();
+			Agent->SetOwner(Traffic);
+			Agent->InitialPersonState = State;
+			Agent->SetInitialBehaviorClass(State == 5 ? 12 : 0);
+			Agent->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian, TEXT(""), Root, 85);
+			Agent->BehaviorModel = Model;
+			Agent->bBehaviorActive = true;
+			Agent->BehaviorContext.ResetToState(State);
+			Agent->BehaviorContext.Attributes[EBhavAttr::Visible] = 1;
+			Agent->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 100;
+			Agent->BehaviorContext.Attributes[EBhavAttr::MoveSpeed] = 18;
+			Agent->SetActorLocation(At + FVector(0,0,Agent->GetCapsuleHalfHeightCm()+1));
+			Traffic->PedestrianAgents.Add(Agent);
+			return Agent;
+		};
+		auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
+		Heli->SetActorLocation(FVector(850,0,1000 + Heli->GetSimpleCollisionHalfHeight() + 1));
+		Heli->GroundClearanceCm = 1;
+		auto* Controller = World->SpawnActor<ASimCopterPlayerController>();
+		World->AddController(Controller);
+		Controller->Player = NewObject<ULocalPlayer>(GEngine);
+		Controller->ChangeState(NAME_Playing);
+		Controller->Possess(Heli);
+		auto* Medic = Person(5, FVector(-650,0,0));
+		TestTrue(TEXT("Medic initially boards"), Medic->BoardCarrier(Heli,false));
+		TestTrue(TEXT("Medic deploys"), Medic->AlightFromCarrier(false));
+		Medic->SetActorLocation(FVector(-650,0,Medic->GetCapsuleHalfHeightCm()+1));
+		Medic->SetPersistentHospitalRoofCrew(true);
+		auto* Patient = Person(6, FVector(-650,0,0));
+		TestTrue(TEXT("Medic holds actual patient"), Patient->BoardCarrier(Medic,false,false,true));
+		TArray<ASimCopterGroundAgent*> Occupants;
+		while (Heli->GetAvailablePassengerSeats() > SeatsFree)
+		{
+			auto* Occupant = Person(0,FVector(850,0,1000));
+			if (!TestTrue(TEXT("Cabin filler boards"),Occupant->BoardCarrier(Heli,false))) return false;
+			Occupants.Add(Occupant);
+		}
+		const FVector Goal(850,0,Medic->GetActorLocation().Z);
+		TestTrue(TEXT("Continuous steep uphill is walkable"), Medic->CanWalkMedicSegment(Medic->GetActorLocation(),Goal,Heli));
+		TestTrue(TEXT("Continuous steep downhill is walkable"), Medic->CanWalkMedicSegment(
+			FVector(850,0,1000+Medic->GetCapsuleHalfHeightCm()+1),Medic->GetActorLocation(),Heli));
+		// Require A* to preserve elevation when it detours around an obstacle halfway up.
+		auto* Wall = MedicalBox(World,FVector(0,0,700),FVector(60,180,350));
+		TestFalse(TEXT("Hill routing still rejects a direct path through a wall"),
+			Medic->CanWalkMedicSegment(Medic->GetActorLocation(),Goal,Heli));
+		FVector Waypoint;
+		TestTrue(TEXT("Uphill detour has a route"), Medic->GetMedicWaypoint(Goal,Heli,Waypoint));
+		if (SeatsFree != 2) Wall->Destroy();
+		Medic->MedicPath.Reset();
+		Medic->bMedicPathAttempted = false;
+		// Resume BHAV 262 at the post-pickup vehicle selection, as in the real rescue loop.
+		Medic->BehaviorContext.Stack.Reset();
+		FSimCopterPersonContext::FFrame ReturnFrame;
+		ReturnFrame.ProgramId = 262;
+		ReturnFrame.RecordIndex = 9;
+		Medic->BehaviorContext.Stack.Add(ReturnFrame);
+		Medic->BehaviorContext.SelectedObject = Heli;
+		Medic->BehaviorContext.SelectedLocation = Heli->GetActorLocation();
+		Medic->BehaviorContext.bHasSelection = true;
+		const float Delta = SeatsFree == 1 ? 1.0f/15 : 1.0f/60;
+		bool bCrossedWall = false;
+		for (int32 Frame=0; Frame<FMath::RoundToInt(90/Delta) && !Medic->GetBehaviorCarrier(); ++Frame)
+		{
+			World->Tick(LEVELTICK_TimeOnly,Delta);
+			Medic->Tick(Delta);
+			bCrossedWall |= SeatsFree == 2 && FBox(FVector(-60,-180,350),FVector(60,180,1050)).IsInside(Medic->GetActorLocation());
+			if (Patient->GetBehaviorCarrier() == Heli && SeatsFree < 2) break;
+		}
+		TestFalse(TEXT("Returning medic never crosses hill obstacle"),bCrossedWall);
+		AddInfo(FString::Printf(TEXT("Seats=%d medic=%s carrier=%s patient=%s"),SeatsFree,
+			*Medic->GetActorLocation().ToString(),*GetNameSafe(Medic->GetBehaviorCarrier()),*GetNameSafe(Patient->GetBehaviorCarrier())));
+		if (SeatsFree > 0) TestTrue(TEXT("Patient delivered up hill"), Patient->GetBehaviorCarrier() == Heli);
+		else
+		{
+			TestTrue(TEXT("Full helicopter cannot board patient"), Patient->GetBehaviorCarrier() != Heli);
+			TestFalse(TEXT("Full-cabin handoff preserves the patient"), Patient->IsActorBeingDestroyed());
+		}
+		if (SeatsFree == 2) TestTrue(TEXT("Medic boards after patient when seat remains"), Medic->GetBehaviorCarrier() == Heli);
+		else TestNull(TEXT("Medic cannot overfill cabin"), Medic->GetBehaviorCarrier());
+	}
+	return true;
+}
 #endif

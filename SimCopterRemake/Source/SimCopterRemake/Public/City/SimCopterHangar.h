@@ -11,6 +11,7 @@ class ASimCopterTrafficSystemActor;
 class UBoxComponent;
 class UMaterialInterface;
 class UProceduralMeshComponent;
+class UPointLightComponent;
 class USimCopterHangarArt;
 class SWidget;
 
@@ -25,34 +26,23 @@ class SWidget;
 //
 // The building itself is not the original's. `dhangar.bmp` is a rendered still and the original's
 // shell is reached from a menu, so there is no hangar mesh to port - only the plot, the height
-// FUN_004829f0 flattens the block to, and the textures object 0x096 is skinned with.
+// FUN_004829f0 flattens the block to. The world structure now follows the menu illustration.
 namespace SimCopterHangarPlacement
 {
 // The footprint is the terminal's own 2x2 plot, inset a little so the walls never sit on the
 // helipads that ring it. 760 x 760 cm at the shipped 400 cm tile.
 constexpr float WidthTiles = 1.9f;
 constexpr float DepthTiles = 1.9f;
-constexpr float EavesHeightTiles = 0.5f;
-constexpr float ApexHeightTiles = 0.8f;
-constexpr float DoorWidthTiles = 1.25f;
-constexpr float DoorHeightTiles = 0.42f;
+// DHANGAR's high industrial nave, with a nearly full-width aircraft doorway. Furniture uses
+// the same quarter-real-world scale as the pilot; the former furniture was over twice his size.
+constexpr float EavesHeightTiles = 0.80f;
+constexpr float ApexHeightTiles = 1.14f;
+constexpr float DoorWidthTiles = 1.80f;
+constexpr float DoorHeightTiles = 0.77f;
 
 // The floor slab is lifted clear of the flattened apron under it. The city actor offsets its own
 // meshes off the terrain by the same 2 cm for the same reason - two coplanar surfaces z-fight.
 constexpr float FloorLiftCm = 2.0f;
-
-// Atlas cells the original's airport building is skinned with, all on page 40 of BMP/SIM3D.BMP:
-// object 0x096's fourteen faces use cells 20..23 for its walls (cell 23 on five of them, so that
-// is the one the hangar takes), and pad object 0x08b uses cell 61 for its slab. Cell 52 is the
-// airport's gravel, which the terminal's flat-shaded roof faces have no texture for.
-constexpr int32 TexturePage = 40;
-constexpr int32 WallTextureCell = 23;
-constexpr int32 RoofTextureCell = 52;
-constexpr int32 FloorTextureCell = 61;
-
-// One repeat of a 32x32 cell across this many centimetres of wall. The terminal's own UVs run to
-// 3.0 over its 478 cm side, i.e. about 160 cm a repeat; this keeps that density.
-constexpr float TextureRepeatCm = 170.0f;
 
 // The terminal plot's top-left tile - SimCopterAirport::GetTerminalTile, restated here so the
 // placement maths reads on its own.
@@ -125,6 +115,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")
 	TObjectPtr<UProceduralMeshComponent> ShellMesh;
 
+	// World-space counterparts of the menu illustration, visible through the open doorway.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")
+	TObjectPtr<UProceduralMeshComponent> InteriorMesh;
+	UPROPERTY(VisibleAnywhere, Category = "Hangar")
+	TObjectPtr<UProceduralMeshComponent> GlazingMesh;
+	UPROPERTY(VisibleAnywhere, Category = "Hangar")
+	TObjectPtr<UPointLightComponent> InteriorLight;
+	UPROPERTY(VisibleAnywhere, Category = "Hangar")
+	TObjectPtr<UPointLightComponent> WorkshopLight;
+
 	// Sits inside the building, clear of the walls, so only walking through the doorway trips it.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")
 	TObjectPtr<UBoxComponent> EntryTrigger;
@@ -157,21 +157,9 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult);
 
-	// Skin the shell with the original airport building's own atlas cells. Off falls back to the
-	// flat vertex colours, which is also what happens when the original assets are missing.
-	UPROPERTY(EditAnywhere, Category = "SimCopter|Hangar")
-	bool bUseOriginalTextures = true;
-
 private:
 	UPROPERTY(Transient)
 	TObjectPtr<UMaterialInterface> ShellMaterial;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UMaterialInterface> TexturedMaterial;
-
-	// One dynamic instance per skinned surface (walls / roof / floor), keyed by atlas cell.
-	UPROPERTY(Transient)
-	TMap<int32, TObjectPtr<UMaterialInterface>> CellMaterials;
 
 	UPROPERTY(Transient)
 	TObjectPtr<USimCopterHangarArt> Art;
@@ -184,10 +172,6 @@ private:
 
 	void BuildShellMesh();
 	FString ResolveOriginalGameRoot() const;
-
-	// Cuts one 32x32 cell out of SIM3D.BMP page 40 and wraps it in a lit-texture instance.
-	// Returns null (and the caller falls back to vertex colour) when the originals are absent.
-	UMaterialInterface* ResolveCellMaterial(int32 AtlasCell);
 
 	// Shared by the overlap event and the tick: open the shell if this really is the player on
 	// foot and the shell is not already up or on its re-open cooldown.

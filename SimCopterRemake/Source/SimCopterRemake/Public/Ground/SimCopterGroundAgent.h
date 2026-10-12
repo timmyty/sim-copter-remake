@@ -77,10 +77,11 @@ public:
 	ASimCopterGroundAgent();
 	// Remake air operations: arrest and vehicle recovery preserve the real actor.
 	bool IsArrestableSuspect() const;
-	bool StunForArrest();
+	bool StunForArrest(float DurationSeconds = 0.0f);
 	bool IsTaserStunned() const { return bTaserStunned; }
 	bool IsHandcuffed() const { return bHandcuffed; }
 	bool IsInPoliceCustody() const { return bTaserStunned || bHandcuffed; }
+	bool IsPassengerFalling() const { return bPassengerFallActive; }
 	void CompletePoliceDelivery(const FVector& Roof);
 	void SetVehicleStalled(bool bPlayerCaused = false);
 	bool DisableVehicleWithTaser();
@@ -91,6 +92,7 @@ public:
 	bool HasVehicleExploded() const { return bVehicleExploded; }
 	void RebuildVehicleDents();
 	bool IsTowableVehicle() const { return AgentKind == ESimCopterGroundAgentKind::Vehicle && bVehicleStalled && !IsVehicleAccidentBurning() && !bVehicleExploded && !bMissionResolutionReported; }
+	bool IsCageRecoverableVehicle() const;
 	bool IsVehicleTipped() const { return bVehicleTipped; }
 	bool IsVehicleAccidentBurning() const { return bVehicleTipped && VehicleExplosionSeconds > 0 && !bVehicleExploded; }
 	void DouseVehicleAccident();
@@ -104,8 +106,15 @@ public:
 	void EnsureTowMission(bool bPlayerCaused);
 private:
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterPoliceRecoveryTest;
+	friend class FSimCopterCheckupCrewTest;
+	friend class FSimCopterPoliceDestinationTest;
+	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterRemoteRecoveryTest;
 	friend class FSimCopterVehicleTaserTest;
+	friend class FSimCopterApacheAftermathTest;
+	friend class FSimCopterEnergyTaserTest;
+	friend class FSimCopterEnergyTaserVisualTest;
 	friend class FSimCopterTrafficFlowTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterParkedAircraftTrafficTest;
@@ -119,6 +128,9 @@ private:
 	void EvacuateVehicleOccupants();
 	bool TickVehicleEscape(float DeltaSeconds);
 	bool bTaserStunned = false;
+	float TaserStunSeconds = 0;
+	bool bTaserResumeBehavior = false;
+	bool bTaserResumeStationary = false;
 	bool bHandcuffed = false;
 	bool bVehicleStalled = false;
 	bool bVehicleTowed = false;
@@ -131,6 +143,7 @@ private:
 	TArray<FVector> VehicleDents;
 	TArray<TArray<FVector>> UndamagedVehicleVertices;
 	bool TickAirOperations(float DeltaSeconds);
+	bool UpdatePoliceRecovery();
 public:
 
 	virtual void BeginPlay() override;
@@ -331,9 +344,9 @@ public:
 	void SetBandFormationTarget(const FVector& Target, float FacingYaw, bool bEnabled);
 	bool TryResolveBandStandLocation(const FVector& Desired, const FVector& Center, FVector& OutLocation,
 		TConstArrayView<FVector> Reserved = {});
-	bool CanWalkBandSegment(const FVector& From, const FVector& To);
-	bool CanWalkGroundSegment(const FVector& From, const FVector& To, const AActor* ApproachTarget = nullptr);
-	bool CanWalkMedicSegment(const FVector& From, const FVector& To, const AActor* Target);
+	bool CanWalkBandSegment(const FVector& From, const FVector& To, FVector* OutGroundedEnd = nullptr);
+	bool CanWalkGroundSegment(const FVector& From, const FVector& To, const AActor* ApproachTarget = nullptr, FVector* OutGroundedEnd = nullptr);
+	bool CanWalkMedicSegment(const FVector& From, const FVector& To, const AActor* Target, FVector* OutGroundedEnd = nullptr);
 	bool GetMedicWaypoint(const FVector& Goal, AActor* Target, FVector& OutWaypoint);
 	// Transient routing only; the original BHAV retains selection, walking speed and handoff.
 	TArray<FVector> MedicPath;
@@ -625,6 +638,8 @@ public:
 	// comes from it, and the car is not told anything happened. Returns true when the strike landed.
 	// Called by ASimCopterTrafficSystemActor::UpdatePedestrianVehicleImpacts.
 	bool ApplyVehicleKnockdown(AActor& Vehicle, const FVector& VehicleVelocityCmPerSec);
+	// Missile aftermath: a radial tumble preserves the injury and resumes medical behavior on landing.
+	bool ApplyExplosionKnockdown(const FVector& ExplosionCenter, float BlastRadiusCm);
 
 	ESimCopterKnockdownPhase GetKnockdownPhase() const { return KnockdownPhase; }
 	bool IsKnockedDown() const { return KnockdownPhase != ESimCopterKnockdownPhase::None; }
@@ -1274,6 +1289,7 @@ public:
 private:
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterMedicRouteTest;
+	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterBandCelebrationTest;
 	friend class FSimCopterAircraftRoadUpdateTest;
@@ -1425,6 +1441,8 @@ private:
 	// currently loaded into it. FUN_004c5210 hands out one of the fourteen and releases it again.
 	int32 VoiceSlotId = INDEX_NONE;
 	int32 VoiceCurrentEvent = INDEX_NONE;
+	// Persistent medics may retry BHAV 262 indefinitely; report each empty search once.
+	bool bReportedNoVictims = false;
 	// person+0x198: 1 when the current voice was started 2D, which is how a looping EKG stays
 	// audible from the cockpit while a 3D moan follows the person around.
 	bool bVoiceIsNonPositional = false;
@@ -1492,6 +1510,7 @@ private:
 	// The whole launch, shared by the car and the airframe. They differ only in which upward scale
 	// they hand in; everything after the launch velocity is the same tumble.
 	bool ApplyKnockdownFrom(AActor& Striker, const FVector& StrikerVelocityCmPerSec, float UpwardScale);
+	bool BeginKnockdown(const FVector& LaunchVelocity, AActor* Source);
 
 	bool UpdateKnockdown(float DeltaSeconds);
 	void UpdateKnockdownFlight(float DeltaSeconds);
@@ -1668,6 +1687,7 @@ protected:
 	// UpdateOriginalBehavior, above the behaviour-tick gate, because it schedules in wall-clock
 	// seconds and the gate skips most frames.
 	void UpdateArsonistThrowSchedule(float DeltaSeconds);
+	void UpdateArsonistFireEscape();
 
 	// Rolls this walker's jaywalk window. Same placement and the same reason: it is a wall-clock
 	// window, and below the behaviour-tick gate it would only see a quarter of the elapsed time at
@@ -1690,6 +1710,8 @@ protected:
 	float RoadJaywalkWindowSecondsRemaining = -1.0f;
 	// Seconds until this arsonist's next fire; negative until the first one is armed.
 	float ArsonThrowCountdownSeconds = -1.0f;
+	// Requested grace applies only to fire contact, and only after an arsonist lights a fire.
+	float ArsonFireGraceSeconds = 0.0f;
 
 	// The last place this walker's body was known to be clear of city geometry, and the point
 	// ContainOutsideBuildingGeometry sweeps forward from.
@@ -1703,6 +1725,7 @@ protected:
 	// FUN_004c82c0 = max of object tops/terrain). See GetPedestrianWalkProbeCeilingZ for why the
 	// probe must not start above the walker.
 	bool TryGetWalkSurfaceZAt(const FVector& WorldLocation, float& OutSurfaceZ) const;
+	bool TryGetWalkSurfaceZAt(const FVector& WorldLocation, float& OutSurfaceZ, float ProbeFeetZ) const;
 
 	// Is there real city geometry between here and the step target? A swept capsule against the
 	// actual mesh, on the Camera channel that agent and player capsules ignore, so this answers

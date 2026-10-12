@@ -1,0 +1,27 @@
+{
+  "InstalledAtUtc": "2026-10-11T17:26:02.0815215Z",
+  "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+  "SHA256": "CCE8AD90BA74E2DCA24C2C79E353F7AE2C4B12BDF31361A1208B544E0EA2366C",
+  "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\hangar-reference-match/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+  "PreviousSHA256": "EA8A74396BAD460561535E2990AE5EEF7AED66730114C6C7B303380370A3656E",
+  "TestsPassed": 11,
+  "RenderTestsPassed": 1,
+  "ChangedFiles": 1,
+  "SourceFilesChanged": 7,
+  "AssetsChanged": false,
+  "InteractiveGameplayChecked": false,
+  "Changes": "World hangar rebuilt around the catalog illustration: tall gridded windows, timber roof, skylights, steel trusses and pillars, caution signs, rear office and stairs, corrected furniture scale and aircraft orientation, and physical interior lighting.",
+  "HeadlessReport": "Docs/scratchpad/hangar-reference-match/tests/index.json",
+  "RenderReport": "Docs/scratchpad/hangar-reference-match/tests-render/index.json",
+  "SourceDiff": "Docs/scratchpad/hangar-reference-match/source.diff",
+  "Builds": [
+    "Docs/scratchpad/hangar-reference-match/build-editor.log",
+    "Docs/scratchpad/hangar-reference-match/build-shipping.log"
+  ],
+  "Screenshots": [
+    "Docs/scratchpad/hangar-reference-match/outside-lit.png",
+    "Docs/scratchpad/hangar-reference-match/exterior.png"
+  ],
+  "PublicationCheckoutChanged": false,
+  "Pushed": false
+}

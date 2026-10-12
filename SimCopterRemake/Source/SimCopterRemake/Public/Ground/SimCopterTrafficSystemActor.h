@@ -262,6 +262,8 @@ public:
 		const ASimCopterGroundAgent& From,
 		int32 LoopFlagFilter,
 		int32 StateFilter) const;
+	ASimCopterGroundAgent* FindPoliceRecoveryTarget(const ASimCopterGroundAgent& Officer) const;
+	int32 SpawnCheckupCrew(ASimCopterHelicopterPawn& Helicopter, int32 ServiceCount);
 	// Ground equivalent of the cabin reservation: one deployed medic per casualty.
 	ASimCopterGroundAgent* FindAndClaimGroundPatient(ASimCopterGroundAgent& Medic) const;
 	// FUN_004ca4f0(State, 0): state match whose visibility attribute is zero.
@@ -820,13 +822,19 @@ private:
 	friend class FSimCopterTrafficFlowTest;
 	friend class FSimCopterPatientPlacementTest;
 	friend class FSimCopterMedicRouteTest;
+	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterPatientMarkerTest;
 	friend class FSimCopterPatientCityPlacementTest;
 	friend class FSimCopterParkedAircraftTrafficTest;
 	friend class FSimCopterVehicleTaserTest;
+	friend class FSimCopterApacheAftermathTest;
 	friend class USimCopterAirOperationsSubsystem;
 	friend class USimCopterAirOperationsComponent;
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterPoliceRecoveryTest;
+	friend class FSimCopterCheckupCrewTest;
+	friend class FSimCopterPoliceDestinationTest;
+	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterCityTourRenderTest;

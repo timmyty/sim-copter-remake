@@ -1,5 +1,11 @@
 # Fork validation
 
+## October 12 release v1.0.8
+
+Editor, Shipping and Development builds succeeded. 461/463 headless cases passed after correcting and rerunning an outdated rescue landing fixture that never advanced the falling pilot. The broad run initially passed 460/463; the two previously documented ReferenceCity fixture and FlapLayout mask expectation failures remain. All 8 focused D3D12 offscreen cases passed, and the four README captures were inspected. The staged launcher and its Shipping child survived a hidden 31-second startup with an isolated profile. All 427 source/configuration/project/build/launcher files match the publication checkout. No interactive gameplay, physical-controller or listening check was performed.
+
+Fresh distribution staging verifies 915 runtime files and 903 NonUFS dependencies, including 45 maps, 21 KINV tracks, two movies and 30 flyover soundtracks. The normal Shipping launcher and optional Development GPU diagnostic launcher are included. Personal data and symbols are excluded. Cooked content is unchanged; no recook was needed. [Detailed results](validation/WindowsRelease108Results.json) and [release notes](Releases/v1.0.8.md).
+
 ## October 11 release v1.0.7
 
 Fresh combined validation: 437/439 headless cases passed after rerunning two persistence checks with config writes enabled; the two previously documented ReferenceCity fixture and FlapLayout mask expectations remain. The initial broad run passed 435/439: its Multiprocess flag suppressed disk config writes, causing the two additional persistence failures. Engine ConfigCacheIni.cpp confirms that MultiprocessSaveConfig enables those writes; both isolated reruns passed. All 8 focused offscreen tests passed. Both build wrappers succeeded, and the staged launcher survived a hidden 31-second isolated startup. All 403 source/configuration/project/build files match the publication checkout. No interactive gameplay or listening check was performed.

@@ -13,6 +13,7 @@ class ASimCopterTrafficSystemActor;
 class ASimCopterMissionSystemActor;
 class UProceduralMeshComponent;
 class UMaterialInterface;
+class UMaterialInstanceDynamic;
 class ACameraActor;
 class USimCopterParticleFXComponent;
 
@@ -21,9 +22,10 @@ namespace SimCopterAirOperations
 {
 constexpr float SafeFallCm = 900.0f;
 constexpr float CageBoardHoldSeconds = 1.25f;
-constexpr float VehicleTaserDisableSeconds = 8.0f;
+constexpr float VehicleTaserDisableSeconds = 16.0f;
 constexpr float MaxCableCm = 1800.0f;
 constexpr int32 CageCapacity = 4;
+constexpr float RecoveryRadiusCm = 180.0f;
 // Fictional remake tasers: a stun query and cosmetic electrical discharge, never weapon projectiles.
 SIMCOPTERREMAKE_API void DrawTaserDischarge(USimCopterParticleFXComponent* FX, const FVector& Start, const FVector& End);
 SIMCOPTERREMAKE_API bool IsCriminalState(int32 State);
@@ -43,10 +45,16 @@ class SIMCOPTERREMAKE_API ASimCopterRecoverySite : public AActor
 public:
 	ASimCopterRecoverySite();
 	void Configure(ESimCopterRecoverySite Kind, const FVector& Location);
+	void SetWaypointActive(bool bActive);
+	bool IsWaypointActive() const { return bWaypointActive; }
+	virtual void Tick(float DeltaSeconds) override;
 	ESimCopterRecoverySite GetKind() const { return SiteKind; }
 private:
 	UPROPERTY() TObjectPtr<UProceduralMeshComponent> Mesh;
 	UPROPERTY() TObjectPtr<UMaterialInterface> Material;
+	UPROPERTY() TObjectPtr<UProceduralMeshComponent> WaypointRing;
+	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> RingMaterial;
+	bool bWaypointActive = false;
 	ESimCopterRecoverySite SiteKind = ESimCopterRecoverySite::AutoRepair;
 };
 
@@ -89,6 +97,7 @@ public:
 	FString GetRemoteTaserReadout() const;
 	void BeginPilotRecovery(ASimCopterOnFootPawn* Pilot);
 	void EndPilotRecovery();
+	bool TryLoadRecoveryPassenger(ASimCopterOnFootPawn* Pilot);
 	bool IsRecoveringPilot() const { return RecoveryPilot.IsValid(); }
 	bool AdvanceAutopilot(const FVector& Goal, float DeltaSeconds, float Speed = 1400.0f, bool bAllowApproachDescent = false);
 	bool IsAIPiloted() const { return bSupportAircraft || bRemoteTaserActive || IsRecoveringPilot(); }
@@ -101,18 +110,25 @@ public:
 private:
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCaptureCageTest;
+	friend class FSimCopterCageRecoveryTest;
+	friend class FSimCopterPoliceRecoveryTest;
 	friend class FSimCopterRemoteRecoveryTest;
 	friend class FSimCopterVehicleTaserTest;
 	ASimCopterHelicopterPawn* Helicopter() const;
 	void EnsureMesh();
 	void DrawCargo();
+	FBox GetCageCargoBounds() const;
 	void UpdateCageMount();
 	void UpdateRemoteTaser(float DeltaSeconds);
+	void DrawRemoteTaserDischarge(const FVector& Start, const FVector& End, bool bHit);
+	void UpdateRemoteTaserDischarge(float DeltaSeconds);
+	friend class FSimCopterTaserVisualTest;
+	void UpdateTaserImpact(float DeltaSeconds);
 	void EndRemoteTaser();
 	void UpdateRemoteTaserMount();
 	void SetRemoteTaserCursor(bool bVisible);
 	void OffsetRemoteTaserAim(float YawDegrees, float PitchDegrees);
-	void SelectRemoteTaserTarget(bool bInitial = false);
+	void SelectRemoteTaserTarget();
 	FVector FindRemoteTaserPursuitOffset(const FVector& Velocity) const;
 	void UpdatePilotRecovery(float DeltaSeconds);
 	bool FindRecoverySurface(FVector& OutGoal, bool& bOutCanLand) const;
@@ -129,6 +145,12 @@ private:
 	UPROPERTY() TObjectPtr<ACameraActor> RemoteTaserCamera;
 	UPROPERTY() TObjectPtr<UProceduralMeshComponent> RemoteTaserMount;
 	UPROPERTY() TObjectPtr<UProceduralMeshComponent> RemoteTaserWeapon;
+	UPROPERTY() TObjectPtr<UProceduralMeshComponent> RemoteTaserTrail;
+	UPROPERTY() TObjectPtr<UMaterialInterface> TaserTrailMaterial;
+	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> TaserTrailMaterialInstance;
+	float TaserTrailSeconds = 0.0f;
+	TWeakObjectPtr<ASimCopterGroundAgent> TaserImpactTarget;
+	float TaserImpactSeconds = 0.0f;
 	TWeakObjectPtr<ASimCopterGroundAgent> RemoteTaserTarget;
 	TWeakObjectPtr<ASimCopterOnFootPawn> RecoveryPilot;
 	TWeakObjectPtr<ASimCopterGroundAgent> RecoveryPassenger;
@@ -141,7 +163,7 @@ private:
 	bool bRecoveryRaising = false;
 	bool bRecoveryHarnessActive = false;
 	bool bRecoveryPilotAttached = false;
-	FVector2D RemoteAimOffset = FVector2D::ZeroVector;
+	float RemotePursuitSpeed = 0;
 	FVector RemotePursuitOffset = FVector::ZeroVector;
 	float RemoteTargetSearchSeconds = 0;
 	float RemotePursuitPlanSeconds = 0;
@@ -184,6 +206,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void Deinitialize() override;
 	void EnsureSites();
+	void RefreshRecoveryWaypoints();
 	ASimCopterRecoverySite* FindRecoverySite(const FVector& From, bool bBoat) const;
 	const TArray<TWeakObjectPtr<ASimCopterRecoverySite>>& GetSites() const { return Sites; }
 	bool OrderSupport(int32 EventId, bool bAutomatic);
@@ -198,7 +221,9 @@ public:
 	bool FindServiceRoof(uint8 BuildingId, const FVector& From, FVector& OutRoof) const;
 private:
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCageRecoveryTest;
 	void UpdateSupport(float DeltaSeconds);
+	friend class FSimCopterPoliceDestinationTest;
 	void EnsureSupport();
 	bool CanPlayerTow() const;
 	void UpdateStalledCars(float DeltaSeconds);
@@ -211,7 +236,7 @@ private:
 	bool bReturning = false;
 	int32 AssignedEvent = INDEX_NONE;
 	float ThinkSeconds = 0.0f;
-	// Stored in equipped-rate seconds; the countdown runs six times slower without a tow clamp.
+	// Legacy 150-second units: now advances at 1/4 with a cage and 1/6 without one.
 	float StalledCarSeconds = 150.0f;
 	float WorkSeconds = 0.0f;
 	float MissionAttemptSeconds = 0.0f;

@@ -73,6 +73,8 @@ protected:
 
 private:
 	friend class FSimCopterStartupCameraTest;
+	friend class FSimCopterCareerAircraftTransferTest;
+	friend class FSimCopterOwnedFleetTransferTest;
 	void FinishStartupCamera();
 	bool bStartupWorldHidden = false;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USimCopterCityIntro> CityIntro;

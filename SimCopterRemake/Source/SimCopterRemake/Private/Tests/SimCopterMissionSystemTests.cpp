@@ -26,6 +26,8 @@ struct FSimCopterTestMissionWorld : public ISimCopterMissionWorld
 	int32 PlayerTileX = 64;
 	int32 PlayerTileY = 64;
 	bool bPlayerOnFoot = false;
+	int32 CustodyEventId = INDEX_NONE;
+	virtual bool IsCrimeInCustody(int32 EventId) const override { return EventId == CustodyEventId; }
 	// The id every in-bounds tile reports. 0x70 is an unoccupied building in the real XBLD property
 	// table; tests that need occupants (property bit 2) set this to one of the 39 ids that carry it.
 	int32 TileXbldId = 0x70;
@@ -410,6 +412,36 @@ bool FSimCopterMissionSystemWeightTableTest::RunTest(const FString& Parameters)
 		return false;
 	}
 
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMissionRecoveryPriorityTest, "SimCopter.Missions.RecoveryDoesNotDisplaceOriginalJobs", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterMissionRecoveryPriorityTest::RunTest(const FString&)
+{
+	FSimCopterTestMissionWorld World;
+	FSimCopterMissionSystem System;
+	System.Initialize(&World, 1);
+	FSimCopterCareerCity City;
+	for (float& Weight : City.Weights) Weight = 0;
+	City.Weights[6] = 100;
+	System.SetCareerCity(City);
+	System.EnsureBaseLocationRecord(1, 1);
+	System.UpdateSchedulerCadence();
+	System.SpawnCountdown = 12345;
+	System.CreateEventAt(10, 10, TYPE_VehicleTow);
+	System.CreateEventAt(11, 11, TYPE_BoatTow);
+	TestEqual(TEXT("Supplemental recovery does not restart the original dispatch timer"), System.SpawnCountdown, 12345);
+	// Old saves retain recovery records and total active counts. The original scheduler
+	// must still dispatch after loading, without completing or deleting either recovery.
+	TArray<uint8> Save;
+	{ FMemoryWriter Writer(Save); System.SerializeRuntimeState(Writer); }
+	{ FMemoryReader Reader(Save); System.SerializeRuntimeState(Reader); }
+	System.SpawnCountdown = 1;
+	System.FrameDeltaEma = 65536;
+	System.RunSchedulerOnce();
+	TestTrue(TEXT("Base plus two recovery jobs still permits an original transport"),
+		System.GetRecords().ContainsByPredicate([](const auto& R) { return R.bActive && R.TypeMask == TYPE_Transport; }));
+	TestEqual(TEXT("Recovery records remain active and counted for UI/save state"), System.GetActiveMissionCount(), 4);
 	return true;
 }
 
@@ -1808,6 +1840,39 @@ bool FSimCopterCrimeScoringTest::RunTest(const FString& Parameters)
 			TestEqual(TEXT("Crime completion type volume"), World.RadioVoiceQueueTags[0], 0x96);
 			TestEqual(TEXT("Crime completion tag volume"), World.RadioVoiceQueueTags[1], 0x32);
 		}
+	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterCrimeCustodyTest, "SimCopter.Missions.CustodyStopsCrimePenalties",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterCrimeCustodyTest::RunTest(const FString&)
+{
+	for (int32 Type : {TYPE_Robber, TYPE_Arsonist, TYPE_Mugger, TYPE_Burglar})
+	{
+		FSimCopterTestMissionWorld World;
+		World.bPlayerOnFoot = true; // The original proximity gate must not conceal the bug.
+		FSimCopterMissionSystem System; System.Initialize(&World, 1);
+		FSimCopterCareerCity City; System.RestoreSessionState(1000, 1000, City);
+		const int32 Id = System.CreateEventAt(64,64,Type);
+		if (!TestTrue(TEXT("Crime created"), Id != INDEX_NONE)) continue;
+		const auto Advance = [&]() { for (int32 Frame=0; Frame<120*20; ++Frame) System.Tick(0.05f); };
+		World.CustodyEventId = Id; World.UiMessages.Reset();
+		Advance();
+		TestNotNull(TEXT("Custody still requires station delivery"), System.FindRecord(Id));
+		TestEqual(TEXT("Prisoner causes no crime penalty"), System.GetScore(), 1000);
+		TestEqual(TEXT("Custody pays no premature reward"), System.GetCash(), 1000);
+		TestFalse(TEXT("Prisoner issues no crime warning"), World.UiMessages.ContainsByPredicate([&](const auto& Message)
+			{ return Message.EventId == Id && (Message.TextId == 0x3b4 || Message.TextId == 0x3b5 || Message.TextId == 0x3b2); }));
+		World.CustodyEventId = INDEX_NONE; Advance();
+		TestTrue(TEXT("Escaped criminal can commit crimes again"), System.GetScore() < 1000);
+		World.CustodyEventId = Id;
+		const int32 Before = System.GetScore(); Advance();
+		TestEqual(TEXT("Recapture stops further penalties"), System.GetScore(), Before);
+		System.PostEvent(EVT_CriminalCaught, Id, 1); System.Tick(0.05f);
+		TestNull(TEXT("Delivery completes mission"), System.FindRecord(Id));
+		TestEqual(TEXT("Delivery retains full score reward"), System.GetScore(), Before+300);
+		TestEqual(TEXT("Delivery retains cash reward"), System.GetCash(), 1500);
 	}
 	return true;
 }

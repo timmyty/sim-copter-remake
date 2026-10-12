@@ -8,6 +8,7 @@
 #include "Game/SimCopterSettings.h"
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterHelicopterParking.h"
 #include "Ground/SimCopterAmbientVehicles.h"
 #include "Ground/SimCopterFireRenderComponent.h"
 #include "Ground/SimCopterParticleFX.h"
@@ -109,6 +110,7 @@ FString FormatMissionMarkerDistance(float DistanceCm)
 FName ResolveMissionMarkerIconName(const FString& Label)
 {
 	if (Label == TEXT("HANGAR")) return TEXT("warehouse");
+	if (Label == TEXT("JUNKYARD")) return TEXT("directions_car");
 	if (Label == TEXT("TRANSPORT")) return TEXT("local_shipping");
 	if (Label == TEXT("DROPOFF")) return TEXT("flag");
 	if (Label == TEXT("PATIENT")) return TEXT("personal_injury");
@@ -723,6 +725,31 @@ bool ASimCopterMissionSystemActor::GetPlayerTile(int32& OutTileX, int32& OutTile
 	return false;
 }
 
+bool ASimCopterMissionSystemActor::IsCrimeInCustody(const int32 EventId) const
+{
+	if (EventId == INDEX_NONE || !GetWorld()) return false;
+	bool bFoundPerson = false;
+	bool bHeldCar = false;
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+	{
+		if (It->IsActorBeingDestroyed() || It->HasMissionResolutionReported()) continue;
+		if (It->GetAgentKind() == ESimCopterGroundAgentKind::Pedestrian && It->MissionEventId == EventId &&
+			(SimCopterAirOperations::IsCriminalState(It->InitialPersonState) ||
+			 SimCopterAirOperations::IsCriminalState(It->GetBehaviorAttribute(EBhavAttr::State))))
+		{
+			bFoundPerson = true;
+			if (!It->IsInPoliceCustody() && !It->IsMissionCarried() && !It->GetBehaviorCarrier() &&
+				It->GetBehaviorAttribute(EBhavAttr::CriminalCaught) == 0) return false;
+		}
+		else if (It->IsCriminalCar() && It->GetCriminalEventId() == EventId)
+		{
+			bHeldCar |= It->IsVehicleTowed() || It->IsVehicleTaserDisabled();
+		}
+	}
+	// An escaped burglar on foot overrides its immobilized getaway car.
+	return bFoundPerson || bHeldCar;
+}
+
 bool ASimCopterMissionSystemActor::IsPlayerOnFoot() const
 {
 	const UWorld* World = GetWorld();
@@ -749,7 +776,56 @@ void ASimCopterMissionSystemActor::OnBuildingFireIgnited(int32 TileX, int32 Tile
 	// there is nothing to place here; the ignition just makes the fire object + flames exist.
 }
 
+void ASimCopterMissionSystemActor::InjurePeopleOnCollapsedBuilding(const FBox& BuildingBounds,int32 TileX,int32 TileY,bool bSuppressNewInjuryRewards)
+{
+	TArray<ASimCopterGroundAgent*> RooftopPeople;
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+	{
+		if (It->GetAgentKind() != ESimCopterGroundAgentKind::Pedestrian || It->IsCow() ||
+			It->IsHidden() || It->IsActorBeingDestroyed() || It->IsMissionCarried()) continue;
+		// Include a patient held by a rooftop medic, but never aircraft passengers.
+		const auto* Carrier = Cast<ASimCopterGroundAgent>(It->GetBehaviorCarrier());
+		if (It->GetBehaviorCarrier() && (!Carrier || Carrier->GetAgentKind() != ESimCopterGroundAgentKind::Pedestrian)) continue;
+		const FVector Feet = Carrier ? Carrier->GetActorLocation()-FVector(0,0,Carrier->GetCapsuleHalfHeightCm())
+			: It->GetActorLocation()-FVector(0,0,It->GetCapsuleHalfHeightCm());
+		if (Feet.X >= BuildingBounds.Min.X && Feet.X <= BuildingBounds.Max.X &&
+			Feet.Y >= BuildingBounds.Min.Y && Feet.Y <= BuildingBounds.Max.Y &&
+			Feet.Z > BuildingBounds.Min.Z+20 && Feet.Z <= BuildingBounds.Max.Z+100)
+			RooftopPeople.Add(*It);
+	}
+
+	// User-requested collapse aftermath: keep each original person over the rubble.
+	// Ordinary incident placement searches outdoor ground and would teleport them
+	// away. Register the injury here, then reuse the saved, gravity-driven fall path.
+	for (auto* Person : RooftopPeople)
+	{
+		if (Person->GetBehaviorCarrier()) Person->AlightFromCarrier(false);
+		if (!Person->IsMissionPatientDead())
+		{
+			const bool bWasPatient = Person->IsMedevacVictim();
+			if (!bWasPatient)
+			{
+				MissionSystem.ReleaseInjuredMissionPerson(Person->MissionEventId,Person->GetBehaviorAttribute(EBhavAttr::State));
+				Person->MissionEventId = MissionSystem.CreateIncidentMedevacAt(TileX,TileY);
+				if (bSuppressNewInjuryRewards) SuppressMissionRewards(Person->MissionEventId);
+				Person->InitialPersonState = 6;
+				Person->ResetMissionActionTracking();
+			}
+			if (!bWasPatient || !Person->IsKnockedDown()) Person->SetMissionInjuredPose();
+		}
+		Person->SetPersistentHospitalRoofCrew(false);
+		// The collapse has already injured them; even a tall roof leaves a rescuable
+		// patient rather than applying the lethal passenger-drop damage a second time.
+		if (!Person->IsKnockedDown()) Person->BeginPassengerFall(Person->MissionEventId,TNumericLimits<float>::Max());
+	}
+}
+
 void ASimCopterMissionSystemActor::OnBuildingBurnedDown(int32 TileX, int32 TileY, int32 FootprintSize)
+{
+	CollapseBuilding(TileX,TileY,FootprintSize,false);
+}
+
+void ASimCopterMissionSystemActor::CollapseBuilding(int32 TileX, int32 TileY, int32 FootprintSize, bool bSuppressNewInjuryRewards)
 {
 	ASimCopterTrafficSystemActor* TrafficSystem = ResolveTrafficSystem();
 	if (TrafficSystem == nullptr)
@@ -776,6 +852,7 @@ void ASimCopterMissionSystemActor::OnBuildingBurnedDown(int32 TileX, int32 TileY
 	// FUN_004a5fd0 zeroes the XBLD entry of every tile the building covered, which is what stops
 	// the tile reading as a building - including to IsFireSuitableTile, so it cannot re-ignite.
 	TrafficSystem->ClearXbldTiles(ClearedTiles);
+	if (bHasBounds) InjurePeopleOnCollapsedBuilding(BuildingBounds,TileX,TileY,bSuppressNewInjuryRewards);
 
 	FVector TileCenter = FVector::ZeroVector;
 	if (!TrafficSystem->TryGetTileCenterWorldLocation(TileX, TileY, TileCenter))
@@ -1492,7 +1569,7 @@ bool ASimCopterMissionSystemActor::DestroyBuildingFromMissile(const FHitResult& 
 	const int32 Size = GetBuildingFootprintSize(Origin.X, Origin.Y);
 	// Reuse the complete collapse: authored rubble, debris, collision removal and
 	// XBLD cleanup. Unlike nuclear selection, Apache strikes exempt no building class.
-	OnBuildingBurnedDown(Origin.X, Origin.Y, Size);
+	CollapseBuilding(Origin.X, Origin.Y, Size, true);
 	if (City->HasStandingBuildingAtTile(Origin.X, Origin.Y)) return false;
 	TArray<FIntPoint> Tiles;
 	for (int32 Y=0; Y<Size; ++Y) for (int32 X=0; X<Size; ++X) Tiles.Emplace(Origin.X+X,Origin.Y+Y);
@@ -1868,7 +1945,7 @@ bool ASimCopterMissionSystemActor::TryResolveTransportSpawnTile(
 	return true;
 }
 
-bool ASimCopterMissionSystemActor::CreateIncidentMedevacForVictim(ASimCopterGroundAgent* Victim)
+bool ASimCopterMissionSystemActor::CreateIncidentMedevacForVictim(ASimCopterGroundAgent* Victim, bool bPreserveWorldLocation)
 {
 	if (Victim && Victim->IsCow()) return false;
 	if (!IsValid(Victim) || Victim->IsMissionPatientDead() || Victim->IsMedevacVictim() ||
@@ -1878,7 +1955,7 @@ bool ASimCopterMissionSystemActor::CreateIncidentMedevacForVictim(ASimCopterGrou
 	auto* Traffic = ResolveTrafficSystem();
 	int32 X, Y;
 	const FVector PreviousLocation = Victim->GetActorLocation();
-	if (!Traffic || !Traffic->TryPlacePatientOnOutdoorGround(*Victim) ||
+	if (!Traffic || (!bPreserveWorldLocation && !Traffic->TryPlacePatientOnOutdoorGround(*Victim)) ||
 		!Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Victim->GetActorLocation(), X, Y)) return false;
 	const int32 Event = MissionSystem.CreateIncidentMedevacAt(X, Y);
 	if (Event < 0)
@@ -1939,17 +2016,36 @@ bool ASimCopterMissionSystemActor::IsPedestrianFireHazard(const FVector& Feet, f
 
 bool ASimCopterMissionSystemActor::ShouldAvoidFireStep(const FVector& FromFeet, const FVector& ToFeet)
 {
-	// Let someone escape a newly ignited fire; incoming steps keep a body-sized clearance.
-	if (IsPedestrianFireHazard(FromFeet, 40)) return false;
-	const int32 Samples = FMath::Max(1, FMath::CeilToInt(FVector::Distance(FromFeet, ToFeet) / 20));
-	for (int32 I = 1; I <= Samples; ++I)
-		if (IsPedestrianFireHazard(FMath::Lerp(FromFeet, ToFeet, float(I) / Samples), 40)) return true;
+	RefreshPedestrianFireHazards();
+	const FBox Route(FromFeet.ComponentMin(ToFeet), FromFeet.ComponentMax(ToFeet));
+	for (int32 X = FMath::FloorToInt(Route.Min.X / 400); X <= FMath::FloorToInt(Route.Max.X / 400); ++X)
+		for (int32 Y = FMath::FloorToInt(Route.Min.Y / 400); Y <= FMath::FloorToInt(Route.Max.Y / 400); ++Y)
+		{
+			const auto* Boxes = PedestrianFireHazards.Find(FIntPoint(X, Y));
+			if (!Boxes) continue;
+			for (const FBox& Box : *Boxes)
+			{
+				const FBox Hazard(Box.Min - FVector(40, 40, 44), Box.Max + FVector(40, 40, 0));
+				if (!FMath::LineBoxIntersection(Hazard, FromFeet, ToFeet, ToFeet - FromFeet)) continue;
+				if (!Hazard.IsInsideOrOn(FromFeet)) return true;
+				// Escape an ignition underfoot, without granting permission to cross deeper
+				// into it or enter a different fire. Also respect the nearest safe edge.
+				const FVector Outward = (FromFeet - Hazard.GetCenter()) * FVector(1, 1, 0);
+				const auto Depth = [&Hazard](const FVector& P)
+				{
+					return FMath::Min(FMath::Min(P.X-Hazard.Min.X, Hazard.Max.X-P.X),
+						FMath::Min(P.Y-Hazard.Min.Y, Hazard.Max.Y-P.Y));
+				};
+				if (FVector::DotProduct(Outward, ToFeet-FromFeet) < -0.01 ||
+					Depth(ToFeet) > Depth(FromFeet) + 0.01) return true;
+			}
+		}
 	return false;
 }
 
-bool ASimCopterMissionSystemActor::CreatePlayerCausedMedevacForVictim(ASimCopterGroundAgent* Victim)
+bool ASimCopterMissionSystemActor::CreatePlayerCausedMedevacForVictim(ASimCopterGroundAgent* Victim, bool bPreserveWorldLocation)
 {
-	if (Victim && Victim->IsAirSupportPassenger()) return CreateIncidentMedevacForVictim(Victim);
+	if (Victim && Victim->IsAirSupportPassenger()) return CreateIncidentMedevacForVictim(Victim,bPreserveWorldLocation);
 	if (Victim && Victim->IsCow()) return false;
 	if (Victim == nullptr)
 	{
@@ -1965,7 +2061,7 @@ bool ASimCopterMissionSystemActor::CreatePlayerCausedMedevacForVictim(ASimCopter
 	int32 TileX = INDEX_NONE;
 	int32 TileY = INDEX_NONE;
 	const FVector PreviousLocation = Victim->GetActorLocation();
-	if (!TrafficSystem->TryPlacePatientOnOutdoorGround(*Victim) ||
+	if ((!bPreserveWorldLocation && !TrafficSystem->TryPlacePatientOnOutdoorGround(*Victim)) ||
 		!TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Victim->GetActorLocation(), TileX, TileY))
 	{
 		return false;
@@ -4246,6 +4342,26 @@ void ASimCopterMissionSystemActor::BuildMissionWorldMarkers(TArray<FSimCopterMis
 	const ASimCopterHelicopterPawn* PlayerHelicopter = GetWorld() != nullptr
 		? Cast<ASimCopterHelicopterPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0))
 		: nullptr;
+	const ASimCopterHelicopterPawn* CargoHelicopter = PlayerHelicopter;
+	if (const auto* Pilot = Cast<ASimCopterOnFootPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0)))
+		CargoHelicopter = Pilot->GetParkedHelicopter();
+	// Requested recovery aid: only the player's caged stalled vehicle exposes this
+	// destination tag. A tow mission elsewhere in the city must not show it.
+	if (const auto* Cargo = CargoHelicopter ? CargoHelicopter->GetAirOperations() : nullptr)
+	{
+		const auto* Vehicle = Cargo->GetTowVehicle();
+		if (Vehicle && Vehicle->IsTowableVehicle())
+			if (const auto* Recovery = GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
+				if (const auto* Yard = Recovery->FindRecoverySite(CargoHelicopter->GetActorLocation(), false))
+				{
+					FSimCopterMissionWorldMarkerEntry Marker;
+					Marker.WorldLocation = Yard->GetActorLocation() + FVector(0, 0, 120);
+					Marker.Label = TEXT("JUNKYARD");
+					Marker.Detail = TEXT("Lower the vehicle into the ring, then OPEN / G");
+					Marker.Color = FLinearColor(1.0f, 0.7f, 0.12f, 1.0f);
+					OutMarkers.Add(Marker);
+				}
+	}
 	TArray<ASimCopterTrafficSystemActor::FHospitalSite> Hospitals;
 	bool bHospitalsGathered = false;
 
@@ -4744,7 +4860,7 @@ FString ASimCopterMissionSystemActor::FormatMissionUiMessage(const SimCopterMiss
 // or figure could load, and played march.wav itself from one looping voice slot at the airport.
 void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 {
-	if (bMarchingBandSpawned || GetWorld() == nullptr || GetWorld()->GetTimeSeconds() < NextMarchingBandSpawnTime)
+	if (GetWorld() == nullptr || GetWorld()->GetTimeSeconds() < NextMarchingBandSpawnTime)
 	{
 		return;
 	}
@@ -4761,7 +4877,10 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 		return;
 	}
 	NextMarchingBandSpawnTime = GetWorld()->GetTimeSeconds() + 1.0;
-	const int32 BandCount = SimCopterBandNavigation::GetOriginalBandCount(GetSessionCareerCityIndex());
+	// Reconcile even after a successful spawn: older saves/running cities may have lost
+	// their airport band to ambient distance pruning, and injuries can remove members.
+	bMarchingBandSpawned = false;
+	const int32 BandCount = SimCopterBandNavigation::GetCelebrationBandCount(GetSessionCareerCityIndex());
 	// People are restored before the mission actor. Adopt them, then reconcile the former
 	// fixed eight-member roster to the original city-dependent count exactly once on load.
 	MarchingBandAgents.Reset();
@@ -4837,8 +4956,19 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 		if (bSpawned && Agent != nullptr)
 		{
 			Agent->SetIgnoresTileClassRules(true);
+			Agent->BandListenerCenter = SpawnCenter;
+			Agent->BandListenerClearance = Radius;
 			FVector StandLocation;
-			if (Agent->TryResolveBandStandLocation(Desired, SpawnCenter, StandLocation, Reserved))
+			bool bHasStand = Agent->TryResolveBandStandLocation(Desired, SpawnCenter, StandLocation, Reserved);
+			// An island's water or terminal can occupy the preferred approach side. Try the
+			// other sides before postponing the greeting; always retain physical clearance.
+			for (float Turn : {90.0f, -90.0f, 180.0f})
+			{
+				if (bHasStand) break;
+				const FVector Alternate = SpawnCenter + (Desired-SpawnCenter).RotateAngleAxis(Turn, FVector::UpVector);
+				bHasStand = Agent->TryResolveBandStandLocation(Alternate, SpawnCenter, StandLocation, Reserved);
+			}
+			if (bHasStand)
 			{
 				Agent->SetActorLocation(StandLocation);
 			}
@@ -4850,6 +4980,7 @@ void ASimCopterMissionSystemActor::SpawnMarchingBandAtAirport()
 			Reserved.Add(StandLocation);
 			bHasLeader = true;
 			Agent->SetActorRotation(FRotator(0, (SpawnCenter - Agent->GetActorLocation()).Rotation().Yaw, 0));
+			Agent->SetBandFormationTarget(StandLocation, Agent->GetActorRotation().Yaw, true);
 			// Uniform colours are a remake flourish and stay - the original band is all one figure.
 			// The offset indexes a 14-entry clothes table, so it has to stay inside it: the old
 			// (i % 5) * 8 + 4 ran to 36 and was clamped, giving five members the same outfit.
@@ -5038,10 +5169,10 @@ FVector ASimCopterMissionSystemActor::GetMarchingBandCenter(const FVector& Playe
 		const double Distance = FVector::DistSquared2D(Pad, PlayerLocation);
 		if (Distance < NearestDistance) { NearestDistance = Distance; NearestPad = Pad; }
 	}
-	// Wait at the airport while the player is across town. Approach their ground position
-	// as they return; the formation offsets keep the crowd outside their personal space.
-	const float ApproachRange = Traffic->GetPeopleWorldCmPerOriginalUnit() * 256.0f;
-	if (NearestDistance <= FMath::Square(ApproachRange))
+	// Greet the player only on the base. A four-tile radius around each pad let the
+	// formation follow them well past the airport; stand slots and routes also enforce this footprint.
+	SimCopterBandNavigation::FBaseArea Base;
+	if (SimCopterBandNavigation::TryGetBaseArea(Traffic, Base) && Base.Contains(PlayerLocation))
 	{
 		return FVector(PlayerLocation.X, PlayerLocation.Y, NearestPad.Z);
 	}
@@ -5279,22 +5410,8 @@ void ASimCopterMissionSystemActor::CaptureCareerCityTransfer()
 
 ASimCopterHelicopterPawn* ASimCopterMissionSystemActor::ResolveCareerHelicopterPawn() const
 {
-	// The one the player is in wins; otherwise the level's single career aircraft. Sorted so the
-	// choice is stable if a map ever holds more than one, matching the game mode's pad pass.
-	if (const APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-	{
-		if (ASimCopterHelicopterPawn* Possessed = Cast<ASimCopterHelicopterPawn>(PlayerController->GetPawn()))
-		{
-			return Possessed;
-		}
-	}
-
-	TArray<AActor*> Helicopters;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASimCopterHelicopterPawn::StaticClass(), Helicopters);
-	Helicopters.Sort([](const AActor& Left, const AActor& Right)
-	{
-		return Left.GetName() < Right.GetName();
-	});
-	return Helicopters.Num() > 0 ? Cast<ASimCopterHelicopterPawn>(Helicopters[0]) : nullptr;
+	// Advancing happens inside the hangar on foot. Retain the pilot's actual parked aircraft,
+	// rather than the first actor name (which can now be the airport plane or support aircraft).
+	return SimCopterHelicopterParking::ResolveCurrentAircraft(this);
 }
 

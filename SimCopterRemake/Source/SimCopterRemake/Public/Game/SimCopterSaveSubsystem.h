@@ -238,6 +238,8 @@ public:
 	static FString MakeExitSaveSlotName(ESimCopterSessionKind Kind);
 
 private:
+	friend class FSimCopterFleetEquipmentTest;
+	friend class FSimCopterOwnedFleetTransferTest;
 	bool SaveReservedGame(const UObject* WorldContextObject, bool bExitSave, FString& OutError);
 	UPROPERTY()
 	TObjectPtr<USimCopterSaveGame> PendingLoadedGame;

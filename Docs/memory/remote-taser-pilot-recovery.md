@@ -1,7 +1,33 @@
 # Remote taser and unattended pilot recovery
 
+## Pilot-level landing follow-up — October 11, 2026
+
+No-harness landing now waits for the pilot's fall to finish, searches around the
+pilot instead of the airborne exit, and rejects ground/roof candidates more than
+120 cm from the pilot's foot level. Cached goals, including those restored from
+older saves, get the same level check. A chosen reachable spot stays fixed during
+the approach; full-airframe sweeps, obstruction replanning and retry remain.
+A clear roof above a street reproduced two failed assertions. The final regression
+includes a long fall, stale roof target and actual helicopter ticks through descent.
+All 46 selected checks and Editor/Shipping/Development builds passed. Installed
+with the subsequent fleet restoration update (55 combined checks); see status and hashes in
+[SteeringRecoveryResults.json](../validation/SteeringRecoveryResults.json).
+
+The user identified the separate RB report as likely controller hardware. Added
+full-pawn cruise checks passed both directions across all nine helicopters without
+slowing down. This follow-up does not change steering behavior.
+
 User-requested remake additions, October 10–11, 2026. Player guide:
 [RemoteTaserAndPilotRecovery.md](../RemoteTaserAndPilotRecovery.md).
+
+October 11 energy/free-aim follow-up supersedes the sight-following details below:
+[EnergyTaserAndFreeAim.md](../EnergyTaserAndFreeAim.md). RemoteTaserAim is now the
+world-space manual sight, not an offset from a target-facing rotation. Target
+selection only changes the aircraft goal. Use derived airframe max speed multiplied
+by BOTH FlightModel.BaseTravelScale and TravelBoostScale for the real sprint cap.
+Synthetic 1600 cm/s base car fixtures were far above authored road speeds; use
+RoadSpeedMaxUnitsPerSecond × 6.25 before the fleeing multiplier. Shared criminal
+eligibility rejects generic fleeing traffic and stale getaway mission records.
 
 - Every helicopter has a procedural, gimballed nose taser. `ToggleRemoteTaser`
   replaces the officer view; there is no passenger or purchase gate. The right-side

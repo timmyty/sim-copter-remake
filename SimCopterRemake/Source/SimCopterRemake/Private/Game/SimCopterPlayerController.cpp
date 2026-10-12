@@ -86,8 +86,8 @@ const TCHAR* const TransportBookmarkAction = TEXT("SimCopterReplayBookmark");
  * player nothing at all - not even the key they are pressing at that moment - as long as the
  * keyboard is handed back here first.
  *
- * Normal input continues after repair. L3 is consumed in gameplay to toggle the contextual
- * help list without reaching pawn actions.
+ * Normal input continues after repair. L3 is consumed here for Sprint Mode; R3+L3
+ * toggles contextual help before either click can reach a widget or pawn action.
  */
 class FSimCopterKeyboardFocusPreProcessor : public IInputProcessor
 {
@@ -116,13 +116,14 @@ public:
 			}
 		}
 		Repair();
-		if (InKeyEvent.GetKey() == EKeys::Gamepad_LeftThumbstick && GEngine && GEngine->GameViewport &&
+		if (GEngine && GEngine->GameViewport &&
 			!GEngine->GameViewport->IgnoreInput())
 		{
 			if (auto* PC = Controller.Get(); PC && PC->GetPawn() && !PC->IsPaused())
 			{
-				if (!InKeyEvent.IsRepeat()) PC->ToggleControllerHelp();
-				return true;
+				if (InKeyEvent.GetKey() == EKeys::Gamepad_LeftThumbstick)
+					return PC->HandleControllerLeftStickPressed(InKeyEvent.IsRepeat());
+				if (PC->HandleControllerMapKeyPressed(InKeyEvent.GetKey(), InKeyEvent.IsRepeat())) return true;
 			}
 		}
 		return false;
@@ -134,6 +135,11 @@ public:
 		// of the viewport is a key the pawn believes is still held - a helicopter that will not stop
 		// climbing - which is the failure the engine's flush-on-focus-loss existed to prevent.
 		Repair();
+		if (auto* PC = Controller.Get())
+		{
+			if (InKeyEvent.GetKey() == EKeys::Gamepad_LeftThumbstick) return PC->HandleControllerLeftStickReleased();
+			if (PC->HandleControllerMapKeyReleased(InKeyEvent.GetKey())) return true;
+		}
 		return false;
 	}
 
@@ -221,6 +227,73 @@ bool IsFocusReclaimableByGame(const TSharedPtr<SWidget>& Focused, const TSharedP
 ASimCopterPlayerController::ASimCopterPlayerController()
 {
 	bShowMouseCursor = true;
+}
+
+void ASimCopterPlayerController::OnPossess(APawn* InPawn)
+{
+	ResetControllerSprint();
+	Super::OnPossess(InPawn);
+}
+
+void ASimCopterPlayerController::OnUnPossess()
+{
+	ResetControllerSprint();
+	Super::OnUnPossess();
+}
+
+bool ASimCopterPlayerController::HandleControllerLeftStickPressed(const bool bRepeat)
+{
+	if (!GetPawn() || IsPaused() || IsMoveInputIgnored()) return false;
+	if (bRepeat || bControllerLeftStickHeld) return true;
+	bControllerLeftStickHeld = true;
+	auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
+	const bool bCanSprint = (Helicopter && !Helicopter->IsFixedWingAircraft()) || GetPawn()->IsA<ASimCopterOnFootPawn>();
+	const bool bHelpChord = IsInputKeyDown(EKeys::Gamepad_RightThumbstick) ||
+		(Helicopter && Helicopter->IsControllerCameraAdjustHeld());
+	bControllerLeftStickUsed = bHelpChord || !bCanSprint ||
+		(Helicopter && Helicopter->GetControllerMode() != ESimCopterControllerMode::None);
+	if (bHelpChord || !bCanSprint) ToggleControllerHelp();
+	return true;
+}
+
+bool ASimCopterPlayerController::HandleControllerLeftStickReleased()
+{
+	if (!bControllerLeftStickHeld) return false;
+	bControllerLeftStickHeld = false;
+	auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
+	if (!bControllerLeftStickUsed && GetPawn() && !IsPaused() && !IsMoveInputIgnored() &&
+		!(GEngine && GEngine->GameViewport && GEngine->GameViewport->IgnoreInput()) &&
+		(!Helicopter || Helicopter->GetControllerMode() == ESimCopterControllerMode::None))
+	{
+		// Wait for release so using L3 as a map modifier never also toggles Sprint Mode.
+		bControllerSprintEnabled = !bControllerSprintEnabled;
+	}
+	bControllerLeftStickUsed = false;
+	return true;
+}
+
+bool ASimCopterPlayerController::HandleControllerMapKeyPressed(const FKey Key, const bool bRepeat)
+{
+	if (ControllerMapKeys.Contains(Key)) return true;
+	// A D-pad hold that began as a tool action must still deliver its release to that tool.
+	if (bRepeat) return false;
+	if (Key != EKeys::Gamepad_DPad_Up && Key != EKeys::Gamepad_DPad_Down &&
+		Key != EKeys::Gamepad_DPad_Left && Key != EKeys::Gamepad_DPad_Right) return false;
+	auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
+	if (!Helicopter || IsPaused() || IsMoveInputIgnored() ||
+		Helicopter->GetControllerMode() != ESimCopterControllerMode::None) return false;
+	if (!bControllerLeftStickHeld && !Helicopter->IsControllerCameraAdjustHeld() &&
+		!IsInputKeyDown(EKeys::Gamepad_RightThumbstick)) return false;
+	ControllerMapKeys.Add(Key);
+	if (bControllerLeftStickHeld) bControllerLeftStickUsed = true;
+	if (!bRepeat) Helicopter->HandleControllerMapShortcut(Key, bControllerLeftStickHeld);
+	return true;
+}
+
+bool ASimCopterPlayerController::HandleControllerMapKeyReleased(const FKey Key)
+{
+	// Consume the matching release even if the stick modifier was released first.
+	return ControllerMapKeys.Remove(Key) > 0;
 }
 
 void ASimCopterPlayerController::BeginPlay()
@@ -917,6 +990,7 @@ void ASimCopterPlayerController::SimSettings()
 
 void ASimCopterPlayerController::PushPause()
 {
+	ResetControllerChords();
 	if (PauseDepth++ == 0)
 	{
 		SetPause(true);

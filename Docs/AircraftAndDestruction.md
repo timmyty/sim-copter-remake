@@ -16,3 +16,42 @@ Original references: `FUN_004c9470` (person contact), `FUN_004c6970` (conversati
 Validation evidence is stored in `Docs/scratchpad/aircraft-destruction/`. The automated checks exercise projectile collisions, population injuries/survivors, whole-city demolition, controls, save migration, propeller poses, and the cockpit widget. See the final validation record for actual results.
 
 Editor and Shipping builds succeeded; 123 headless tests and both offscreen gear variants passed. Installed with verified backup and hashes. [Detailed results](validation/AircraftAndDestructionResults.json). No interactive gameplay or live listening check.
+
+## Rooftop casualties and medic aftermath — October 11, 2026
+
+Hospital crews, other rooftop occupants and patients held by rooftop medics now
+fall with gravity when their building collapses from a missile, fire or nuclear
+destruction. Their identities and existing medical records are retained. Healthy
+occupants become injured patients, roof confinement is removed, and they land
+over the rubble instead of being relocated to another outdoor tile. Tall roofs
+leave rescuable patients. Street-level bystanders and aircraft passengers are
+excluded from this rooftop conversion. New missile/nuclear injuries cannot earn
+completion rewards; existing patient credit is preserved.
+
+Missile explosions also throw nearby people radially away from the impact with
+an upward impulse that decreases toward the edge of the existing 150 cm blast
+radius. The existing swept tumble handles walls, gravity and landing, then
+resumes medical behavior. Injuries begin at the person's actual position, and
+repeated blasts preserve the patient's medical record. A simultaneous building
+collapse retains the missile's horizontal throw; other rooftop occupants fall
+vertically into the rubble. Machine-gun injuries do not add this missile throw.
+
+An injured medic releases their carried patient and switches to patient behavior,
+even if their behavior VM was suspended. They cannot pick up another patient.
+The original BHAV 262 record 41 (mdvc1, voice event 19) can repeat when persistent
+hospital crew retry a failed return to a zero-seat Apache. The line now reports
+an empty search once, cannot play while carrying a patient, and is rearmed by a
+successful pickup. Repeated playback is suppressed across completed clips and
+retry cycles, independently of the mixer's overlapping-sound guard.
+
+The regression uses the original people programs, a real passengerless Apache,
+completed voice attempts, and actual injury/pickup transitions. Whole-city
+destruction checks hospital and ordinary rooftop falls, medical registration,
+landing in the rubble, and the separate nuclear path. See
+[current validation receipt](validation/ApacheAftermathResults.json).
+
+Editor and Shipping builds passed, as did all 37 selected headless results and
+the real D3D12 offscreen taser check. The headless run includes one pre-existing
+CityEffects fixture-warning case and visual-only no-ops under NullRHI. The local
+executable was backed up, replaced and SHA-256 verified. No interactive gameplay
+or live listening check was performed; the publication checkout was untouched.

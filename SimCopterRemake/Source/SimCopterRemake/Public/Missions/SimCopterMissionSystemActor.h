@@ -127,6 +127,8 @@ public:
 	virtual bool GetCameraTile(int32& OutTileX, int32& OutTileY) const override;
 	virtual bool GetPlayerTile(int32& OutTileX, int32& OutTileY) const override;
 	virtual bool IsPlayerOnFoot() const override;
+	virtual bool IsCrimeInCustody(int32 EventId) const override;
+	friend class FSimCopterControllerSprintTest;
 	virtual bool IsModalUiActive() const override;
 
 	virtual void OnBuildingFireIgnited(int32 TileX, int32 TileY, int32 EventId) override;
@@ -229,8 +231,8 @@ public:
 	// victim aboard. The mission layer adds the missing temporal context: the helper ride is useful
 	// only while an active medevac still has a patient waiting to be retrieved.
 	bool CanHospitalParamedicBoardPlayerHelicopter(const ASimCopterHelicopterPawn* Helicopter) const;
-	bool CreatePlayerCausedMedevacForVictim(ASimCopterGroundAgent* Victim);
-	bool CreateIncidentMedevacForVictim(ASimCopterGroundAgent* Victim);
+	bool CreatePlayerCausedMedevacForVictim(ASimCopterGroundAgent* Victim, bool bPreserveWorldLocation = false);
+	bool CreateIncidentMedevacForVictim(ASimCopterGroundAgent* Victim, bool bPreserveWorldLocation = false);
 	bool IsPedestrianFireHazard(const FVector& Feet, float SafetyMarginCm = 0.0f);
 	bool ShouldAvoidFireStep(const FVector& FromFeet, const FVector& ToFeet);
 	// Shared spatial cache, rebuilt at most once per frame and independent of render visibility.
@@ -459,6 +461,7 @@ public:
 	// These are cosmetic rubble fires, separate from building-fire mission accounting.
 	void AddPostBlastFire(const FVector& WorldLocation);
 	bool DestroyBuildingFromMissile(const FHitResult& Hit);
+	void InjurePeopleOnCollapsedBuilding(const FBox& BuildingBounds, int32 TileX, int32 TileY, bool bSuppressNewInjuryRewards);
 	int32 ApplyNuclearPopulationDamage(int32 RandomSeed);
 	void ClearDestroyedBuildingFires(const TArray<FIntPoint>& Tiles);
 
@@ -493,10 +496,16 @@ public:
 	static bool IsHelicopterSettledForAlight(const ASimCopterHelicopterPawn& Helicopter);
 
 private:
+	void CollapseBuilding(int32 TileX, int32 TileY, int32 FootprintSize, bool bSuppressNewInjuryRewards);
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCageRecoveryTest;
+	friend class FSimCopterPoliceRecoveryTest;
+	friend class FSimCopterCheckupCrewTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterBandCelebrationTest;
+	friend class FSimCopterCareerAircraftTransferTest;
+	friend class FSimCopterOwnedFleetTransferTest;
 	friend class FSimCopterPatientCityPlacementTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;

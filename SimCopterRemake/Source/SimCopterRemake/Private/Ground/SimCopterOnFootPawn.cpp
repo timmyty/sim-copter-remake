@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterOnFootPawn.h"
+#include "Game/SimCopterPlayerController.h"
 #include "Game/SimCopterCheats.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Framework/Application/SlateApplication.h"
@@ -10,6 +11,7 @@
 #include "Ground/SimCopterInteraction.h"
 #include "Camera/CameraComponent.h"
 #include "City/SimCity2000CityActor.h"
+#include "City/SimCopterHangar.h"
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -250,7 +252,10 @@ void ASimCopterOnFootPawn::BeginPlay()
 		FindOrSpawnParkedHelicopter();
 	}
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	// Auto-possession and SnapToGround can open the hangar during this spawn.
+	// Its modal input must survive the remainder of pawn initialization.
+	const bool bHangarOpen = ASimCopterHangar::IsAnyShellOpen(GetWorld());
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()); PlayerController && !bHangarOpen)
 	{
 		PlayerController->bShowMouseCursor = false;
 		FInputModeGameOnly InputMode;
@@ -259,7 +264,7 @@ void ASimCopterOnFootPawn::BeginPlay()
 	EnsureControllerOverlayWidget();
 	// Same reason as the helicopter's: the overlay above is a Slate widget, and a focused widget
 	// takes the keys before the pawn's axis bindings do.
-	if (FSlateApplication::IsInitialized())
+	if (!bHangarOpen && FSlateApplication::IsInitialized())
 	{
 		FSlateApplication::Get().SetAllUserFocusToGameViewport();
 	}
@@ -274,7 +279,7 @@ void ASimCopterOnFootPawn::PossessedBy(AController* NewController)
 	{
 		PlayerController->FlushPressedKeys();
 	}
-	if (FSlateApplication::IsInitialized())
+	if (!ASimCopterHangar::IsAnyShellOpen(GetWorld()) && FSlateApplication::IsInitialized())
 	{
 		FSlateApplication::Get().SetAllUserFocusToGameViewport();
 	}
@@ -293,6 +298,7 @@ void ASimCopterOnFootPawn::UnPossessed()
 
 void ASimCopterOnFootPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	StopTaserHum();
 	StopWalkingSound();
 	RemoveControllerOverlayWidget();
 	Super::EndPlay(EndPlayReason);
@@ -304,11 +310,17 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 	// SCHOOK: PilotSuperpower 0x004c1b50: Shift selects dog class 10 at 20x speed.
 	const auto* Cheats = SimCopterCheats::Get(this);
 	const auto* PC = Cast<APlayerController>(GetController());
-	const bool bDog = Cheats && Cheats->bSuperpower && PC &&
-		(PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
+	const auto* SimPC = Cast<ASimCopterPlayerController>(PC);
+	const bool bShiftDown = PC && !PC->IsMoveInputIgnored() &&
+		(PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift) ||
+		 (SimPC && SimPC->IsControllerSprintEnabled()));
+	const bool bDog = Cheats && Cheats->bSuperpower && bShiftDown;
 	if (auto* Move = GetCharacterMovement())
 	{
-		Move->MaxWalkSpeed = WalkSpeedCmPerSec * (bDog ? 20.0f : 1.0f);
+		// Running only changes grounded travel. In-flight exits and parachute control retain
+		// their own movement limits. Shift and controller Sprint Mode share the same gait.
+		const bool bRun = bShiftDown && Move->IsMovingOnGround();
+		Move->MaxWalkSpeed = WalkSpeedCmPerSec * (bDog ? 20.0f : bRun ? RunSpeedScale : 1.0f);
 		Move->MaxAcceleration = MaxAccelerationCmPerSec2 * (bDog ? 20.0f / 3.0f : 1.0f);
 	}
 	if (FigureShared.IsValid() && bUsingOriginalFigure)
@@ -328,6 +340,10 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 
 	UpdateAirOperations(DeltaSeconds);
 	UpdateLookYaw(DeltaSeconds);
+	// Reaching the lowered sling with a patient is the handoff; do not wait for an input
+	// or for the helicopter to finish aligning directly overhead before taking the load.
+	if (CarriedMissionPerson.IsValid() && ParkedHelicopter)
+		ParkedHelicopter->GetAirOperations()->TryLoadRecoveryPassenger(this);
 	TryAutoEnterHelicopter();
 	if (IsActorBeingDestroyed())
 	{
@@ -339,6 +355,7 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 	UpdateWalkingSound();
 	UpdateCamera(DeltaSeconds);
 	UpdateTaserPose(DeltaSeconds);
+	UpdateEnergyTaser(DeltaSeconds);
 
 	// The listener has to follow whoever the player is. Every distance in the mixer is measured
 	// against it (DAT_0061a748 in the original), so leaving it parked at the helicopter would
@@ -399,9 +416,9 @@ void ASimCopterOnFootPawn::UpdateWalkingSound()
 	}
 
 	// FUN_004c1b50 restores the player-person to class 19 (pilot), whose own voice from
-	// FUN_004c71c0 is event 0x29: xFtBoots.wav. The remake currently exposes one walk gait, so
-	// use the original walk selector's speed 4 (speed 8 is its separate 1Run arm).
-	constexpr int32 OriginalWalkSpeed = 4;
+	// FUN_004c71c0 is event 0x29: xFtBoots.wav. Use the original walk/run selector's
+	// speeds 4/8 for the actual gait, so holding Shift while stationary adds no footsteps.
+	const int32 OriginalWalkSpeed = SpeedAlpha > 1.05f ? 8 : 4;
 	UAudioComponent* WalkingSound = WalkingSoundComponent.Get();
 	if (WalkingSound == nullptr || !WalkingSound->IsPlaying())
 	{
@@ -588,6 +605,8 @@ void ASimCopterOnFootPawn::DropCarriedMissionPerson()
 	{
 		return;
 	}
+	// The same put-down control loads a reachable rescue sling before releasing to the ground.
+	if (ParkedHelicopter && ParkedHelicopter->GetAirOperations()->TryLoadRecoveryPassenger(this)) return;
 
 	ASimCopterGroundAgent* Patient = ConsumeCarriedMissionPerson();
 	if (Patient == nullptr)
@@ -809,6 +828,7 @@ bool ASimCopterOnFootPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		}
 	}
 
+	if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->ResetControllerSprint();
 	SetActorTransform(Transform, false, nullptr, ETeleportType::TeleportPhysics);
 	if (UCharacterMovementComponent* Move = GetCharacterMovement())
 	{
@@ -964,6 +984,9 @@ void ASimCopterOnFootPawn::TryAutoEnterHelicopter()
 
 void ASimCopterOnFootPawn::TryEnterHelicopter(const float ReachCm)
 {
+	// Automatic contact boarding continues to tick beneath the hangar menu. It must
+	// not possess the aircraft and restore cockpit input while that menu owns focus.
+	if (ASimCopterHangar::IsAnyShellOpen(GetWorld())) return;
 	if (bAutoRescueAttached || (ParkedHelicopter && ParkedHelicopter->GetAirOperations()->IsRecoveringPilot() &&
 		ParkedHelicopter->HasHarnessRider())) return;
 	ASimCopterHelicopterPawn* Helicopter = FindHelicopterWithinReach(ReachCm);
@@ -1021,8 +1044,10 @@ void ASimCopterOnFootPawn::UpdateCamera(float DeltaSeconds)
 		CameraPitchDeg -
 			(LookPitchInput + MouseLookPitchInput * MouseSensitivity + ControllerLookPitchInput * ControllerSensitivity)
 			* LookPitchSpeedDegPerSec * DeltaSeconds,
-		-62.0f,
-		14.0f);
+		// The shoulder view must reach overhead and the ground while walking or aiming.
+		// Stop short of vertical so the camera and raised arm never invert.
+		-85.0f,
+		85.0f);
 	CameraBoom->SetRelativeRotation(FRotator(CameraPitchDeg, 0.0f, 0.0f));
 }
 
@@ -1107,7 +1132,9 @@ void ASimCopterOnFootPawn::UpdateBodySprite(float DeltaSeconds)
 		OriginalBodySpriteComponent->SetRelativeRotation(FRotator::ZeroRotator);
 
 		const bool bWalking = SpeedAlpha > 0.12f;
-		const FString Desired = bWalking ? TEXT("1Wal") : TEXT("NoMo");
+		const bool bRunning = GetCharacterMovement()->IsMovingOnGround() &&
+			GetVelocity().Size2D() > WalkSpeedCmPerSec * 1.05f;
+		const FString Desired = bWalking ? (bRunning ? TEXT("1Run") : TEXT("1Wal")) : TEXT("NoMo");
 		if (Desired != FigureAnim.Mnemonic)
 		{
 			RebuildPlayerFigureClip(Desired);

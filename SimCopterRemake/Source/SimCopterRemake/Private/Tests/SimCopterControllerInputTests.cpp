@@ -44,11 +44,11 @@ bool FSimCopterControllerFlightRoutingTest::RunTest(const FString& Parameters)
 		0.0f, 0.0f, 0.0f, false, 1.0f, 1.0f);
 	TestEqual(TEXT("LT and RT together cancel vertical flight"), Opposed.CollectiveCommand, 0);
 
-	TestEqual(TEXT("A climbs without a trigger"), ResolveFlightRouting(0, 0, 0, false, 0, 0, true, false).CollectiveCommand, 1);
+	TestEqual(TEXT("Generic climb hold raises collective"), ResolveFlightRouting(0, 0, 0, false, 0, 0, true, false).CollectiveCommand, 1);
 	TestEqual(TEXT("B descends without a trigger"), ResolveFlightRouting(0, 0, 0, false, 0, 0, false, true).CollectiveCommand, -1);
-	TestEqual(TEXT("A plus LT cancels"), ResolveFlightRouting(0, 0, 0, false, 1, 0, true, false).CollectiveCommand, 0);
+	TestEqual(TEXT("Generic climb hold plus LT cancels"), ResolveFlightRouting(0, 0, 0, false, 1, 0, true, false).CollectiveCommand, 0);
 	TestEqual(TEXT("RT plus B cancels"), ResolveFlightRouting(0, 0, 0, false, 0, 1, false, true).CollectiveCommand, 0);
-	TestEqual(TEXT("A and RT do not double collective"), ResolveFlightRouting(0, 0, 0, false, 0, 1, true, false).CollectiveCommand, 1);
+	TestEqual(TEXT("Duplicate climb requests do not double collective"), ResolveFlightRouting(0, 0, 0, false, 0, 1, true, false).CollectiveCommand, 1);
 	return true;
 }
 
@@ -60,7 +60,9 @@ bool FSimCopterControllerRadialSelectionTest::RunTest(const FString& Parameters)
 {
 	using namespace SimCopterControllerInput;
 
-	TestEqual(TEXT("centring the stick clears the highlight"), ResolveRadialIndex(FVector2D(0.1f, 0.1f), 4, 2), INDEX_NONE);
+	TestEqual(TEXT("centring the stick retains the highlight"), ResolveRadialIndex(FVector2D(0.1f, 0.1f), 4, 2), 2);
+	TestEqual(TEXT("neutral on a new wheel has no implicit choice"), ResolveRadialIndex(FVector2D::ZeroVector, 4, INDEX_NONE), INDEX_NONE);
+	TestEqual(TEXT("a removed slot cannot remain selected"), ResolveRadialIndex(FVector2D::ZeroVector, 4, 5), INDEX_NONE);
 	TestEqual(TEXT("up selects slot zero"), ResolveRadialIndex(FVector2D(0.0f, -1.0f), 4, 2), 0);
 	TestEqual(TEXT("right proceeds clockwise"), ResolveRadialIndex(FVector2D(1.0f, 0.0f), 4, 0), 1);
 	TestEqual(TEXT("down selects opposite slot"), ResolveRadialIndex(FVector2D(0.0f, 1.0f), 4, 0), 2);
@@ -71,7 +73,7 @@ bool FSimCopterControllerRadialSelectionTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Police chase uses the same police service"), Chase.ServiceIndex, Police.ServiceIndex);
 	TestFalse(TEXT("Normal Police does not chase"), Police.bChaseSpotlight);
 	TestTrue(TEXT("Police (Chase) is a distinct wheel command"), Chase.bChaseSpotlight);
-	TestEqual(TEXT("Invalid dispatch slot cannot dispatch"), GetDispatchSelection(6).ServiceIndex, INDEX_NONE);
+	TestEqual(TEXT("Invalid dispatch slot cannot dispatch"), GetDispatchSelection(7).ServiceIndex, INDEX_NONE);
 	float LastAnalog = 0;
 	TestFalse(TEXT("Idle stick noise is not device use"), UpdateAnalogActivity(0.05f, LastAnalog));
 	bool bSawSlowMovement = false;
@@ -84,7 +86,7 @@ bool FSimCopterControllerRadialSelectionTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("A fresh trigger squeeze switches device"), UpdateAnalogActivity(0.8f, LastAnalog));
 
 	// Point at every painted sector for every tool count and the dispatch wheel.
-	for (int32 Count = 1; Count <= 8; ++Count)
+	for (int32 Count = 1; Count <= 11; ++Count)
 	{
 		for (int32 Index = 0; Index < Count; ++Index)
 		{

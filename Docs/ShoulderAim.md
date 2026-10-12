@@ -2,6 +2,10 @@
 
 October 10, 2026
 
+The October 11 [energy taser redesign](EnergyTaserAndFreeAim.md) retains this grip
+and camera behavior while replacing the weapon, charging, firing, sound and stun
+recovery. The validation below records the earlier shoulder-camera work.
+
 The on-foot camera stays behind the pilot's right shoulder. Holding right mouse
 button (or the controller's left trigger) blends the camera closer, frames the
 upper torso, and raises the right arm. The taser grip follows the animated palm
@@ -57,3 +61,14 @@ For the final manual gameplay check: exit a helicopter, walk and turn, hold RMB,
 look up/down and strafe, fire at a suspect, then release RMB. Confirm the right
 shoulder remains the default view, the upper torso and raised taser are visible
 while aiming, and the camera moves forward safely beside walls.
+
+## Free vertical look — October 11, 2026
+
+Walking and aiming now allow camera pitch from -85 to +85 degrees. The previous
++14-degree ceiling prevented looking up. Mouse and controller input retain their
+sensitivity settings, and the final five degrees prevent camera inversion.
+`SimCopter.RescuePilot.ShoulderAim` now holds both input types against both limits
+while moving, in normal and aiming views, and checks the camera and weapon pose.
+The old clamp failed eight assertions; the corrected clamp passes. Evidence is
+in `Docs/scratchpad/equipment-preview/` and
+[the combined results](validation/EquipmentPreviewAndAirportRecoveryResults.json).

@@ -56,6 +56,14 @@ public:
 	void NoteGamepadDevice(FInputDeviceId Device);
 	SimCopterControllerHelp::EStyle GetControllerIconStyle() const { return ControllerIconStyle; }
 	bool IsControllerHelpExpanded() const { return bControllerHelpExpanded; }
+	bool HandleControllerLeftStickPressed(bool bRepeat);
+	bool IsControllerSprintEnabled() const { return bControllerSprintEnabled; }
+	void ResetControllerSprint() { bControllerSprintEnabled = false; ResetControllerChords(); }
+	bool HandleControllerLeftStickReleased();
+	bool HandleControllerMapKeyPressed(FKey Key, bool bRepeat);
+	bool HandleControllerMapKeyReleased(FKey Key);
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 	void ToggleControllerHelp() { bControllerHelpExpanded = !bControllerHelpExpanded; }
 
 	ASimCopterPlayerController();
@@ -264,6 +272,11 @@ private:
 	/** Registered for the life of the controller so a stray focus grab cannot outlive one frame. */
 	TSharedPtr<IInputProcessor> KeyboardFocusGuard;
 	bool bLastInputWasGamepad = false;
+	bool bControllerSprintEnabled = false;
+	bool bControllerLeftStickHeld = false;
+	bool bControllerLeftStickUsed = false;
+	TSet<FKey> ControllerMapKeys;
+	void ResetControllerChords() { bControllerLeftStickHeld = bControllerLeftStickUsed = false; ControllerMapKeys.Reset(); }
 	bool bControllerHelpExpanded = false;
 	SimCopterControllerHelp::EStyle ControllerIconStyle = SimCopterControllerHelp::EStyle::Xbox;
 	/** Last thief reported, so a widget that re-takes focus every frame logs once, not per frame. */

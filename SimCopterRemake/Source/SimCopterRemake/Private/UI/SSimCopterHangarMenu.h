@@ -46,8 +46,11 @@ public:
 	TSharedPtr<SWidget> GetInitialFocusWidget() const { return const_cast<SSimCopterHangarMenu*>(this)->AsShared(); }
 
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
+	virtual FReply OnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event) override;
 
 private:
+	friend class FSimCopterEquipmentPageTest;
+	friend class FSimCopterEquipmentInteractionTest;
 	enum class EPage : uint8
 	{
 		Hangar,
@@ -75,6 +78,12 @@ private:
 	int32 CatalogRow = 0;
 	// Which of the five upgrade rows the upgrades page has selected (ui + 0x172).
 	int32 UpgradeRow = 0;
+	int32 EquipmentPreviewType = 4;
+	int32 GetOwnedEquipmentMask() const;
+	FReply CycleEquipmentHelicopter(int32 Direction);
+	FReply HandleActivateUpgradeRow(int32 NewRow);
+	void SelectEquipmentAction();
+	virtual void OnControllerSelectionChanged(int32 Index) override;
 
 	FString StatusText;
 

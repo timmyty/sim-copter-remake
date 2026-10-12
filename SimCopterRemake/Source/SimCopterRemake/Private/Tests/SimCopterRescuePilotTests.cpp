@@ -197,10 +197,20 @@ bool FSimCopterRescuePilotRuntimeTest::RunTest(const FString& Parameters)
 	Floor->SetRootComponent(FloorBox); FloorBox->SetBoxExtent(FVector(10000,10000,20));
 	FloorBox->SetCollisionResponseToAllChannels(ECR_Block); FloorBox->RegisterComponent(); Floor->SetActorLocation(FVector(0,0,-20));
 	City->WaterGameplayTerrainClasses.Init(10,128*128);
-	for (int32 Step=0;Step<1000 && Heli->GetAirOperations()->IsRecoveringPilot();++Step)
+	Pilot->ToggleParachute(); // This landing case needs a surviving pilot; fall injuries are tested below.
+	// Allow both the parachute descent and the subsequent 100 cm/s aircraft descent.
+	for (int32 Step=0;Step<1600 && Heli->GetAirOperations()->IsRecoveringPilot();++Step)
 	{
+		// Recovery waits for a falling pilot before choosing a nearby landing surface.
+		// This isolated world does not tick character movement on its own.
+		Pilot->UpdateAirOperations(0.05f);
+		Pilot->GetCharacterMovement()->TickComponent(0.05f,LEVELTICK_All,nullptr);
 		Heli->GetAirOperations()->Update(0.05f);
 	}
+	TestFalse(TEXT("Recovery fixture pilot reaches the ground"),Pilot->GetCharacterMovement()->IsFalling());
+	AddInfo(FString::Printf(TEXT("Recovery end: pilot %s health %.0f, aircraft %s, landed %d, status %s"),
+		*Pilot->GetActorLocation().ToString(),Pilot->PilotHealth,*Heli->GetActorLocation().ToString(),Heli->bIsLanded,
+		*Heli->GetAirOperations()->GetStatus()));
 	TestTrue(TEXT("Recovery lands on clear ground without destroying aircraft"),Heli->bIsLanded && Heli->FlightModel.HitPoints>0);
 	Pilot->ParkedHelicopter=nullptr;
 	auto* Move=Pilot->GetCharacterMovement(); Move->bRunPhysicsWithNoController=true;

@@ -57,16 +57,16 @@ void SSimCopterControllerOverlay::Construct(const FArguments& InArgs)
 			const auto* H=Pawn.Get(); if(!H) return FText::GetEmpty();
 			auto* Ops=H->GetAirOperations(); FString Text;
 			if(Ops->IsRemoteTaserActive() || Ops->IsDeployed()) Text=Ops->GetStatus();
-			if(Ops->IsRemoteTaserActive()) Text=TEXT("REMOTE TASER  |  AUTO ORBIT follows the target\nMouse / right stick: aim   |   Left click / X / RT: fire   |   Hold RMB: cockpit cursor   |   N / R3+Y: exit\n")+Ops->GetRemoteTaserReadout();
+			if(Ops->IsRemoteTaserActive()) Text=TEXT("REMOTE TASER  |  AUTO ORBIT follows the target\nMouse / right stick: aim   |   Left click / A / RT: fire   |   Hold RMB: cockpit cursor   |   N / X then Fly Helicopter: return\n")+Ops->GetRemoteTaserReadout();
 			if(Ops->IsDeployed())
 			{
-				Text+=FString::Printf(TEXT("\nCable %.1fm | PgUp/PgDn or D-pad up/down winch | X / click grab | G / D-pad left release"),Ops->GetCableLength()/100);
-				if(auto* System=H->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
+				Text+=FString::Printf(TEXT("\nCable %.1fm | PgUp/PgDn or D-pad up/down winch | A / click grab | G / D-pad left release"),Ops->GetCableLength()/100);
+				if(auto* System=H->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>(); System && (Ops->HasBoat() || Ops->GetTowVehicle()))
 					if(auto* Site=System->FindRecoverySite(H->GetActorLocation(),Ops->HasBoat()))
 					{
 						const FVector Delta=Site->GetActorLocation()-H->GetActorLocation();
 						const float Heading=FRotator::ClampAxis(Delta.Rotation().Yaw-H->GetActorRotation().Yaw);
-						Text+=FString::Printf(TEXT("\n%s %.0fm | bearing %.0f degrees relative"),Ops->HasBoat()?TEXT("Harbor"):TEXT("Recovery yard"),Delta.Size2D()/100,Heading);
+						Text+=FString::Printf(TEXT("\n%s %.0fm | bearing %.0f degrees relative | Lower into light ring, then OPEN / G"),Ops->HasBoat()?TEXT("HARBOR"):TEXT("JUNKYARD"),Delta.Size2D()/100,Heading);
 					}
 			}
 			if(auto* System=H->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>();System && System->IsSupportUnlocked()) Text+=TEXT("\n")+System->GetSupportStatus();
@@ -186,7 +186,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildDispatchWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"DispatchInstructions",
-			"A: DISPATCH   Y: TOOLS\nX: RECALL ALL   B: CANCEL"), DispatchWheel);
+			"A: CONFIRM   X: TOOLS\nB: CANCEL"), DispatchWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
@@ -198,6 +198,9 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
 		{
 			Labels.Add(SimCopterHelicopterRegistry::GetToolDisplayName(Tool));
 		}
+		if (Helicopter->GetControllerRemoteTaserSlot() != INDEX_NONE)
+			Labels.Add(Helicopter->GetAirOperations()->IsRemoteTaserActive() ? TEXT("Fly Helicopter") : TEXT("Remote Taser"));
+		if (Helicopter->GetControllerPassengersSlot() != INDEX_NONE) Labels.Add(TEXT("Passengers"));
 	}
 
 	if (Labels.Num() == 0)
@@ -211,7 +214,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"ToolInstructions",
-			"A: EQUIP   Y: DISPATCH\nX: PASSENGERS   B: CANCEL"), ToolWheel);
+			"A: SELECT   X: DISPATCH\nB: CANCEL"), ToolWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildRadialWheel(

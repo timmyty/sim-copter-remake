@@ -2,6 +2,8 @@
 #include "Engine/World.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "GameFramework/InputSettings.h"
+#include "Components/InputComponent.h"
+#include "Flight/SimCopterControllerInput.h"
 #include "Misc/AutomationTest.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterControllerContextsTest, "SimCopter.Controller.Contexts",
@@ -13,15 +15,30 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 		.AllowAudioPlayback(false).CreatePhysicsScene(false).CreateNavigation(false).CreateAISystem(false);
 	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
 	ASimCopterHelicopterPawn* Pawn = World->SpawnActor<ASimCopterHelicopterPawn>();
-	Pawn->ControllerPrimaryPressed();
-	TestTrue(TEXT("A holds climb in flight"), Pawn->bControllerClimbHeld);
-	Pawn->ControllerToolWheelPressed();
-	TestFalse(TEXT("Opening a wheel clears A flight hold"), Pawn->bControllerClimbHeld);
-	Pawn->ControllerPassengerPressed();
-	TestTrue(TEXT("X in Tools opens passengers"), Pawn->ControllerMode == ESimCopterControllerMode::PassengerSelect);
+	auto* Input = NewObject<UInputComponent>(Pawn);
+	Pawn->SetupPlayerInputComponent(Input);
+	const auto Key = [&](FKey Button, EInputEvent Event = IE_Pressed)
+	{
+		for (auto& Binding : Input->KeyBindings)
+			if (Binding.Chord.Key == Button && Binding.KeyEvent == Event) Binding.KeyDelegate.Execute(Button);
+	};
+	Key(EKeys::Gamepad_FaceButton_Bottom);
+	TestTrue(TEXT("Actual A binding holds the selected tool action"), Pawn->bPrimaryToolUseHeld);
+	TestFalse(TEXT("A no longer climbs"), Pawn->bControllerClimbHeld);
+	Key(EKeys::Gamepad_FaceButton_Bottom, IE_Released);
+	TestFalse(TEXT("Releasing A stops continuous tools"), Pawn->bPrimaryToolUseHeld);
+	Key(EKeys::Gamepad_FaceButton_Bottom);
+	Key(EKeys::Gamepad_FaceButton_Left);
+	TestFalse(TEXT("Opening options stops a held tool"), Pawn->bPrimaryToolUseHeld);
+	Pawn->MissionPassengerSlots.AddDefaulted();
+	const FVector2D PassengerDirection = SimCopterControllerInput::GetRadialSlotDirection(Pawn->GetControllerPassengersSlot(), Pawn->GetControllerToolWheelSlotCount());
+	Pawn->ControllerRightX(PassengerDirection.X); Pawn->ControllerRightY(PassengerDirection.Y);
+	Pawn->UpdateControllerRadialSelection();
+	Pawn->ControllerRightX(0); Pawn->ControllerRightY(0);
+	Key(EKeys::Gamepad_FaceButton_Bottom);
+	TestTrue(TEXT("A selects Passengers from Tools"), Pawn->ControllerMode == ESimCopterControllerMode::PassengerSelect);
 	Pawn->ControllerToolWheelReleased();
 	TestTrue(TEXT("Releasing LB leaves passengers open"), Pawn->ControllerMode == ESimCopterControllerMode::PassengerSelect);
-	Pawn->MissionPassengerSlots.AddDefaulted();
 	Pawn->ControllerPassengerSlot = 0;
 	Pawn->ControllerPrimaryPressed();
 	TestTrue(TEXT("A selects the passenger action"), Pawn->ControllerMode == ESimCopterControllerMode::PassengerConfirm);
@@ -47,12 +64,15 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Pointing up highlights Fire Truck"), Pawn->ControllerRadialIndex, 0);
 	Pawn->ControllerRightY(0.0f);
 	Pawn->UpdateControllerRadialSelection();
-	TestEqual(TEXT("Centring removes the old dispatch highlight"), Pawn->ControllerRadialIndex, INDEX_NONE);
+	TestEqual(TEXT("Centring retains the old dispatch highlight"), Pawn->ControllerRadialIndex, 0);
 	Pawn->ControllerDispatchWheelReleased();
-	TestTrue(TEXT("Unhighlighted release closes without selecting a command"),
+	TestTrue(TEXT("Confirming the retained choice closes dispatch"),
 		Pawn->ControllerMode == ESimCopterControllerMode::None);
 	Pawn->ControllerDispatchWheelPressed();
+	TestEqual(TEXT("Opening a fresh wheel clears the previous choice"), Pawn->ControllerRadialIndex, INDEX_NONE);
 	Pawn->ControllerRightY(-1.0f);
+	Pawn->UpdateControllerRadialSelection();
+	Pawn->ControllerRightY(0.0f);
 	Pawn->ControllerPrimaryPressed();
 	TestTrue(TEXT("A confirms dispatch without holding a bumper"),
 		Pawn->ControllerMode == ESimCopterControllerMode::None);
@@ -61,15 +81,17 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Later RB release remains outside dispatch context"),
 		Pawn->ControllerMode == ESimCopterControllerMode::None);
 	Pawn->ControllerPrimaryReleased();
-	Pawn->ControllerEnterExitPressed();
-	TestTrue(TEXT("Y alone opens Tools"), Pawn->ControllerMode == ESimCopterControllerMode::ToolWheel);
-	Pawn->ControllerEnterExitPressed();
-	TestTrue(TEXT("Y alone switches to Dispatch"), Pawn->ControllerMode == ESimCopterControllerMode::DispatchWheel);
-	Pawn->ControllerEnterExitPressed();
-	TestTrue(TEXT("Y alone switches back to Tools"), Pawn->ControllerMode == ESimCopterControllerMode::ToolWheel);
+	Pawn->ControllerRightX(0); Pawn->ControllerRightY(0);
+	Key(EKeys::Gamepad_FaceButton_Left);
+	TestTrue(TEXT("X alone opens Tools"), Pawn->ControllerMode == ESimCopterControllerMode::ToolWheel);
+	Key(EKeys::Gamepad_FaceButton_Left);
+	TestTrue(TEXT("X alone switches to Dispatch"), Pawn->ControllerMode == ESimCopterControllerMode::DispatchWheel);
+	Key(EKeys::Gamepad_FaceButton_Left);
+	TestTrue(TEXT("X alone switches back to Tools"), Pawn->ControllerMode == ESimCopterControllerMode::ToolWheel);
 	Pawn->ControllerPrimaryPressed();
 	TestTrue(TEXT("A confirms Tools without holding a bumper"), Pawn->ControllerMode == ESimCopterControllerMode::None);
 	TestFalse(TEXT("Confirming Tools cannot climb"), Pawn->bControllerClimbHeld);
+	TestFalse(TEXT("Confirming an option cannot also use a tool"), Pawn->bPrimaryToolUseHeld);
 	Pawn->ControllerPrimaryReleased();
 	Pawn->bControllerCameraAdjustHeld=true;
 	Pawn->ControllerCancelPressed();
@@ -111,6 +133,43 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Left selects previous message"), static_cast<int32>(Pawn->SelectedMegaphoneMessage), 0);
 	Pawn->ControllerDPadLeftPressed();
 	TestEqual(TEXT("Left wraps to last message"), static_cast<int32>(Pawn->SelectedMegaphoneMessage), static_cast<int32>(ESimCopterMegaphoneMessage::Count) - 1);
+	// Drive the real bumper bindings through the flight input adapter at cruising pitch.
+	Pawn->MissionPassengerSlots.Reset();
+	using namespace SimCopterFixed;
+	for (int32 Type=0; Type<9; ++Type) for (bool Boost : {false,true})
+	{
+		TestTrue(TEXT("Cruise test loads the requested airframe"),Pawn->SwitchHelicopterModel(Type));
+		Pawn->ResetTransientInputState(); Pawn->bEngineRunning=true;
+		Pawn->ControllerLeftY(1); Pawn->ControllerLeftX(0);
+		auto Cruise=Pawn->GetFlightModel(); Cruise.ResetOnSurface(0,0,0);
+		Cruise.State=ESimCopterFlightState::Flying; Cruise.Altitude=FromFloat(500);
+		Cruise.RotorSpeed=FSimCopterFlightModel::RotorTopSpeed; Cruise.Heading=FromFloat(1800);
+		Cruise.PitchTarget=Cruise.PitchSmoothed=Cruise.ForwardSpeed=Cruise.Tuning.MaxPitch;
+		for (bool ForwardHeld : {true,false}) for (bool Right : {false,true})
+		{
+			Pawn->ControllerLeftY(ForwardHeld ? 1 : 0);
+			const FKey Bumper=Right ? EKeys::Gamepad_RightShoulder : EKeys::Gamepad_LeftShoulder;
+			Key(Bumper); auto FlightInput=Pawn->BuildFlightInputs(); FlightInput.bTravelBoost=Boost;
+			TestTrue(TEXT("Pressed bumper reaches coordinated turn"),Right ? FlightInput.bTurnRightKey : FlightInput.bTurnLeftKey);
+			auto Model=Cruise; FSimCopterFlightEvents Events; FSimCopterFlightEnvironment Env;
+			for (int32 Frame=0; Frame<60; ++Frame) Model.Step(1.f/60,FlightInput,Env,Events);
+			const float Change=ToFloat(Model.Heading-Cruise.Heading)/10;
+			TestTrue(*FString::Printf(TEXT("Type %d %s turns at cruise, forward=%d boost=%d (%.2f deg)"),Type,Right?TEXT("RB"):TEXT("LB"),ForwardHeld,Boost,Change),Right ? Change>5 : Change<-5);
+			Key(Bumper,IE_Released);
+		}
+	}
+	for (bool RightFirst : {false,true})
+	{
+		Pawn->ResetTransientInputState(); Pawn->bEngineRunning=true; Pawn->ControllerLeftY(1);
+		const FKey First=RightFirst ? EKeys::Gamepad_RightShoulder : EKeys::Gamepad_LeftShoulder;
+		const FKey Second=RightFirst ? EKeys::Gamepad_LeftShoulder : EKeys::Gamepad_RightShoulder;
+		Key(First); Key(Second);
+		TestTrue(TEXT("Overlapping turn bumpers never open the tool wheel"),Pawn->ControllerMode==ESimCopterControllerMode::None);
+		Key(First,IE_Released);
+		const auto InputAfterSwitch=Pawn->BuildFlightInputs();
+		TestTrue(TEXT("Remaining bumper turns immediately after direction change"),RightFirst ? InputAfterSwitch.bTurnLeftKey : InputAfterSwitch.bTurnRightKey);
+		Key(Second,IE_Released);
+	}
 	World->DestroyWorld(false);
 
 	// The hint must retain every keyboard alternative as well as the controller shortcut.
@@ -121,9 +180,9 @@ bool FSimCopterControllerContextsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Hint includes a second live climb binding"), Hint.Contains(EKeys::F10.GetDisplayName().ToString()));
 	TestFalse(TEXT("Keyboard hint excludes controller A shortcut"), Hint.Contains(TEXT(" / A")));
 	const FString PadHint = ASimCopterHelicopterPawn::GetCollectiveUpKeyDisplayName(true).ToString();
-	TestTrue(TEXT("Controller hint includes A"), PadHint.Contains(TEXT("A")));
+	TestEqual(TEXT("Controller climb hint names the trigger, not tool A"), PadHint, FString(TEXT("RT")));
 	TestFalse(TEXT("Controller hint excludes keyboard alternatives"), PadHint.Contains(TEXT("F10")));
-	TestEqual(TEXT("Controller exit hint names R3+B"), ASimCopterHelicopterPawn::GetExitHelicopterKeyDisplayName(true).ToString(), FString(TEXT("R3+B")));
+	TestEqual(TEXT("Controller exit hint names Y"), ASimCopterHelicopterPawn::GetExitHelicopterKeyDisplayName(true).ToString(), FString(TEXT("Y")));
 	Settings->RemoveAxisMapping(Extra, false);
 	return true;
 }

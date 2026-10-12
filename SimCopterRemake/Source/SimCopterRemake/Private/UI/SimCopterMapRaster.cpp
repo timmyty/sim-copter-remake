@@ -278,6 +278,26 @@ void FSimCopterMapRaster::Render(const FSimCopterMapFrame& Frame, const FSimCopt
 	DrawHeadingNeedle(Frame);
 	DrawOtherMissions(Frame, Settings);
 	DrawServiceBlips(Frame, Settings);
+	// Small permanent site markers grow slightly when recovery work activates their light rings.
+	// Pin distant sites along their true bearing and identify J(unkyard) / H(arbor).
+	for (const auto& Waypoint:Frame.RecoveryWaypoints)
+	{
+		if (!Settings.bShowMissionBlips && !Waypoint.bCargoDestination) continue;
+		const FVector2D Delta(-(Waypoint.Tile.Y-Frame.CentreTile.Y)*Scale,-(Waypoint.Tile.X-Frame.CentreTile.X)*Scale);
+		const double Fit=FMath::Max(1.0,FMath::Max(FMath::Abs(Delta.X)/(ViewTilesX/2-8.0),FMath::Abs(Delta.Y)/(ViewTilesY/2-8.0)));
+		const int32 X=CentreX+FMath::RoundToInt(Delta.X/Fit), Y=CentreY+FMath::RoundToInt(Delta.Y/Fit);
+		const uint8 Ink=Waypoint.bHarbor ? Color::PoliceStation : Color::Heading;
+		const int32 Radius=Waypoint.bActive || Waypoint.bCargoDestination ? 5 : 3;
+		if (Waypoint.bCargoDestination) DrawLineFrom(CentreX,CentreY,X-CentreX,Y-CentreY,Ink);
+		for (int32 DY=-Radius;DY<=Radius;++DY) for (int32 DX=-Radius;DX<=Radius;++DX)
+		{
+			const int32 D=DX*DX+DY*DY;
+			if (D<=Radius*Radius+2) SetPixel(X+DX,Y+DY,D>=(Radius-1)*(Radius-1) ? Ink : Color::LabelBackground);
+		}
+		const char* Glyph=Waypoint.bHarbor ? "101111101" : "111001110";
+		for (int32 Row=0;Row<3;++Row) for (int32 Col=0;Col<3;++Col)
+			if (Glyph[Row*3+Col]=='1') SetPixel(X+Col-1,Y+Row-1,Color::LabelText);
+	}
 }
 
 void FSimCopterMapRaster::RasteriseTiles(const FSimCopterMapFrame& Frame, const FSimCopterMapSettings& Settings)
@@ -570,6 +590,15 @@ void FSimCopterMapRaster::BlitIconAt(
 
 void FSimCopterMapRaster::DrawMissionLines(const FSimCopterMapFrame& Frame, const FSimCopterMapSettings& Settings)
 {
+	// Custody delivery takes priority over the old crime-location line and stays
+	// visible independently of the optional mission/service blips.
+	if (Frame.PoliceDestination.X != INDEX_NONE)
+	{
+		const int32 Scale = 1 << FMath::Clamp(Settings.Zoom, 0, MaxZoom);
+		DrawRay(-(Frame.PoliceDestination.Y-Frame.CentreTile.Y)*Scale,
+			-(Frame.PoliceDestination.X-Frame.CentreTile.X)*Scale, Color::PoliceStation, INDEX_NONE, nullptr, false);
+		return;
+	}
 	// SCHOOK: MapSelectedMissionLines 0x004a3820. With nothing selected (DAT_0057f9d8 == 0) the
 	// needle is all it draws. Otherwise two fading lines and NO icons (both FUN_004a3a00 calls pass
 	// icon -1):

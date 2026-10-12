@@ -335,6 +335,10 @@ struct SIMCOPTERREMAKE_API FSimCopterFlightModel
 	// dominant term in how long the helicopter takes to get moving.
 	int32 SpeedChaseFrameSeconds = OriginalFrameSeconds;
 
+	// Remake travel tuning, applied to powered horizontal velocity without changing the
+	// original attitude/speed chase. The gameplay pawn supplies 1.3; reference tests use 1.
+	int32 BaseTravelScale = SimCopterFixed::One;
+
 	// Pure presentation: how much faster than the original's 39.1-degrees-per-0.05 s
 	// strobe the blades are drawn (16.16 multiplier). Nothing in the simulation reads
 	// the blade angle, and this is deliberately independent of the two above so that

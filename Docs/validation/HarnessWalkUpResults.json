@@ -1,0 +1,89 @@
+{
+  "Date": "2026-10-11",
+  "Change": "Automatic walk-up loading of a carried patient onto the rescue harness",
+  "BaselineFailedAssertions": [
+    "Expected 'Walking up automatically loads the same patient on the harness' to be true.",
+    "Expected 'Automatic walk-up releases the pilot's carry reference' to be false."
+  ],
+  "EditorBuild": "Succeeded",
+  "ShippingBuild": "Succeeded",
+  "Passed": 13,
+  "Failed": 0,
+  "Warnings": 0,
+  "Skipped": 0,
+  "Tests": [
+    {
+      "Name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Missions.ParamedicCabinHandoff",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RemoteRecovery.SaveAndObstruction",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.PassengerIdentity",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.RuntimeRegression",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.ShiftRun",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.RescuePilot.ShoulderAim",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Safety.ParkedAircraftTraffic",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Winch.CommandResolution",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Winch.Constants",
+      "State": "Success"
+    },
+    {
+      "Name": "SimCopter.Winch.RopeEndExchange",
+      "State": "Success"
+    }
+  ],
+  "Source": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootPawn.cpp",
+      "SHA256": "B972912C21C292050CDAFBA5D8D8EFD2AA3FBF644D5892B03B4B61DD41899F9C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "SHA256": "F336FD18FF323AD0327A592EAE99D5F21BF04160F782425FF8D5F1A65ECB3B6B"
+    }
+  ],
+  "InstalledExecutableSHA256": "47AEEF77C062811C1D06BF4380BE80BD5AA16A21B85749665D9B66F0F0929C42",
+  "PreviousExecutableSHA256": "FA20B308C9708D39440C662F7DAB9058682414CCDFAC862ADD4AE0658BE4F1A1",
+  "Evidence": "Docs/scratchpad/harness-walk-up/",
+  "Limitations": [
+    "Headless actor tests; no interactive city playtest.",
+    "Focused suite, not a full-suite rerun.",
+    "Existing engine deprecation and newer MSVC toolchain build warnings remain."
+  ],
+  "AssetsChanged": false,
+  "PublicationCheckoutChanged": false,
+  "Pushed": false
+}

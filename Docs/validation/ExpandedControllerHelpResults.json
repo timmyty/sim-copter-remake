@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-11",
+  "summary": "Expanded help, Y/X/A action mapping, persistent wheel selection, R3/L3 minimap chords, and custody crime timer fix.",
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/expanded-controller-help/build-editor-final-chords.log"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/expanded-controller-help/build-shipping-final-chords.log"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/expanded-controller-help/build-development-final-chords.log"
+    }
+  },
+  "headless": {
+    "passed": 95,
+    "clean": 93,
+    "withWarnings": 2,
+    "failed": 0,
+    "report": "Docs/scratchpad/expanded-controller-help/tests-final-chords/index.json",
+    "warnings": [
+      {
+        "test": "SimCopter.Missions.PlaneDeckRescue",
+        "count": 11
+      },
+      {
+        "test": "SimCopter.Missions.SafePassengerLanding",
+        "count": 12
+      }
+    ]
+  },
+  "offscreen": {
+    "passed": 2,
+    "failed": 0,
+    "report": "Docs/scratchpad/expanded-controller-help/help-render-final/index.json",
+    "previews": "Docs/scratchpad/expanded-controller-help/previews",
+    "inspected": [
+      "controller-help-0.png",
+      "controller-help-3.png",
+      "controller-help-4.png",
+      "controller-help-5.png",
+      "controller-tools.png",
+      "controller-dispatch.png"
+    ],
+    "layout": "1280x720 HUD, two columns when expanded lists exceed nine rows; no overlap with minimap or tool flap."
+  },
+  "crimeRegression": {
+    "beforeFix": "16 failed assertions across robber, arsonist, mugger and burglar lifecycle scenarios; warnings and penalties continued while held. One additional map fixture failure was corrected by providing the mission creation world hook.",
+    "report": "Docs/scratchpad/expanded-controller-help/tests-chords-prefixed-unrestricted/index.json",
+    "original": "FUN_004a73e0; export copied to Docs/scratchpad/expanded-controller-help/crime-lifecycle-original.txt",
+    "fix": "World custody query resets/suspends crime warning timer without posting completion. Escape resumes normal crime timing. Police delivery retains +300 points/+500 dollars. Existing restrained AI stays suspended.",
+    "save": "Actual cuffed passenger state round-trip and reference relinking covered."
+  },
+  "controls": {
+    "Y": "Enter/exit helicopter; walk-up boarding retained.",
+    "X": "Open Tools, switch Tools/Dispatch. Remote Taser/Fly Helicopter and Passengers are selectable Tools entries.",
+    "A": "Use equipped tool; confirms retained wheel choice without firing or climbing on the same press.",
+    "L3": "Click-release toggles Sprint in helicopters/on foot; map/help chords do not change sprint.",
+    "R3+Dpad": "Up/down minimap zoom; left/right previous/next mission.",
+    "L3+Dpad": "Up toggles mission markers; down toggles service vehicle markers.",
+    "wheel": "Neutral stick retains last valid choice; newly opened menu has no selection; B cancels."
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-12T02:53:21.8623714Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "2AB436EAFDC84B2FB51FDE584E69ED3772881E2977FE0C2DF423E44B3CCCA7A5",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\expanded-controller-help/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "B089A656E18DD57DE17B8F4B457150E2FDAB44F29BCF450FB65C127D21C03DF5"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "B6FE9EFBAE81A31C19DC0D9FDDDCBD6AA14F1ABFF0637FDC93BBD51C0B82BA4F",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\expanded-controller-help/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "7ED4E63F9BA72E9D817E4DE0AB5D67836769AB77EC5CDC03F44DDE38ABB20C98"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "594429A31C0645A9063649746C4BC0B3F5B0114D2ADE7CE606F5EAE2693D7E13",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\expanded-controller-help/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "06DEFDB5E4D094B159EE77EC9789CDB694A1BB1380FDD52395AA14262760B40E"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "0933798EA12D1C6500902CEBA7E2AC23FA61C7C58A0A5F9BBEE0C13386E4AC90",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\expanded-controller-help/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "BA5A30EAEE4920CED5C818D752D02AC8EA3954E2FFF37499CFBBEFF8E809304A"
+      }
+    ],
+    "HeadlessPassed": 95,
+    "OffscreenPassed": 2,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "interactiveGameplayChecked": false,
+  "gpuCrashRootCauseResolved": false,
+  "gpuInvestigation": "Separate existing diagnostic configuration retained; this update does not claim a GPU crash fix.",
+  "publicationCheckoutChanged": false
+}

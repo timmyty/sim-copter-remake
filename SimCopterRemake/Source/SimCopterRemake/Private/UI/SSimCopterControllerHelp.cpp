@@ -3,6 +3,7 @@
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterRegistry.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Ground/SimCopterOnFootPawn.h"
@@ -24,6 +25,9 @@ FState ReadState(APawn* Pawn)
 	if (!Pawn) return State;
 	const auto* PC = Cast<ASimCopterPlayerController>(Pawn->GetController());
 	State.bExpanded = PC && PC->IsControllerHelpExpanded();
+	State.bSprintEnabled = PC && PC->IsControllerSprintEnabled();
+	const auto* Aircraft = Cast<ASimCopterHelicopterPawn>(Pawn);
+	State.bSprintAvailable = (Aircraft && !Aircraft->IsFixedWingAircraft()) || Pawn->IsA<ASimCopterOnFootPawn>();
 	if (!State.bExpanded) return State;
 	if (const auto* Helicopter = Cast<ASimCopterHelicopterPawn>(Pawn))
 	{
@@ -36,8 +40,7 @@ FState ReadState(APawn* Pawn)
 		State.Message = SimCopterHelicopterRegistry::GetMegaphoneMessageName(Helicopter->GetSelectedMegaphoneMessage());
 		switch (Tool)
 		{
-		case ESimCopterHelicopterTool::TowClamp: State.ToolAction = TEXT("Deploy / grab tow clamp"); State.bRope=true; break;
-		case ESimCopterHelicopterTool::CaptureCage: State.ToolAction = TEXT("Deploy / close cage"); State.bRope=true; break;
+		case ESimCopterHelicopterTool::CaptureCage: State.ToolAction = TEXT("Deploy cage / auto capture"); State.bRope=true; break;
 		case ESimCopterHelicopterTool::WaterBucket: State.ToolAction = TEXT("Dump water bucket"); break;
 		case ESimCopterHelicopterTool::WaterCannon: State.ToolAction = TEXT("Hold to spray water"); break;
 		case ESimCopterHelicopterTool::TearGas: State.ToolAction = TEXT("Fire tear gas"); break;
@@ -53,6 +56,7 @@ FState ReadState(APawn* Pawn)
 		case ESimCopterControllerMode::PassengerConfirm: State.Context = EContext::ConfirmPassenger; break;
 		default: State.Context = Helicopter->IsControllerCameraAdjustHeld() ? EContext::Camera : EContext::Flight; break;
 		}
+		if (Helicopter->GetControllerMode() == ESimCopterControllerMode::None && Helicopter->GetAirOperations()->IsRemoteTaserActive()) State.Context = EContext::RemoteTaser;
 	}
 	else if (const auto* OnFoot = Cast<ASimCopterOnFootPawn>(Pawn))
 	{
@@ -117,10 +121,10 @@ void SSimCopterControllerHelp::Refresh()
 	if (Layout == PreviousLayout) return;
 	PreviousLayout = MoveTemp(Layout);
 	Rows->ClearChildren();
-	for (const FPrompt& Prompt : Prompts)
+	const auto MakeRow = [this, &Prompts](const FPrompt& Prompt) -> TSharedRef<SWidget>
 	{
-		const bool bToggle = Prompt.Icon == TEXT("l3");
-		Rows->AddSlot().AutoHeight().Padding(0, bToggle && Prompts.Num() > 1 ? 6 * Scale : 0)
+		const bool bToggle = Prompt.Icon == TEXT("l3") && !Prompt.Label.StartsWith(TEXT("+ D-pad"));
+		return SNew(SBox).Padding(FMargin(0, bToggle && Prompts.Num() > 1 ? 6 * Scale : 0))
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
@@ -135,7 +139,23 @@ void SSimCopterControllerHelp::Refresh()
 				.ColorAndOpacity(bToggle ? FLinearColor(1, 0.83f, 0.42f) : FLinearColor::White)
 			]
 		];
+	};
+	// Longer expanded lists grow sideways so the flight basics still fit above the map.
+	if (Prompts.Num() > 9)
+	{
+		TSharedRef<SVerticalBox> Left = SNew(SVerticalBox);
+		TSharedRef<SVerticalBox> Right = SNew(SVerticalBox);
+		const int32 Split = (Prompts.Num() + 1) / 2;
+		for (int32 Index = 0; Index < Prompts.Num(); ++Index)
+			(Index < Split ? Left : Right)->AddSlot().AutoHeight()[MakeRow(Prompts[Index])];
+		Rows->AddSlot().AutoHeight()
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth()[Left]
+			+ SHorizontalBox::Slot().AutoWidth().Padding(20 * Scale, 0, 0, 0)[Right]
+		];
 	}
+	else for (const FPrompt& Prompt : Prompts) Rows->AddSlot().AutoHeight()[MakeRow(Prompt)];
 }
 
 void SSimCopterControllerHelp::Tick(const FGeometry& Geometry, double Time, float Delta)

@@ -608,6 +608,14 @@ void FSimCopterFlightModel::StepVelocity(int32 Dt, const FSimCopterFlightInputs&
 	const int32 SlideVel = Mul(SlideSmoothed, SlideVelocityScale);
 	VelX = Mul(FwdX, Speed) - Mul(FwdZ, SlideVel);
 	VelZ = Mul(FwdZ, Speed) + Mul(FwdX, SlideVel);
+	// User-requested normal helicopter pacing. Turbo retains its original absolute speed;
+	// ordinary Shift is an additional multiplier over this base. Never feed either back
+	// into ForwardSpeed, or holding a direction would compound the increase every frame.
+	if (!Inputs.bTurbo && State == ESimCopterFlightState::Flying && IsRotorLifting() && Fuel > 0)
+	{
+		VelX = Mul(VelX, BaseTravelScale);
+		VelZ = Mul(VelZ, BaseTravelScale);
+	}
 	// Scale the complete horizontal travel vector once; never compound this with x10 turbo
 	// or feed it back into ForwardSpeed, which would accelerate exponentially while held.
 	if (bTravelBoostActive)

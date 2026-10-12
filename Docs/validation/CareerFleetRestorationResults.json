@@ -1,0 +1,147 @@
+{
+  "RecordedAtUtc": "2026-10-12T04:18:35.6716271Z",
+  "ReportedAircraft": "Dauphin (corrected from Bell 212)",
+  "RootCause": "Ownership persists across city graduation, but only the active aircraft was recreated. Old saves can retain ownership without parked-aircraft records.",
+  "Changes": [
+    "Restore all missing owned helicopter types after city transfer or saved-aircraft restoration.",
+    "Preserve existing aircraft runtime state, positions, player selection and money.",
+    "Copy fleet equipment and source tear gas rounds; exclude sold types and support/plane actors.",
+    "Use the four corner pads as overflow after eight hangar-adjacent pads.",
+    "Includes pending pilot-level automatic landing fix without additional steering behavior changes."
+  ],
+  "BeforeFix": {
+    "FailedAssertions": 5,
+    "Report": "Docs/scratchpad/career-fleet-transfer/reproduction/index.json"
+  },
+  "Builds": {
+    "Shipping": "Docs/scratchpad/career-fleet-transfer/build-shipping-final.log",
+    "Result": "Succeeded",
+    "Development": "Docs/scratchpad/career-fleet-transfer/build-development-final.log",
+    "Editor": "Docs/scratchpad/career-fleet-transfer/build-editor-final.log"
+  },
+  "Tests": {
+    "Passed": 55,
+    "Report": "Docs/scratchpad/career-fleet-transfer/tests-final/index.json",
+    "Failed": 0,
+    "Warnings": 1,
+    "WarningDetail": "Existing HangarPurchaseParking fixture: three missing-world-context destruction warnings."
+  },
+  "SourceFiles": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterGameMode.h",
+      "SHA256": "C5CD96EE83425851EDEB50C8026CCC6127C2E7D25FCA8480540828D8CE9A5E45",
+      "PreviousSHA256": "A084572EA32CD598B9BB25FDA84A723076EC3100D3EF7287531CC9C17463CC84"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterCareerSubsystem.h",
+      "SHA256": "93CB1BFFF35E495D37C19EA7FDFDBCBDAE869BCE519AFC4D425C9DD653428BD5",
+      "PreviousSHA256": "9DAADEA39AE7CD5D505EF9CF6A159787382905A2E378DCFC4CE87369BF1E0D12"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterSaveSubsystem.h",
+      "SHA256": "A2FA68C06588F5C882AC3B7F339572A2D84D3D1F8A2BDC279E5A32844E547470",
+      "PreviousSHA256": "CD19E0E47F1ED937687991536812A281D76F15E8F349D6E4724763365D40A603"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterGameMode.cpp",
+      "SHA256": "0C4379C046CA856689D34370789E00DE275C7CBEE84CF7B9B374105045714747",
+      "PreviousSHA256": "CA5598E8C10B3D1957C2E82194511CB59F2691D1376F0B9429103AEBD000DE97"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterParking.h",
+      "SHA256": "63FC82B6C4CDB1433F994FB8DDF8080EAEFA262EC558E55475AE7063EAE36EBA",
+      "PreviousSHA256": "98507DD856F9736ACE848B77AF32ABB3BFD685F097E484758933FB8F4574C788"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterParking.cpp",
+      "SHA256": "E5374F3C6551D7A95BE9B14F69FEF02011971DD511F70FF47DB97E7E4E0D89DC",
+      "PreviousSHA256": "1BA03C7E089D0A36B88FD4F043D00A0EF2DFCA8C715B760FA63494FDCCBDFF15"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCareerAircraftTransferTests.cpp",
+      "SHA256": "8203BEF0519BECD55AFD2788772BF20EAD19E25AE64E54116EC65358590485EF",
+      "PreviousSHA256": "AE83B92B58392AC7FE0D00DAC53320B2F389A9593B87724D999B9F38BBD3CE4F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystemActor.h",
+      "SHA256": "31028801C6F8A2BDB9D8E18784BD6EC5EDD40E62C6D7A470D01C43B2C78E17C5",
+      "PreviousSHA256": "9433206DCDE59EAF8B8115AAEF87894F0C65E679B627718CA4496C507ECFBF46"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h",
+      "SHA256": "002A15B0EAE738D7907EE841A8C26CAE305B7EFEC4AD487CD683AB45A7C3FF4D",
+      "PreviousSHA256": "89DC885B691FC15789E6BB2BCB2448A67CC84F6B3A121F56EC7B2D69EEC30A86"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPilotRecovery.cpp",
+      "SHA256": "7D31E58374E44E8DBC786CD73B2BD43B2F3B590E979AB8123BEE198CA5F55759",
+      "PreviousSHA256": "0C2F447E007C19A257DA5DAC6407A517AA69EEB8687BAEA6E127BC407D302C6A"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "SHA256": "DD5560EABAC77BD3AA3BC8DDFDD1CD54301A3B56D7410F56E97836C35B31EF6A",
+      "PreviousSHA256": "58D51ADA18A9AB6C569200845C78EE8AB64988E8597CBFF366923C2C6354473D"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterSteeringResponseTests.cpp",
+      "SHA256": "B6D563FA61B86ACE0DAF64759FB88FC4627F2077D96870CBFE386DE030506B0B",
+      "PreviousSHA256": null
+    }
+  ],
+  "Binaries": [
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+      "SHA256": "98693EADD65063FCEEC757BAB19E4B2A768582980922396BCB25E249B068D2D4"
+    },
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+      "SHA256": "E760689EC3FB63A5B7D15396050B3AACDF054C0F7EE0594D3AF58D0BCFCE4DAD"
+    },
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+      "SHA256": "67B417BF61DBE96CD4D17EC1724DDE2378B8F2DD738566930113714B75CD013A"
+    },
+    {
+      "Path": "SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+      "SHA256": "EBACF26914F3B14D11852F9F672E1C790013C099BC3E4EE435A47B08E58170EF"
+    }
+  ],
+  "InstallationStatus": "Installed with the combined fleet/landing update after user saved and closed the game; four executable/symbol files backed up and hash-verified.",
+  "Installer": "Docs/scratchpad/career-fleet-transfer/install-update.ps1",
+  "InteractiveGameplayChecked": false,
+  "PhysicalControllerChecked": false,
+  "PublicationCheckoutChanged": false,
+  "Installation": {
+    "InstalledAtUtc": "2026-10-12T04:19:24.3536922Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "98693EADD65063FCEEC757BAB19E4B2A768582980922396BCB25E249B068D2D4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "55C5C06A0C3CA78B577D720EAB7C05316AD4B2CB753520C9C3046650409DCB65"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "E760689EC3FB63A5B7D15396050B3AACDF054C0F7EE0594D3AF58D0BCFCE4DAD",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "D99B3FEBFF21DEBE48194FC0550381557ADB0C984A4BE209E72444B23F6EDEC1"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "67B417BF61DBE96CD4D17EC1724DDE2378B8F2DD738566930113714B75CD013A",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "2B33F53397AA330DECADAEE61EC4AE7F8CCBA385DCABD30A61A7909CAA6DD8E6"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "EBACF26914F3B14D11852F9F672E1C790013C099BC3E4EE435A47B08E58170EF",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\career-fleet-transfer/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "8E60ACD8A87F9344858D0EE99FC05DC9F5BF4DBAA6410DC69FE08A34A6235B36"
+      }
+    ],
+    "HeadlessPassed": 55,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  }
+}

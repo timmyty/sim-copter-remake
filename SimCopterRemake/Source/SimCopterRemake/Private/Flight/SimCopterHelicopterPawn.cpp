@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterHelicopterParking.h"
 #include "Flight/SimCopterPlaneParts.h"
 #include "Game/SimCopterCheats.h"
 #include "Flight/SimCopterAirOperations.h"
@@ -547,6 +548,7 @@ bool CameraModeShowsCrosshair(ESimCopterCameraMode Mode, bool bIsApache)
 
 ASimCopterHelicopterPawn::ASimCopterHelicopterPawn()
 {
+	FlightModel.BaseTravelScale = SimCopterFixed::One * 13 / 10;
 	AirOperations = CreateDefaultSubobject<USimCopterAirOperationsComponent>(TEXT("AirOperations"));
 	PrimaryActorTick.bCanEverTick = true;
 	AutoPossessPlayer = EAutoReceiveInput::Disabled;
@@ -906,7 +908,7 @@ void ASimCopterHelicopterPawn::BeginPlay()
 
 	// Career layer (Phase 7) will own this; for now the map seeds it and debug grants overlay it.
 	EquipmentState.CareerEquipmentMask =
-		StartingCareerEquipmentMask & SimCopterHelicopterRegistry::AllCareerEquipmentBits;
+		SimCopterHelicopterRegistry::NormalizeEquipmentMask(StartingCareerEquipmentMask);
 	EquipmentState.CareerTearGasRounds = FMath::Clamp(
 		StartingTearGasRounds, 0, SimCopterHelicopterRegistry::TearGasCapacity);
 	EquipmentState.ClearDebugOverlay();
@@ -1044,7 +1046,6 @@ void ASimCopterHelicopterPawn::SetupPlayerInputComponent(UInputComponent* Player
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	PlayerInputComponent->BindKey(EKeys::N, IE_Pressed, this, &ASimCopterHelicopterPawn::ToggleRemoteTaser);
-	PlayerInputComponent->BindKey(EKeys::T, IE_Pressed, this, &ASimCopterHelicopterPawn::SelectTowClamp);
 	PlayerInputComponent->BindKey(EKeys::V, IE_Pressed, this, &ASimCopterHelicopterPawn::SelectCaptureCage);
 
 	PlayerInputComponent->BindAxis(TEXT("SimCopterPitch"), this, &ASimCopterHelicopterPawn::MovePitch);
@@ -1089,8 +1090,7 @@ void ASimCopterHelicopterPawn::SetupPlayerInputComponent(UInputComponent* Player
 	PlayerInputComponent->BindKey(EKeys::Equals, IE_Pressed, this, &ASimCopterHelicopterPawn::MapZoomIn);
 	PlayerInputComponent->BindKey(EKeys::Hyphen, IE_Pressed, this, &ASimCopterHelicopterPawn::MapZoomOut);
 
-	// Controller contexts are direct key bindings rather than static action mappings: LB/LT/R3
-	// deliberately change what A/X/B, the right stick, RB/RT, and the D-pad mean.
+	// A performs/confirms, X opens options, Y enters/exits. Menu contexts own the face buttons.
 	PlayerInputComponent->BindKey(EKeys::Gamepad_RightShoulder, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerRightBumperPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_RightShoulder, IE_Released, this, &ASimCopterHelicopterPawn::ControllerRightBumperReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerLeftBumperPressed);
@@ -1100,13 +1100,12 @@ void ASimCopterHelicopterPawn::SetupPlayerInputComponent(UInputComponent* Player
 
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerPrimaryPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Released, this, &ASimCopterHelicopterPawn::ControllerPrimaryReleased);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerPassengerPressed);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Released, this, &ASimCopterHelicopterPawn::StopPrimaryToolUse);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerOptionsPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Right, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerCancelPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Right, IE_Released, this, &ASimCopterHelicopterPawn::ControllerCancelReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Top, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerEnterExitPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_Special_Left, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerBackPressed);
-	// L3 is owned by the player controller: show/hide contextual help.
+	// L3 is owned by the player controller: Sprint Mode, or R3+L3 for help.
 
 	PlayerInputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerDPadUpPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Released, this, &ASimCopterHelicopterPawn::ControllerDPadUpReleased);
@@ -2168,7 +2167,7 @@ void ASimCopterHelicopterPawn::RestoreSavedCareerState(
 	SwitchHelicopterModel(TypeIndex);
 
 	EquipmentState.CareerEquipmentMask =
-		CareerEquipmentMask & SimCopterHelicopterRegistry::AllCareerEquipmentBits;
+		SimCopterHelicopterRegistry::NormalizeEquipmentMask(CareerEquipmentMask);
 	EquipmentState.CareerTearGasRounds = FMath::Clamp(
 		CareerTearGasRounds, 0, SimCopterHelicopterRegistry::TearGasCapacity);
 	EquipmentState.ClearDebugOverlay();
@@ -2206,7 +2205,7 @@ void ASimCopterHelicopterPawn::ApplyCareerCityTransfer(
 	SwitchHelicopterModel(TypeIndex);
 
 	EquipmentState.CareerEquipmentMask =
-		CareerEquipmentMask & SimCopterHelicopterRegistry::AllCareerEquipmentBits;
+		SimCopterHelicopterRegistry::NormalizeEquipmentMask(CareerEquipmentMask);
 	EquipmentState.CareerTearGasRounds = FMath::Clamp(
 		CareerTearGasRounds, 0, SimCopterHelicopterRegistry::TearGasCapacity);
 	EquipmentState.ClearDebugOverlay();
@@ -2363,6 +2362,7 @@ bool ASimCopterHelicopterPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data
 	uint8 Megaphone = 0;
 	Reader << Tool << Megaphone << ToolCooldownSeconds;
 	Reader << EquipmentState.CareerEquipmentMask << EquipmentState.CareerTearGasRounds;
+	EquipmentState.CareerEquipmentMask=SimCopterHelicopterRegistry::NormalizeEquipmentMask(EquipmentState.CareerEquipmentMask);
 	Reader << MegaphoneVoiceNextIndices;
 	SerializeArchiveBool(Reader, bWaterCannonInstalled);
 
@@ -2436,6 +2436,7 @@ bool ASimCopterHelicopterPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data
 
 	CameraMode = static_cast<ESimCopterCameraMode>(SavedCameraMode);
 	SelectedTool = static_cast<ESimCopterHelicopterTool>(Tool);
+	if (SelectedTool==ESimCopterHelicopterTool::TowClamp) SelectedTool=ESimCopterHelicopterTool::CaptureCage;
 	SelectedMegaphoneMessage = static_cast<ESimCopterMegaphoneMessage>(Megaphone);
 	WinchState.RopeEnd = static_cast<SimCopterWinch::ERopeEnd>(RopeEnd);
 	SpotlightTarget.HitActor.Reset();
@@ -2709,7 +2710,16 @@ void ASimCopterHelicopterPawn::EnterHelicopter(APlayerController* PlayerControll
 	PlayerController->Possess(this);
 	if (IsApacheHelicopter() && GetGameInstance())
 		if (auto* Career = GetGameInstance()->GetSubsystem<USimCopterCareerSubsystem>())
+		{
+			// The discovered aircraft joins the same purchased equipment set as a hangar delivery.
+			if (!Career->OwnsHelicopter(2))
+			{
+				const int32 Mask=SimCopterHelicopterParking::GetFleetEquipmentMask(this,Career);
+				for (const auto& Item:SimCopterHelicopterRegistry::GetEquipment())
+					SetCareerEquipmentOwned(Item.Tool,(Mask & Item.CareerBit)!=0);
+			}
 			Career->SetHelicopterOwned(2, true);
+		}
 	// Sound slots 0x25/0x26 are DOROPN/DORCLS in FUN_00424b70. GetHelicopterAudio deliberately
 	// rejects aircraft the player is not flying, so play only after Possess has set the original's
 	// player-helicopter flag equivalent. A saved-game restore also reaches this function with a
@@ -2777,8 +2787,9 @@ void ASimCopterHelicopterPawn::RestoreGameViewportFocus()
 
 void ASimCopterHelicopterPawn::ResetTransientInputState()
 {
+	if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->ResetControllerSprint();
 	bBumperLeftHeld = bBumperRightHeld = false;
-	CargoKeyboardCableInput=0; bBumperChordLatched=false;
+	CargoKeyboardCableInput=0;
 	AirOperations->SetCableInput(0);
 	AirOperations->SetCagePanelInput(0);
 	// Everything here is "what is the player pressing right now", none of it is simulation state,
@@ -3490,6 +3501,24 @@ void ASimCopterHelicopterPawn::RemoveMapWidget()
 	MapWidget.Reset();
 }
 
+void ASimCopterHelicopterPawn::HandleControllerMapShortcut(const FKey Key, const bool bMarkerVisibility)
+{
+	if (!MapPanel.IsValid()) return;
+	using SimCopterMap::EButton;
+	if (bMarkerVisibility)
+	{
+		if (Key == EKeys::Gamepad_DPad_Up) MapPanel->ActivateButton(EButton::ToggleMissionBlips);
+		else if (Key == EKeys::Gamepad_DPad_Down) MapPanel->ActivateButton(EButton::ToggleServiceBlips);
+	}
+	else
+	{
+		if (Key == EKeys::Gamepad_DPad_Up) MapPanel->ActivateButton(EButton::ZoomIn);
+		else if (Key == EKeys::Gamepad_DPad_Down) MapPanel->ActivateButton(EButton::ZoomOut);
+		else if (Key == EKeys::Gamepad_DPad_Left) MapPanel->ActivateButton(EButton::PreviousMission);
+		else if (Key == EKeys::Gamepad_DPad_Right) MapPanel->ActivateButton(EButton::NextMission);
+	}
+}
+
 void ASimCopterHelicopterPawn::MapZoomIn()
 {
 	if (MapPanel.IsValid())
@@ -3714,7 +3743,7 @@ bool ASimCopterHelicopterPawn::ShouldShowTakeoffPrompt(
 FText ASimCopterHelicopterPawn::GetCollectiveUpKeyDisplayName(const bool bGamepad)
 {
 	// List every live positive binding, not just the first keyboard key. Controller collective
-	// has its own routing; RT's remappable axis and the fixed A shortcut must be named too.
+	// has its own routing; RT's remappable axis must be named too. A belongs to tools.
 	TArray<FString> Names;
 	if (const UInputSettings* Settings = UInputSettings::GetInputSettings())
 	{
@@ -3727,7 +3756,6 @@ FText ASimCopterHelicopterPawn::GetCollectiveUpKeyDisplayName(const bool bGamepa
 			}
 		}
 	}
-	if (bGamepad) Names.AddUnique(TEXT("A"));
 	if (Names.IsEmpty()) return NSLOCTEXT("SimCopter", "NoClimbBinding", "[climb unbound]");
 	return FText::FromString(FString::Join(Names, TEXT(" / ")));
 }
@@ -3750,7 +3778,7 @@ FText ASimCopterHelicopterPawn::GetExitHelicopterKeyDisplayName(const bool bGame
 			}
 		}
 	}
-	if (bGamepad) Names.AddUnique(TEXT("R3+B"));
+	if (bGamepad) Names.AddUnique(TEXT("Y"));
 	if (Names.IsEmpty()) return NSLOCTEXT("SimCopter", "NoExitBinding", "[exit unbound]");
 	return FText::FromString(FString::Join(Names, TEXT(" / ")));
 }
@@ -4498,7 +4526,7 @@ void ASimCopterHelicopterPawn::ControllerLeftTrigger(float Value)
 
 void ASimCopterHelicopterPawn::ControllerRightTrigger(float Value)
 {
-	if(AirOperations->IsRemoteTaserActive() && Value>0.5f && ControllerRightTriggerInput<=0.5f) AirOperations->FireRemoteTaser();
+	if(AirOperations->IsRemoteTaserActive() && ControllerMode==ESimCopterControllerMode::None && Value>0.5f && ControllerRightTriggerInput<=0.5f) AirOperations->FireRemoteTaser();
 	ControllerRightTriggerInput = FMath::Clamp(Value, 0.0f, 1.0f);
 }
 
@@ -4514,6 +4542,7 @@ void ASimCopterHelicopterPawn::ControllerDispatchWheelPressed()
 void ASimCopterHelicopterPawn::DispatchControllerSelection()
 {
 	const auto Selection = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex);
+	if (Selection.ServiceIndex == SimCopterControllerInput::RecallAllServiceIndex) { ClearAllDispatchVehicles(); return; }
 	if (Selection.ServiceIndex >= 100) { RequestAirSupport(Selection.ServiceIndex == 101); return; }
 	if (Selection.ServiceIndex != INDEX_NONE)
 	{
@@ -4551,13 +4580,23 @@ void ASimCopterHelicopterPawn::ControllerToolWheelReleased()
 	}
 
 	UpdateControllerRadialSelection();
+	const bool bRemoteTaser = ControllerRadialIndex != INDEX_NONE && ControllerRadialIndex == GetControllerRemoteTaserSlot();
+	const bool bPassengers = ControllerRadialIndex != INDEX_NONE && ControllerRadialIndex == GetControllerPassengersSlot();
+	const bool bSelected = ControllerToolWheelTools.IsValidIndex(ControllerRadialIndex) || bRemoteTaser || bPassengers;
 	if (ControllerToolWheelTools.IsValidIndex(ControllerRadialIndex))
 	{
+		if (AirOperations->IsRemoteTaserActive()) ToggleRemoteTaser();
 		SetSelectedTool(ControllerToolWheelTools[ControllerRadialIndex]);
 	}
 	if (ControllerOverlayPanel.IsValid())
-		ControllerOverlayPanel->ReleaseRadial(false, ControllerToolWheelTools.IsValidIndex(ControllerRadialIndex) ? ControllerRadialIndex : INDEX_NONE);
+		ControllerOverlayPanel->ReleaseRadial(false, bSelected ? ControllerRadialIndex : INDEX_NONE);
 	ControllerMode = ESimCopterControllerMode::None;
+	if (bRemoteTaser) ToggleRemoteTaser();
+	else if (bPassengers)
+	{
+		NormalizeControllerPassengerSelection();
+		ControllerMode = ESimCopterControllerMode::PassengerSelect;
+	}
 	RefreshDashboardSeats();
 }
 
@@ -4593,7 +4632,7 @@ void ASimCopterHelicopterPawn::ControllerPrimaryPressed()
 		ControllerToolWheelReleased();
 		break;
 	default:
-		bControllerClimbHeld = true;
+		StartPrimaryToolUse();
 		break;
 	}
 }
@@ -4601,9 +4640,10 @@ void ASimCopterHelicopterPawn::ControllerPrimaryPressed()
 void ASimCopterHelicopterPawn::ControllerPrimaryReleased()
 {
 	bControllerClimbHeld = false;
+	StopPrimaryToolUse();
 }
 
-void ASimCopterHelicopterPawn::ControllerPassengerPressed()
+void ASimCopterHelicopterPawn::ControllerOptionsPressed()
 {
 	if (ControllerMode == ESimCopterControllerMode::None && bControllerCameraAdjustHeld)
 	{
@@ -4613,26 +4653,16 @@ void ASimCopterHelicopterPawn::ControllerPassengerPressed()
 
 	if (ControllerMode == ESimCopterControllerMode::DispatchWheel)
 	{
-		ClearAllDispatchVehicles(); CloseControllerMode();
+		ControllerToolWheelPressed();
 		return;
 	}
 	if (ControllerMode == ESimCopterControllerMode::ToolWheel)
 	{
-		CloseControllerMode();
-		NormalizeControllerPassengerSelection();
-		ControllerMode = ESimCopterControllerMode::PassengerSelect;
-		RefreshDashboardSeats();
-		return;
-	}
-	if (ControllerMode == ESimCopterControllerMode::PassengerSelect ||
-		ControllerMode == ESimCopterControllerMode::PassengerConfirm)
-	{
-		ControllerMode = ESimCopterControllerMode::None;
-		RefreshDashboardSeats();
+		ControllerDispatchWheelPressed();
 		return;
 	}
 
-	StartPrimaryToolUse();
+	ControllerToolWheelPressed();
 }
 
 void ASimCopterHelicopterPawn::ControllerCancelPressed()
@@ -4673,17 +4703,8 @@ void ASimCopterHelicopterPawn::ControllerCancelReleased()
 
 void ASimCopterHelicopterPawn::ControllerEnterExitPressed()
 {
-	if (bControllerCameraAdjustHeld && ControllerMode == ESimCopterControllerMode::None) { ToggleRemoteTaser(); return; }
-	if (ControllerMode == ESimCopterControllerMode::DispatchWheel)
-	{
-		ControllerToolWheelPressed();
-		return;
-	}
-	if (ControllerMode == ESimCopterControllerMode::ToolWheel) { ControllerDispatchWheelPressed(); return; }
-	if (ControllerMode == ESimCopterControllerMode::None)
-	{
-		ControllerToolWheelPressed();
-	}
+	CloseControllerMode();
+	Interact();
 }
 
 void ASimCopterHelicopterPawn::ControllerBackPressed()
@@ -4850,7 +4871,7 @@ void ASimCopterHelicopterPawn::UpdateControllerRadialSelection()
 	}
 	else if (ControllerMode == ESimCopterControllerMode::ToolWheel)
 	{
-		SlotCount = ControllerToolWheelTools.Num();
+		SlotCount = GetControllerToolWheelSlotCount();
 	}
 	else
 	{
@@ -4869,7 +4890,8 @@ void ASimCopterHelicopterPawn::UpdateControllerRadialSelection()
 	ControllerRadialIndex = NewIndex;
 	if (ControllerMode == ESimCopterControllerMode::DispatchWheel && NewIndex != INDEX_NONE)
 	{
-		SelectedDispatchService = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex).ServiceIndex;
+		const int32 Service = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex).ServiceIndex;
+		if (Service != SimCopterControllerInput::RecallAllServiceIndex) SelectedDispatchService = Service;
 	}
 }
 
@@ -5134,7 +5156,7 @@ bool ASimCopterHelicopterPawn::IsToolSelectable(ESimCopterHelicopterTool Tool) c
 	{
 		return GetModelCapabilityMask() != 0;
 	}
-	return Tool != ESimCopterHelicopterTool::Count;
+	return Tool != ESimCopterHelicopterTool::Count && Tool != ESimCopterHelicopterTool::TowClamp;
 }
 
 ESimCopterToolAvailability ASimCopterHelicopterPawn::GetToolAvailability(ESimCopterHelicopterTool Tool) const
@@ -5182,6 +5204,7 @@ FString ASimCopterHelicopterPawn::DescribeToolAvailability(ESimCopterHelicopterT
 
 void ASimCopterHelicopterPawn::SetSelectedTool(ESimCopterHelicopterTool Tool)
 {
+	if (Tool==ESimCopterHelicopterTool::TowClamp) Tool=ESimCopterHelicopterTool::CaptureCage;
 	if (Tool == ESimCopterHelicopterTool::Count)
 	{
 		return;
@@ -5253,6 +5276,8 @@ void ASimCopterHelicopterPawn::RecomputeActiveToolFallback()
 
 void ASimCopterHelicopterPawn::SetDebugToolGrant(ESimCopterHelicopterTool Tool, bool bGranted)
 {
+	if (Tool==ESimCopterHelicopterTool::TowClamp) Tool=ESimCopterHelicopterTool::CaptureCage;
+	EquipmentState.DebugGrantedEquipmentMask=SimCopterHelicopterRegistry::NormalizeEquipmentMask(EquipmentState.DebugGrantedEquipmentMask);
 	const int32 Bit = SimCopterHelicopterRegistry::GetToolCareerBit(Tool);
 	if (Bit == 0)
 	{
@@ -5282,6 +5307,8 @@ void ASimCopterHelicopterPawn::SetDebugToolGrant(ESimCopterHelicopterTool Tool, 
 
 void ASimCopterHelicopterPawn::SetCareerEquipmentOwned(ESimCopterHelicopterTool Tool, bool bOwned)
 {
+	if (Tool==ESimCopterHelicopterTool::TowClamp) Tool=ESimCopterHelicopterTool::CaptureCage;
+	EquipmentState.CareerEquipmentMask=SimCopterHelicopterRegistry::NormalizeEquipmentMask(EquipmentState.CareerEquipmentMask);
 	const int32 Bit = SimCopterHelicopterRegistry::GetToolCareerBit(Tool);
 	if (Bit == 0)
 	{
@@ -7449,12 +7476,14 @@ FSimCopterFlightInputs ASimCopterHelicopterPawn::BuildFlightInputs() const
 	const auto* PC = Cast<APlayerController>(GetController());
 	const bool bShiftHeld = PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
 	const auto* Cheats = SimCopterCheats::Get(this);
-	Inputs.bTurbo = bShiftHeld && Cheats && Cheats->bSuperpower;
-	Inputs.bTravelBoost = bShiftHeld && !Inputs.bTurbo;
+	const auto* SimPC = Cast<ASimCopterPlayerController>(PC);
+	const bool bSprintRequested = bShiftHeld || (SimPC && SimPC->IsControllerSprintEnabled() && !IsFixedWingAircraft());
+	Inputs.bTurbo = bSprintRequested && Cheats && Cheats->bSuperpower;
+	Inputs.bTravelBoost = bSprintRequested && !Inputs.bTurbo;
 	Inputs.bPitchForwardKey = PitchInput > KeyThreshold;
 	Inputs.bPitchBackKey = PitchInput < -KeyThreshold;
-	Inputs.bTurnRightKey = RollInput > KeyThreshold || (bBumperRightHeld && !bBumperLeftHeld && !bBumperChordLatched);
-	Inputs.bTurnLeftKey = RollInput < -KeyThreshold || (bBumperLeftHeld && !bBumperRightHeld && !bBumperChordLatched);
+	Inputs.bTurnRightKey = RollInput > KeyThreshold || (bBumperRightHeld && !bBumperLeftHeld);
+	Inputs.bTurnLeftKey = RollInput < -KeyThreshold || (bBumperLeftHeld && !bBumperRightHeld);
 	Inputs.bSlideRightKey = YawInput > KeyThreshold;
 	Inputs.bSlideLeftKey = YawInput < -KeyThreshold;
 	const bool bRadialOwnsRightStick =
@@ -7944,6 +7973,12 @@ void ASimCopterHelicopterPawn::ApplyCheckupOrder(const FSimCopterCheckupOrder& R
 		EquipmentState.CareerTearGasRounds =
 			FSimCopterCheckup::ApplyTearGas(Dollars, EquipmentState.CareerTearGasRounds);
 	}
+	// SCHOOK: CheckupApply 0x004385c0 -> CheckupCrew 0x004c1ea0. Teargas
+	// contributes one worker just like repair and fuel; zero/cancel orders do not.
+	const int32 ServiceCount = int32(Order.DamageDollars > 0) + int32(Order.FuelDollars > 0) + int32(Order.TearGasRounds > 0);
+	if (ServiceCount > 0)
+		if (auto* Traffic = Cast<ASimCopterTrafficSystemActor>(UGameplayStatics::GetActorOfClass(GetWorld(),ASimCopterTrafficSystemActor::StaticClass())))
+			Traffic->SpawnCheckupCrew(*this,ServiceCount);
 }
 
 bool ASimCopterHelicopterPawn::IsCheckupMenuOpen() const

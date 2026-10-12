@@ -36,42 +36,22 @@ void ASimCopterHelicopterPawn::SetAutopilotTransform(const FVector& Location,con
 void ASimCopterHelicopterPawn::ControllerLeftBumperPressed()
 {
 	bBumperLeftHeld=true;
-	if(bBumperRightHeld && !bBumperChordLatched)
-	{
-		bBumperChordLatched=true;
-		ControllerToolWheelPressed();
-	}
-	else if(!bBumperChordLatched && ControllerMode==ESimCopterControllerMode::None) RememberExitSide(-1);
+	// X owns Tools/Dispatch. A brief overlap while reversing a turn must not latch
+	// that old wheel shortcut and disable the remaining bumper until both release.
+	if(ControllerMode==ESimCopterControllerMode::None) RememberExitSide(-1);
 }
 void ASimCopterHelicopterPawn::ControllerLeftBumperReleased()
 {
-	if(bBumperChordLatched && bBumperLeftHeld && bBumperRightHeld)
-	{
-		if(ControllerMode==ESimCopterControllerMode::ToolWheel) ControllerToolWheelReleased();
-		else if(ControllerMode==ESimCopterControllerMode::DispatchWheel) ControllerDispatchWheelReleased();
-	}
 	bBumperLeftHeld=false;
-	if(!bBumperRightHeld) bBumperChordLatched=false;
 }
 void ASimCopterHelicopterPawn::ControllerRightBumperPressed()
 {
 	bBumperRightHeld=true;
-	if(bBumperLeftHeld && !bBumperChordLatched)
-	{
-		bBumperChordLatched=true;
-		ControllerToolWheelPressed();
-	}
-	else if(!bBumperChordLatched && ControllerMode==ESimCopterControllerMode::None) RememberExitSide(1);
+	if(ControllerMode==ESimCopterControllerMode::None) RememberExitSide(1);
 }
 void ASimCopterHelicopterPawn::ControllerRightBumperReleased()
 {
-	if(bBumperChordLatched && bBumperLeftHeld && bBumperRightHeld)
-	{
-		if(ControllerMode==ESimCopterControllerMode::ToolWheel) ControllerToolWheelReleased();
-		else if(ControllerMode==ESimCopterControllerMode::DispatchWheel) ControllerDispatchWheelReleased();
-	}
 	bBumperRightHeld=false;
-	if(!bBumperLeftHeld) bBumperChordLatched=false;
 }
 void ASimCopterHelicopterPawn::RequestAirSupport(bool bAutomatic)
 {

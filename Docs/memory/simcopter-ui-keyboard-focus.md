@@ -89,3 +89,21 @@ offending widget's type once per theft under `LogSimCopterInputFocus`, naming th
 
 Related: [[simcopter-replay-clips]] (which found the same trap twice from the other end),
 [[simcopter-collective-is-the-engine]], [[simcopter-settings-menu]], [[simcopter-checkup-menu]].
+
+## Hangar dismount input ownership — October 11, 2026
+
+The on-foot pawn auto-possesses Player0. Its initial grounding can open the hangar
+overlap menu before BeginPlay finishes; the remaining setup then hid the cursor,
+set GameOnly/permanent capture and focused the viewport over the UIOnly menu.
+PossessedBy could also reclaim focus, and automatic contact boarding could possess
+the nearby helicopter beneath an already-open shell.
+
+On-foot BeginPlay and PossessedBy now preserve an open hangar's input/focus, and
+TryEnterHelicopter refuses while that shell is open. CloseShell still restores
+on-foot gameplay normally. `SimCopter.Hangar.DismountMenuInput` opens the actual
+shell in a synthetic viewport, invokes the late pawn initialization, verifies
+visible cursor/UIOnly/NoCapture, then checks blocked boarding and normal boarding
+after closing. Five assertions failed before the fix; all pass afterward.
+This is headless state validation, not a physical mouse or foreground playtest.
+The two optional FLAP-dispatch/FLAP-apache-missles-gun art warnings are pre-existing.
+See [combined results](../validation/MedicPoliceAndHangarResults.json).

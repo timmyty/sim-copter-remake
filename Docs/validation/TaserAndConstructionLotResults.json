@@ -1,0 +1,42 @@
+{
+  "InstalledAtUtc": "2026-10-11T17:49:56.4673518Z",
+  "Executable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+  "SHA256": "60FF6B9CD514C630869D39B3124D9DF5ACE115E0642CD9ABF9615C4941E5061F",
+  "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\taser-and-lot/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+  "PreviousSHA256": "CCE8AD90BA74E2DCA24C2C79E353F7AE2C4B12BDF31361A1208B544E0EA2366C",
+  "TestsPassed": 8,
+  "RenderTestsPassed": 2,
+  "AssetsChanged": false,
+  "InteractiveGameplayChecked": false,
+  "PublicationCheckoutChanged": false,
+  "Pushed": false,
+  "SourceFilesChanged": 6,
+  "Changes": "Remote taser discharge and hit arcs use a separate transient actor, with electrode-origin tapered lines for the muzzle view. CA137 gray floor is separated from its textured base by 2 cm.",
+  "HeadlessReport": "Docs/scratchpad/taser-and-lot/tests/index.json",
+  "RenderReport": "Docs/scratchpad/taser-and-lot/tests-render/index.json",
+  "SourceDiff": "Docs/scratchpad/taser-and-lot/source.diff",
+  "HeadlessNotes": "Eight reported successes: seven logic cases plus the visual test no-op under NullRHI. BuildingDemolition retains 34 existing static/movable attachment fixture warnings. Both D3D12 visual cases ran and passed separately.",
+  "BuildWarnings": "Untouched engine Character.h GetMovementBase deprecation and traffic TryGetVehicleEscapeLocation SurfaceZ warning.",
+  "Builds": [
+    "Docs/scratchpad/taser-and-lot/build-editor.log",
+    "Docs/scratchpad/taser-and-lot/build-shipping.log"
+  ],
+  "Baselines": [
+    "Docs/scratchpad/taser-and-lot/baseline-render/index.json",
+    "Docs/scratchpad/taser-and-lot/baseline-lot/index.json"
+  ],
+  "RemoteSightPixels": {
+    "BeforeDischarge": 0,
+    "BeforeVehicleShock": 0,
+    "AfterDischarge": 6195,
+    "AfterVehicleShock": 574,
+    "Width": 1280,
+    "Height": 720
+  },
+  "Screenshots": [
+    "Docs/scratchpad/taser-and-lot/remote-sight-discharge.png",
+    "Docs/scratchpad/taser-and-lot/remote-sight-car-shock.png",
+    "Docs/scratchpad/taser-and-lot/construction-lot-0.png",
+    "Docs/scratchpad/taser-and-lot/construction-lot-1.png"
+  ]
+}

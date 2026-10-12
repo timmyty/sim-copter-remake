@@ -4,11 +4,13 @@
 namespace SimCopterControllerHelp
 {
 enum class EStyle : uint8 { Xbox, PlayStation };
-enum class EContext : uint8 { Flight, Camera, ToolWheel, DispatchWheel, Passengers, ConfirmPassenger, OnFoot };
+enum class EContext : uint8 { Flight, Camera, ToolWheel, DispatchWheel, Passengers, ConfirmPassenger, OnFoot, RemoteTaser };
 struct FState
 {
 	EContext Context = EContext::Flight;
 	bool bExpanded = false;
+	bool bSprintAvailable = true;
+	bool bSprintEnabled = false;
 	bool bHasTool = false;
 	bool bCanExit = false;
 	bool bHasPassengers = false;

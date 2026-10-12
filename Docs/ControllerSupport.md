@@ -10,12 +10,28 @@ the existing keyboard and mouse controls.
 | --- | --- |
 | Left stick | Analog equivalent of `WASD`: forward/back pitch and coordinated left/right turn |
 | Right stick | Pan/orbit the camera like holding the right mouse button |
-| `RT` or `A` / `LT` or `B` | Climb / descend; on the ground these also hold engine start / shutdown |
-| `Y` | Exit the helicopter when it is safely landed |
+| `RT` / `LT` or `B` | Climb / descend; on the ground these also hold engine start / shutdown |
+| `X` | Open Tools / switch to Dispatch |
+| `A` | Use the selected tool / confirm a menu choice |
+| `LB` / `RB` | Turn left / right |
+| `Y` | Exit the helicopter, including deliberate airborne exits |
 | View / Back | Cycle camera view |
 | Menu / Start | Pause or resume |
-| `L3` | Show / hide contextual button help |
+| `L3` | Toggle Sprint Mode |
+| `R3` + `L3` | Show / hide contextual button help |
 | `R3` + left-stick X | Dedicated lateral slide, equivalent to `Q` / `E` |
+| `R3` + D-pad up/down | Minimap zoom in/out |
+| `R3` + D-pad left/right | Previous/next map mission |
+| `L3` + D-pad up | Toggle mission markers |
+| `L3` + D-pad down | Toggle service vehicle markers |
+
+Sprint toggles when an ordinary L3 click is released. Using L3 for a marker shortcut
+or the help chord leaves Sprint Mode unchanged. Map chords consume the D-pad press
+so they do not also operate a winch or change megaphone messages.
+
+LB and RB remain dedicated to turning. Holding both cancels their turn input;
+releasing either immediately restores the other direction, including at cruise.
+The retired LB+RB tool-wheel shortcut no longer latches steering off. Use X for Tools.
 
 ### Camera adjustment
 
@@ -24,7 +40,7 @@ Hold `R3` to enter camera-adjust mode:
 | Control while `R3` is held | Action |
 | --- | --- |
 | Right-stick Y | Zoom in/out |
-| `RT` / `LT` (or `A` / `B`) | Move the helicopter up/down in the framing of exterior camera views |
+| `RT` / `LT` | Move the helicopter up/down in the framing of exterior camera views |
 | `X` (Square on PlayStation) | Toggle the spotlight |
 
 Flight collective is suppressed while `R3` is held so camera framing cannot accidentally change
@@ -33,14 +49,15 @@ slide described above.
 
 ## Dispatch radial
 
-Hold `RB` to open the dispatch radial and select Fire Truck, Police, Ambulance, or Police (Chase) with the right
-stick.
+Press `X` to open Tools, then `X` again to switch to Dispatch. Select a service
+with the right stick, including ground services and the unlocked air-support options.
 
-| Control while `RB` is held | Action |
+| Control in Dispatch | Action |
 | --- | --- |
 | `B` | Cancel and close without dispatching |
-| `Y` | Recall every active dispatch and chase vehicle, then close |
-| Release `RB` | Dispatch only if a segment is highlighted; otherwise just close |
+| Select Recall All, then `A` | Recall every active dispatch and chase vehicle, then close |
+| `X` | Switch back to Tools |
+| `A` | Dispatch the highlighted service |
 
 The spotlight determines the dispatch and chase tile. Recall All is immediate and does not require
 a valid spotlight target; the original Shift+F2-F5 bindings retain their selected-service,
@@ -48,22 +65,24 @@ spotlight-local release behavior.
 
 ## Tool radial and use
 
-Hold `LB` to open the tool radial, navigate with the right stick, and release `LB` to equip the
-highlighted installed tool. Press `B` before releasing `LB` to cancel without changing tools.
+Press `X` to open the tool radial, navigate with the right stick, and press `A` to
+equip the highlighted installed tool. Press `B` to cancel without changing tools.
 
 | Control | Action |
 | --- | --- |
-| `X` | Activate the equipped tool; held tools remain active until `X` is released |
-| `LB` + `X` | Open passenger selection |
+| `A` | Activate the equipped tool; held tools remain active until `A` is released |
+| Select Passengers in Tools, then `A` | Open passenger selection |
+| Select Remote Taser in Tools, then `A` | Activate the remote sight while airborne |
 | D-pad up/down with bucket selected | Raise/lower the bucket |
 | D-pad up/down with rescue harness selected | Raise/lower the harness |
-| D-pad up/down with megaphone selected | Select the previous/next message |
+| D-pad left/right with megaphone selected | Select the previous/next message |
 
-The radial only contains tools installed on and available to the current helicopter.
+The radial contains installed tools plus Remote Taser on helicopters and Passengers when the cabin is occupied. In remote mode, right stick aims and A or RT fires. Open Tools with X, select Fly Helicopter, and press A to return. Selecting an ordinary tool also returns to manual flight. Confirming an option does not perform a tool action on the same press. These menu options do not change equipment or save formats.
 
 ## Passengers
 
-Hold `LB` and press `X` to enter passenger-selection mode; you can then release `LB`. The selected seat is highlighted on the dashboard.
+Open Tools with `X`, select Passengers with the right stick, then press `A`. The selected
+seat is highlighted on the dashboard.
 
 | Control in passenger-selection mode | Action |
 | --- | --- |
@@ -72,7 +91,7 @@ Hold `LB` and press `X` to enter passenger-selection mode; you can then release 
 | D-pad left/up or right/down | Select Drop or Cancel |
 | `A` | Confirm the highlighted choice |
 | `B` | Back out one level; press again to leave passenger mode |
-| `X` | Leave passenger mode immediately |
+| `X` | Return to Tools |
 
 ## On foot
 
@@ -80,9 +99,13 @@ Hold `LB` and press `X` to enter passenger-selection mode; you can then release 
 | --- | --- |
 | Left stick | Move |
 | Right stick | Look |
+| `LT` / `RT` | Aim / fire the taser |
+| `L3` | Toggle Sprint Mode |
+| `R3` + `L3` | Show / hide contextual button help |
 | `A` | Jump |
 | `X` | Put down a carried mission person |
 | `Y` | Enter a nearby helicopter |
+| `B` | Toggle parachute while falling |
 | Menu / Start | Pause or resume |
 
 Mission-person pickup remains proximity-driven, as in the existing on-foot mission flow.
@@ -106,6 +129,10 @@ hangar pages and airport check-up use spatial controller navigation:
 - Hangar catalog tabs and equipment hotspots are included. Settings scroll to reveal
   the selected control. The original main-menu lamps and city preview selection follow
   controller navigation.
+- In Helicopter Equipment, one A press on an item moves to Buy, Sell, or Done,
+  according to availability. A fresh A press activates that button. B returns to
+  the selected item before leaving the page. LB/RB browses helicopter previews.
+  A mouse click keeps the item selected while the pointer crosses other rows.
 
 Menus show the selection outline without a button-help text strip. Keyboard and mouse
 retain their existing controls. The check-up panel owns UI input while open and returns it
@@ -121,12 +148,12 @@ were offset twice because slots default to centre alignment, so the visible labe
 were displaced from their selection directions.
 
 Police (Chase) is a separate fourth segment, using the police service in spotlight-chase mode.
-Both wheels commit on shoulder release only with a highlighted segment. The wheel fades out over
+Both wheels commit on `A` only with a highlighted segment. The wheel fades out over
 0.25 seconds; the activated segment turns gold and fades over 0.75 seconds. Actions take effect
-immediately, and the fading wheel never captures input. Centring the stick
-clears the highlight, so release from centre cancels. Y recalls all and closes the wheel so release cannot send a second
-request. A is ignored while either wheel is open. B always cancels a wheel. A and B retain select/confirm and back/cancel in
-the passenger menu and never become altitude commands when closing it. A/B flight
+immediately, and the fading wheel never captures input. Centring the stick retains
+the highlighted choice so A can confirm after releasing the stick. A newly opened
+wheel starts unselected; pointing elsewhere changes the choice. Recall All is a selectable Dispatch option. `B` cancels a wheel. `A` and `B` retain select/confirm and back/cancel in
+the passenger menu and never become altitude commands when closing it. Tool/descent
 holds are cleared when entering a wheel and require a fresh press after leaving it.
 Triggers remain available for altitude while using wheels. On foot, A remains jump.
 
@@ -137,7 +164,7 @@ opposed climb/descent commands cancel, and duplicate climb inputs do not add up.
 
 The takeoff hint follows the last-used device. Keyboard/mouse activity shows every
 live keyboard binding for climb and exit; controller activity shows the controller
-alternatives (RT / A for takeoff, Y for exit by default). It updates while visible,
+alternatives (RT for takeoff, Y for exit). It updates while visible,
 filters out the other device, and is hidden while a wheel or passenger menu is open.
 Neutral stick noise, repeated held-axis reports and releases do not change device.
 
@@ -148,15 +175,20 @@ water card glows for either the bucket or cannon, and the Apache card glows for 
 weapon. Individual buttons do not receive selection borders.
 
 Controller help sits at the bottom left immediately above the map, with 16 HUD-scaled
-pixels of padding below it. It starts collapsed. Clicking the left stick toggles the
-contextual rows; the stick-click icon and Show help / Hide help row always remain.
+pixels of padding below it. It starts collapsed. `R3+L3` toggles the contextual rows;
+the Sprint Mode status and Show help / Hide help row always remain. `L3` toggles
+sprint in helicopters and on foot. Airplanes retain `L3` for help.
 The setting lasts across helicopter and on-foot possession for the current session.
 
-Expanded help uses imported Kenney Input Prompts icons, and only includes actions for
-the current tool, wheel, passenger selection, camera adjustment or on-foot context.
-Exit helicopter appears only while landed and safe to exit.
+Expanded help uses imported Kenney Input Prompts icons. Flight help includes both
+sticks, both triggers, and the R3 camera modifier alongside the current tool.
+On-foot help explains movement, looking and aiming, both taser triggers, and actions.
+Camera-adjust help shows zoom, lateral slide and trigger framing; remote-taser help
+shows aiming, firing and returning to flight. Wheels and passengers retain their
+contextual controls. Longer lists use two columns to fit above the map at 720p.
+Exit helicopter appears whenever the existing exit rules permit it, including airborne exits.
 The megaphone's broadcast row includes the current message; the D-pad icon explains
-how to change it without broadcasting. X / Square broadcasts. No top-of-screen tool
+how to change it without broadcasting. A / Cross broadcasts. No top-of-screen tool
 help panel is shown. Wheel and passenger control hints live in this list too.
 
 L3 is no longer spotlight toggle. Hold R3 and press X / Square to toggle the spotlight.

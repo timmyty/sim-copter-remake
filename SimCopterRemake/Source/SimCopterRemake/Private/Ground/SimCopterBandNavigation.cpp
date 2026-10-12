@@ -1,7 +1,51 @@
-#include "Ground/SimCopterBandNavigation.h"
+﻿#include "Ground/SimCopterBandNavigation.h"
+
+#include "Ground/SimCopterTrafficSystemActor.h"
 
 namespace SimCopterBandNavigation
 {
+bool TryGetBaseArea(const ASimCopterTrafficSystemActor* Traffic, FBaseArea& OutArea)
+{
+	// FUN_004829f0's 4x4 airport, using the same pad basis as hangar placement.
+	// Confining the remake choreography to that base is a requested adaptation.
+	FVector Origin, PadX, PadY;
+	if (!Traffic || !Traffic->TryGetAirportPadWorldLocation(8, Origin) ||
+		!Traffic->TryGetAirportPadWorldLocation(9, PadX) ||
+		!Traffic->TryGetAirportPadWorldLocation(3, PadY)) return false;
+	const FVector X = (PadX - Origin) / 3.0f;
+	const FVector Y = (PadY - Origin) / 3.0f;
+	if (X.IsNearlyZero() || Y.IsNearlyZero()) return false;
+	OutArea.Center = Origin + (X + Y) * 1.5f;
+	OutArea.AxisX = X.GetSafeNormal2D();
+	OutArea.AxisY = Y.GetSafeNormal2D();
+	OutArea.HalfExtent = FVector2D(X.Size2D(), Y.Size2D()) * 2.0;
+	return true;
+}
+
+FVector FBaseArea::Clamp(const FVector& Location, float Inset) const
+{
+	const FVector Delta = Location - Center;
+	const double X = FMath::Max(0.0, HalfExtent.X - Inset);
+	const double Y = FMath::Max(0.0, HalfExtent.Y - Inset);
+	FVector Result = Center + AxisX * FMath::Clamp(FVector::DotProduct(Delta, AxisX), -X, X) +
+		AxisY * FMath::Clamp(FVector::DotProduct(Delta, AxisY), -Y, Y);
+	Result.Z = Location.Z;
+	return Result;
+}
+
+bool FBaseArea::Contains(const FVector& Location, float Inset) const
+{
+	return FVector::DistSquared2D(Location, Clamp(Location, Inset)) < UE_KINDA_SMALL_NUMBER;
+}
+
+bool FBaseArea::AllowsStep(const FVector& From, const FVector& To, float Inset) const
+{
+	if (Contains(To, Inset)) return true; // A segment between in-bounds points stays inside this rectangle.
+	// Older saves can restore stragglers outside. Permit physical return, never further drift.
+	return FVector::DistSquared2D(To, Clamp(To, Inset)) + UE_KINDA_SMALL_NUMBER <
+		FVector::DistSquared2D(From, Clamp(From, Inset));
+}
+
 int32 GetOriginalBandCount(int32 CityIndex)
 {
 	// SCHOOK: SpawnVictoryBand 0x004c2a20 -> SpawnTubaGroup 0x004c29d0.
@@ -13,6 +57,12 @@ int32 GetOriginalBandCount(int32 CityIndex)
 int32 GetFormationIndex(float Elapsed)
 {
 	return FMath::FloorToInt(FMath::Max(0.0f, Elapsed) / PhaseSeconds) % 3;
+}
+
+int32 GetCelebrationBandCount(int32 CityIndex)
+{
+	// Requested first-island greeting: a leader and two musicians, including restored completions.
+	return CityIndex <= 0 ? 3 : GetOriginalBandCount(CityIndex);
 }
 
 FVector FormationOffset(int32 Member, int32 Count, int32 Formation, float Radius)
@@ -57,16 +107,17 @@ bool KeepsDistance(const FVector& From, const FVector& To, const FVector& Center
 }
 
 bool FindPath(const FVector& Start, const FVector& Goal,
-	TFunctionRef<bool(const FVector&, const FVector&)> CanWalk, TArray<FVector>& OutPath)
+	TFunctionRef<bool(const FVector&, FVector&)> CanWalk, TArray<FVector>& OutPath)
 {
 	OutPath.Reset();
-	if (CanWalk(Start, Goal)) { OutPath.Add(Goal); return true; }
+	FVector GroundGoal = Goal;
+	if (CanWalk(Start, GroundGoal)) { OutPath.Add(GroundGoal); return true; }
 	constexpr float CellSize = 75;
 	constexpr int32 Radius = 48;
-	struct FNode { FIntPoint Cell; int32 Parent; float Cost; bool bClosed = false; };
+	struct FNode { FIntPoint Cell; int32 Parent; float Cost; FVector Location; bool bClosed = false; };
 	TArray<FNode> Nodes;
 	TMap<FIntPoint, int32> Indices;
-	Nodes.Add({FIntPoint::ZeroValue, INDEX_NONE, 0});
+	Nodes.Add({FIntPoint::ZeroValue, INDEX_NONE, 0, Start});
 	Indices.Add(FIntPoint::ZeroValue, 0);
 	auto Position = [&](const FIntPoint& Cell) { return Start + FVector(Cell.X * CellSize, Cell.Y * CellSize, 0); };
 	const FIntPoint Directions[] = {{1,0},{0,1},{-1,0},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
@@ -83,27 +134,29 @@ bool FindPath(const FVector& Start, const FVector& Goal,
 		if (Best == INDEX_NONE) break;
 		Nodes[Best].bClosed = true;
 		const FNode Current = Nodes[Best];
-		const FVector Here = Position(Current.Cell);
+		const FVector Here = Current.Location;
+		GroundGoal = Goal;
 		// Once around a wall, connect to a visible distant goal. Requiring the goal to be
 		// inside the local grid stranded musicians on the far side of the airport.
 		if ((Iteration % 8 == 0 || FVector::Dist2D(Here, Goal) < CellSize * 1.5f) &&
-			CanWalk(Here, Goal)) { Last = Best; break; }
+			CanWalk(Here, GroundGoal)) { Last = Best; break; }
 		for (const auto& Direction : Directions)
 		{
 			const FIntPoint Cell = Current.Cell + Direction;
 			if (FMath::Abs(Cell.X) > Radius || FMath::Abs(Cell.Y) > Radius) continue;
-			const FVector Next = Position(Cell);
+			FVector Next = Position(Cell);
+			Next.Z = Here.Z;
 			const float Cost = Current.Cost + FVector::Dist2D(Here, Next);
 			int32* Existing = Indices.Find(Cell);
 			if (Existing && (Nodes[*Existing].bClosed || Nodes[*Existing].Cost <= Cost)) continue;
 			if (!CanWalk(Here, Next)) continue;
-			if (Existing) { Nodes[*Existing].Parent = Best; Nodes[*Existing].Cost = Cost; }
-			else { Indices.Add(Cell, Nodes.Num()); Nodes.Add({Cell, Best, Cost}); }
+			if (Existing) { Nodes[*Existing].Parent = Best; Nodes[*Existing].Cost = Cost; Nodes[*Existing].Location = Next; }
+			else { Indices.Add(Cell, Nodes.Num()); Nodes.Add({Cell, Best, Cost, Next}); }
 		}
 	}
 	if (Last == INDEX_NONE) return false;
-	OutPath.Add(Goal);
-	for (int32 I = Last; I > 0; I = Nodes[I].Parent) OutPath.Insert(Position(Nodes[I].Cell), 0);
+	OutPath.Add(GroundGoal);
+	for (int32 I = Last; I > 0; I = Nodes[I].Parent) OutPath.Insert(Nodes[I].Location, 0);
 	// Remove grid zigzags only where the physical walk probe accepts the full shortcut.
 	FVector Previous = Start;
 	for (int32 I = 0; I < OutPath.Num(); ++I)

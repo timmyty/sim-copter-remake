@@ -7,6 +7,18 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
 
+namespace
+{
+bool IsLandingAtPilotLevel(const ASimCopterHelicopterPawn* Heli, const ASimCopterOnFootPawn* Pilot, const FVector& Goal)
+{
+	if (!Pilot) return true;
+	const FBox Body=Heli->GetParkingWorldBounds();
+	const float PilotFloor=Pilot->GetActorLocation().Z-Pilot->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const float AircraftFloor=Goal.Z+Body.Min.Z-Heli->GetActorLocation().Z;
+	return Body.IsValid && FMath::Abs(AircraftFloor-PilotFloor)<=120.f;
+}
+}
+
 // User-requested remake autopilot. Never feed stale pilot controls into the fixed-point model.
 void USimCopterAirOperationsComponent::BeginPilotRecovery(ASimCopterOnFootPawn* Pilot)
 {
@@ -117,12 +129,17 @@ bool USimCopterAirOperationsComponent::FindRecoverySurfaceAt(const FVector& Posi
 bool USimCopterAirOperationsComponent::FindNearbyRecoveryLanding(FVector& OutGoal) const
 {
 	auto* Heli=Helicopter();
+	auto* Pilot=RecoveryPilot.Get();
 	const FVector From=Heli->GetActorLocation();
+	const FVector SearchOrigin=Pilot ? Pilot->GetActorLocation() : RecoveryHoldLocation;
 	const auto TryLanding=[&](FVector Position)
 	{
 		Position.Z=From.Z;
 		FVector Goal; bool CanLand=false;
 		if (!FindRecoverySurfaceAt(Position,Goal,CanLand) || !CanLand) return false;
+		// A rooftop beneath the airborne exit may be clear yet unreachable from the
+		// pilot's landing level. Keep the airframe's lowest point within boarding reach.
+		if (!IsLandingAtPilotLevel(Heli,Pilot,Goal)) return false;
 		const double CruiseZ=FMath::Max(From.Z,Goal.Z);
 		const FVector AboveFrom(From.X,From.Y,CruiseZ), AboveGoal(Goal.X,Goal.Y,CruiseZ);
 		// Use the same full-airframe corridor as movement: climb, translate, then descend.
@@ -130,11 +147,12 @@ bool USimCopterAirOperationsComponent::FindNearbyRecoveryLanding(FVector& OutGoa
 			!IsRecoveryRouteClear(AboveGoal,Goal)) return false;
 		OutGoal=Goal; return true;
 	};
-	if (TryLanding(From)) return true;
-	// Bounded search around the exit location, nearest rings first. Never chase a walking pilot.
+	if (TryLanding(SearchOrigin)) return true;
+	// Search around where the pilot reached the ground, then retain the chosen spot
+	// while approaching it rather than continually chasing a walking pilot.
 	for (int32 Ring=1; Ring<=6; ++Ring)
 		for (int32 Direction=0; Direction<16; ++Direction)
-			if (TryLanding(RecoveryHoldLocation+FVector(300.f*Ring,0,0).RotateAngleAxis(Direction*22.5f,FVector::UpVector))) return true;
+			if (TryLanding(SearchOrigin+FVector(300.f*Ring,0,0).RotateAngleAxis(Direction*22.5f,FVector::UpVector))) return true;
 	return false;
 }
 
@@ -195,11 +213,20 @@ void USimCopterAirOperationsComponent::UpdatePilotRecovery(float DeltaSeconds)
 	const bool Harness=(Heli->GetEquipmentState().CareerEquipmentMask & SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::RescueHarness))!=0;
 	if (!Harness)
 	{
+		// The two-second exit hover can end before a long fall does. Plan against
+		// the pilot's final support level, not an intermediate height above a roof.
+		if (Pilot->GetCharacterMovement()->IsFalling())
+		{
+			bHasRecoveryLandingGoal=false; RecoveryLandingSearchSeconds=0;
+			Status=TEXT("AUTO HOVER: waiting for the pilot to reach the ground."); Heli->SetAirOperationsStatus(Status);
+			Heli->SetAutopilotTransform(Heli->GetActorLocation(),Heli->GetActorRotation(),DeltaSeconds); return;
+		}
 		RecoveryLandingSearchSeconds=FMath::Max(0.f,RecoveryLandingSearchSeconds-DeltaSeconds);
 		if (bHasRecoveryLandingGoal)
 		{
 			FVector Probe=RecoveryLandingGoal; Probe.Z=Heli->GetActorLocation().Z;
-			if (!FindRecoverySurfaceAt(Probe,Goal,CanLand) || !CanLand || FMath::Abs(Goal.Z-RecoveryLandingGoal.Z)>16)
+			if (!FindRecoverySurfaceAt(Probe,Goal,CanLand) || !CanLand || FMath::Abs(Goal.Z-RecoveryLandingGoal.Z)>16 ||
+				!IsLandingAtPilotLevel(Heli,Pilot,Goal))
 			{ bHasRecoveryLandingGoal=false; RecoveryLandingSearchSeconds=0; }
 		}
 		if (!bHasRecoveryLandingGoal && RecoveryLandingSearchSeconds<=0)
@@ -214,12 +241,18 @@ void USimCopterAirOperationsComponent::UpdatePilotRecovery(float DeltaSeconds)
 		}
 		Goal=RecoveryLandingGoal; CanLand=true;
 	}
-	else if (!FindRecoverySurface(Goal,CanLand))
-	{ Heli->SetAutopilotTransform(Heli->GetActorLocation(),Heli->GetActorRotation(),DeltaSeconds); return; }
-	if (!CanLand && Harness && !Pilot->GetCharacterMovement()->IsFalling() && FVector::Dist2D(Pilot->GetActorLocation(),Heli->GetActorLocation())<1800)
+	else if (!FindRecoverySurface(Goal,CanLand) || !CanLand || !IsRecoveryRouteClear(Heli->GetActorLocation(),Goal))
 	{
-		bRecoveryHarnessActive=true;
-		UpdateRecoveryHarness(DeltaSeconds); return;
+		// Ground support is not enough: an overhang can block the descent. A bought harness
+		// must keep following after every exit, even when the pilot has walked beyond cable range.
+		// Cable length limits the vertical lift, not the horizontal approach to the pilot.
+		if (!Pilot->GetCharacterMovement()->IsFalling())
+		{
+			bRecoveryHarnessActive=true;
+			UpdateRecoveryHarness(DeltaSeconds);
+		}
+		else Heli->SetAutopilotTransform(Heli->GetActorLocation(),Heli->GetActorRotation(),DeltaSeconds);
+		return;
 	}
 	Status=CanLand?TEXT("AUTO LAND: moving to clear ground."):TEXT("AUTO HOVER: uneven ground - jump toward the cabin to board.");
 	Heli->SetAirOperationsStatus(Status);
@@ -239,6 +272,31 @@ void USimCopterAirOperationsComponent::UpdatePilotRecovery(float DeltaSeconds)
 	}
 }
 
+bool USimCopterAirOperationsComponent::TryLoadRecoveryPassenger(ASimCopterOnFootPawn* Pilot)
+{
+	auto* Heli=Helicopter();
+	if (!Pilot || RecoveryPilot.Get()!=Pilot || !bRecoveryHarnessActive || bRecoveryRaising ||
+		Pilot->GetCharacterMovement()->IsFalling()) return false;
+	auto* Patient=Pilot->GetCarriedMissionPerson();
+	FVector End;
+	if (!Patient || !Heli->TryGetRopeEndWorldLocation(End) || FVector::Distance(End,Patient->GetActorLocation())>90) return false;
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(AutoRescueHandoff),true,Heli);
+	Query.AddIgnoredActor(Pilot); Query.AddIgnoredActor(Patient);
+	FHitResult Hit;
+	if (GetWorld()->SweepSingleByChannel(Hit,Patient->GetActorLocation(),End,FQuat::Identity,ECC_Visibility,
+		FCollisionShape::MakeSphere(14),Query)) return false;
+	if (!Patient->BoardCarrier(Heli,true,true))
+	{
+		Status=TEXT("AUTO RESCUE: free a passenger seat for the carried person."); Heli->SetAirOperationsStatus(Status);
+		return false;
+	}
+	Pilot->ConsumeCarriedMissionPerson(); RecoveryPassenger=Patient;
+	bRecoveryRaising=true; Heli->bHarnessRiderAttached=true;
+	Patient->SetActorLocation(End,false,nullptr,ETeleportType::TeleportPhysics);
+	Status=TEXT("AUTO RESCUE: lifting passenger first."); Heli->SetAirOperationsStatus(Status);
+	return true;
+}
+
 void USimCopterAirOperationsComponent::UpdateRecoveryHarness(float DeltaSeconds)
 {
 	auto* Heli=Helicopter(); auto* Pilot=RecoveryPilot.Get();
@@ -254,8 +312,9 @@ void USimCopterAirOperationsComponent::UpdateRecoveryHarness(float DeltaSeconds)
 		if (auto* Carried=Pilot->GetCarriedMissionPerson()) Target=Carried->GetActorLocation();
 		if (Pilot->GetCharacterMovement()->IsFalling()) return;
 		FVector Goal=Heli->GetActorLocation()+FVector(Target.X-Anchor.X,Target.Y-Anchor.Y,0);
+		Goal.Z=Target.Z+240.f;
 		FVector SurfaceGoal; bool CanLand;
-		if (FindRecoverySurface(SurfaceGoal,CanLand)) Goal.Z=FMath::Max(SurfaceGoal.Z+160.f,Target.Z+240.f);
+		if (FindRecoverySurface(SurfaceGoal,CanLand)) Goal.Z=FMath::Max(SurfaceGoal.Z+160.f,Goal.Z);
 		if (!MoveRecoveryAircraft(Goal,DeltaSeconds)) return;
 		Anchor=Heli->GetCargoAnchorWorldLocation();
 	}
@@ -282,11 +341,9 @@ void USimCopterAirOperationsComponent::UpdateRecoveryHarness(float DeltaSeconds)
 	Heli->SmoothedRopeOffsets.Reset(); Heli->UpdateRopeVisuals(0);
 	if (!bRecoveryRaising && FVector::Distance(End,Target)<24)
 	{
-		if (auto* Carried=Pilot->GetCarriedMissionPerson())
+		if (Pilot->GetCarriedMissionPerson())
 		{
-			if (!Carried->BoardCarrier(Heli,true,true))
-			{ Status=TEXT("AUTO RESCUE: free a passenger seat for the carried person."); Heli->SetAirOperationsStatus(Status); return; }
-			Pilot->ConsumeCarriedMissionPerson(); RecoveryPassenger=Carried;
+			if (!TryLoadRecoveryPassenger(Pilot)) return;
 		}
 		else { Pilot->SetAutoRescueAttached(true); bRecoveryPilotAttached=true; }
 		bRecoveryRaising=true; Heli->bHarnessRiderAttached=true;

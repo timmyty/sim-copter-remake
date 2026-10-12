@@ -845,6 +845,8 @@ bool USimCopterSaveSubsystem::ApplyPendingAircraftState(UWorld* World)
 		if (Ambient != nullptr) Ambient->SetActorTickEnabled(true);
 	}
 
+	if (bApplySucceeded)
+		SimCopterHelicopterParking::SynchronizeFleetEquipment(World,GetGameInstance()->GetSubsystem<USimCopterCareerSubsystem>());
 	PendingLoadedGame = nullptr;
 	bPendingMissionStateApplied = false;
 	return bApplySucceeded;

@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-11",
+  "feature": "Capture cage vehicle and boat recovery, mission waypoints, 16-second vehicle taser, prisoner portrait",
+  "builds": {
+    "editor": "Succeeded",
+    "editorLog": "../scratchpad/cage-towing/build-editor-visual-final.log",
+    "shipping": "Succeeded",
+    "shippingLog": "../scratchpad/cage-towing/build-shipping-final.log"
+  },
+  "headless": {
+    "report": "../scratchpad/cage-towing/tests-final/index.json",
+    "passed": 48,
+    "clean": 47,
+    "withWarnings": 1,
+    "failed": 0,
+    "warning": "Existing SimCopter.UI.HangarPurchaseParking fixture emits two World has no context warnings.",
+    "visualNoOps": ["SimCopter.AirOperations.TaserVisuals", "SimCopter.EnergyTaser.Visuals"],
+    "coverage": [
+      "Automatic vehicle and boat capture, bottom seal and winch hold",
+      "Moving runners, 16-second taser disable, expired stun remains held",
+      "Routes preserved on release, escape AI paused while held",
+      "Manual release, active correct site, height/radius/speed/seal checks",
+      "Boat riders rescued before hull recovery",
+      "No duplicate rewards, completion deactivates waypoints",
+      "Legacy clamp ownership, selection and saved cargo migration",
+      "Small inactive minimap markers, larger active markers, edge bearing",
+      "Helper recovery, equipment catalog, controller, map, save and passenger regressions"
+    ]
+  },
+  "offscreen": {
+    "report": "../scratchpad/cage-towing/render-final/index.json",
+    "passed": 1,
+    "failed": 0,
+    "case": "SimCopter.CaptureCage.VehicleBoatRecoveryAndWaypoints",
+    "renderer": "D3D12 RenderOffscreen",
+    "assertions": ["Actual vehicle geometry fits inside the expanded cage floor", "Visible cargo differs from hidden cargo", "Active world rings differ from inactive sites"],
+    "portraits": "Actual Slate dashboard at 1x, 2x and 3x",
+    "screenshotsInspected": true,
+    "artifacts": "../scratchpad/cage-towing/",
+    "limitation": "Synthetic scene and dashboard renders; no interactive or live-city playtest."
+  },
+  "installation": {
+    "receipt": "../scratchpad/cage-towing/installation.json",
+    "exe": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "sha256": "5266DA05BA5B1AFD53B3FE0A619218A31C8106C02F333A73790D2DECF4B94245",
+    "previousSha256": "D89E334A98B67676E2F922611B68A0E3FEDACCD629D24A9999A21606E401AAC7",
+    "backupVerified": true,
+    "installedHashVerified": true,
+    "cookedAssetsChanged": false
+  },
+  "interactivePlaytest": false,
+  "publicationCheckoutChanged": false,
+  "pushed": false
+}

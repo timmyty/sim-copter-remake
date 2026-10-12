@@ -57,7 +57,7 @@ void USimCopterAirOperationsSubsystem::Tick(float DeltaSeconds)
 	ThinkSeconds-=DeltaSeconds;
 	if (ThinkSeconds<=0)
 	{
-		ThinkSeconds=1.0f; EnsureSites();
+		ThinkSeconds=1.0f; EnsureSites(); RefreshRecoveryWaypoints();
 		if (Mission->IsLevelComplete())
 			if (auto* GI=GetWorld()->GetGameInstance())
 				if (auto* Career=GI->GetSubsystem<USimCopterCareerSubsystem>(); Career && !Career->IsAirSupportUnlocked())
@@ -77,7 +77,7 @@ void USimCopterAirOperationsSubsystem::EnsureSites()
 	if (!Road || !City) return;
 	// Original SC2 cities need no edited map asset: service yards occupy clear terrain and
 	// harbors occupy open shore water. Never replace a city building to make room.
-	for (int32 Pass=0;Pass<3;++Pass)
+	for (int32 Pass=1;Pass<3;++Pass)
 	{
 		bool Placed=false;
 		for (int32 Y=4;Y<124 && !Placed;++Y) for (int32 X=4;X<124 && !Placed;++X)
@@ -111,12 +111,29 @@ void USimCopterAirOperationsSubsystem::EnsureSites()
 ASimCopterRecoverySite* USimCopterAirOperationsSubsystem::FindRecoverySite(const FVector& From,bool bBoat) const
 {
 	ASimCopterRecoverySite* Best=nullptr; float BestDistance=MAX_flt;
-	for(auto Site:Sites) if (Site.IsValid() && (Site->GetKind()==ESimCopterRecoverySite::Harbor)==bBoat)
+	for(auto Site:Sites) if (Site.IsValid() && Site->GetKind()==(bBoat?ESimCopterRecoverySite::Harbor:ESimCopterRecoverySite::Junkyard))
 	{
 		const float D=FVector::DistSquared(From,Site->GetActorLocation());
 		if(D<BestDistance) { BestDistance=D; Best=Site.Get(); }
 	}
 	return Best;
+}
+void USimCopterAirOperationsSubsystem::RefreshRecoveryWaypoints()
+{
+	bool bCars=false, bBoats=false;
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It)
+		bCars|=It->IsCageRecoverableVehicle();
+	for (TActorIterator<ASimCopterAmbientVehiclesActor> It(GetWorld());It;++It)
+		bBoats|=It->HasRecoverableBoat();
+	if (const auto* Mission=Missions())
+		for (const auto& Record:Mission->GetMissionRecords())
+		{
+			if (!CanAssignAirSupport(Record)) continue;
+			bCars|=(Record.TypeMask & SimCopterMissions::TYPE_VehicleTow)!=0;
+			bBoats|=(Record.TypeMask & SimCopterMissions::TYPE_BoatTow)!=0;
+		}
+	for (auto Site:Sites) if (Site.IsValid())
+		Site->SetWaypointActive(Site->GetKind()==ESimCopterRecoverySite::Harbor ? bBoats : bCars);
 }
 bool USimCopterAirOperationsSubsystem::FindServiceRoof(uint8 BuildingId,const FVector& From,FVector& OutRoof) const
 {
@@ -148,15 +165,15 @@ bool USimCopterAirOperationsSubsystem::CanPlayerTow() const
 	const ASimCopterHelicopterPawn* Helicopter = Cast<ASimCopterHelicopterPawn>(Player);
 	if (const auto* Pilot = Cast<ASimCopterOnFootPawn>(Player))
 		Helicopter = Pilot->GetParkedHelicopter();
-	return Helicopter && !Helicopter->IsSupportAircraft() && Helicopter->IsToolAvailable(ESimCopterHelicopterTool::TowClamp);
+	return Helicopter && !Helicopter->IsSupportAircraft() && Helicopter->IsToolAvailable(ESimCopterHelicopterTool::CaptureCage);
 }
 
 void USimCopterAirOperationsSubsystem::UpdateStalledCars(float DeltaSeconds)
 {
 	const bool bCanTow = CanPlayerTow();
-	// Remake ambient jobs: every 15 minutes without towing, versus 2.5 minutes when equipped.
-	// Scaling the existing saved countdown also handles buying/selling the clamp mid-interval.
-	StalledCarSeconds -= DeltaSeconds * (bCanTow ? 1.0f : 1.0f / 6.0f);
+	// Supplemental jobs: ten minutes with a cage, fifteen without. Retain the saved
+	// 150-second scale so existing countdowns and equipment changes need no migration.
+	StalledCarSeconds -= DeltaSeconds * (bCanTow ? 0.25f : 1.0f / 6.0f);
 	if (StalledCarSeconds <= 0.0f)
 	{
 		StalledCarSeconds = 150.0f;
@@ -167,9 +184,14 @@ void USimCopterAirOperationsSubsystem::UpdateStalledCars(float DeltaSeconds)
 void USimCopterAirOperationsSubsystem::StartStalledCar(bool bCanTow)
 {
 	if(!FindRecoverySite(FVector::ZeroVector,false)) return;
+	// Original missions own dispatch while there is work to do. Collision-created
+	// recoveries still use EnsureTowMission immediately and do not pass through here.
+	if (auto* Mission=Missions())
+		for (const auto& R:Mission->GetMissionRecords())
+			if (CanAssignAirSupport(R) && !SimCopterMissions::IsRecoveryMission(R.TypeMask)) return;
 	int32 Existing=0;
 	for(TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It) if(It->IsTowableVehicle()) ++Existing;
-	if(Existing >= (bCanTow ? 2 : 1)) return;
+	if(Existing >= 1) return;
 	auto* Road=Traffic();
 	for(TActorIterator<ASimCopterGroundAgent> It(GetWorld());It;++It)
 		if(It->GetAgentKind()==ESimCopterGroundAgentKind::Vehicle && !It->IsHidden() && !It->IsCriminalCar() &&
@@ -211,7 +233,6 @@ void USimCopterAirOperationsSubsystem::EnsureSupport()
 		}
 	}
 	if (!bClearSpawn) { Heli->Destroy(); return; }
-	Heli->SetDebugToolGrant(ESimCopterHelicopterTool::TowClamp,true);
 	Heli->SetDebugToolGrant(ESimCopterHelicopterTool::CaptureCage,true);
 	Heli->GetAirOperations()->SetStatus(TEXT("AIR SUPPORT: available"));
 	SupportHelicopter=Heli;
@@ -283,7 +304,12 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 	if((Ops->GetTowVehicle() || Ops->HasBoat()))
 	{
 		auto* Site=FindRecoverySite(Heli->GetActorLocation(),Ops->HasBoat());
-		if(Site) { Ops->SetSupportGoal(Site->GetActorLocation()+FVector(0,0,float(Heli->GetActorLocation().Z-Heli->GetCargoAnchorWorldLocation().Z)+Ops->GetCableLength()+70)); Ops->SetStatus(TEXT("AIR SUPPORT: delivering recovered vehicle")); }
+		if(Site)
+		{
+			Ops->SetSupportGoal(Site->GetActorLocation()+FVector(0,0,float(Heli->GetActorLocation().Z-Heli->GetCaptureCageMountTransform().GetLocation().Z)+Ops->GetCableLength()+70));
+			Ops->SetStatus(TEXT("AIR SUPPORT: delivering recovered vehicle"));
+			Ops->TryDeliverCargo();
+		}
 		return;
 	}
 	if(Heli->GetPassengerCount()>0)
@@ -329,17 +355,24 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		}
 		return;
 	}
+	// With nobody aboard, automatic support may leave an optional recovery for an
+	// original emergency. Manual assignments and cargo already being delivered stay put.
+	if (Record && bAutomatic && SimCopterMissions::IsRecoveryMission(Record->TypeMask) &&
+		Records.ContainsByPredicate([](const auto& R) { return CanAssignAirSupport(R) && !SimCopterMissions::IsRecoveryMission(R.TypeMask); })) Record=nullptr;
 	if(!Record && bAutomatic && !bReturning)
 	{
 		const int32 PlayerIndex=Mission->GetMapFocusRecordIndex();
 		float Nearest=MAX_flt;
+		bool bBestIsRecovery=true;
 		for(const auto& R:Records)
 		{
 			if(!CanAssignAirSupport(R)) continue;
 			FVector Point; if(!Road->TryGetTileCenterWorldLocation(R.TileX,R.TileY,Point)) continue;
 			float D=FVector::DistSquared(Heli->GetActorLocation(),Point);
 			if(Records.IsValidIndex(PlayerIndex) && Records[PlayerIndex].EventId==R.EventId) D+=100000000;
-			if(D<Nearest) { Nearest=D; Record=&R; AssignedEvent=R.EventId; WorkSeconds=0; MissionAttemptSeconds=0; }
+			const bool bRecovery=SimCopterMissions::IsRecoveryMission(R.TypeMask);
+			if ((!bRecovery && bBestIsRecovery) || (bRecovery==bBestIsRecovery && D<Nearest))
+			{ bBestIsRecovery=bRecovery; Nearest=D; Record=&R; AssignedEvent=R.EventId; WorkSeconds=0; MissionAttemptSeconds=0; }
 		}
 	}
 	if(!Record || bReturning)
@@ -367,11 +400,11 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 	{
 		auto* Ambient=Cast<ASimCopterAmbientVehiclesActor>(UGameplayStatics::GetActorOfClass(GetWorld(),ASimCopterAmbientVehiclesActor::StaticClass()));
 		if(!Ambient || !Ambient->GetBoatTowLocation(0,Target)) { AssignedEvent=INDEX_NONE; return; }
-		const float Height=Heli->GetActorLocation().Z-Heli->GetCargoAnchorWorldLocation().Z+180;
+		const float Height=Heli->GetActorLocation().Z-Heli->GetCaptureCageMountTransform().GetLocation().Z+180;
 		Ops->SetSupportGoal(Target+FVector(0,0,Height));
 		if(FVector::Dist2D(Heli->GetActorLocation(),Target)<120 && FMath::Abs(Heli->GetActorLocation().Z-Target.Z-Height)<80)
 		{
-			Heli->SetSelectedTool(ESimCopterHelicopterTool::TowClamp);
+			Heli->SetSelectedTool(ESimCopterHelicopterTool::CaptureCage);
 			if(!Ops->IsDeployed()) Ops->UseCargoTool(); else Ops->TryGrabCargo();
 		}
 		return;
@@ -387,7 +420,7 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		{ Ops->SetSupportGoal(Heli->GetActorLocation()); Ops->SetStatus(TEXT("AIR SUPPORT: awaiting a clear pickup")); return; }
 		Target=Clearing;
 	}
-	const FVector Goal = TargetCar ? Target+FVector(0,0,float(Heli->GetActorLocation().Z-Heli->GetCargoAnchorWorldLocation().Z)+180) : HoverOver(Target,45);
+	const FVector Goal = TargetCar ? Target+FVector(0,0,float(Heli->GetActorLocation().Z-Heli->GetCaptureCageMountTransform().GetLocation().Z)+180) : HoverOver(Target,45);
 	const float Height = Goal.Z-Target.Z;
 	Ops->SetSupportGoal(Goal);
 	if(FVector::Dist2D(Heli->GetActorLocation(),Target)>170 || FMath::Abs(Heli->GetActorLocation().Z-Target.Z-Height)>100) return;
@@ -412,7 +445,7 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 	WorkSeconds+=DeltaSeconds;
 	if(TargetCar)
 	{
-		Heli->SetSelectedTool(ESimCopterHelicopterTool::TowClamp);
+		Heli->SetSelectedTool(ESimCopterHelicopterTool::CaptureCage);
 		if(!Ops->IsDeployed()) Ops->UseCargoTool();
 		else Ops->TryGrabCargo();
 		return;

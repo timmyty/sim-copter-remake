@@ -237,6 +237,8 @@ public:
 	bool SetBoatTow(int32 Index, bool bTowed, const FVector& Location);
 	bool FinishBoatTow(int32 Index);
 	bool GetBoatTowLocation(int32 Index, FVector& Location) const;
+	bool GetBoatTowBounds(int32 Index, FBox& OutBounds) const;
+	bool HasRecoverableBoat() const;
 	bool CaptureRuntimeSaveState(TArray<uint8>& OutData);
 	bool RestoreRuntimeSaveState(const TArray<uint8>& Data);
 	// Stable component owned by the fixed UFO pool. Restored abductees relink to it after traffic
@@ -315,6 +317,7 @@ private:
 	TArray<FSimCopterVehicleWreck> Wrecks;
 	int32 NextWreckKey = 1;
 	friend class FSimCopterAirOperationsTest;
+	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterPlaneDeckRescueTest;
 	FSimCopterVehicleWreck* PendingPlaneRescueWreck = nullptr;
 	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> TrainRoofRiders;

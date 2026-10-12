@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-11",
+  "project": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/SimCopterRemake.uproject",
+  "editorBuild": "passed",
+  "shippingBuild": "passed",
+  "headless": {
+    "passed": 21,
+    "failed": 0,
+    "warnings": 0,
+    "visualOnlyNoOps": 2,
+    "report": "../scratchpad/energy-taser/tests-final/index.json"
+  },
+  "offscreen": {
+    "passed": 2,
+    "failed": 0,
+    "warnings": 0,
+    "report": "../scratchpad/energy-taser/tests-render-verified/index.json",
+    "transformationPixels": 44945,
+    "blueGreenPixels": 1900,
+    "shoulderWeaponPixels": 2460,
+    "imagesInspected": ["weapon-idle.png", "weapon-charged.png", "weapon-fading.png", "weapon-expired.png", "shoulder-charged.png", "orb-flight.png", "orb-impact.png"]
+  },
+  "coverage": [
+    "Visible criminal proximity to crosshair; civilian, occluded and stale-car rejection",
+    "Charge formation, click-only release, recharge, thirty-second memory, renewed sightings and fade/retraction",
+    "Moving-target homing, delayed contact, holstering during flight, walls and deleted targets",
+    "Nonlethal pedestrian stun, timed recovery, handcuff retention and save v11/v10 compatibility",
+    "Criminal-car impact and eight-second recovery; existing vehicle persistence regression",
+    "Distinct non-silent unclipped synthesized charge, release, seek and impact PCM",
+    "Free remote yaw/pitch, frame-independent mouse travel, pursuit and target handoff without aim changes",
+    "Sprint-bounded movement, moving criminal pursuit, no-crime hover and building avoidance",
+    "Existing rescue, custody, traffic and save regressions",
+    "Actual-material offscreen weapon states, shoulder framing, orb flight/contact, and existing remote discharge"
+  ],
+  "installedExecutable": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+  "installedSHA256": "D89E334A98B67676E2F922611B68A0E3FEDACCD629D24A9999A21606E401AAC7",
+  "priorSHA256": "60FF6B9CD514C630869D39B3124D9DF5ACE115E0642CD9ABF9615C4941E5061F",
+  "installationReceipt": "../scratchpad/energy-taser/installation.json",
+  "priorExecutableBackup": "../scratchpad/energy-taser/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+  "sourceDiff": "../scratchpad/energy-taser/source.diff",
+  "assetsChanged": false,
+  "interactiveGameplayChecked": false,
+  "listeningCheckPerformed": false,
+  "publicationCheckoutChanged": false,
+  "pushed": false
+}

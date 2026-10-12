@@ -6,6 +6,7 @@
 
 class FArchive;
 class FSimCopterAirOperationsTest;
+class FSimCopterMissionRecoveryPriorityTest;
 
 // Decompiled SimCopter mission/event system, ported from SimCopter.exe.
 //
@@ -77,6 +78,11 @@ enum EType : int32
 	TYPE_VehicleTow = 0x200000,
 	TYPE_BoatTow = 0x400000,
 };
+
+inline bool IsRecoveryMission(int32 TypeMask)
+{
+	return TypeMask == TYPE_VehicleTow || TypeMask == TYPE_BoatTow;
+}
 
 // SCHOOK: RioterSpawn 0x004c4190, spawn-mode-3 arm.
 // The original writes 7 directly to person + 0x150 before placing the rioter. BHAV 852 then
@@ -449,6 +455,8 @@ public:
 	// DAT_00503aa0 == 3: view mode 3 is the on-foot player. Crime timers advance nearby only in
 	// this mode; while flying they pause inside the original's 12-step weighted distance.
 	virtual bool IsPlayerOnFoot() const { return false; }
+	// Remake custody precedes station delivery. A contained suspect cannot commit another crime.
+	virtual bool IsCrimeInCustody(int32 EventId) const { return false; }
 	// FUN_00408c30, the scheduler's only spawn gate (DAT_005812b4). Despite the name it is not a
 	// UI test: it returns 1 only in career mode (DAT_00518d50 == 2) once the session score has
 	// reached the current city's "Points Needed", i.e. new missions stop arriving as soon as the
@@ -769,6 +777,7 @@ public:
 
 private:
 	friend class ::FSimCopterAirOperationsTest;
+	friend class ::FSimCopterMissionRecoveryPriorityTest;
 	friend class FSimCopterNpcMedicalTest;
 	ISimCopterMissionWorld* World = nullptr;
 	FSimCopterMsvcRand Rand;
