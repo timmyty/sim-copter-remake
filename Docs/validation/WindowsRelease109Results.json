@@ -1,0 +1,220 @@
+{
+  "version": "v1.0.9",
+  "verified_at_utc": "2026-10-12T20:29:52.486989+00:00",
+  "baseline_commit": "05f753a6392e4433837d8e6a342ed453063dcfe6",
+  "source_verification": {
+    "file_count": 439,
+    "source_publication_match": true,
+    "manifest_sha256": "ff909ee2fe9454158297c611bea37ced633f100b1bd6d89942a179aaae542488"
+  },
+  "builds": [
+    {
+      "target": "editor",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.9/build-editor.log",
+      "log_sha256": "ee97ba4c4299c433752e31ce30aae19236127e654059014a4532354742bf6e41"
+    },
+    {
+      "target": "shipping",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.9/build-shipping.log",
+      "log_sha256": "260e9f92a7c738abcce8b16dc91f94c573fbb7500b77e9571ea5da05c6f3e9b6"
+    },
+    {
+      "target": "development",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.9/build-development.log",
+      "log_sha256": "8bfa7bad197a675e8a8dcb619f3984470f77df412fa086317f83af1379168abb"
+    }
+  ],
+  "tests": [
+    {
+      "mode": "Complete SimCopter suite, NullRHI, isolated profile with config writes",
+      "counts": {
+        "succeeded": 470,
+        "succeededWithWarnings": 20,
+        "failed": 2,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 224.23272705078125,
+      "failures": [
+        {
+          "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+          "messages": [
+            "Expected 'Finds flat land ALTM sample' to be not null.",
+            "Expected 'Finds water ALTM sample' to be not null.",
+            "Expected 'Finds sloped ALTM sample' to be not null."
+          ]
+        },
+        {
+          "test": "SimCopter.UI.FlapLayout",
+          "messages": [
+            "Expected 'The four flaps between them cover every career equipment bit' to be 95, but it was 31."
+          ]
+        }
+      ],
+      "warnings": [
+        {
+          "test": "SimCopter.Cheats.CityEffects",
+          "warnings": 17
+        },
+        {
+          "test": "SimCopter.Cheats.GortOriginalAssets",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.City.BuildingDemolition",
+          "warnings": 34
+        },
+        {
+          "test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Hangar.DismountMenuInput",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Missions.PlaneDeckRescue",
+          "warnings": 11
+        },
+        {
+          "test": "SimCopter.Missions.SafePassengerLanding",
+          "warnings": 12
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city19",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city22",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city23",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city24",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city25",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city26",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city27",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city28",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city29",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Traffic.TunnelTransit",
+          "warnings": 4
+        },
+        {
+          "test": "SimCopter.UI.HangarPurchaseParking",
+          "warnings": 3
+        },
+        {
+          "test": "SimCopter.Water.SupplyGeometry",
+          "warnings": 11
+        }
+      ],
+      "report": "Docs/scratchpad/release-v1.0.9/tests-full/index.json",
+      "report_sha256": "cf86380fad59c1fea3e5a394407f273d66ebb3a4888ac08114fefb4633f7d5a1"
+    },
+    {
+      "mode": "D3D12 offscreen baseball and drive-in playback plus isolated Windows mixer",
+      "counts": {
+        "succeeded": 1,
+        "succeededWithWarnings": 2,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 64.79644775390625,
+      "failures": [],
+      "warnings": [
+        {
+          "test": "SimCopter.DriveIn.LocalizedAudio",
+          "warnings": 38
+        },
+        {
+          "test": "SimCopter.DriveIn.Playback",
+          "warnings": 11
+        }
+      ],
+      "report": "Docs/scratchpad/release-v1.0.9/tests-media/index.json",
+      "report_sha256": "b7932398c2d1f0eb48d3e9bfd63f5452b04055a6d48e56796ecc868eda7f01dd"
+    }
+  ],
+  "runtime": {
+    "files": 916,
+    "bytes": 2352963103,
+    "nonufs_verified": 903,
+    "maps": 45,
+    "kinv_tracks": 21,
+    "drive_in_movies": 2,
+    "flyover_soundtracks": 30,
+    "shipping_sha256": "7eb96c7d99d732f8d198fa25de6900e3719c85c86083b230b4d02ec9e4c869fd"
+  },
+  "startup": {
+    "children": [
+      {
+        "pid": 46196,
+        "window_handle": 0,
+        "cpu_seconds": 7.15625,
+        "path": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.9\\SimCopterRemake-v1.0.9-Windows-x64\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "working_set_bytes": 687128576
+      }
+    ],
+    "launcher_pid": 42032,
+    "limitation": "Checks bootstrap and startup survival only; no visible rendering or gameplay check.",
+    "launcher_exited": false,
+    "seconds": 30.7284215,
+    "mode": "NullRHI, unattended, no audio, isolated user directory"
+  },
+  "screenshots": [
+    {
+      "path": "Docs/screenshots/baseball-back-v1.0.9.png",
+      "sha256": "2e767ff065b4b9d22228843a454b6cfd3a024eaec5b2232aba1072eb2a364dc5"
+    },
+    {
+      "path": "Docs/screenshots/baseball-final-v1.0.9.png",
+      "sha256": "652bf05dd01d2839252f42bd3102342a6ca3d7bf29d0fec286b1eef722e913c0"
+    },
+    {
+      "path": "Docs/screenshots/baseball-side-v1.0.9.png",
+      "sha256": "97003ec7c93f2174f4e63f3023bdd49952807ed277b429fd86dae64b2234a224"
+    },
+    {
+      "path": "Docs/screenshots/baseball-stadium-v1.0.9.png",
+      "sha256": "1261271a5e5914696d46a2f9ba27365ec9a85cab1b93ccec1f2e4127236a1365"
+    }
+  ],
+  "assembly": "Fresh staging with current Shipping and Development executables and verified unchanged cooked/runtime assets; no recook.",
+  "archive_gate": "Every decompressed ZIP entry must match staging SHA-256; both GitHub asset digests must match before publishing.",
+  "receipt_location": "Docs/scratchpad/release-v1.0.9/",
+  "limitations": [
+    "Two pre-existing automation fixture failures remain.",
+    "NullRHI visual-only cases may be no-ops; the focused offscreen run exercises the changed presentation and audio.",
+    "No interactive gameplay, physical-controller, manual listening or FPS benchmark.",
+    "Witness-photo slowdown and recurring GPU compute crash remain unresolved."
+  ]
+}

@@ -79,6 +79,7 @@ class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCageRecoveryTest;
+	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterCityTourRenderTest;
@@ -232,6 +233,8 @@ private:
 	friend class FSimCopterConstructionLotTest;
 	friend class FSimCopterPatientPlacementTest;
 	friend class FSimCopterPatientCityPlacementTest;
+	friend class FSimCopterBaseballTest;
+	friend class FSimCopterBaseballGameTest;
 	friend class FSimCopterSafePassengerLandingTest;
 	friend class FSimCopterWaterSupplyGeometryTest;
 	// Countdown to the next SimCopterCloudTuning::Apply (once a second, from Tick).

@@ -11,6 +11,7 @@
 #include "SimCopterGroundAgent.generated.h"
 
 class ASimCopterHelicopterPawn;
+class ASimCopterBaseballGame;
 class ASimCopterMissionSystemActor;
 class UAudioComponent;
 class UCapsuleComponent;
@@ -67,6 +68,8 @@ class SIMCOPTERREMAKE_API ASimCopterGroundAgent
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class ASimCopterBaseballGame;
+	friend class FSimCopterBaseballGameTest;
 	friend class FSimCopterPlaneControlsTest;
 	friend class FSimCopterWeaponDamageTest;
 	friend class FSimCopterCityWeaponTest;
@@ -110,6 +113,7 @@ private:
 	friend class FSimCopterCheckupCrewTest;
 	friend class FSimCopterPoliceDestinationTest;
 	friend class FSimCopterCageRecoveryTest;
+	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterRemoteRecoveryTest;
 	friend class FSimCopterVehicleTaserTest;
 	friend class FSimCopterApacheAftermathTest;
@@ -195,6 +199,7 @@ public:
 
 	void SetInitialBehaviorProgramId(int32 NewInitialBehaviorProgramId);
 	void SetPedestrianFigureClothesOffset(int32 NewClothesOffset);
+	bool IsPlayingBaseball() const;
 
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Ground Agent")
 	bool LoadOriginalMeshFromOriginalGameRoot();
@@ -555,6 +560,9 @@ public:
 	// FUN_004b89a0 -> FUN_0049e0c0. Returns true when the order was accepted, which is only when
 	// the car has been marked by the spotlight first.
 	bool TryOrderStop(int32 CallerMessageId);
+	bool TryMegaphoneStop();
+	void UpdateMegaphoneStop(float DeltaSeconds, bool bKeepSpeederStopped);
+	bool HasMegaphoneStop() const { return MegaphoneStopSeconds > 0.0f; }
 
 	// FUN_004b8b60's hold while the burglar is outside the car.
 	float GetBurglarOutsideSeconds() const { return BurglarOutsideSeconds; }
@@ -573,6 +581,7 @@ public:
 		bStopOrdered = false;
 		bStopped = false;
 		CriminalStopScale = 1.0f;
+		MegaphoneStopSeconds = 0.0f;
 	}
 	float GetCriminalCruiseSeconds() const { return CriminalCruiseSeconds; }
 	void SetCriminalCruiseSeconds(float NewSeconds) { CriminalCruiseSeconds = NewSeconds; }
@@ -1287,7 +1296,17 @@ public:
 	TObjectPtr<UMaterialInstanceDynamic> FigureHeadMaterialInstance;
 
 private:
+	// Transient control: injuries/carriers keep the normal VM and save format.
+	TWeakObjectPtr<ASimCopterBaseballGame> BaseballGame;
+	FVector BaseballTarget = FVector::ZeroVector;
+	float BaseballFacing = 0, BaseballSpeed = 180;
+	FString BaseballClip = TEXT("NoMo");
+	bool UpdateBaseball(float DeltaSeconds);
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterAmbientCuriosityTest;
+	friend class FSimCopterBaseballTest;
+	friend class FSimCopterCasualtyGawkingTest;
+	friend class FSimCopterBehaviorAircraftTest;
 	friend class FSimCopterMedicRouteTest;
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterNpcAppearanceTest;
@@ -1341,6 +1360,7 @@ private:
 	float BurglarOutsideSeconds = 0.0f; // +0x10, armed to 0x780000 by FUN_004b8b60
 	float CriminalStopScale = 1.0f; // stands in for the stop distance at +0xd3
 	float SpeederRewardCooldownSeconds = 0.0f; // veh +0xd7, event 0x21 repeat timer
+	float MegaphoneStopSeconds = 0.0f; // veh +0xd3, temporary stop/recheck timer
 	float CriminalCruiseSeconds = 0.0f; // +0x137, DAT_00506360 + rand()%DAT_00506364
 	float CriminalSpotlightLostSeconds = 0.0f; // +0x13b, DAT_00506368 = 20.0s
 	uint8 BurglarDoorPhase = 0; // +0x133..+0x136 flags in FUN_004b8b60/FUN_004b8c90
@@ -1424,6 +1444,24 @@ private:
 	void AlightAttachmentOnly();
 	// DAT_005040d0+0xa4: the player's helicopter, in it or not.
 	ASimCopterHelicopterPawn* ResolvePlayerHelicopter() const;
+	// Requested ambient extension, using the original conversation clips/voice selector.
+	// Transient: the untouched BHAV stack resumes after a visit or a save/load.
+	bool IsEligibleForAmbientCuriosity() const;
+	bool UpdateAmbientCuriosity(float DeltaSeconds);
+	void StopAmbientCuriosity();
+	void PlayCivilianConversation(FSimCopterPersonContext& Context, AActor* LookAt);
+	TWeakObjectPtr<ASimCopterHelicopterPawn> AmbientCuriosityAircraft;
+	FVector AmbientCuriosityGoal = FVector::ZeroVector;
+	FVector AmbientCuriosityAircraftLocation = FVector::ZeroVector;
+	float AmbientCuriosityAircraftYaw = 0;
+	float AmbientCuriosityCooldown = 5;
+	float AmbientCuriosityTimeLeft = 0;
+	float AmbientCuriosityChatWait = 0;
+	float AmbientCuriositySpeakingTime = 0;
+	int32 AmbientCuriositySlot = INDEX_NONE;
+	int32 AmbientCuriositySide = 0;
+	int32 AmbientCuriosityRemarks = 0;
+	bool bAmbientCuriosityArrived = false;
 	// Keeps a harness rider on the rope end, which is a point on the helicopter rather than a
 	// component this actor can be parented to.
 	void UpdateCarriedTransform();

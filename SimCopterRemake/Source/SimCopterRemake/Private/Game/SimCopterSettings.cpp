@@ -361,8 +361,13 @@ void USimCopterSettings::ApplySound(const UObject* WorldContextObject)
 			// Restore the station and the user's saved volume together.
 			Radio->SetStationIndex(ResolveRadioStation(Radio->GetStations()));
 		}
-		Radio->SetVolume((static_cast<float>(RadioVolume) / VolumeMax) * (bAutoQuiet ? AutoQuietScale : 1.0f));
+		Radio->SetVolume(GetRadioVolumeScale());
 	}
+}
+
+float USimCopterSettings::GetRadioVolumeScale() const
+{
+	return VolumeIndexToScale(RadioVolume) * (bAutoQuiet ? AutoQuietScale : 1.0f);
 }
 
 void USimCopterSettings::SetGameVolume(const int32 Value)

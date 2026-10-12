@@ -41,6 +41,8 @@ namespace EBhavAttr
 	constexpr int32 Speed = 8;       // +0x150, 0..10 (op23's "logic" speed; compared by programs)
 	constexpr int32 Visible = 9;     // +0x152
 	constexpr int32 PreviousSpeed = 10; // +0x154, written by op23 before speed changes
+	constexpr int32 InteractionParameter = 12; // +0x158, FUN_004c1050's param_5
+	constexpr int32 MegaphoneMessage = 13; // +0x15a, BHAV 901 reads this attribute, not a separate field
 	// The actual per-tick move magnitude: FUN_004ca7d0 (op4) passes +0x164 into the move core,
 	// and the shipped programs assign it directly via expressions ("movespeed := 6/8/12/16/25").
 	// One tick's displacement is octantDir * MoveSpeed / 12 original units (FUN_004c3010 builds
@@ -125,6 +127,7 @@ namespace EBhavObjectClass
 	// "Cop speeder" probes it at rec[3] to find the car it was sent to arrest.
 	constexpr int32 BurglarCar = 13;      // FUN_0049b060(3, tile)
 	constexpr int32 Civilian = 14;        // FUN_004ca350 state == 0
+	constexpr int32 Casualty = 15;        // inline scan: written off OR state 6, visible, uncarried, outside hospital
 	// DAT_005040d0+0xc0, the third object hanging off the player record. Taken to be the
 	// searchlight: the only program that asks for it is 1151 "copf - follow heli", and pointing
 	// the light at what you want the police to deal with is how SimCopter directs them - the

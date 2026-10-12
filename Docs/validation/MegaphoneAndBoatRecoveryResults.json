@@ -1,0 +1,160 @@
+{
+  "date": "2026-10-12",
+  "features": [
+    "Original Stop Criminal pedestrian reaction via BHAV 901 and the real message attributes",
+    "Original eligible vehicle stop gates and ordinary-car/speeder hold behavior",
+    "Hull geometry and short-drop acceptance for harbor recovery",
+    "Requested police-station roof boat delivery",
+    "Single mission completion and credit, upright delivery surface placement",
+    "Save version 12 with backward loading and pending-reaction repair"
+  ],
+  "originalEvidence": {
+    "directory": ".ghidra-exports/",
+    "functions": [
+      "004c1050",
+      "0049d7e0",
+      "0049df60",
+      "0049e0c0",
+      "0049ed20",
+      "0049b930",
+      "004681f0"
+    ],
+    "scripts": "Reference/SimCopterOriginalGame/x/people.df BHAV 901 and 1104"
+  },
+  "reproduction": {
+    "report": "Docs/scratchpad/megaphone-harbor/reproduction/index.json",
+    "failingAssertions": 28,
+    "tests": [
+      {
+        "name": "SimCopter.CaptureCage.VehicleBoatRecoveryAndWaypoints",
+        "errors": 9
+      },
+      {
+        "name": "SimCopter.Interaction.MegaphoneEffects",
+        "errors": 19
+      }
+    ]
+  },
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/megaphone-harbor/build-editor.log"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/megaphone-harbor/build-shipping.log"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/megaphone-harbor/build-development.log"
+    }
+  },
+  "tests": {
+    "passed": 61,
+    "clean": 60,
+    "withWarnings": 1,
+    "failed": 0,
+    "notRun": 0,
+    "report": "Docs/scratchpad/megaphone-harbor/combined/index.json",
+    "existingFixtureWarnings": [
+      "SimCopter.Traffic.TunnelTransit"
+    ],
+    "initialCombinedFailure": "Synthetic v8 test payload still included the appended v12 field. Updated legacy taser fixture offsets; final v8, v10 and v11 compatibility tests passed.",
+    "rendering": "NullRHI only; render-only guards do not exercise rendering"
+  },
+  "sourceFiles": [
+    {
+      "path": "Private/Flight/SimCopterAirOperations.cpp",
+      "sha256": "0ea0942e4ed428d566a6a04dfd4982ae8caa65f1ccfd1f645b204e360d1d8840"
+    },
+    {
+      "path": "Private/Ground/SimCopterAmbientVehicles.cpp",
+      "sha256": "d8a47cda5565bf6622cae7a2d789dab9ad618450787517b6f8aef7aa224f88fe"
+    },
+    {
+      "path": "Private/Ground/SimCopterGroundAgent.cpp",
+      "sha256": "365b90bb08358e2b93822ed4739bd6585951ad2adf5075c00ebb25ed3c25a27e"
+    },
+    {
+      "path": "Private/Ground/SimCopterTrafficSystemActor.cpp",
+      "sha256": "5c5db5ed566defb01c590f4f688f0f9b9218e3de1d5290dda87f9ab2fe0b7b5b"
+    },
+    {
+      "path": "Private/Tests/SimCopterCageRecoveryTests.cpp",
+      "sha256": "2bc7999940c1de24e645840aa5b27bb25a5c46e941cadf51ae3428d73730076c"
+    },
+    {
+      "path": "Private/Tests/SimCopterEnergyTaserTests.cpp",
+      "sha256": "9a4582556582b27ee52339c10f2be0740e75e3109d60ca65fb71a95b894fb7ad"
+    },
+    {
+      "path": "Private/Tests/SimCopterVehicleTaserTests.cpp",
+      "sha256": "6e66ad65d97289a81756d9684ef8b6001f4c1e37d838773bcd350e57c45d1091"
+    },
+    {
+      "path": "Public/City/SimCity2000CityActor.h",
+      "sha256": "361df98399e1122c5399e564d86eb9f6e41218135c9dffe83ec4cf30ae2fcefe"
+    },
+    {
+      "path": "Public/Flight/SimCopterHelicopterPawn.h",
+      "sha256": "48151721f192a3368e8159a8f62583582ec0bea004cd024658f645635be97d1e"
+    },
+    {
+      "path": "Public/Ground/SimCopterAmbientVehicles.h",
+      "sha256": "f0ee13e36251e04ca1b08602312b64d51c9a9a5b252c1919ed8f7b6d9df6214f"
+    },
+    {
+      "path": "Public/Ground/SimCopterBehaviorVM.h",
+      "sha256": "b5ae8b5c6a2c6d42d35c85d641a9075a93669e66ebad813953ba2b78fccac2b7"
+    },
+    {
+      "path": "Public/Ground/SimCopterGroundAgent.h",
+      "sha256": "9ec39305ad8c936c00b4c60a7b5a386e4bc77607ac0700d6d81fe8c634486e80"
+    },
+    {
+      "path": "Public/Ground/SimCopterTrafficSystemActor.h",
+      "sha256": "17d9f4373b38b4879aabc0a3259e327b7537f57f92479bec2c4205ed7c21e35d"
+    },
+    {
+      "path": "Private/Tests/SimCopterMegaphoneTests.cpp",
+      "sha256": "cee230e84832f9c27442892fa3e98b1e28b600a959db8b8aa964ca43cae6817e"
+    }
+  ],
+  "installation": {
+    "InstalledAtUtc": "2026-10-12T17:56:50.0677214Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "99196060C993159458F7261130E75C1A34E884729891F6DA962B3E418A26045E",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\megaphone-harbor/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "480A4F0B36F5FC0DDF60258477B845F80E95B07D604DFC9931AF51A29FF1DF48"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "27F50D75EA405C0CDBAFC358AF74FD8EF9313FD7BE5AC9B7F8A1544BDB853CE2",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\megaphone-harbor/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "904C2EC74B9060B41A45F5AE337822A49BEAEB68E19B1293FC98C68C033635C7"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "71BFC7A6446E2043612F8A37D6CB6A69EE2583D8EF5D96B595D8E71C3C187249",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\megaphone-harbor/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "DA7CB07F774F88AF7BC0872D437EC2DA3D94A183C0B911783D2E49411159A783"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "F5465F5D081338B22B86B3EFEE2A48C4E3AFE9114F4B742588D2EEE609B728C4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\megaphone-harbor/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "150D53117F7383B29CA0958C4FF9CC518CE4BE6279DB9FB6E9685F1EE50F07F3"
+      }
+    ],
+    "HeadlessPassed": 61,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "interactiveGameplayChecked": false,
+  "listeningChecked": false,
+  "cookedAssetsChanged": false,
+  "publicationCheckoutChanged": false
+}

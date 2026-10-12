@@ -74,6 +74,17 @@ bool FSimCopterPurchaseParkingTest::RunTest(const FString& Parameters)
 	Current->PlaceOnHelipad(FirstPad, 0);
 	ASimCopterHangar* Hangar = World->SpawnActor<ASimCopterHangar>();
 	if (!TestTrue(TEXT("Hangar placed"), Hangar->PlaceAtAirport(Traffic, FirstPad))) return false;
+	for (int32 PadIndex=0;PadIndex<SimCopterAirport::PadCount;++PadIndex)
+	{
+		FVector Surface; Traffic->TryGetAirportPadWorldLocation(PadIndex,Surface);
+		const FVector Forward=FRotator(0,SimCopterHelicopterParking::GetAirportFacingYaw(Traffic,Surface),0).Vector();
+		TestTrue(TEXT("Every edge and corner pad faces the base"),
+			FVector::DotProduct(Forward,(Hangar->GetActorLocation()-Surface).GetSafeNormal2D())>0.99f);
+		FHitResult RearHit;
+		FCollisionQueryParams RearQuery(SCENE_QUERY_STAT(AirportRearClearance),true,Current);
+		TestFalse(TEXT("Rear camera corridor does not enter the hangar"),World->LineTraceSingleByChannel(
+			RearHit,Surface+FVector(0,0,100),Surface-Forward*900+FVector(0,0,100),ECC_Camera,RearQuery));
+	}
 	const FTransform Before = Current->GetActorTransform();
 	const float FuelBefore = Current->GetFuelFraction();
 	SimCopterHangarShop::FContext Shop;
@@ -97,6 +108,8 @@ bool FSimCopterPurchaseParkingTest::RunTest(const FString& Parameters)
 		ASimCopterHelicopterPawn* Bought = CastChecked<ASimCopterHelicopterPawn>(Actor);
 		TestEqual(TEXT("New model matches catalog"), Bought->GetHelicopterTypeIndex(), 0);
 		TestNull(TEXT("Purchase does not possess the new aircraft"), Bought->GetController());
+		TestTrue(TEXT("New helicopter faces the base with tail and chase camera away from hangar"),
+			FVector::DotProduct(Bought->GetActorForwardVector(),(Hangar->GetActorLocation()-Bought->GetActorLocation()).GetSafeNormal2D())>0.9f);
 		TestFalse(TEXT("New aircraft does not overlap the original"),
 			SimCopterHelicopterParking::OverlapsParkedAircraft(Bought->GetParkingWorldBounds(), {Current->GetParkingWorldBounds()}));
 		bool bOnPurchasePad = false;

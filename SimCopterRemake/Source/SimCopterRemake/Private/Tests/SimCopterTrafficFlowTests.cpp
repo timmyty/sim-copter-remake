@@ -5,13 +5,17 @@
 #include "Engine/World.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Ground/SimCopterCriminalCar.h"
+#include "Formats/SimCopterOriginalGamePaths.h"
+#include "Misc/Paths.h"
 
 IMPLEMENT_COMPLEX_AUTOMATION_TEST(FSimCopterTrafficFlowTest, "SimCopter.Traffic.Flow",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
 void FSimCopterTrafficFlowTest::GetTests(TArray<FString>& Names, TArray<FString>& Commands) const
 {
-	for (const TCHAR* Name : {TEXT("Following"), TEXT("Recovery"), TEXT("Routing"), TEXT("Intersection")})
+	for (const TCHAR* Name : {TEXT("Following"), TEXT("Recovery"), TEXT("Routing"), TEXT("Intersection"),
+		TEXT("BurglarSpeed"), TEXT("BurglarRecovery"), TEXT("BurglarSpawn"), TEXT("KeithlyBurglarRoute")})
 	{
 		Names.Add(Name); Commands.Add(Name);
 	}
@@ -128,6 +132,99 @@ bool FSimCopterTrafficFlowTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("Oncoming traffic does not penalize an exit"), A->GetRouteTargetNode(),2);
 		A->SetRouteState(5,2,INDEX_NONE); Traffic->AssignNextTarget(*A,Traffic->RoadNodes);
 		TestEqual(TEXT("Dead end still permits the necessary U-turn"), A->GetRouteTargetNode(),2);
+	}
+	else if (Parameters == TEXT("BurglarSpeed"))
+	{
+		for (const bool Speeder : {false, true})
+		{
+			auto* Suspect = Car(FVector(0,0,100), FVector(2000,0,100));
+			if (Speeder) Suspect->MakeSpeeder();
+			else { Suspect->MakeCriminalCar(17, 100 << 16); Traffic->CriminalCars.Add(Suspect); }
+			// Inside the stopping band but outside body-separation padding.
+			auto* Leader = Car(FVector(92,0,100), FVector(2000,0,100));
+			Leader->DisableVehicleWithTaser();
+			// Same order as the live coordinator: traffic brakes, then the crime state machine.
+			Traffic->UpdateTrafficInteractions(.1f);
+			Traffic->UpdateSpeeders(.1f); Traffic->UpdateCriminalCars(.1f);
+			TestEqual(TEXT("Criminal speed cannot erase the stopped traffic ahead"), Suspect->TrafficSpeedScale, 0.0f);
+			Suspect->Tick(.1f);
+			TestTrue(TEXT("Burglar/speeder stays behind a blocked leader"), Suspect->GetActorLocation().Equals(FVector(0,0,100)));
+			Traffic->VehicleAgents.Remove(Leader); Leader->Destroy();
+			Traffic->UpdateTrafficInteractions(.1f);
+			Traffic->UpdateSpeeders(.1f); Traffic->UpdateCriminalCars(.1f);
+			TestEqual(TEXT("Open road retains the original fleeing speed"), Suspect->TrafficSpeedScale, 1.75f);
+			Traffic->VehicleAgents.Remove(Suspect); Traffic->CriminalCars.Remove(Suspect); Suspect->Destroy();
+		}
+	}
+	else if (Parameters == TEXT("BurglarRecovery"))
+	{
+		auto* Suspect = Car(FVector(0,0,100), FVector(2000,0,100));
+		Suspect->MakeCriminalCar(17, 100 << 16); Traffic->CriminalCars.Add(Suspect);
+		auto* Other = Car(FVector(60,0,100), FVector(-2000,0,100));
+		Traffic->SyncVehicleTrafficStates(.1f);
+		auto& State = Traffic->VehicleTrafficStates.FindChecked(TObjectKey<ASimCopterGroundAgent>(Suspect));
+		State.NoProgressSeconds = 20;
+		Traffic->UpdateVehicleBlockageRecovery();
+		TestTrue(TEXT("Driving burglar can escape a car deadlock without losing the mission"), State.CarPhaseSeconds > 0);
+		for (int32 Frame=0; Frame<300; ++Frame)
+		{
+			Traffic->UpdateTrafficInteractions(.05f); Traffic->UpdateCriminalCars(.05f);
+			Suspect->Tick(.05f); Other->Tick(.05f);
+		}
+		TestTrue(TEXT("Burglar physically clears the overlapping traffic"), Suspect->GetActorLocation().X > 500);
+		TestTrue(TEXT("Other traffic clears the burglar"), Other->GetActorLocation().X < -500);
+		TestEqual(TEXT("Recovery preserves criminal event identity"), Suspect->GetCriminalEventId(), 17);
+		Suspect->SetCriminalState(uint8(SimCopterCriminalCar::EState::BurglarOutside));
+		TestFalse(TEXT("Parked getaway car cannot phase while its burglar is outside"), Traffic->CanVehicleRecoverFromTraffic(*Suspect));
+		Suspect->SetCriminalState(uint8(SimCopterCriminalCar::EState::SeekingBurglaryStop));
+		Suspect->TryOrderStop(INDEX_NONE);
+		TestFalse(TEXT("Ordered burglary/police stop remains protected"), Traffic->CanVehicleRecoverFromTraffic(*Suspect));
+		Suspect->ResumeCriminalCarDriving(); Suspect->SetCriminalState(uint8(SimCopterCriminalCar::EState::Cruising));
+		Suspect->DisableVehicleWithTaser();
+		TestFalse(TEXT("Taser still prevents recovery"), Traffic->CanVehicleRecoverFromTraffic(*Suspect));
+	}
+	else if (Parameters == TEXT("BurglarSpawn"))
+	{
+		Traffic->XbldTileIds.Init(0,128*128); Traffic->RoadNodes.SetNum(3);
+		const FIntPoint Tiles[] = {{64,64},{65,64},{65,65}};
+		for (int32 Index=0; Index<3; ++Index)
+		{
+			auto& Node=Traffic->RoadNodes[Index]; Node.FileX=Tiles[Index].X; Node.FileY=Tiles[Index].Y;
+			Node.BuildingId=0x1d; Node.Location=Node.LocalLocation=FVector((Node.FileX-63.5f)*400,-(Node.FileY-63.5f)*400,0);
+			Traffic->RoadNodeIndexByTile.Add(Tiles[Index],Index); Traffic->XbldTileIds[Node.FileY*128+Node.FileX]=0x1d;
+		}
+		Traffic->RoadNodes[0].Neighbors={1}; Traffic->RoadNodes[1].Neighbors={0,2}; Traffic->RoadNodes[2].Neighbors={1};
+		if (!TestTrue(TEXT("Clear connected road accepts the burglar"),Traffic->TryActivateBurglarCar(17,64,64,100<<16))) return false;
+		auto* Suspect=Traffic->CriminalCars.Last().Get();
+		TestTrue(TEXT("Spawn starts with a real first-hop target instead of skipping the corner"),Suspect->HasMoveTarget());
+		TestFalse(TEXT("Occupied spawn cannot stack a second burglar on the first"),Traffic->TryActivateBurglarCar(18,64,64,100<<16));
+		TestEqual(TEXT("Rejected spawn consumes no criminal pool slot"),Traffic->CriminalCars.Num(),1);
+	}
+	else if (Parameters == TEXT("KeithlyBurglarRoute"))
+	{
+		Traffic->CityFile.FilePath = FPaths::Combine(SimCopterOriginalGame::ResolveRoot(), TEXT("cities/career/city7.sc2"));
+		if (!TestTrue(TEXT("Actual Keithly road graph loads"), Traffic->RebuildSpawnData())) return false;
+		// The user's live log repeatedly places the burglary stop at this road tile.
+		if (!TestTrue(TEXT("Reported road supports the getaway car"), Traffic->TryActivateBurglarCar(17,15,79,1000<<16))) return false;
+		auto* Suspect = Traffic->CriminalCars.Last().Get();
+		for (int32 Cycle=0; Cycle<3; ++Cycle)
+		{
+			Suspect->SetCriminalState(uint8(SimCopterCriminalCar::EState::SeekingBurglaryStop));
+			Suspect->TryOrderStop(INDEX_NONE); Suspect->MarkStopped();
+			Suspect->SetCriminalState(uint8(SimCopterCriminalCar::EState::BurglarOutside));
+			Suspect->SetBurglarOutsideSeconds(120); Suspect->SignalCriminalDriverReturned(1);
+			for (int32 Phase=0; Phase<3; ++Phase) Traffic->RunBurglarOutsidePhase(*Suspect,.1f);
+			TestFalse(TEXT("Returning driver releases the deliberate stop"), Suspect->IsStopped() || Suspect->IsStopOrdered());
+			const FVector Start = Suspect->GetActorLocation();
+			float Furthest = 0;
+			for (int32 Frame=0; Frame<400; ++Frame)
+			{
+				if (!Suspect->HasMoveTarget() || Suspect->IsNearMoveTarget()) Traffic->AssignNextTarget(*Suspect,Traffic->RoadNodes);
+				Traffic->UpdateTrafficInteractions(.05f); Traffic->UpdateCriminalCars(.05f); Suspect->Tick(.05f);
+				Furthest=FMath::Max(Furthest,float(FVector::Dist2D(Start,Suspect->GetActorLocation())));
+			}
+			TestTrue(TEXT("Each returned burglar drives away through Keithly's real turns"), Furthest>800);
+		}
 	}
 	else
 	{

@@ -125,7 +125,8 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	TestTrue(TEXT("Restored car resumes its route"), Restored->GetActorLocation().X > StoppedAt.X);
 	Restored->Destroy();
 	TArray<uint8> Legacy = Save;
-	Legacy.SetNum(Legacy.Num()-3*sizeof(float)-2); // v9/v10 timers, v11 stun timer and two byte flags
+	constexpr int32 TailAfterVersion8 = 4*sizeof(float)+2; // v9/v10/v11/v12 timers and two v11 byte flags
+	Legacy.SetNum(Legacy.Num()-TailAfterVersion8);
 	const int32 LegacyVersion = 8;
 	FMemory::Memcpy(Legacy.GetData()+sizeof(uint32), &LegacyVersion, sizeof(LegacyVersion));
 	auto* LegacyCar = NewCar(FVector(0,5000,100));
@@ -135,7 +136,7 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	LegacyCar->Destroy();
 	auto* InvalidCar = NewCar(FVector(0,6000,100));
 	const float InvalidDuration = -1.0f;
-	FMemory::Memcpy(Save.GetData()+Save.Num()-3*sizeof(float)-2, &InvalidDuration, sizeof(float));
+	FMemory::Memcpy(Save.GetData()+Save.Num()-TailAfterVersion8, &InvalidDuration, sizeof(float));
 	TestFalse(TEXT("Invalid saved duration is rejected"), InvalidCar->RestoreRuntimeSaveState(Save));
 	InvalidCar->Destroy();
 	Car->Tick(13.0f); Car->Tick(.1f);

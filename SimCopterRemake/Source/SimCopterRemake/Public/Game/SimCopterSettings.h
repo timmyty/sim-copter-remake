@@ -180,6 +180,8 @@ public:
 
 	int32 GetRadioVolume() const { return RadioVolume; }
 	void SetRadioVolume(int32 Value);
+	/** Normalized music setting with Auto-Quiet, before the mixer boost and master gain. */
+	float GetRadioVolumeScale() const;
 
 	/** The tuner slider, 0..2 in the original. Clamped to the stations actually discovered. */
 	int32 GetRadioStation() const { return RadioStation; }

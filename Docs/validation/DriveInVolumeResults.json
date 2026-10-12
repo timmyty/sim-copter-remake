@@ -1,0 +1,335 @@
+{
+  "verifiedAtUtc": "2026-10-12T20:19:22.626892+00:00",
+  "scope": "Drive-in movie gain follows Music Volume, Auto-Quiet and Game Volume at every theater",
+  "reportedSettings": {
+    "musicPercent": 135,
+    "gamePercent": 100,
+    "autoQuiet": false
+  },
+  "beforeSpeakerGain": 0.65,
+  "afterSpeakerGain": 1.35,
+  "gainIncreaseDb": 6.348408237043012,
+  "rootCause": "Creation and Tick forced 0.65 instead of reading the sound settings; music mute was also ignored.",
+  "baseline": {
+    "report": "Docs/scratchpad/drive-in-volume/tests-before/index.json",
+    "volumeFailures": 57,
+    "unrelatedFixtureFailures": 1,
+    "fixtureCorrection": "Stop separately tested cheat confirmation sounds before measuring movie-only output; the bundled original movie remains silent."
+  },
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/drive-in-volume/build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/drive-in-volume/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/drive-in-volume/build-development.log"
+    }
+  },
+  "tests": {
+    "passed": 19,
+    "failed": 0,
+    "notRun": 0,
+    "warningCases": 1,
+    "report": "Docs/scratchpad/drive-in-volume/tests-final/index.json",
+    "cases": [
+      {
+        "name": "SimCopter.Cheats.DriveInCommands",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.DriveIn.LocalizedAudio",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.DashboardVolume",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.Dial",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.PossessionGate",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.Random",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.Schedule",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.SequentialResume",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.ShuffleBag",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Radio.StationPreference",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Settings.SoundSettings",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Settings.SoundVolumePersistence",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Sound.Attenuation",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Sound.GameplayMappings",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Sound.IndependentPlayback",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Sound.RadioLiveVolume",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Sound.RotorLaw",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Sound.Table",
+        "state": "Success"
+      },
+      {
+        "name": "SimCopter.Sound.VoiceEvents",
+        "state": "Success"
+      }
+    ],
+    "warnings": "Existing synthetic-city static attachment warnings in the mixer fixture"
+  },
+  "windowsMixerMeasurements": [
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "near",
+      "peak": 0.333003
+    },
+    {
+      "movie": 0,
+      "theater": 1,
+      "condition": "near",
+      "peak": 0.325239
+    },
+    {
+      "movie": 0,
+      "theater": 2,
+      "condition": "near",
+      "peak": 0.389301
+    },
+    {
+      "movie": 0,
+      "theater": 3,
+      "condition": "near",
+      "peak": 0.335289
+    },
+    {
+      "movie": 0,
+      "theater": 4,
+      "condition": "near",
+      "peak": 0.407216
+    },
+    {
+      "movie": 0,
+      "theater": 5,
+      "condition": "near",
+      "peak": 0.393405
+    },
+    {
+      "movie": 0,
+      "theater": 6,
+      "condition": "near",
+      "peak": 0.354797
+    },
+    {
+      "movie": 0,
+      "theater": 7,
+      "condition": "near",
+      "peak": 0.403905
+    },
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "far",
+      "peak": 0.0
+    },
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "returned",
+      "peak": 0.39257
+    },
+    {
+      "movie": 0,
+      "theater": 0,
+      "condition": "silent_movie",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "near",
+      "peak": 0.333003
+    },
+    {
+      "movie": 1,
+      "theater": 1,
+      "condition": "near",
+      "peak": 0.325239
+    },
+    {
+      "movie": 1,
+      "theater": 2,
+      "condition": "near",
+      "peak": 0.389301
+    },
+    {
+      "movie": 1,
+      "theater": 3,
+      "condition": "near",
+      "peak": 0.335289
+    },
+    {
+      "movie": 1,
+      "theater": 4,
+      "condition": "near",
+      "peak": 0.407216
+    },
+    {
+      "movie": 1,
+      "theater": 5,
+      "condition": "near",
+      "peak": 0.393405
+    },
+    {
+      "movie": 1,
+      "theater": 6,
+      "condition": "near",
+      "peak": 0.354797
+    },
+    {
+      "movie": 1,
+      "theater": 7,
+      "condition": "near",
+      "peak": 0.403905
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "far",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "returned",
+      "peak": 0.39257
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "paused",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "resumed",
+      "peak": 0.379637
+    },
+    {
+      "movie": 1,
+      "theater": 0,
+      "condition": "demolished",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 1,
+      "condition": "surviving",
+      "peak": 0.420845
+    },
+    {
+      "movie": 1,
+      "theater": 1,
+      "condition": "music_muted",
+      "peak": 0.0
+    },
+    {
+      "movie": 1,
+      "theater": 1,
+      "condition": "music_boosted",
+      "peak": 0.70553
+    }
+  ],
+  "sourceAudio": {
+    "meanDb": -12.8,
+    "peakDb": 0.0,
+    "modified": false,
+    "preparedAndInstalledSha256": "D559C7AC4D45714C48C892A67E94F71D1870D383A3239001A3ECB3C611C19957"
+  },
+  "installed": {
+    "InstalledAtUtc": "2026-10-12T20:18:10.9599487Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "7EB96C7D99D732F8D198FA25DE6900E3719C85C86083B230B4D02EC9E4C869FD",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\drive-in-volume/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "A39CD09E35F075661BB0EAA2CD04AD938948547D521ABE40A7166B489BEFD204"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "7516A757164837492042FD6CF98F16EB9C4FF3D96A3F03F24F05954746DFE6AC",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\drive-in-volume/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "94ED7303F3521CAE7294C9725516CDD816C0B93C91D897FB0442B9DF2AC57FA4"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "A07F4ED03992A3D20E597BD2F0921D50DC2E8C6BA36498F9820707FE1F212A1F",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\drive-in-volume/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "D44B906EFB26FA856C35F65EAC0E54C8E99F2E0EB657C1DB16DABA8882C72537"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "253FEAE1D2CA1E4592E301D0624D5A664DCD3B9792447A2C041AD6EBC95CF4E8",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\drive-in-volume/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "CFD23993CDEBD9C6C99CA8CD95505FB30315C963E05E6258D37ED325E7312E20"
+      }
+    ],
+    "TestsPassed": 19,
+    "IncludesDiagnostics": true,
+    "InteractiveListeningChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "sourceManifest": "Docs/scratchpad/drive-in-volume/source-manifest.json",
+  "diff": "Docs/scratchpad/drive-in-volume/source.diff",
+  "limitations": [
+    "Automated mixer capture, not manual gameplay or speaker listening.",
+    "Spatial falloff remains: loudest within 3 m, fading over the next 40 m.",
+    "No publication checkout sync or push."
+  ],
+  "manualVerification": [
+    "Launch either updated installed game build.",
+    "Set Game Volume 100%, Music Volume 135%, Auto-Quiet off; activate HSI at a standing theater.",
+    "Listen near the theater, adjust Music Volume, then mute and restore it.",
+    "Move out of range and return; pause/resume and confirm localized playback returns."
+  ]
+}

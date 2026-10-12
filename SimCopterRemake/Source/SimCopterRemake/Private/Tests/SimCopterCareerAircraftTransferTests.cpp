@@ -165,6 +165,8 @@ bool FSimCopterOwnedFleetTransferTest::RunTest(const FString&)
 			if (Traffic->TryGetAirportPadWorldLocation(Index,Surface)) bOnPad|=FVector::DistSquared2D(Aircraft->GetActorLocation(),Surface)<1;
 		}
 		TestTrue(TEXT("Owned helicopter stands on an airport pad"),bOnPad);
+		if (Aircraft!=Current) TestTrue(TEXT("Restored fleet faces toward base instead of putting tail inside hangar"),
+			FVector::DotProduct(Aircraft->GetActorForwardVector(),(Hangar->GetActorLocation()-Aircraft->GetActorLocation()).GetSafeNormal2D())>0.9f);
 		TestFalse(TEXT("Full fleet footprints do not overlap"),OverlapsParkedAircraft(Aircraft->GetParkingWorldBounds(),Occupied));
 		Occupied.Add(Aircraft->GetParkingWorldBounds());
 		TestEqual(TEXT("Every restored model has the purchased equipment"),Aircraft->GetEquipmentState().CareerEquipmentMask,Mask);

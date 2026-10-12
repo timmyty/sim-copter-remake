@@ -363,7 +363,7 @@ void USimCopterAirOperationsComponent::UseCargoTool()
 	}
 	else if (HasCargo())
 	{
-		Status=TowVehicle.IsValid() || HasBoat() ? TEXT("Cars: JUNKYARD ring or police roof. Boats: HARBOR. Lower and press OPEN / G to deliver.") : TEXT("Raise and hold at the top to board. Deliver prisoners to the police roof. G opens the floor.");
+		Status=TowVehicle.IsValid() || HasBoat() ? TEXT("Cars: JUNKYARD. Boats: HARBOR. Both: police roof. Lower and press OPEN / G to deliver.") : TEXT("Raise and hold at the top to board. Deliver prisoners to the police roof. G opens the floor.");
 	}
 	else if (!TryGrabCargo())
 	{
@@ -421,7 +421,7 @@ bool USimCopterAirOperationsComponent::TryGrabCargo()
 			BoatIndex=INDEX_NONE; Status=TEXT("Rescue everyone from the hull before towing it."); return false;
 		}
 		bCageOpen=false;
-		Status=TEXT("Boat secured. Floor sealing. Carry to the HARBOR ring, lower and press OPEN / G.");
+		Status=TEXT("Boat secured. Floor sealing. Carry to the HARBOR ring or police roof, lower and press OPEN / G.");
 		if (auto* System=GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>()) System->RefreshRecoveryWaypoints();
 		return true;
 	}
@@ -459,15 +459,26 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 {
 	if ((!TowVehicle.IsValid() && !HasBoat()) || !GetWorld() || bCageOpen || CageSeal<1) return false;
 	auto* Ops=GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>();
-	auto IsVehicleDropInside=[&](const FVector& Center,double Extent,bool bSquare)
+	auto* Ambient=HasBoat()?ActorIn<ASimCopterAmbientVehiclesActor>(GetWorld()):nullptr;
+	auto IsCargoDropInside=[&](const FVector& Center,double Extent,bool bSquare)
 	{
 		FBox Body;
-		if (!TowVehicle.IsValid() || !TowVehicle->TryGetBodyLocalBoundsCm(Body))
-			return FVector::Dist2D(CargoLocation,Center)<=Extent && FMath::Abs(CargoLocation.Z-Center.Z-70)<=100;
-		// Match UpdateCargo between physics ticks. Judge the visible rotated footprint,
-		// allowing the same short drop onto a police roof as onto a junkyard lift.
-		FTransform Drop=TowVehicle->GetActorTransform();
-		Drop.SetLocation(CargoLocation-FVector(0,0,25));
+		FTransform Drop;
+		bool bHasGeometry=false;
+		if (TowVehicle.IsValid())
+		{
+			bHasGeometry=TowVehicle->TryGetBodyLocalBoundsCm(Body);
+			Drop=TowVehicle->GetActorTransform(); Drop.SetLocation(CargoLocation-FVector(0,0,25));
+		}
+		else if (Ambient)
+		{
+			bHasGeometry=Ambient->GetBoatTowGeometry(BoatIndex,Body,Drop);
+			Drop.SetLocation(CargoLocation);
+		}
+		if (!bHasGeometry)
+			return FVector::Dist2D(CargoLocation,Center)<=Extent && CargoLocation.Z-Center.Z>=-30 && CargoLocation.Z-Center.Z<=370;
+		// Match UpdateCargo between physics ticks, including the hull's capsize rotation.
+		// The visible footprint and bottom govern a short drop, not the cage/mesh pivot.
 		const double BottomHeight=Body.TransformBy(Drop).Min.Z-Center.Z;
 		if (BottomHeight < -70 || BottomHeight > 300) return false;
 		constexpr int32 SamplesPerAxis=9;
@@ -485,14 +496,22 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 	float RoofHalfExtent=0;
 	int32 RoofX=0,RoofY=0;
 	auto* Road=Ops?Ops->Traffic():nullptr;
-	if (Ops && TowVehicle.IsValid() && (TowVehicle->IsCriminalCar() || TowVehicle->IsTowableVehicle()) &&
+	if (Ops && (HasBoat() || (TowVehicle.IsValid() && (TowVehicle->IsCriminalCar() || TowVehicle->IsTowableVehicle()))) &&
 		Road && Road->TryGetPeopleTileCoordinateAtWorldLocation(CargoLocation,RoofX,RoofY) &&
 		Road->GetXbldTileId(RoofX,RoofY)==0xD2 && Road->TryGetBuildingRoofPost(RoofX,RoofY,PoliceRoof,RoofHalfExtent) &&
-		IsVehicleDropInside(PoliceRoof,RoofHalfExtent,true) &&
+		IsCargoDropInside(PoliceRoof,RoofHalfExtent,true) &&
 		CargoVelocity.Size()<=200)
 	{
-		TowVehicle->SetActorLocation(PoliceRoof+FVector(0,0,65));
-		TowVehicle->CompleteVehicleTow(false); TowVehicle.Reset();
+		if (HasBoat())
+		{
+			if (!Ambient || !Ambient->FinishBoatTow(BoatIndex,&PoliceRoof)) return false;
+			BoatIndex=INDEX_NONE;
+		}
+		else
+		{
+			TowVehicle->SetActorLocation(PoliceRoof+FVector(0,0,65));
+			TowVehicle->CompleteVehicleTow(false); TowVehicle.Reset();
+		}
 		bCageOpen=true; CageCaptureDelay=1.5f; BoardHoldSeconds=0;
 		Ops->RefreshRecoveryWaypoints();
 		Status=TEXT("Police station accepted the vehicle. Recovery complete.");
@@ -501,13 +520,7 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 	if (Ops) Ops->RefreshRecoveryWaypoints();
 	auto* Site=Ops?Ops->FindRecoverySite(CargoLocation,BoatIndex!=INDEX_NONE):nullptr;
 	if (!Site || !Site->IsWaypointActive() || CargoVelocity.Size()>200) return false;
-	bool bInsideDropZone=FVector::Dist2D(CargoLocation,Site->GetActorLocation())<=SimCopterAirOperations::RecoveryRadiusCm &&
-		FMath::Abs(CargoLocation.Z-Site->GetActorLocation().Z-70)<=100;
-	if (TowVehicle.IsValid() && Site->GetKind()==ESimCopterRecoverySite::Junkyard)
-	{
-		bInsideDropZone=IsVehicleDropInside(Site->GetActorLocation(),SimCopterAirOperations::RecoveryRadiusCm,false);
-	}
-	if (!bInsideDropZone) return false;
+	if (!IsCargoDropInside(Site->GetActorLocation(),SimCopterAirOperations::RecoveryRadiusCm,false)) return false;
 	if (TowVehicle.IsValid())
 	{
 		TowVehicle->SetActorLocation(Site->GetActorLocation()+FVector(0,0,65));
@@ -515,10 +528,9 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 	}
 	if (BoatIndex!=INDEX_NONE)
 	{
-		auto* Ambient=ActorIn<ASimCopterAmbientVehiclesActor>(GetWorld());
 		if (!Ambient) return false;
-		Ambient->SetBoatTow(BoatIndex,true,Site->GetActorLocation()+FVector(0,0,70));
-		if (!Ambient->FinishBoatTow(BoatIndex)) return false;
+		const FVector CradleSurface=Site->GetActorLocation()+FVector(0,0,50);
+		if (!Ambient->FinishBoatTow(BoatIndex,&CradleSurface)) return false;
 		BoatIndex=INDEX_NONE;
 	}
 	bCageOpen=true; CageCaptureDelay=1.5f; BoardHoldSeconds=0;

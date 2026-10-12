@@ -20,6 +20,17 @@
 
 namespace
 {
+// The fixture creates the physical people itself; still allocate real crime and
+// medical records so delivery/reward assertions cannot pass on an invalid event ID.
+struct FPoliceMissionWorld : SimCopterMissions::ISimCopterMissionWorld
+{
+	virtual int32 GetXbldTileId(int32, int32) const override { return 0x1d; }
+	virtual int32 GetBuildingFootprintSize(int32, int32) const override { return 1; }
+	virtual bool GetCameraTile(int32& X, int32& Y) const override { X=60; Y=60; return true; }
+	virtual bool GetPlayerTile(int32& X, int32& Y) const override { X=60; Y=60; return true; }
+	virtual bool TrySpawnMissionPerson(int32, int32, int32, int32, int32) override { return true; }
+	virtual bool TryActivateBurglarCar(int32, int32, int32, int32) override { return true; }
+};
 UWorld* PoliceTestWorld()
 {
 	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
@@ -134,7 +145,8 @@ bool FSimCopterPoliceRecoveryTest::RunTest(const FString& Parameters)
 	Runner->Destroy(); Pursuer->Destroy();
 	// A disabled burglar remains inside its car, so a people-only scan cannot arrest it.
 	auto* Missions=World->SpawnActor<ASimCopterMissionSystemActor>();
-	Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
+	FPoliceMissionWorld MissionWorld;
+	Missions->MissionSystem.Initialize(&MissionWorld,1); Missions->MissionSystem.BeginSession();
 	const int32 Crime=Missions->CreateMissionAt(60,60,SimCopterMissions::TYPE_Burglar);
 	auto* Car=World->SpawnActor<ASimCopterGroundAgent>(); Car->AgentKind=ESimCopterGroundAgentKind::Vehicle;
 	Car->SetOwner(Traffic); Car->SetActorLocation(FVector(500,900,24));
@@ -148,6 +160,119 @@ bool FSimCopterPoliceRecoveryTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Dropped officer walks five metres and arrests disabled burglar car"),Car->IsActorBeingDestroyed());
 	Missions->MissionSystem.Tick(0);
 	TestFalse(TEXT("Disabled-car arrest completes burglar mission"),Missions->IsMissionEventActive(Crime));
+	Officer->Destroy();
+
+	// Direct cage delivery never occupies a cabin seat. Exercise the real release,
+	// fall and posted officer ticks, including a street suspect below the roof.
+	PoliceTestBox(World,FVector(0,3000,590),FVector(600,600,10));
+	auto* Ops=Heli->GetAirOperations();
+	Heli->SetActorLocation(FVector(-900,3000,1600));
+	const uint32 CrimeTypes[]={SimCopterMissions::TYPE_Arsonist,SimCopterMissions::TYPE_Robber,
+		SimCopterMissions::TYPE_Mugger,SimCopterMissions::TYPE_Burglar};
+	const int32 CrimeStates[]={11,10,12,13};
+	for (int32 Index=0;Index<4;++Index)
+	{
+		auto* RoofOfficer=Person(7,FVector(-250,3000,600));
+		RoofOfficer->SetHospitalRoofPost(FVector(0,3000,600),600);
+		auto* Below=Person(11,FVector(-250,3000,0)); Below->StunForArrest();
+		auto* Suspect=Person(CrimeStates[Index],FVector(200,3000,800));
+		Suspect->MissionEventId=Missions->CreateMissionAt(60,60,CrimeTypes[Index]);
+		TestTrue(TEXT("Roof prisoner owns an active crime mission"),Missions->IsMissionEventActive(Suspect->MissionEventId));
+		const int32 ScoreBefore=Missions->MissionSystem.GetScore();
+		TestTrue(TEXT("Suspect is stunned before cage pickup"),Suspect->StunForArrest());
+		Ops->bDeployed=true; Ops->bCage=true; Ops->bCageOpen=true; Ops->CageCaptureDelay=0;
+		Ops->CargoLocation=Suspect->GetActorLocation();
+		TestTrue(TEXT("Cage takes the same stunned suspect"),Ops->TryGrabCargo());
+		TestEqual(TEXT("Direct roof delivery has no cabin prisoner"),Heli->GetMissionPassengerSlots().Num(),0);
+		RoofOfficer->Tick(1.f/15);
+		TestFalse(TEXT("Roof officer cannot arrest someone still in the cage"),Suspect->HasMissionResolutionReported());
+		Ops->CageAnchor->SetWorldLocation(FVector(200,3000,800));
+		Ops->OpenCargo(); Ops->bDeployed=false;
+		TestTrue(TEXT("Opening begins physical fall onto station roof"),Suspect->IsPassengerFalling());
+		bool bWalked=false;
+		for (int32 Tick=0;Tick<600 && !Suspect->HasMissionResolutionReported();++Tick)
+		{
+			World->Tick(LEVELTICK_TimeOnly,1.f/15); Suspect->Tick(1.f/15); RoofOfficer->Tick(1.f/15);
+			bWalked |= RoofOfficer->GetActorLocation().X>-100;
+		}
+		TestTrue(FString::Printf(TEXT("State %d dropped on roof is accepted by officer"),CrimeStates[Index]),Suspect->HasMissionResolutionReported());
+		TestTrue(TEXT("Roof officer physically approaches the dropped prisoner"),bWalked);
+		TestTrue(TEXT("Accepted prisoner is handcuffed and alive"),Suspect->IsHandcuffed() && !Suspect->IsMissionPatientDead());
+		TestTrue(TEXT("Officer keeps its station post"),RoofOfficer->bHasHospitalRoofPost);
+		TestFalse(TEXT("Street-level suspect cannot be arrested through station roof"),Below->HasMissionResolutionReported());
+		Missions->MissionSystem.Tick(0);
+		TestFalse(TEXT("Roof arrest completes the crime mission"),Missions->IsMissionEventActive(Suspect->MissionEventId));
+		TestTrue(TEXT("Officer handoff earns the crime reward"),Missions->MissionSystem.GetScore()>ScoreBefore);
+		const int32 Score=Missions->MissionSystem.GetScore();
+		Suspect->CompletePoliceDelivery(FVector(200,3000,600)); Missions->MissionSystem.Tick(0);
+		TestEqual(TEXT("Repeated roof acceptance cannot award twice"),Missions->MissionSystem.GetScore(),Score);
+		Suspect->Destroy(); Below->Destroy(); RoofOfficer->Destroy();
+	}
+
+	// A deployed officer remains police, but can retrieve a patient when no criminal
+	// needs attention. Use the real carrying and cabin transfer, including full-cabin retry.
+	Heli->SetActorLocation(FVector(-550,0,Heli->GetSimpleCollisionHalfHeight()+7.5f));
+	for (const bool bFullCabin : {false,true})
+	{
+		auto* Responder=Person(7,FVector(-300,0,0));
+		TestTrue(TEXT("Medical responder starts aboard as an officer"),Responder->BoardCarrier(Heli,false));
+		TestTrue(TEXT("Officer deploys beside patient"),Responder->AlightFromCarrier(false));
+		Responder->SetActorLocation(FVector(-300,0,Responder->GetCapsuleHalfHeightCm()+1));
+		auto* Patient=Person(6,FVector(500,0,0)); Patient->SetMissionInjuredPose();
+		Patient->MissionEventId=Missions->CreateMissionAt(60,60,SimCopterMissions::TYPE_Medevac);
+		TestTrue(TEXT("Patient owns an active medical mission"),Missions->IsMissionEventActive(Patient->MissionEventId));
+		auto* Criminal=Person(11,FVector(1800,0,0)); Criminal->StunForArrest();
+		Responder->Tick(1.f/15);
+		TestTrue(TEXT("Nearby criminal takes priority over patient"),Responder->BehaviorContext.SelectedObject.Get()==Criminal);
+		TestFalse(TEXT("Police work does not reserve a medical patient"),Patient->HospitalPatientClaim.IsValid());
+		Criminal->Destroy();
+		auto* Medic=Person(5,FVector(800,500,0));
+		TestTrue(TEXT("Medic can reserve the patient first"),Patient->TryClaimHospitalPatient(Medic));
+		Responder->Tick(1.f/15);
+		TestTrue(TEXT("Officer does not steal a medic's patient"),Patient->HospitalPatientClaim.Get()==Medic);
+		Medic->Destroy();
+		Responder->Tick(1.f/15);
+		TestTrue(TEXT("Officer reserves the available patient"),Patient->HospitalPatientClaim.Get()==Responder);
+		auto* NewCriminal=Person(12,FVector(1800,0,0)); NewCriminal->StunForArrest();
+		Responder->Tick(1.f/15);
+		TestTrue(TEXT("New criminal interrupts an uncompleted patient approach"),Responder->BehaviorContext.SelectedObject.Get()==NewCriminal);
+		TestFalse(TEXT("Interrupted officer releases the patient's reservation"),Patient->HospitalPatientClaim.IsValid());
+		NewCriminal->Destroy(); Responder->Tick(1.f/15);
+		auto* OtherOfficer=Person(7,FVector(900,500,0));
+		TestFalse(TEXT("A second officer cannot steal the reserved patient"),Patient->TryClaimHospitalPatient(OtherOfficer));
+		OtherOfficer->Destroy();
+		TArray<ASimCopterGroundAgent*> Blockers;
+		if (bFullCabin) while (Heli->GetAvailablePassengerSeats()>0)
+		{
+			auto* Blocker=Person(0,FVector(-2000,0,0));
+			if (!Blocker->BoardCarrier(Heli,false)) { Blocker->Destroy(); break; }
+			Blockers.Add(Blocker);
+		}
+		bool bCarriedPatient=false; int32 FullTicks=0;
+		for (int32 Tick=0;Tick<900 && Patient->GetBehaviorCarrier()!=Heli;++Tick)
+		{
+			World->Tick(LEVELTICK_TimeOnly,1.f/15); Responder->Tick(1.f/15);
+			bCarriedPatient |= Patient->GetBehaviorCarrier()==Responder;
+			if (bFullCabin && !Blockers.IsEmpty() && Patient->GetBehaviorCarrier()==Responder &&
+				FVector::Dist2D(Responder->GetActorLocation(),Heli->GetActorLocation())<150 && ++FullTicks==30)
+			{
+				TestTrue(TEXT("Full cabin keeps the patient in the officer's arms"),Patient->GetBehaviorCarrier()==Responder);
+				auto* Leaving=Blockers.Pop(); Leaving->AlightFromCarrier(false); Leaving->Destroy();
+			}
+		}
+		TestTrue(TEXT("Officer physically carries the patient back"),bCarriedPatient);
+		TestTrue(TEXT("Same patient occupies a helicopter seat"),Patient->GetBehaviorCarrier()==Heli);
+		TestFalse(TEXT("Medical rescue never handcuffs patient"),Patient->IsInPoliceCustody());
+		TestTrue(TEXT("Patient retains medical identity and awaits hospital delivery"),Patient->IsMedevacVictim() && !Patient->HasMissionResolutionReported());
+		Missions->MissionSystem.Tick(0);
+		TestTrue(TEXT("Loading with police cannot prematurely complete medical mission"),Missions->IsMissionEventActive(Patient->MissionEventId));
+		TestEqual(TEXT("Medical duty preserves officer state"),Responder->BehaviorContext.GetStateIndex(),7);
+		if (bFullCabin) TestNull(TEXT("Last free seat goes to patient before officer"),Responder->GetBehaviorCarrier());
+		else TestTrue(TEXT("Officer returns aboard alongside patient"),Responder->GetBehaviorCarrier()==Heli);
+		Patient->AlightFromCarrier(false); Responder->AlightFromCarrier(false);
+		Patient->Destroy(); Responder->Destroy();
+		for (auto* Blocker:Blockers) { Blocker->AlightFromCarrier(false); Blocker->Destroy(); }
+	}
 	return true;
 }
 

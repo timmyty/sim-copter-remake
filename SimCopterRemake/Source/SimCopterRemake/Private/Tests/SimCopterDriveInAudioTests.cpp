@@ -4,6 +4,8 @@
 #include "City/SimCity2000CityActor.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Game/SimCopterPlayerController.h"
+#include "Game/SimCopterSettings.h"
+#include "Audio/SimCopterAudioSubsystem.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -62,6 +64,10 @@ public:
 			Instance = NewObject<UGameInstance>(GEngine);
 			Instance->InitializeStandalone();
 			World = Instance->GetWorld();
+			Settings = Instance->GetSubsystem<USimCopterSettings>();
+			Settings->SetGameVolume(10000);
+			Settings->SetRadioVolume(6750); // The reported Music Volume of 135%.
+			Settings->SetAutoQuietEnabled(false);
 			World->bAllowAudioPlayback = true;
 			FAudioDeviceParams Params; Params.AssociatedWorld = World;
 			Params.Scope = EAudioDeviceScope::Unique;
@@ -86,7 +92,10 @@ public:
 			City->FinishSpawning(FTransform::Identity); City->RebuildCity();
 			DriveIn = ASimCopterDriveInPlayer::Get(World);
 			Test->AddInfo(Controller->ExecuteCheatCodes(TEXT("hsi")));
+			// Cheat feedback is verified by Playback; it must not contaminate movie measurements.
+			World->GetSubsystem<USimCopterAudioSubsystem>()->StopStandaloneSounds();
 			if (!Test->TestEqual(TEXT("Real city has eight theater speakers"), DriveIn->Sounds.Num(), 8)) return Finish();
+			CheckSpeakerVolumes(TEXT("Opening honors 135% music"), 1.35f);
 			Started = StepStarted = FPlatformTime::Seconds();
 		}
 		const double Now = FPlatformTime::Seconds();
@@ -110,6 +119,24 @@ public:
 		}
 		if (bAwaitingMovie)
 		{
+			if (Movie == 0 && Phase == 0)
+			{
+				// Exercise settings on the actual existing emitters, without reopening media.
+				Settings->SetRadioVolume(0); DriveIn->Tick(.05f);
+				CheckSpeakerVolumes(TEXT("Music mute reaches every theater"), 0.f);
+				Settings->SetRadioVolume(2500); DriveIn->Tick(.05f);
+				CheckSpeakerVolumes(TEXT("Music 50% reaches every theater"), .5f);
+				Settings->SetRadioVolume(10000); DriveIn->Tick(.05f);
+				CheckSpeakerVolumes(TEXT("Music boost reaches 200%"), 2.f);
+				Settings->SetRadioVolume(6750);
+				Settings->SetAutoQuietEnabled(true); DriveIn->Tick(.05f);
+				CheckSpeakerVolumes(TEXT("Auto-Quiet applies once"), .81f);
+				Settings->SetAutoQuietEnabled(false);
+				Settings->SetGameVolume(8000); DriveIn->Tick(.05f);
+				CheckSpeakerVolumes(TEXT("Game volume retains the original -20 dB gain"), .135f);
+				Settings->SetGameVolume(10000); DriveIn->Tick(.05f);
+				CheckSpeakerVolumes(TEXT("Reported settings restore full requested gain"), 1.35f);
+			}
 			bAwaitingMovie = false; StepStarted = Now; Meter->TakePeak(); return false;
 		}
 		const FVector Centre = (DriveIn->Surfaces[Theater].Corners[0] + DriveIn->Surfaces[Theater].Corners[2]) * .5;
@@ -123,10 +150,10 @@ public:
 		if (Now - StepStarted < .5) return false; // Drain the previous listener position.
 		StepPeak = FMath::Max(StepPeak, Peak);
 		if (Now - StepStarted < 2) return false;
-		const TCHAR* Names[] = {TEXT("near"), TEXT("far"), TEXT("returned"), TEXT("paused"), TEXT("resumed"), TEXT("demolished"), TEXT("surviving"), TEXT("silent_movie")};
+		const TCHAR* Names[] = {TEXT("near"), TEXT("far"), TEXT("returned"), TEXT("paused"), TEXT("resumed"), TEXT("demolished"), TEXT("surviving"), TEXT("silent_movie"), TEXT("music_muted"), TEXT("music_boosted")};
 		Test->AddInfo(FString::Printf(TEXT("Movie %d theater %d %s output peak %.6f"), Movie, Theater, Names[Phase], StepPeak));
 		const FString Check = FString::Printf(TEXT("Movie %d theater %d %s audio"), Movie, Theater, Names[Phase]);
-		if (Phase == 1 || Phase == 3 || Phase == 5 || Phase == 7) Test->TestTrue(*Check, StepPeak < .00001f);
+		if (Phase == 1 || Phase == 3 || Phase == 5 || Phase == 7 || Phase == 8) Test->TestTrue(*Check, StepPeak < .00001f);
 		else Test->TestTrue(*Check, StepPeak > .0001f && StepPeak <= 1.f);
 		StepPeak = 0; StepStarted = Now;
 		if (Phase == 0 && ++Theater < DriveIn->Sounds.Num()) return false;
@@ -135,6 +162,7 @@ public:
 		if (Phase == 2 && Movie == 0)
 		{
 			Test->AddInfo(Controller->ExecuteCheatCodes(TEXT("Lights, Camera, Action!")));
+			World->GetSubsystem<USimCopterAudioSubsystem>()->StopStandaloneSounds();
 			Test->TestEqual(TEXT("Switching movies replaces eight speakers without duplicates"), DriveIn->Sounds.Num(), 8);
 			// This bundled movie contains a silent AAC track. Its silence must not
 			// retain the previous soundtrack, and returning to HSI must restore audio.
@@ -143,6 +171,7 @@ public:
 		if (Phase == 7)
 		{
 			Test->AddInfo(Controller->ExecuteCheatCodes(TEXT("hsi")));
+			World->GetSubsystem<USimCopterAudioSubsystem>()->StopStandaloneSounds();
 			++Movie; Theater = 0; Phase = 0; bAwaitingMovie = true; return false;
 		}
 		if (Phase == 2)
@@ -168,6 +197,8 @@ public:
 			Test->TestTrue(TEXT("Other standing theaters keep their movie after demolition"), DriveIn->IsVideoActive());
 			Theater = 1; Phase = 6; return false;
 		}
+		if (Phase == 6) { Settings->SetRadioVolume(0); Phase = 8; return false; }
+		if (Phase == 8) { Settings->SetRadioVolume(10000); Phase = 9; return false; }
 		Controller->ExecuteCheatCodes(TEXT("hsi"));
 		Test->TestEqual(TEXT("Stopping releases all theater speakers"), DriveIn->Sounds.Num(), 0);
 		TArray<UMediaSoundComponent*> RemainingMedia;
@@ -182,6 +213,7 @@ private:
 	ASimCopterPlayerController* Controller = nullptr;
 	ASimCity2000CityActor* City = nullptr;
 	ASimCopterDriveInPlayer* DriveIn = nullptr;
+	USimCopterSettings* Settings = nullptr;
 	FAudioDeviceHandle Device;
 	FDriveInTestMixerModule MixerModule;
 	TSharedPtr<FDriveInAudioMeter, ESPMode::ThreadSafe> Meter;
@@ -191,6 +223,11 @@ private:
 	float StepPeak = 0;
 	int32 Theater = 0, Movie = 0, Phase = 0;
 	bool bAwaitingMovie = true;
+	void CheckSpeakerVolumes(const TCHAR* Label, float Expected)
+	{
+		for (int32 I = 0; I < DriveIn->Sounds.Num(); ++I)
+			Test->TestEqual(*FString::Printf(TEXT("%s (theater %d)"), Label, I), DriveIn->Sounds[I]->VolumeMultiplier, Expected, .00001f);
+	}
 	bool Finish()
 	{
 		if (World) World->GetWorldSettings()->SetPauserPlayerState(nullptr);

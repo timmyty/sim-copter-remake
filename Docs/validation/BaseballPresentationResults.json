@@ -1,0 +1,97 @@
+{
+  "verifiedAtUtc": "2026-10-12T19:38:10.047334+00:00",
+  "scope": "Distinct red visitor and blue home uniforms, backed scoreboard and explicit winner banner",
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/baseball-presentation/build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/baseball-presentation/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/baseball-presentation/build-development.log"
+    }
+  },
+  "headless": {
+    "reportedSuccessfulCases": 42,
+    "exercisedLogicCases": 41,
+    "captureSkippedUnderNullRHI": 1,
+    "failed": 0,
+    "warningCases": 0,
+    "report": "Docs/scratchpad/baseball-presentation/validated/index.json"
+  },
+  "offscreen": {
+    "successfulCases": 1,
+    "failed": 0,
+    "api": "D3D12",
+    "imagesInspected": true,
+    "report": "Docs/scratchpad/baseball-presentation/rendered/index.json",
+    "images": [
+      "Docs/scratchpad/baseball-presentation/canyon-live.png",
+      "Docs/scratchpad/baseball-presentation/canyon-final.png"
+    ],
+    "finalCaptureState": "Staged 7-4 visitor win in inning 9 to inspect the final display"
+  },
+  "coverage": [
+    "Visible original mesh jersey colors, matching teammates, runners and switched batting/fielding roles",
+    "Live score and count, side changes, visitor win, home walk-off, retained final score and new-game reset",
+    "Existing full-game, distance, capacity, legacy behavior, injury, people and save regressions"
+  ],
+  "bounds": {
+    "activePlayersPerGame": [
+      10,
+      13
+    ],
+    "maxNearbyGames": 2,
+    "activationTiles": 8,
+    "retirementTiles": 12,
+    "coordinatorHz": 15,
+    "benchedActors": 0,
+    "additionalNPCs": 0,
+    "scoreboardPhysicsBodies": 0
+  },
+  "limitations": [
+    "Offscreen rendering and automation, not an interactive playtest or live FPS benchmark"
+  ],
+  "installed": {
+    "InstalledAtUtc": "2026-10-12T19:37:51.8402291Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "95DE9515F68B177A43EAB1FB92D6E97BD0E7717270EA38119D41EB4E73BB33F6",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-presentation/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "DEB09F2688B048856FAA3207EBFA0E1464C0C0C4EC0311B135BF10D35E5CF61A"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "2B688E0E07ED95D2729CEB8438B6443C4A9B88CEFC2C0ABB0981CD6E3B2DC819",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-presentation/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "EB82A3DA6D69FB538C3198C3CA318C5B740270D380D7326C1CC5AF70A64F79DE"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "E2EF08BDB68788193AB697A1E40F5412E4CEC387BCE7CF572DED4819D121CB02",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-presentation/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "E6D9A0B1F0426C9C79404402E90DCC20777182A704045AD3305882A4A4D6E97B"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "201E9A271828F418E6CE47433093ADE1CBF81138FBC4481D297E89FBC11F2881",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-presentation/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "9D0FC7149C2D0BE9CD0D1EAFBDEBC930E6129A3D447924FAC6F061AB3254D444"
+      }
+    ],
+    "HeadlessPassed": 42,
+    "HeadlessLogicCases": 41,
+    "OffscreenPassed": 1,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "publicationChanged": false,
+  "sourceManifest": "Docs/scratchpad/baseball-presentation/source-manifest.json",
+  "diff": "Docs/scratchpad/baseball-presentation/source.diff"
+}

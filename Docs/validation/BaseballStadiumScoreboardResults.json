@@ -1,0 +1,102 @@
+{
+  "verifiedAtUtc": "2026-10-12T19:57:56.607620+00:00",
+  "scope": "Fixed 1990s-style stadium scoreboard with grounded steel supports, full cabinet geometry, painted labels and amber bulb matrices",
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/baseball-stadium-board/build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/baseball-stadium-board/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/baseball-stadium-board/build-development.log"
+    }
+  },
+  "headless": {
+    "reportedSuccessfulCases": 42,
+    "exercisedLogicCases": 41,
+    "captureSkippedUnderNullRHI": 1,
+    "failed": 0,
+    "warningCases": 0,
+    "report": "Docs/scratchpad/baseball-stadium-board/validated/index.json"
+  },
+  "offscreen": {
+    "successfulCases": 1,
+    "failed": 0,
+    "api": "D3D12",
+    "imagesInspected": true,
+    "report": "Docs/scratchpad/baseball-stadium-board/rendered-final/index.json",
+    "images": [
+      "Docs/scratchpad/baseball-stadium-board/canyon-live.png",
+      "Docs/scratchpad/baseball-stadium-board/canyon-final.png",
+      "Docs/scratchpad/baseball-stadium-board/stadium-side.png",
+      "Docs/scratchpad/baseball-stadium-board/stadium-back.png"
+    ],
+    "rearCaptureLighting": "Key light rotated toward the rear for geometry inspection; the isolated fixture has no sky fill",
+    "finalCaptureState": "Staged 7-4 visitor win in inning 9 to inspect the final display"
+  },
+  "coverage": [
+    "Fixed transform while helicopter focus moves, upright home-plate orientation, cabinet depth and grounded footings",
+    "Actual bulb geometry changes with scores; all front/back faces have outward-facing winding",
+    "Visible original mesh jersey colors, matching teammates, runners and switched batting/fielding roles",
+    "Live score and count, side changes, visitor win, home walk-off, retained final score and new-game reset",
+    "Existing full-game, distance, capacity, legacy behavior, injury, people and save regressions"
+  ],
+  "bounds": {
+    "activePlayersPerGame": [
+      10,
+      13
+    ],
+    "maxNearbyGames": 2,
+    "activationTiles": 8,
+    "retirementTiles": 12,
+    "coordinatorHz": 15,
+    "benchedActors": 0,
+    "additionalNPCs": 0,
+    "scoreboardPhysicsBodies": 0
+  },
+  "limitations": [
+    "Offscreen rendering and automation, not an interactive playtest or live FPS benchmark"
+  ],
+  "installed": {
+    "InstalledAtUtc": "2026-10-12T19:57:29.8618200Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "A39CD09E35F075661BB0EAA2CD04AD938948547D521ABE40A7166B489BEFD204",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-stadium-board/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "95DE9515F68B177A43EAB1FB92D6E97BD0E7717270EA38119D41EB4E73BB33F6"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "94ED7303F3521CAE7294C9725516CDD816C0B93C91D897FB0442B9DF2AC57FA4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-stadium-board/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "2B688E0E07ED95D2729CEB8438B6443C4A9B88CEFC2C0ABB0981CD6E3B2DC819"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "D44B906EFB26FA856C35F65EAC0E54C8E99F2E0EB657C1DB16DABA8882C72537",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-stadium-board/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "E2EF08BDB68788193AB697A1E40F5412E4CEC387BCE7CF572DED4819D121CB02"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "CFD23993CDEBD9C6C99CA8CD95505FB30315C963E05E6258D37ED325E7312E20",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-stadium-board/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "201E9A271828F418E6CE47433093ADE1CBF81138FBC4481D297E89FBC11F2881"
+      }
+    ],
+    "HeadlessPassed": 42,
+    "HeadlessLogicCases": 41,
+    "OffscreenPassed": 1,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "publicationChanged": false,
+  "sourceManifest": "Docs/scratchpad/baseball-stadium-board/source-manifest.json",
+  "diff": "Docs/scratchpad/baseball-stadium-board/source.diff"
+}
