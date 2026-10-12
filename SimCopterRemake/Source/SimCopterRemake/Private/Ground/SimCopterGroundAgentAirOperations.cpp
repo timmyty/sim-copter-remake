@@ -28,14 +28,44 @@ bool ASimCopterGroundAgent::UpdatePoliceRecovery()
 	// Remake taser custody has no retail BHAV: 1053 selects only active criminals,
 	// and 1060 immediately credits arrest and sends them to a police car. Recover
 	// disabled people physically instead, retaining delivery credit for the station.
-	if (BehaviorContext.GetStateIndex() != 7 || bHasHospitalRoofPost || BehaviorCarrier.IsValid() ||
-		bMissionCarried || bPassengerFallActive || bMissionPatientDead || IsKnockedDown()) return false;
+	if (BehaviorContext.GetStateIndex() != 7 || BehaviorCarrier.IsValid() ||
+		bMissionCarried || bPassengerFallActive || bMissionPatientDead || IsInPoliceCustody() || IsKnockedDown()) return false;
 	auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
 	auto* Heli = ResolvePlayerHelicopter();
-	if (!Traffic || !Heli || Heli->IsFixedWingAircraft()) return false;
+	if (!Traffic || (!bHasHospitalRoofPost && (!Heli || Heli->IsFixedWingAircraft()))) return false;
 	auto* Carried = Traffic->FindPersonCarriedBy(*this);
-	if (Carried && !Carried->IsInPoliceCustody()) return false;
-	auto* Target = Carried ? nullptr : Traffic->FindPoliceRecoveryTarget(*this);
+	if (Carried && (!Carried->IsInPoliceCustody() && !Carried->IsMedevacVictim())) return false;
+	ASimCopterGroundAgent* Target = nullptr;
+	if (bHasHospitalRoofPost)
+	{
+		// Direct cage drops never pass through a cabin seat. A station officer must
+		// collect the released person on its own roof, after the fall has finished.
+		if (Carried) return false;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+		{
+			if (*It == this || It->IsActorBeingDestroyed() || It->IsHidden() || It->HasMissionResolutionReported() ||
+				It->GetBehaviorCarrier() || It->IsMissionCarried() || It->IsPassengerFalling() ||
+				It->IsMedevacVictim() || It->IsMissionPatientDead() ||
+				(!It->IsInPoliceCustody() && !It->IsArrestableSuspect())) continue;
+			const FVector Feet = It->GetActorLocation() - FVector(0,0,It->GetCapsuleHalfHeightCm());
+			const FVector Offset = Feet - HospitalRoofPostWorldLocation;
+			const float Extent = HospitalRoofPostHalfExtentCm - It->GetCollisionRadiusCm();
+			if (FMath::Abs(Offset.X) > Extent || FMath::Abs(Offset.Y) > Extent || FMath::Abs(Offset.Z) > 30) continue;
+			const float Distance = FVector::DistSquared(GetActorLocation(),It->GetActorLocation());
+			if (Distance < BestDistance) { BestDistance = Distance; Target = *It; }
+		}
+	}
+	else if (!Carried)
+	{
+		Target = Traffic->FindPoliceRecoveryTarget(*this);
+		// Requested remake addition: deployed police help with medical retrieval only
+		// after criminal work. Keep the same patient claims, route and real-body carry.
+		if (!Target) Target = Traffic->FindAndClaimGroundPatient(*this);
+	}
+	if (auto* Previous = Cast<ASimCopterGroundAgent>(BehaviorContext.SelectedObject.Get());
+		Previous && Previous != Target && Previous != Carried && Previous->HospitalPatientClaim.Get() == this)
+		Previous->HospitalPatientClaim.Reset();
 	if (!Carried && !Target) return false;
 	AActor* Goal = Carried ? static_cast<AActor*>(Heli) : Target;
 	BehaviorContext.SelectedObject = Goal;
@@ -45,12 +75,19 @@ bool ASimCopterGroundAgent::UpdatePoliceRecovery()
 	// BHAV 1053 searches thirty tiles, but its repeated two-tile probes and random
 	// Run-10/Run-30 bursts can lose a distant suspect. Keep a routed pursuit through
 	// physical contact, at the shipped Run-10 speed, then resume its arrest/hold.
-	BehaviorContext.Attributes[EBhavAttr::MoveSpeed] = Carried ? 16 : 25;
+	BehaviorContext.Attributes[EBhavAttr::MoveSpeed] = Carried || (Target && Target->IsMedevacVictim()) ? 16 : 25;
 	BehaviorContext.Attributes[EBhavAttr::AutoTurn] = 1;
 	if (StepTowardSelectedObject(BehaviorContext) != ESimCopterBehaviorStepResult::Arrived) return true;
 	BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
 	BehaviorStepTimeRemainingSeconds = 0;
-	if (Carried)
+	if (bHasHospitalRoofPost)
+	{
+		Target->bHandcuffed = true;
+		Target->bTaserStunned = false;
+		Target->TaserStunSeconds = 0;
+		Target->CompletePoliceDelivery(Target->GetActorLocation() - FVector(0,0,Target->GetCapsuleHalfHeightCm()));
+	}
+	else if (Carried)
 	{
 		// Keep hold while hovering too high or full; never drop or teleport a prisoner.
 		if (Heli->CanBoardMissionPassengers() && Heli->GetAvailablePassengerSeats() >= 1 &&
@@ -67,6 +104,10 @@ bool ASimCopterGroundAgent::UpdatePoliceRecovery()
 			Missions->ReportBurglarCaught(Target->GetCriminalEventId());
 			Target->Destroy();
 		}
+	}
+	else if (Target->IsMedevacVictim())
+	{
+		if (!IsCarryingPerson() && Target->TryClaimHospitalPatient(this)) PutSelectedPersonOnMe(BehaviorContext);
 	}
 	else if (!Target->IsInPoliceCustody())
 	{

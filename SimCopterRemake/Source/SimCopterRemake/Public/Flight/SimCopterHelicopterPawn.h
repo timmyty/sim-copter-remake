@@ -1671,6 +1671,7 @@ private:
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCheckupCrewTest;
 	friend class FSimCopterCageRecoveryTest;
+	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterApacheAftermathTest;
 	friend class FSimCopterNpcAppearanceTest;

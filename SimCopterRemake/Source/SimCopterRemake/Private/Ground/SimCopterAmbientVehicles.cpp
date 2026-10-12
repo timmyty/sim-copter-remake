@@ -3239,19 +3239,36 @@ bool ASimCopterAmbientVehiclesActor::GetBoatTowBounds(int32 Index,FBox& OutBound
 	OutBounds=Boats[Index].Mesh->Bounds.GetBox();
 	return OutBounds.IsValid != 0;
 }
+bool ASimCopterAmbientVehiclesActor::GetBoatTowGeometry(int32 Index,FBox& OutLocalBounds,FTransform& OutTransform) const
+{
+	if (Index<0 || Index>=SimCopterAmbientVehicles::BoatSlots || !Boats[Index].bVisible || !Boats[Index].Mesh) return false;
+	OutLocalBounds=Boats[Index].Mesh->CalcBounds(FTransform::Identity).GetBox();
+	OutTransform=Boats[Index].Mesh->GetComponentTransform();
+	return OutLocalBounds.IsValid != 0;
+}
 bool ASimCopterAmbientVehiclesActor::HasRecoverableBoat() const
 {
 	for (const auto& Boat : Boats)
 		if (Boat.bVisible && Boat.RepairDisplaySeconds<=0 && Boat.ObjectId==SimCopterAmbientVehicles::CapsizedBoatObjectId) return true;
 	return false;
 }
-bool ASimCopterAmbientVehiclesActor::FinishBoatTow(int32 Index)
+bool ASimCopterAmbientVehiclesActor::FinishBoatTow(int32 Index,const FVector* DeliverySurface)
 {
 	if(Index<0 || Index>=SimCopterAmbientVehicles::BoatSlots || !Boats[Index].bTowAttached) return false;
 	auto& Boat=Boats[Index];
 	if(auto* M=Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(this,ASimCopterMissionSystemActor::StaticClass())))
 		M->PostMissionEvent(SimCopterMissions::EVT_CarCleared,Boat.TowEventId,1,true);
 	Boat.bTowAttached=false; Boat.TowEventId=INDEX_NONE; Boat.EventId=INDEX_NONE; Boat.RepairDisplaySeconds=20;
+	if (DeliverySurface) Boat.World=*DeliverySurface;
 	SetBoatMeshTransform(Boat,Boat.World,FRotator::ZeroRotator);
+	if (DeliverySurface)
+	{
+		// Recovery rights the hull. Place its upright bottom on the receiving cradle/roof;
+		// neither the capsized mesh pivot nor a fixed +70 cm offset describes that surface.
+		FBox Body;
+		if (GetBoatTowBounds(Index,Body)) Boat.World.Z+=DeliverySurface->Z-Body.Min.Z;
+		else Boat.World.Z+=70;
+		SetBoatMeshTransform(Boat,Boat.World,FRotator::ZeroRotator);
+	}
 	return true;
 }

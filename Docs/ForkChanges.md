@@ -1,5 +1,16 @@
 # Timmyty SimCopter gameplay fork
 
+## October 12 release v1.0.9
+
+Publishes all completed work since v1.0.8: full nearby baseball games and the
+fixed stadium scoreboard; casualty reactions and parked-helicopter gatherings;
+police roof arrests and medical retrieval; airport headings and burglar braking;
+original megaphone reactions and footprint-based boat delivery; drive-in music
+volume controls; and combined performance/crash diagnostics. Earlier features
+remain included. The GPU fault and witness-photo slowdown remain unresolved.
+[Release notes](Releases/v1.0.9.md) and
+[combined validation](validation/WindowsRelease109Results.json).
+
 Initial publication snapshot: October 8, 2026. This is a customized Unreal Engine 5.8 fork
 of [JamesIV4/sim-copter-remake](https://github.com/JamesIV4/sim-copter-remake), built
 on [wyozi's version](https://github.com/wyozi/sim-copter-remake/tree/25d81802b065eac5fee1dbd74afb75d1e59004e8).

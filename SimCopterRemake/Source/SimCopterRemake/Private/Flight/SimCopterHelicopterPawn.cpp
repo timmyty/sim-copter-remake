@@ -2103,8 +2103,9 @@ bool ASimCopterHelicopterPawn::ReturnToAirportAfterCrash()
 		return false;
 	}
 
-	// FUN_00484790 clears the orientation outright; the pads have no facing.
-	PlaceOnHelipad(PadSurface, 0.0f);
+	// Match new airport deliveries: the tail and chase camera point away from the base.
+	PlaceOnHelipad(PadSurface, IsFixedWingAircraft() ? 0.0f :
+		SimCopterHelicopterParking::GetAirportFacingYaw(TrafficSystem,PadSurface));
 	StuckFallSeconds = 0.0f;
 
 	// Anyone riding the wreck comes back with it. Attached passengers already follow the actor;

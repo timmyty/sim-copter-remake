@@ -25,6 +25,7 @@
 #include "Formats/SimCopterPeopleCityRules.h"
 #include "Formats/SimCopterPeopleReader.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Flight/SimCopterHelicopterParking.h"
 #include "Flight/SimCopterWaterGameplay.h"
 #include "Game/SimCopterLowPowerMode.h"
 #include "Game/SimCopterVehicleMaterialSubsystem.h"
@@ -56,7 +57,7 @@ namespace
 constexpr uint32 GroundAgentRuntimeSaveMagic = 0x4147454e; // 'AGEN'
 // 5 adds the vehicle-knockdown phase. Without it a save taken mid-tumble restored a person with no
 // behaviour VM and a forced clip, i.e. a pedestrian frozen in the recoil pose forever.
-constexpr int32 GroundAgentRuntimeSaveVersion = 11;
+constexpr int32 GroundAgentRuntimeSaveVersion = 12;
 
 void SerializeAgentBool(FArchive& Archive, bool& Value)
 {
@@ -375,10 +376,12 @@ void ASimCopterGroundAgent::StartOriginalBehavior()
 	BehaviorContext.Lfsr = uint16(GetTypeHash(GetFName()) | 1);
 	BehaviorContext.Attributes[EBhavAttr::Facing] = uint16(FMath::RoundToInt(GetActorRotation().Yaw / 45.0f) & 7);
 	BehaviorContext.Attributes[EBhavAttr::BehaviorClass] = uint16(FMath::Clamp(InitialBehaviorClass, 0, 21));
-	// FUN_004c7090 enables the move core's clockwise retry loop (+0x16a) for every spawned
-	// person; the move speed (+0x164) starts 0 and is assigned by the shipped programs
-	// ("movespeed := 6/8/12/16/25" expressions in people.df).
-	BehaviorContext.Attributes[EBhavAttr::AutoTurn] = 1;
+	// SCHOOK: SetPersonState 0x004c7090 sets +0x16a to (state != 0). Baseball uses
+	// state zero: a blocked base run must return to BHAV 1040, not steer around a
+	// fielder/fence and change the next leg's axis. Retain the existing ordinary-walker
+	// policy here; the baseball scripts never enable the retry flag themselves.
+	BehaviorContext.Attributes[EBhavAttr::AutoTurn] =
+		InitialPersonState == 0 && (InitialBehaviorProgramId == 1205 || InitialBehaviorProgramId == 1206) ? 0 : 1;
 	// person+0x152: a spawned person is on the map and can be seen. The shipped programs treat 1
 	// as the live default and clear it only while riding something (BHAV 1052 "cop - ride on
 	// copter" sets it to 0, BHAV 1055 sets it back on getting out). It gates every object-class
@@ -566,6 +569,7 @@ bool ASimCopterGroundAgent::ApplyInteraction(const FSimCopterInteractionEvent& E
 	}
 
 	BehaviorContext.ReactionParameter = Event.MessageIndex;
+	BehaviorContext.Attributes[EBhavAttr::InteractionParameter] = uint16(Event.MessageIndex);
 	// person+0x1a4, written on the same accepted branch: what caused this. Opcodes 32/33 turn away
 	// from or toward it, opcode 80 gabs at it, and opcode 15 class 4 selects it.
 	BehaviorInteractionSource = Event.Source;
@@ -573,6 +577,7 @@ bool ASimCopterGroundAgent::ApplyInteraction(const FSimCopterInteractionEvent& E
 	{
 		// person+0x15a: the message index the shipped BHAV 901 branches on.
 		BehaviorContext.MegaphoneMessageIndex = Event.MessageIndex;
+		BehaviorContext.Attributes[EBhavAttr::MegaphoneMessage] = uint16(Event.MessageIndex);
 	}
 	return true;
 }
@@ -622,6 +627,7 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 	UpdateArsonistThrowSchedule(DeltaSeconds);
 	// Same slot, same reason: a 10-second window measured on the VM's clock would be forty.
 	UpdateRoadJaywalkWindow(DeltaSeconds);
+	const bool bCuriosityOwnsBehavior = UpdateAmbientCuriosity(DeltaSeconds);
 
 	BehaviorTickAccumulator += DeltaSeconds * BehaviorTickRate;
 	int32 Steps = FMath::FloorToInt(BehaviorTickAccumulator);
@@ -636,7 +642,7 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 	{
 		// DAT_00506448, incremented once per behaviour tick by FUN_004c5fb0. Opcode 79 reads it.
 		++BehaviorTickCounter;
-		if (UpdatePoliceRecovery()) continue;
+		if (bCuriosityOwnsBehavior || UpdatePoliceRecovery()) continue;
 		// The support crew stabilizes its own patients until a safe hospital handoff.
 		const auto* Support = GetWorld() ? GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>() : nullptr;
 		if ((bAirSupportPassenger || (Support && Support->IsRescuingPerson(this))) &&
@@ -2028,38 +2034,9 @@ bool ASimCopterGroundAgent::TryGetPlayerTileProbe(
 
 ASimCopterHelicopterPawn* ASimCopterGroundAgent::ResolvePlayerHelicopter() const
 {
-	// DAT_005040d0+0xa4: the player's airframe, whether or not they are currently in it.
-	UWorld* World = GetWorld();
-	if (World == nullptr)
-	{
-		return nullptr;
-	}
-	if (ASimCopterHelicopterPawn* Piloted = Cast<ASimCopterHelicopterPawn>(UGameplayStatics::GetPlayerPawn(World, 0)))
-	{
-		return Piloted;
-	}
-	// On foot: the machine they stepped out of is the one parked nearest to them.
-	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(World, 0);
-	const FVector From = PlayerPawn != nullptr ? PlayerPawn->GetActorLocation() : GetActorLocation();
-	TArray<AActor*> Helicopters;
-	UGameplayStatics::GetAllActorsOfClass(World, ASimCopterHelicopterPawn::StaticClass(), Helicopters);
-	ASimCopterHelicopterPawn* Best = nullptr;
-	float BestDistanceSq = TNumericLimits<float>::Max();
-	for (AActor* Actor : Helicopters)
-	{
-		ASimCopterHelicopterPawn* Candidate = Cast<ASimCopterHelicopterPawn>(Actor);
-		if (Candidate == nullptr)
-		{
-			continue;
-		}
-		const float DistanceSq = FVector::DistSquared(From, Candidate->GetActorLocation());
-		if (DistanceSq < BestDistanceSq)
-		{
-			BestDistanceSq = DistanceSq;
-			Best = Candidate;
-		}
-	}
-	return Best;
+	// SCHOOK: PlayerAircraftObject 0x004cac70. DAT_005040d0+0xa4 is an identity,
+	// not a nearest-airframe query. On foot, keep the aircraft the pilot exited.
+	return GetWorld() ? SimCopterHelicopterParking::ResolveCurrentAircraft(this) : nullptr;
 }
 
 bool ASimCopterGroundAgent::SelectObjectOfClass(
@@ -2163,6 +2140,9 @@ bool ASimCopterGroundAgent::SelectObjectOfClass(
 		Found = TrafficSystem != nullptr
 			? (Context.GetStateIndex() == 5 ? TrafficSystem->FindAndClaimGroundPatient(*this)
 				: TrafficSystem->FindNearestBehaviorPerson(*this, -2, 6)) : nullptr;
+		break;
+	case EBhavObjectClass::Casualty:
+		Found = TrafficSystem ? TrafficSystem->FindNearestGawkCasualty(*this) : nullptr;
 		break;
 	case EBhavObjectClass::UncaughtCriminal:
 		Found = TrafficSystem != nullptr ? TrafficSystem->FindNearestBehaviorPerson(*this, 0, -2) : nullptr;
@@ -2389,19 +2369,7 @@ void ASimCopterGroundAgent::RunMeetSelector(FSimCopterPersonContext& Context, AA
 	if ((OtherPerson != nullptr && OtherPerson->AgentKind == ESimCopterGroundAgentKind::Pedestrian) ||
 		Cast<ASimCopterOnFootPawn>(Source) != nullptr)
 	{
-		int32 Octant = 0;
-		if (TryGetBehaviorFacingOctantToward(Source->GetActorLocation(), Octant))
-		{
-			Context.Attributes[EBhavAttr::Facing] = uint16(Octant);
-		}
-		// FUN_004c6970 case 5: 50/50 between the two conversation clips, then one of nine voice
-		// lines. The line is rolled with FUN_004cea00(9) and mapped through the switch at
-		// 0x004c6b3a - which is NOT the identity, and not sorted: cases 0..8 pick voice events
-		// 10, 1, 4, 11, 2, 18, 6, 7, 3. Both halves matter; the animation on its own is a mime.
-		Context.PendingAnimMnemonic = Context.RandomBounded(2) == 0 ? TEXT("2Gab") : TEXT("HipH");
-		static constexpr int32 ChatVoiceEvents[9] = { 10, 1, 4, 11, 2, 18, 6, 7, 3 };
-		const int32 Roll = FMath::Clamp(int32(Context.RandomBounded(9)), 0, 8);
-		PlayPersonVoiceEvent(ChatVoiceEvents[Roll], /*bAllocateSlot=*/true, /*bNonPositional=*/false, /*bForce=*/false);
+		PlayCivilianConversation(Context, Source);
 		return;
 	}
 
@@ -2410,8 +2378,44 @@ void ASimCopterGroundAgent::RunMeetSelector(FSimCopterPersonContext& Context, AA
 	PlayPersonVoiceEvent(0x2a, /*bAllocateSlot=*/true, /*bNonPositional=*/false, /*bForce=*/false);
 }
 
+void ASimCopterGroundAgent::PlayCivilianConversation(FSimCopterPersonContext& Context, AActor* LookAt)
+{
+	int32 Octant = 0;
+	if (LookAt && TryGetBehaviorFacingOctantToward(LookAt->GetActorLocation(), Octant))
+	{
+		Context.Attributes[EBhavAttr::Facing] = uint16(Octant);
+	}
+	// FUN_004c6970 case 5: 50/50 between the two conversation clips, then one of nine voice
+	// lines. The line is rolled with FUN_004cea00(9) and mapped through the switch at
+	// 0x004c6b3a - which is NOT the identity, and not sorted: cases 0..8 pick voice events
+	// 10, 1, 4, 11, 2, 18, 6, 7, 3. Both halves matter; the animation on its own is a mime.
+	Context.PendingAnimMnemonic = Context.RandomBounded(2) == 0 ? TEXT("2Gab") : TEXT("HipH");
+	static constexpr int32 ChatVoiceEvents[9] = { 10, 1, 4, 11, 2, 18, 6, 7, 3 };
+	const int32 Roll = FMath::Clamp(int32(Context.RandomBounded(9)), 0, 8);
+	PlayPersonVoiceEvent(ChatVoiceEvents[Roll], /*bAllocateSlot=*/true, /*bNonPositional=*/false, /*bForce=*/false);
+}
+
 ESimCopterBehaviorStepResult ASimCopterGroundAgent::StepTowardSelectedObject(FSimCopterPersonContext& Context)
 {
+	// BHAV 273 must give up a person as soon as a rescuer takes them. A shared selected
+	// actor otherwise follows its new carrier, drawing the gawker after the helicopter.
+	const bool bGawking = Context.GetStateIndex() == 0 && Context.Stack.ContainsByPredicate(
+		[](const FSimCopterPersonContext::FFrame& Frame) { return Frame.ProgramId == 273; });
+	if (bGawking)
+	{
+		const auto* Casualty = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get());
+		if (!Casualty || Casualty->IsHidden() || Casualty->GetBehaviorCarrier() || Casualty->IsMissionCarried() ||
+			Casualty->IsPassengerFalling() || (!Casualty->IsMedevacVictim() && !Casualty->IsMissionPatientDead() &&
+			Casualty->GetBehaviorAttribute(EBhavAttr::WrittenOff) == 0)) return ESimCopterBehaviorStepResult::NoTarget;
+		// Remake clearance: watch from outside the pickup space rather than touching the body.
+		if (FMath::Abs(GetActorLocation().Z - Casualty->GetActorLocation().Z) < 30 &&
+			GetSelectionContactGapCm(Context,GetActorLocation()) < 70)
+		{
+			FaceSelectedObject(Context);
+			BehaviorStepTimeRemainingSeconds = 0;
+			return ESimCopterBehaviorStepResult::Arrived;
+		}
+	}
 	// FUN_004ca940: turn to face the object, take one ordinary move step, and report arrival on
 	// move result 10 with under 5 original units of vertical separation.
 	//
@@ -2574,8 +2578,7 @@ ESimCopterBehaviorStepResult ASimCopterGroundAgent::StepTowardSelectedObject(FSi
 	}
 
 	FaceSelectedObject(Context);
-	const bool bMedicApproach = (Context.GetStateIndex() == 5 ||
-		(Context.GetStateIndex() == 7 && !bHasHospitalRoofPost)) && !BehaviorCarrier.IsValid();
+	const bool bMedicApproach = (Context.GetStateIndex() == 5 || Context.GetStateIndex() == 7) && !BehaviorCarrier.IsValid();
 	if (bMedicApproach)
 	{
 		if (auto* Patient = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get()); Patient && Patient->IsMedevacVictim())
@@ -4711,7 +4714,9 @@ bool ASimCopterGroundAgent::TryClaimHospitalPatient(ASimCopterGroundAgent* Medic
 	// Keep the reservation across that temporary selection, but expire abandoned approaches.
 	if (auto* Existing = HospitalPatientClaim.Get(); Existing && Existing != Medic &&
 		!Existing->IsActorBeingDestroyed() && !Existing->IsMissionPatientDead() &&
-		Existing->BehaviorContext.GetStateIndex() == 5 && Now < HospitalPatientClaimUntil)
+		(Existing->BehaviorContext.GetStateIndex() == 5 ||
+		 (Existing->BehaviorContext.GetStateIndex() == 7 && !Existing->bHasHospitalRoofPost &&
+		  !Existing->BehaviorCarrier.IsValid() && !Existing->IsInPoliceCustody())) && Now < HospitalPatientClaimUntil)
 		return false;
 	HospitalPatientClaim = Medic;
 	HospitalPatientClaimUntil = Now + 20.0f;
@@ -5624,6 +5629,7 @@ void ASimCopterGroundAgent::Tick(float DeltaSeconds)
 	RefreshSpriteExposure();
 	ArsonFireGraceSeconds = BehaviorContext.GetStateIndex() == 11
 		? FMath::Max(0.0f, ArsonFireGraceSeconds - FMath::Max(0.0f, DeltaSeconds)) : 0.0f;
+	if (AmbientCuriositySlot != INDEX_NONE && !IsEligibleForAmbientCuriosity()) StopAmbientCuriosity();
 	if (TickAirOperations(DeltaSeconds)) return;
 	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian && !bMissionCarried && !bBehaviorMoveSuspended &&
 		!bPassengerFallActive && !bMissionPatientDead && !IsMedevacVictim() && ArsonFireGraceSeconds <= 0.0f &&
@@ -5704,6 +5710,7 @@ void ASimCopterGroundAgent::Tick(float DeltaSeconds)
 		return;
 	}
 
+	if (UpdateBaseball(DeltaSeconds)) return;
 	UpdateOriginalBehavior(DeltaSeconds);
 	const FVector PreMovementLocation = GetActorLocation();
 	UpdateMovement(DeltaSeconds);
@@ -5802,6 +5809,7 @@ void ASimCopterGroundAgent::ConfigureAgent(
 	// retyping. The pedestrian branch below restarts it cleanly.
 	bBehaviorActive = false;
 	BehaviorTickAccumulator = 0.0f;
+	StopAmbientCuriosity();
 	ApplyAgentShape();
 
 	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian)
@@ -5943,6 +5951,7 @@ bool ASimCopterGroundAgent::CaptureRuntimeSaveState(TArray<uint8>& OutData)
 	Writer << TaserStunSeconds;
 	SerializeAgentBool(Writer,bTaserResumeBehavior);
 	SerializeAgentBool(Writer,bTaserResumeStationary);
+	Writer << MegaphoneStopSeconds;
 	return !Writer.IsError();
 }
 
@@ -6045,6 +6054,9 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		for (uint16& Local : Frame.Locals) Reader << Local;
 	}
 	for (uint16& Attribute : BehaviorContext.Attributes) Reader << Attribute;
+	// Repair the old initialization flag while retaining the saved base-running stack.
+	if (BehaviorContext.GetStateIndex() == 0 && (InitialBehaviorProgramId == 1205 || InitialBehaviorProgramId == 1206))
+		BehaviorContext.Attributes[EBhavAttr::AutoTurn] = 0;
 	Reader << BehaviorContext.Lfsr << BehaviorContext.PendingAnimMnemonic;
 	SerializeAgentBool(Reader, BehaviorContext.bRequestDespawn);
 	Reader << BehaviorContext.SelectedLocation;
@@ -6052,6 +6064,11 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 	SerializeAgentBool(Reader, BehaviorContext.bSelectionIsHarness);
 	Reader << BehaviorContext.LastReactionProgramId << BehaviorContext.ReactionParameter;
 	Reader << BehaviorContext.MegaphoneMessageIndex;
+	// Older saves kept these writes outside the original attribute block, so BHAV 901
+	// saw message zero even when Stop Criminal/Disperse had just interrupted the walker.
+	BehaviorContext.Attributes[EBhavAttr::InteractionParameter] = uint16(BehaviorContext.ReactionParameter);
+	if (BehaviorContext.MegaphoneMessageIndex >= 0 && BehaviorContext.MegaphoneMessageIndex < 5)
+		BehaviorContext.Attributes[EBhavAttr::MegaphoneMessage] = uint16(BehaviorContext.MegaphoneMessageIndex);
 	Reader << PendingSavedCarrierName << PendingSavedStartingVehicleName;
 	Reader << PendingSavedInteractionSourceName << PendingSavedSelectionName;
 	if (Version >= 2)
@@ -6144,6 +6161,12 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		Reader << TaserStunSeconds;
 		SerializeAgentBool(Reader,bTaserResumeBehavior); SerializeAgentBool(Reader,bTaserResumeStationary);
 		if (!FMath::IsFinite(TaserStunSeconds) || TaserStunSeconds<0 || TaserStunSeconds>12) return false;
+	}
+	MegaphoneStopSeconds=0.0f;
+	if (Version>=12)
+	{
+		Reader << MegaphoneStopSeconds;
+		if (!FMath::IsFinite(MegaphoneStopSeconds) || MegaphoneStopSeconds<0 || MegaphoneStopSeconds>16) return false;
 	}
 	ApplyVehicleTipVisual();
 	if (Reader.IsError() || Reader.Tell() != Reader.TotalSize()) return false;
@@ -6903,6 +6926,7 @@ void ASimCopterGroundAgent::MakeSpeeder()
 	SpotlightMark = 0;
 	CriminalStopScale = 1.75f;
 	SpeederRewardCooldownSeconds = 0.0f;
+	MegaphoneStopSeconds = 0.0f;
 }
 
 void ASimCopterGroundAgent::ClearSpeeder()
@@ -6914,6 +6938,50 @@ void ASimCopterGroundAgent::ClearSpeeder()
 	SpotlightMark = 0;
 	CriminalStopScale = 1.0f;
 	SpeederRewardCooldownSeconds = 0.0f;
+	MegaphoneStopSeconds = 0.0f;
+}
+
+bool ASimCopterGroundAgent::TryMegaphoneStop()
+{
+	// SCHOOK: VehicleMegaphone 0x0049d7e0 -> vtable[1]. CARROBBR keeps its self-halt
+	// gate: a broadcast is not a police caller and cannot force the fleeing burglar out.
+	if (bCriminalCar) return TryOrderStop(INDEX_NONE);
+	const bool bAlreadyStopped=bStopped;
+	if (!bStopOrdered && !bStopped)
+	{
+		bStopOrdered=true;
+		CriminalStopScale=TrafficSpeedScale;
+	}
+	// FUN_0049e0c0 arms 16 s for speeders; reaching the roadside in FUN_0049ed20
+	// resets it to 4 s. Repeating a command at rest refreshes the 16 s hold.
+	MegaphoneStopSeconds=bSpeeder && bAlreadyStopped ? 16.0f : 4.0f;
+	if (bSpeeder) SpeederRewardCooldownSeconds=10.0f;
+	return true;
+}
+
+void ASimCopterGroundAgent::UpdateMegaphoneStop(float DeltaSeconds, bool bKeepSpeederStopped)
+{
+	if (MegaphoneStopSeconds<=0 || IsVehicleImmobilized()) return;
+	if (!bStopped)
+	{
+		// Speeders already use the common pull-over braking in UpdateSpeeders.
+		if (!bSpeeder)
+		{
+			CriminalStopScale=FMath::Max(0.0f,CriminalStopScale-DeltaSeconds*1.5f);
+			LimitTrafficSpeedScale(CriminalStopScale);
+			if (CriminalStopScale<=0) bStopped=true;
+		}
+		return;
+	}
+	// FUN_0049b930: ordinary cars leave after four seconds. A speeder rechecks after
+	// sixteen while the player or police remain nearby, and drives off if abandoned.
+	MegaphoneStopSeconds=FMath::Max(0.0f,MegaphoneStopSeconds-DeltaSeconds);
+	if (MegaphoneStopSeconds<=0)
+	{
+		if (bSpeeder && bKeepSpeederStopped) MegaphoneStopSeconds=16.0f;
+		else { ResumeCriminalCarDriving(); return; }
+	}
+	LimitTrafficSpeedScale(0.0f);
 }
 
 bool ASimCopterGroundAgent::TryOrderStop(const int32 CallerMessageId)

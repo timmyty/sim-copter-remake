@@ -1,6 +1,8 @@
 #include "City/SimCopterDriveIn.h"
 #include "City/SimCity2000CityActor.h"
 #include "City/SimCopterEffectExposure.h"
+#include "Audio/SimCopterAudioSubsystem.h"
+#include "Game/SimCopterSettings.h"
 #include "Formats/MaxisMeshLibrary.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "MediaPlayer.h"
@@ -17,6 +19,18 @@
 #include "Misc/Paths.h"
 #include "Missions/SimCopterMissionSystemActor.h"
 #include "UObject/ConstructorHelpers.h"
+
+namespace
+{
+float MovieVolume(const UObject* WorldContext)
+{
+	const auto* Settings = USimCopterSettings::Get(WorldContext);
+	// The music slider displays 0..200%, just like ApplyRadioVolume. Apply gain
+	// only at the theater speakers so the shared decoder/bus cannot scale it twice.
+	return Settings ? 2.f * Settings->GetRadioVolumeScale() *
+		USimCopterAudioSubsystem::VolumeIndexToGain(Settings->GetGameVolume()) : 1.f;
+}
+}
 
 FString SimCopterDriveIn::VideoDirectory()
 {
@@ -159,6 +173,7 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 	DecodedSound->PreEffectBusSends.Add(Send);
 	DecodedSound->SetMediaPlayer(Player);
 	DecodedSound->RegisterComponent();
+	const float Volume = UGameplayStatics::IsGamePaused(this) ? 0.f : MovieVolume(this);
 	for (int32 Index = 0; Index < Surfaces.Num(); ++Index)
 	{
 		auto* Screen = NewObject<UProceduralMeshComponent>(this);
@@ -175,7 +190,7 @@ FString ASimCopterDriveInPlayer::PlayVideo(const FString& FileName, bool bToggle
 		Sound->AttenuationOverrides.FalloffDistance = 4000;
 		Sound->SetSound(SoundBus);
 		Sound->SetWorldLocation((Surfaces[Index].Corners[0] + Surfaces[Index].Corners[2]) * 0.5);
-		Sound->SetVolumeMultiplier(0.65f); Sound->RegisterComponent(); Sounds.Add(Sound);
+		Sound->SetVolumeMultiplier(Volume); Sound->RegisterComponent(); Sounds.Add(Sound);
 	}
 	CurrentFile = FileName;
 	if (!Player->OpenFile(Path)) { StopVideo(); return TEXT("Could not open this movie. Use H.264 video and AAC audio in an MP4 file."); }
@@ -213,7 +228,8 @@ void ASimCopterDriveInPlayer::MediaOpened(FString)
 	if (CurrentFile.IsEmpty()) return;
 	bWasPaused = UGameplayStatics::IsGamePaused(this);
 	DecodedSound->Start();
-	for (auto Sound : Sounds) Sound->Play();
+	const float Volume = bWasPaused ? 0.f : MovieVolume(this);
+	for (auto Sound : Sounds) { Sound->SetVolumeMultiplier(Volume); Sound->Play(); }
 	if (!bWasPaused) Player->Play();
 }
 
@@ -238,12 +254,13 @@ void ASimCopterDriveInPlayer::Tick(float DeltaSeconds)
 	const bool bPaused = UGameplayStatics::IsGamePaused(this);
 	if (bPaused != bWasPaused) { if (bPaused) Player->Pause(); else Player->Play(); bWasPaused = bPaused; }
 	ScreenMaterial->SetScalarParameterValue(TEXT("EmissiveNits"), USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld()) * 0.6f);
+	const float Volume = bPaused ? 0.f : MovieVolume(this);
 	bool bAnyStanding = false;
 	for (int32 Index = 0; Index < Screens.Num(); ++Index)
 	{
 		const bool bStanding = Cities[Index].IsValid() && Cities[Index]->HasStandingBuildingAtTile(Surfaces[Index].Tile.X, Surfaces[Index].Tile.Y);
 		Screens[Index]->SetVisibility(bStanding);
-		Sounds[Index]->SetVolumeMultiplier(bStanding && !bPaused ? 0.65f : 0.0f);
+		Sounds[Index]->SetVolumeMultiplier(bStanding ? Volume : 0.f);
 		bAnyStanding |= bStanding;
 	}
 	if (!bAnyStanding) StopVideo();

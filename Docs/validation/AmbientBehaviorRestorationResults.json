@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-12",
+  "features": [
+    "Original BHAV 273 casualty lookup with physical rescue clearance",
+    "NPC active-aircraft identity and valid fallback",
+    "Three-person parked-helicopter visits with original Simlish and conversations",
+    "Timed departure and pilot/responder/hazard priority",
+    "Transient visit cleanup on save/load"
+  ],
+  "originalEvidence": {
+    "exeSHA256": "a20bc20616f705df9d2a700c397704e93aea087c1167d54137fa4efaddf392b4",
+    "query": "Classics 004d19f0, case 15 004d1c65; prior export equivalents 004cac70, 004caee5",
+    "path": "Docs/scratchpad/ambient-curiosity/original/object-query-asm.txt"
+  },
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/ambient-curiosity/build-editor.log"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/ambient-curiosity/build-shipping.log"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/ambient-curiosity/build-development.log"
+    }
+  },
+  "tests": {
+    "passed": 127,
+    "clean": 123,
+    "withWarnings": 4,
+    "failed": 0,
+    "notRun": 0,
+    "report": "Docs/scratchpad/ambient-curiosity/combined/index.json",
+    "existingFixtureWarnings": [
+      "SimCopter.Missions.PlaneDeckRescue",
+      "SimCopter.Missions.SafePassengerLanding",
+      "SimCopter.Traffic.TunnelTransit",
+      "SimCopter.UI.HangarPurchaseParking"
+    ]
+  },
+  "sourceFiles": [
+    {
+      "path": "Private/Flight/SimCopterHelicopterParking.cpp",
+      "sha256": "405973c4342a7bad1e298969885abe52159938f85f67921fb89dce60d40f945c"
+    },
+    {
+      "path": "Private/Ground/SimCopterGroundAgent.cpp",
+      "sha256": "c4a1cb46fefee175bd45919dbe3820598de44d432a1cd3c110923636664e6e52"
+    },
+    {
+      "path": "Private/Ground/SimCopterGroundAgentCuriosity.cpp",
+      "sha256": "a3aa5aa524ea334450c531521d8cacf29e0da389ce94a9382eb9ffc94fff8466"
+    },
+    {
+      "path": "Private/Ground/SimCopterTrafficSystemActor.cpp",
+      "sha256": "8e75491d6d1baac1cf8a93d3debd66026a15453d820510199ebe1c4dd4b24518"
+    },
+    {
+      "path": "Private/Tests/SimCopterAmbientRestorationTests.cpp",
+      "sha256": "7b3c459e922585fdcf9ad885ce6942ae6a4d9db2647302251bdbffec6213cd57"
+    },
+    {
+      "path": "Public/Ground/SimCopterBehaviorVM.h",
+      "sha256": "3e080ec3d73958730d0792e434d4a49931b2247ecc3ccb2333ec1f2466b89c55"
+    },
+    {
+      "path": "Public/Ground/SimCopterGroundAgent.h",
+      "sha256": "e1fdc8809179b218af0e207ba0b33ce5be4a95d7fd17050af25817994d542883"
+    },
+    {
+      "path": "Public/Ground/SimCopterTrafficSystemActor.h",
+      "sha256": "9e95550f739decd945e839393780b77d713c85046ef6451ddf1e24db2e9a2785"
+    }
+  ],
+  "installation": {
+    "InstalledAtUtc": "2026-10-12T17:21:14.4587387Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "480A4F0B36F5FC0DDF60258477B845F80E95B07D604DFC9931AF51A29FF1DF48",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\ambient-curiosity/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "A00C6E37FAB7EDE752B8B91F042162A50C7F237D7E2A9799D35FF37F0804EEC6"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "904C2EC74B9060B41A45F5AE337822A49BEAEB68E19B1293FC98C68C033635C7",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\ambient-curiosity/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "2F98D15180F9471DCAEEBA8834287B44E6709DC8986509E920851716B6BBC1F0"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "DA7CB07F774F88AF7BC0872D437EC2DA3D94A183C0B911783D2E49411159A783",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\ambient-curiosity/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "3B76ED135C12B0FF9C7D06C9FBE024EE42414156A7F5A65DBF0B932A627D5BD2"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "150D53117F7383B29CA0958C4FF9CC518CE4BE6279DB9FB6E9685F1EE50F07F3",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\ambient-curiosity/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "C09BE680F0CD9B194D3C1F34697216A86631B8085AF9434FF0FF677A79467FF3"
+      }
+    ],
+    "HeadlessPassed": 127,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "interactiveGameplayChecked": false,
+  "listeningChecked": false,
+  "publicationCheckoutChanged": false
+}

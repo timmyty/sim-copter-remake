@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-12",
+  "city": "Canyon (career/city20.sc2)",
+  "originalRoster": {
+    "batter": 1,
+    "fielders": 7,
+    "behaviorClass": 4,
+    "programs": [
+      1205,
+      1206,
+      1040
+    ]
+  },
+  "proximity": {
+    "focus": "controlled pawn (helicopter in flight, pilot on foot)",
+    "spawnRadiusTiles": 8,
+    "existingDespawnRadiusTiles": 12,
+    "horizontalDistance": true
+  },
+  "reproductions": {
+    "Canyon": "All four fields created only one player with one remaining spawn attempt.",
+    "passerby": "Nearby ordinary pedestrian prevented any team spawning.",
+    "partialTeam": "Three survivors prevented the five missing players from spawning.",
+    "warpArrival": "Civilian cap and unchanged scan tile prevented field staffing.",
+    "movement": "New and saved baseball players had AutoTurn=1; original state-zero value is 0."
+  },
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\baseball-restoration\\build-editor-verified.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\baseball-restoration\\build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\baseball-restoration\\build-development.log"
+    }
+  },
+  "tests": {
+    "passed": 29,
+    "warningCases": 0,
+    "failed": 0,
+    "report": "Docs\\scratchpad\\baseball-restoration\\validated\\index.json",
+    "cases": [
+      "SimCopter.Behavior.Baseball.Canyon",
+      "SimCopter.Behavior.Baseball.Capacity",
+      "SimCopter.Behavior.Baseball.Distance",
+      "SimCopter.Behavior.Baseball.OriginalPrograms",
+      "SimCopter.Behavior.Baseball.PartialTeam",
+      "SimCopter.Behavior.Baseball.Passerby",
+      "SimCopter.Behavior.Baseball.SpawnBudget",
+      "SimCopter.Behavior.Baseball.WarpArrival",
+      "SimCopter.Behavior.VM.ActionDelegation",
+      "SimCopter.Behavior.VM.HospitalMedicRetire",
+      "SimCopter.Behavior.VM.LateOpcodes",
+      "SimCopter.Behavior.VM.Opcode22PlayerTileProbe",
+      "SimCopter.Behavior.VM.PoliceReturnBudget",
+      "SimCopter.Behavior.VM.PoliceReturnInterrupt",
+      "SimCopter.Behavior.VM.Reference",
+      "SimCopter.Behavior.VM.SelectionContact",
+      "SimCopter.Behavior.World.CasualtyGawking",
+      "SimCopter.Behavior.World.CurrentAircraft",
+      "SimCopter.Behavior.World.HelicopterCuriosity",
+      "SimCopter.City.PeopleRules.ClassMap",
+      "SimCopter.City.PeopleRules.SymmetricHeightStep",
+      "SimCopter.People.LyingPoseClearsGround",
+      "SimCopter.People.MoveCoreCellRules",
+      "SimCopter.People.RoadJaywalk",
+      "SimCopter.SaveGame.ArchiveRoundTrip",
+      "SimCopter.SaveGame.FleetEquipmentRepair",
+      "SimCopter.SaveGame.Names",
+      "SimCopter.SaveGame.QuickSavePersistence",
+      "SimCopter.SaveGame.RestoreState"
+    ]
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-12T18:45:15.0685070Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "078F279FE0827F58D61C9EB6028BE3788483A49D098CEC11775D76420D2ECA19",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-restoration/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "99196060C993159458F7261130E75C1A34E884729891F6DA962B3E418A26045E"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "05794BF84AA74C30E3858D1B4B2FE98D4AE3629B1D2AC8FF98D4201D5F91BDF6",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-restoration/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "27F50D75EA405C0CDBAFC358AF74FD8EF9313FD7BE5AC9B7F8A1544BDB853CE2"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "23A9F7B64702A0F1BCB79651060B6E15F830D8DFA432013B4315BEAFB182E109",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-restoration/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "71BFC7A6446E2043612F8A37D6CB6A69EE2583D8EF5D96B595D8E71C3C187249"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "673E27F05AC3DA3F2B76DAC8C2F04A060792FD7447FF5DCF0D1D340F4D4D103A",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\baseball-restoration/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "F5465F5D081338B22B86B3EFEE2A48C4E3AFE9114F4B742588D2EEE609B728C4"
+      }
+    ],
+    "HeadlessPassed": 29,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "limits": {
+    "interactiveGameplayChecked": false,
+    "visualOrListeningParityChecked": false,
+    "fpsBenchmarked": false,
+    "publicationCheckoutChanged": false,
+    "oldSavedAppearanceMigrated": false,
+    "saveFormatChanged": false
+  }
+}

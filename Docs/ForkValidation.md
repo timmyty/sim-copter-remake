@@ -1,5 +1,11 @@
 # Fork validation
 
+## October 12 release v1.0.9
+
+Editor, Shipping and Development builds succeeded. The full NullRHI automation run passed 490/492 cases; the same two pre-existing ReferenceCity fixture and FlapLayout mask-expectation failures remain. All three focused offscreen cases passed: full baseball capture, drive-in video playback and the isolated Windows audio mixer. The staged launcher and its Shipping child survived a hidden 31-second startup with an isolated profile. All 439 source/configuration/project/build/launcher files match the publication checkout. No interactive gameplay, physical-controller, listening or live FPS check was performed.
+
+Fresh staging verifies 916 runtime files and 903 NonUFS dependencies. Both diagnostic launchers are included. Personal data, captures and symbols are excluded. [Detailed results](validation/WindowsRelease109Results.json) and [release notes](Releases/v1.0.9.md).
+
 ## October 12 release v1.0.8
 
 Editor, Shipping and Development builds succeeded. 461/463 headless cases passed after correcting and rerunning an outdated rescue landing fixture that never advanced the falling pilot. The broad run initially passed 460/463; the two previously documented ReferenceCity fixture and FlapLayout mask expectation failures remain. All 8 focused D3D12 offscreen cases passed, and the four README captures were inspected. The staged launcher and its Shipping child survived a hidden 31-second startup with an isolated profile. All 427 source/configuration/project/build/launcher files match the publication checkout. No interactive gameplay, physical-controller or listening check was performed.

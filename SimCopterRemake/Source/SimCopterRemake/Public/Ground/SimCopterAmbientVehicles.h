@@ -235,9 +235,10 @@ public:
 
 	bool FindTowableBoat(const FVector& Near, float Radius, int32& OutIndex) const;
 	bool SetBoatTow(int32 Index, bool bTowed, const FVector& Location);
-	bool FinishBoatTow(int32 Index);
+	bool FinishBoatTow(int32 Index, const FVector* DeliverySurface = nullptr);
 	bool GetBoatTowLocation(int32 Index, FVector& Location) const;
 	bool GetBoatTowBounds(int32 Index, FBox& OutBounds) const;
+	bool GetBoatTowGeometry(int32 Index, FBox& OutLocalBounds, FTransform& OutTransform) const;
 	bool HasRecoverableBoat() const;
 	bool CaptureRuntimeSaveState(TArray<uint8>& OutData);
 	bool RestoreRuntimeSaveState(const TArray<uint8>& Data);

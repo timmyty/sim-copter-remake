@@ -37,6 +37,8 @@ struct FPad
 // The eight edge-adjacent tiles around the 2x2 hangar, excluding the four airport corners.
 SIMCOPTERREMAKE_API bool IsHangarPad(int32 PadIndex);
 SIMCOPTERREMAKE_API void SortByDoorDistance(TArray<FPad>& Pads, const FVector& Door);
+// Point the nose toward the terminal so the tail and chase camera face the open apron.
+SIMCOPTERREMAKE_API float GetAirportFacingYaw(const ASimCopterTrafficSystemActor* Traffic, const FVector& PadSurface);
 SIMCOPTERREMAKE_API bool OverlapsParkedAircraft(const FBox& Candidate, const TArray<FBox>& Occupants);
 
 // Creates a separate, unpossessed airframe. No money/ownership changes on failure.

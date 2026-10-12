@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.8 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.8.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.9 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.9.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -15,13 +15,32 @@ recovery systems are deliberate additions to the remake.
 
 ## Start playing
 
-1. Download **`SimCopterRemake-v1.0.8-Windows-x64.zip`** from the latest release.
+1. Download **`SimCopterRemake-v1.0.9-Windows-x64.zip`** from the latest release.
 2. Extract the **entire ZIP** and run **`SimCopterRemake.exe`** in the extracted folder.
 3. Choose **New Career Game** or **New User Game**, then select a city.
 
 Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the launcher.
 Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 `Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
+
+## New in v1.0.9: baseball, city life and clearer drive-in audio
+
+[![A live Canyon baseball game with red visitors, blue defenders and a fixed stadium scoreboard](Docs/screenshots/baseball-stadium-v1.0.9.png)](Docs/screenshots/baseball-stadium-v1.0.9.png)
+
+Nearby baseball fields now host complete nine-inning games with base running,
+counts, scoring and a fixed stadium scoreboard. Only active players are spawned,
+with at most two nearby games. [Baseball details](Docs/BaseballGames.md)
+
+This release also restores ambient reactions, improves rooftop arrests and police
+medical retrieval, corrects burglar braking and airport headings, restores
+megaphone reactions, and accepts properly placed boat drops at harbors or police
+roofs. Drive-in music now honors Music Volume, Game Volume and Auto-Quiet: HSI is
+about 6.35 dB stronger at 135% music with full game volume and Auto-Quiet off.
+[Release notes](Docs/Releases/v1.0.9.md)
+
+The optional `Launch-With-Performance-Diagnostics.cmd` records timing traces and
+GPU crash evidence together. The reported witness-photo slowdown and GPU compute
+fault remain under investigation. [Diagnostics](Docs/WitnessPhotoStutterInvestigation.md)
 
 ## A rebuilt hangar and a fleet that stays yours
 
@@ -61,11 +80,11 @@ the game and press **Ctrl + Alt + X** to enter a code. The original UFO effects,
 Gort dialogue, money cheats and drive-in movie commands are included.
 [Full cheat guide](Docs/CheatCodes.md)
 
-These screenshots are direct Unreal captures of the current hangar, gameplay
-components and menu widgets. The cage scene uses a neutral demonstration floor;
+These screenshots are direct Unreal captures of the current baseball field,
+hangar, gameplay components and menu widgets. The cage scene uses a neutral demonstration floor;
 it shows an actual captured car and sealed cage state.
 
-## More in v1.0.8
+## Also included from v1.0.8
 
 | Area | What changed |
 | --- | --- |
@@ -76,7 +95,7 @@ it shows an actual captured car and sealed cage state.
 | **Career and airport** | Fleet-wide equipment, restored parked purchases after graduation, clearer equipment selection, and a band that remains on the base. Recovery jobs no longer consume original mission slots. |
 | **Rendering and diagnostics** | Clearer taser effects, corrected construction-lot surfaces and a separate GPU diagnostic launcher. The reported GPU compute fault remains under investigation. |
 
-[Detailed release notes](Docs/Releases/v1.0.8.md) explain the changes and their
+[Detailed release notes](Docs/Releases/v1.0.9.md) explain the changes and their
 validation. For GPU crash investigation, `Launch-With-GPU-Diagnostics.cmd` starts
 the included Development executable with extra diagnostics; the normal launcher
 continues to use Shipping. [Diagnostic guide](Docs/GpuCrashAndSprint.md)

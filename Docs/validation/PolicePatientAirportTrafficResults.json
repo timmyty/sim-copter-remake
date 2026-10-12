@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-12",
+  "scope": [
+    "police acceptance of cage-dropped roof prisoners",
+    "police medical retrieval",
+    "inward base-pad helicopter headings",
+    "burglar traffic braking, recovery and spawn routing",
+    "original pedestrian behavior audit"
+  ],
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\burglar-traffic\\build-verified.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\burglar-traffic\\build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\burglar-traffic\\build-development.log"
+    }
+  },
+  "tests": {
+    "succeeded": 113,
+    "succeededWithWarnings": 4,
+    "failed": 0,
+    "notRun": 0
+  },
+  "test_report": "Docs\\scratchpad\\burglar-traffic\\combined\\index.json",
+  "warnings": [
+    {
+      "test": "SimCopter.Missions.PlaneDeckRescue",
+      "count": 11,
+      "messages": [
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_5' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_12' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_13' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_54' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_55' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_56' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_57' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_58' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_59' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_13.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_60' which is static to it. Aborting."
+      ]
+    },
+    {
+      "test": "SimCopter.Missions.SafePassengerLanding",
+      "count": 12,
+      "messages": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_14.Untitled:PersistentLevel.SimCopterHelicopterPawn_0",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_4' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_5' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_12' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_13' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_54' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_55' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_56' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_57' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_58' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_59' which is static to it. Aborting.",
+        "PIE: AttachTo: '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.SceneRoot' is not static , cannot attach '/Temp/Untitled_14.Untitled:PersistentLevel.SimCity2000CityActor_0.InstancedStaticMeshComponent_60' which is static to it. Aborting."
+      ]
+    },
+    {
+      "test": "SimCopter.Traffic.TunnelTransit",
+      "count": 4,
+      "messages": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_33.Untitled:PersistentLevel.SimCopterGroundAgent_0",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_33.Untitled:PersistentLevel.SimCopterGroundAgent_1",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_33.Untitled:PersistentLevel.SimCopterGroundAgent_2",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_33.Untitled:PersistentLevel.SimCopterGroundAgent_3"
+      ]
+    },
+    {
+      "test": "SimCopter.UI.HangarPurchaseParking",
+      "count": 3,
+      "messages": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_34.Untitled:PersistentLevel.SimCopterHelicopterPawn_1",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_34.Untitled:PersistentLevel.SimCopterHelicopterPawn_2",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_34.Untitled:PersistentLevel.SimCopterHelicopterPawn_11"
+      ]
+    }
+  ],
+  "baseline": {
+    "police_assertions_failed": 17,
+    "heading_assertions_failed": 7,
+    "traffic_assertions_failed": 9,
+    "traffic_report": "Docs/scratchpad/burglar-traffic/baseline-tests/index.json",
+    "notes": "Mission fixture activation stub and traffic brake-only fixture spacing were corrected; final combined run passes."
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-12T16:45:02.6369265Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "A00C6E37FAB7EDE752B8B91F042162A50C7F237D7E2A9799D35FF37F0804EEC6",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\burglar-traffic/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "E91A899CB2891CA37D9780A0F56E36184C192AEB1BB3C459CB99D0B8C0E43C15"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "2F98D15180F9471DCAEEBA8834287B44E6709DC8986509E920851716B6BBC1F0",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\burglar-traffic/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "87462F7D70901B4F86514466340AE2F5866B7223B061DC2C6BDFBD7ABA5373B7"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "3B76ED135C12B0FF9C7D06C9FBE024EE42414156A7F5A65DBF0B932A627D5BD2",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\burglar-traffic/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "B8E7837B25D93D3F2E966721A1F66B3C541D19B06A187B21CB3F4C7997590FEC"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "C09BE680F0CD9B194D3C1F34697216A86631B8085AF9434FF0FF677A79467FF3",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\burglar-traffic/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "F41D69DC54D6B904A5C41F32CFD823F57BB04EFAE350A2D5924260E439123FF4"
+      }
+    ],
+    "HeadlessPassed": 117,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "source_manifest": "Docs/scratchpad/police-roof-patient/source-manifest.json",
+  "behavior_audit": "Docs/OriginalPedestrianBehaviorAudit.md",
+  "interactive_playtest": false,
+  "limitations": [
+    "NullRHI does not verify visuals or listening",
+    "Exact screenshot traffic arrangement was not replayed",
+    "General civilian parked-helicopter inspection is not established from the supplied original data",
+    "Existing saved aircraft transforms are retained"
+  ],
+  "publication_checkout_changed": false
+}

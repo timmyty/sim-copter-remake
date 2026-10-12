@@ -147,8 +147,9 @@ void ASimCopterGameMode::PlaceSessionOnAirportPads()
 		}
 		PadTaken[PadIndex] = true;
 
-		// FUN_00484790 clears the helicopter's orientation outright; the pads have no facing.
-		Helicopter->PlaceOnHelipad(PadWorld, 0.0f);
+		// Face new helicopters into the base, leaving the tail and chase camera outside.
+		Helicopter->PlaceOnHelipad(PadWorld, Helicopter->IsFixedWingAircraft() ? 0.0f :
+			SimCopterHelicopterParking::GetAirportFacingYaw(Traffic,PadWorld));
 
 		if (PlayerHelicopter == nullptr)
 		{

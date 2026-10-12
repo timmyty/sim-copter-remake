@@ -772,7 +772,7 @@ bool ASimCopterTrafficSystemActor::CaptureRuntimeSaveState(TArray<uint8>& OutDat
 	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
 	{
 		ASimCopterGroundAgent* Agent = *It;
-		if (Agent != nullptr && Agent->GetOwner() == this && !Agent->IsActorBeingDestroyed())
+		if (Agent != nullptr && Agent->GetOwner() == this && !Agent->IsActorBeingDestroyed() && !Agent->IsPlayingBaseball())
 		{
 			Agents.Add(Agent);
 		}
@@ -958,6 +958,7 @@ bool ASimCopterTrafficSystemActor::RestoreRuntimeSaveState(
 			Existing.Add(Agent);
 		}
 	}
+	ClearBaseballGames();
 	for (ASimCopterGroundAgent* Agent : Existing) Agent->Destroy();
 	PedestrianAgents.Reset();
 	VehicleAgents.Reset();
@@ -1245,17 +1246,33 @@ bool ASimCopterTrafficSystemActor::ApplyVehicleInteraction(
 	const FSimCopterInteractionEvent& Event)
 {
 	// SCHOOK: FUN_0049a4f0 routes class-0x10 objects through FUN_0049fc10/FUN_0049f680.
-	// Interaction mode 2 then calls FUN_0049d7e0; message 0 is Report Traffic.
+	// Interaction mode 2 then calls FUN_0049d7e0; messages 0/1 are Report Traffic/Stop Criminal.
 	constexpr int32 ReportTrafficMessage = 0;
 	if (Vehicle.GetAgentKind() != ESimCopterGroundAgentKind::Vehicle ||
-		Event.Mode != ESimCopterInteractionMode::Megaphone ||
-		Event.MessageIndex != ReportTrafficMessage)
+		Event.Mode != ESimCopterInteractionMode::Megaphone)
 	{
 		return false;
 	}
 
 	FSimCopterVehicleTrafficState* State =
 		VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(&Vehicle));
+	if (Event.MessageIndex == 1)
+	{
+		if (Vehicle.IsVehicleImmobilized() || Vehicle.IsVehicleTipped() || Vehicle.HasVehicleExploded() ||
+			Vehicle.HasMissionResolutionReported() || (State && (State->bMissionJammed || State->bMissionOnFire || State->bJamQueued))) return false;
+		// FUN_0049d7e0 tests flag 0x800 and illumination before offering a speeder a halt.
+		if (Vehicle.IsFleeing() && Vehicle.GetSpotlightMark() <= 0) return false;
+		const FString& Model=Vehicle.GetMeshTableName();
+		if (Model.Equals(TEXT("CARFIRET"),ESearchCase::IgnoreCase) ||
+			Model.Equals(TEXT("CARPOLIC"),ESearchCase::IgnoreCase) ||
+			Model.Equals(TEXT("CARAMBUL"),ESearchCase::IgnoreCase)) return false;
+		for (const auto& Service : DispatchVehicles)
+			for (const auto& Dispatch : Service) if (Dispatch.Agent.Get()==&Vehicle) return false;
+		int32 X,Y;
+		if (!Vehicle.TryGetTileCoordinate(X,Y) || !CanVehicleStopOnTile(FIntPoint(X,Y))) return false;
+		return Vehicle.TryMegaphoneStop();
+	}
+	if (Event.MessageIndex != ReportTrafficMessage) return false;
 	if (State == nullptr || !State->bMissionJammed || State->bMissionOnFire ||
 		State->MissionEventId == INDEX_NONE)
 	{
@@ -2528,6 +2545,33 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindNearestBehaviorPerson(
 	return Best;
 }
 
+// SCHOOK: FindGawkCasualty 0x004caee5
+// Verified in the local Classics executable at 004d1c65 (opcode-15 table 004d1eb0).
+// The exported Ghidra function omits this inline case. It accepts written-off people OR
+// state 6, rejects a carrier and hospital tile D1, then minimizes 3D Manhattan distance.
+ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindNearestGawkCasualty(const ASimCopterGroundAgent& From) const
+{
+	ASimCopterGroundAgent* Best = nullptr;
+	float BestDistance = TNumericLimits<float>::Max();
+	for (const auto& Weak : PedestrianAgents)
+	{
+		auto* Person = Weak.Get();
+		if (!Person || Person == &From || Person->IsActorBeingDestroyed() || Person->IsHidden() ||
+			Person->GetAgentKind() != ESimCopterGroundAgentKind::Pedestrian ||
+			(!Person->IsBehaviorActive() && !Person->IsMissionPatientDead()) ||
+			Person->GetBehaviorAttribute(EBhavAttr::Visible) == 0 || Person->GetBehaviorCarrier() ||
+			Person->IsMissionCarried() || Person->IsPassengerFalling()) continue;
+		if (Person->GetBehaviorAttribute(EBhavAttr::WrittenOff) == 0 && !Person->IsMedevacVictim() &&
+			!Person->IsMissionPatientDead()) continue;
+		int32 X, Y;
+		if (!TryGetPeopleTileCoordinateAtWorldLocation(Person->GetActorLocation(), X, Y) || GetXbldTileId(X,Y) == 0xd1) continue;
+		const FVector Delta = Person->GetActorLocation() - From.GetActorLocation();
+		const float Distance = FMath::Abs(Delta.X) + FMath::Abs(Delta.Y) + FMath::Abs(Delta.Z);
+		if (Distance < BestDistance) { Best = Person; BestDistance = Distance; }
+	}
+	return Best;
+}
+
 int32 ASimCopterTrafficSystemActor::SpawnCheckupCrew(ASimCopterHelicopterPawn& Helicopter, int32 ServiceCount)
 {
 	// SCHOOK: CheckupCrew 0x004c1ea0. CheckupApply (004385c0) counts each paid
@@ -2625,6 +2669,9 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(A
 			!Patient->IsBehaviorActive() || !Patient->IsMedevacVictim() ||
 			Patient->HasMissionResolutionReported() || Patient->IsMissionPatientDead() ||
 			Patient->GetBehaviorCarrier() || Patient->GetBehaviorAttribute(EBhavAttr::Visible) == 0) continue;
+		if (Medic.GetBehaviorAttribute(EBhavAttr::State) == 7 &&
+			(Patient->IsMissionCarried() || Patient->IsPassengerFalling() || Patient->IsHidden() ||
+			 FVector::DistSquared(Medic.GetActorLocation(),Patient->GetActorLocation()) >= FMath::Square(ActiveTileSize * 30.f))) continue;
 		if (Medic.bMedicPathAttempted && Medic.MedicPathTarget.Get() == Patient && Medic.MedicPath.IsEmpty() &&
 			GetWorld()->GetTimeSeconds() < Medic.NextMedicPathTime) continue;
 		Candidates.Add(Patient);
@@ -3507,6 +3554,7 @@ ASimCity2000CityActor* ASimCopterTrafficSystemActor::ResolveSourceCityActor() co
 
 bool ASimCopterTrafficSystemActor::RebuildSpawnData()
 {
+	ClearBaseballGames();
 	USimCopterLoadingSubsystem::SetStage(this, 9);
 	LastLoadError.Reset();
 	LastCitySource.Reset();
@@ -4654,6 +4702,9 @@ bool ASimCopterTrafficSystemActor::TryActivateBurglarCar(
 	const int32 NextIndex = ChooseNextRouteNode(
 		RoadNodes, NodeIndex, INDEX_NONE, RandomStream, TrafficAiMode == ESimCopterTrafficAiMode::Modernized);
 	const FVector SpawnBase = MakeRoutePointLocation(RoadNodes, NodeIndex, INDEX_NONE, NextIndex, true);
+	// Use the same occupancy gate as ambient cars. The pool allocator alone does not
+	// guarantee an empty road, and an isolated tile has no getaway route at all.
+	if (!RoadNodes.IsValidIndex(NextIndex) || !IsVehicleSpawnLocationClear(SpawnBase)) return false;
 
 	FRotator SpawnRotation = FRotator::ZeroRotator;
 	if (RoadNodes.IsValidIndex(NextIndex))
@@ -4689,6 +4740,9 @@ bool ASimCopterTrafficSystemActor::TryActivateBurglarCar(
 		const int32 PlannedNext = ChooseNextRouteNode(
 			RoadNodes, NextIndex, NodeIndex, RandomStream, TrafficAiMode == ESimCopterTrafficAiMode::Modernized);
 		Car->SetRouteState(NextIndex, NodeIndex, PlannedNext);
+		// As with ambient spawns, arm the first hop now. AssignNextTarget otherwise
+		// interprets NextIndex as already reached and cuts straight across its corner.
+		Car->SetMoveTarget(MakeVehicleRouteTargetLocation(RoadNodes, NextIndex, NodeIndex, INDEX_NONE, PlannedNext));
 	}
 	else
 	{
@@ -4911,7 +4965,7 @@ void ASimCopterTrafficSystemActor::UpdateSpeeders(const float DeltaSeconds)
 			const float Coast = FMath::Max(
 				0.0f, Car->GetCriminalStopScale() - DeltaSeconds * CriminalCarStopBrakeRate);
 			Car->SetCriminalStopScale(Coast);
-			Car->SetTrafficSpeedScale(Coast);
+			Car->LimitTrafficSpeedScale(Coast);
 			if (Coast > 0.0f)
 			{
 				continue;
@@ -4965,7 +5019,7 @@ void ASimCopterTrafficSystemActor::UpdateSpeeders(const float DeltaSeconds)
 
 		// FUN_0049d980 applies the same 1.75x and spotlight-band slowdown to the ordinary
 		// speeder flag as to CARROBBR.
-		Car->SetTrafficSpeedScale(SimCopterCriminalCar::GetFleeingSpeedMultiplier(
+		Car->LimitTrafficSpeedScale(SimCopterCriminalCar::GetFleeingSpeedMultiplier(
 			true, Car->GetSpotlightMark(), SpotlightMarkBand));
 	}
 }
@@ -5032,7 +5086,7 @@ void ASimCopterTrafficSystemActor::RunBurglarOutsidePhase(ASimCopterGroundAgent&
 		Car.SetFleeing(true);
 		Car.SetSpotlightMark(0);
 		Car.SetCriminalState(static_cast<uint8>(SimCopterCriminalCar::EState::Cruising));
-		Car.SetTrafficSpeedScale(SimCopterCriminalCar::GetFleeingSpeedMultiplier(true, 0, INDEX_NONE));
+		Car.LimitTrafficSpeedScale(SimCopterCriminalCar::GetFleeingSpeedMultiplier(true, 0, INDEX_NONE));
 		UE_LOG(LogSimCopterTrafficSystem, Display,
 			TEXT("Burglar returned to event %d's car; the getaway cycle continues."),
 			Car.GetCriminalEventId());
@@ -5202,7 +5256,7 @@ void ASimCopterTrafficSystemActor::UpdateCriminalCars(const float DeltaSeconds)
 			// traffic pass overwrites TrafficSpeedScale every frame.
 			const float Coast = FMath::Max(0.0f, Car->GetCriminalStopScale() - DeltaSeconds * CriminalCarStopBrakeRate);
 			Car->SetCriminalStopScale(Coast);
-			Car->SetTrafficSpeedScale(Coast);
+			Car->LimitTrafficSpeedScale(Coast);
 			if (Coast > 0.0f)
 			{
 				continue;
@@ -5290,7 +5344,7 @@ void ASimCopterTrafficSystemActor::UpdateCriminalCars(const float DeltaSeconds)
 		}
 
 		// FUN_0049d980: the mark decides how fast the getaway car can run.
-		Car->SetTrafficSpeedScale(SimCopterCriminalCar::GetFleeingSpeedMultiplier(
+		Car->LimitTrafficSpeedScale(SimCopterCriminalCar::GetFleeingSpeedMultiplier(
 			Car->IsFleeing(), Car->GetSpotlightMark(), SpotlightMarkBand));
 	}
 }
@@ -6703,6 +6757,7 @@ void ASimCopterTrafficSystemActor::UpdateAgentPool(float DeltaSeconds)
 		return;
 	}
 	SpawnThinkAccumulatorSeconds = 0.0f;
+	PruneBaseballGames();
 
 	int32 SpawnAttemptsRemaining = MaxSpawnAttemptsPerThink;
 	while (VehicleAgents.Num() + TunnelTransits.Num() < MaxVehicleAgents && SpawnAttemptsRemaining-- > 0)
@@ -6710,6 +6765,21 @@ void ASimCopterTrafficSystemActor::UpdateAgentPool(float DeltaSeconds)
 		if (!TrySpawnAgent(true, FocusLocation))
 		{
 			break;
+		}
+	}
+
+	// Scripted fields are not random street population. The leading-edge scan can miss a
+	// field after a warp/load, stop at the civilian cap, or spend its budget before reaching
+	// it. Reconcile nearby fields even while stationary; retain the hard actor cap.
+	SpawnAttemptsRemaining = MaxSpawnAttemptsPerThink;
+	const float FieldRadiusCm = FMath::Max(1, OriginalAmbientScanRadiusTiles) * ActiveTileSize;
+	for (const FSimCopterGroundRouteNode& Node : PedestrianNodes)
+	{
+		if (SpawnAttemptsRemaining <= 0) break;
+		if (Node.BuildingId == 0xD7 &&
+			FVector::DistSquared2D(Node.Location, FocusLocation) <= FMath::Square(FieldRadiusCm))
+		{
+			TrySpawnSpecialBuildingPeople(Node.FileX, Node.FileY, SpawnAttemptsRemaining);
 		}
 	}
 
@@ -6889,7 +6959,32 @@ void ASimCopterTrafficSystemActor::UpdateTrafficInteractions(float DeltaSeconds)
 	{
 		if (ASimCopterGroundAgent* Agent = AgentPtr.Get())
 		{
-			Agent->SetTrafficSpeedScale(1.0f);
+			// FUN_0049d980 supplies the free-road speed before FUN_0049ee30 can block
+			// the move. Crime updates after this pass may lower, never erase, its brakes.
+			Agent->SetTrafficSpeedScale(SimCopterCriminalCar::GetFleeingSpeedMultiplier(
+				Agent->IsFleeing(), Agent->GetSpotlightMark(), SpotlightMarkBand));
+			if (Agent->HasMegaphoneStop())
+			{
+				bool bKeepSpeederStopped=false;
+				int32 X,Y;
+				if (Agent->IsSpeeder() && Agent->TryGetTileCoordinate(X,Y))
+				{
+					int32 PlayerX,PlayerY;
+					if (const APawn* Player=UGameplayStatics::GetPlayerPawn(this,0); Player &&
+						TryGetPeopleTileCoordinateAtWorldLocation(Player->GetActorLocation(),PlayerX,PlayerY))
+					{
+						const int32 DX=FMath::Abs(X-PlayerX),DY=FMath::Abs(Y-PlayerY);
+						bKeepSpeederStopped=FMath::Min(DX,DY)+2*FMath::Max(DX,DY)<16; // FUN_004681f0
+					}
+					for (const auto& Police : DispatchVehicles[static_cast<int32>(SimCopterDispatch::EService::Police)])
+					{
+						int32 PX,PY;
+						if (Police.Agent.IsValid() && Police.Agent->TryGetTileCoordinate(PX,PY) &&
+							SimCopterCriminalCar::GetTileStepDistance(FIntPoint(X,Y),FIntPoint(PX,PY))<3) bKeepSpeederStopped=true;
+					}
+				}
+				Agent->UpdateMegaphoneStop(DeltaSeconds,bKeepSpeederStopped);
+			}
 		}
 	}
 
@@ -8749,10 +8844,19 @@ bool ASimCopterTrafficSystemActor::TryStartVehicleRecovery(ASimCopterGroundAgent
 
 bool ASimCopterTrafficSystemActor::CanVehicleRecoverFromTraffic(const ASimCopterGroundAgent& Vehicle) const
 {
+	// CARROBBR owns a mission even during free driving. Excluding every mission car
+	// made it an immovable barrier to the car-only escape on both sides of the pair.
+	// Keep burglary stops, driver-outside, custody, fire and scripted vehicles protected.
+	const auto CriminalState = static_cast<SimCopterCriminalCar::EState>(Vehicle.GetCriminalState());
+	const bool bDrivingBurglar = Vehicle.IsCriminalCar() &&
+		(CriminalState == SimCopterCriminalCar::EState::Cruising ||
+		 CriminalState == SimCopterCriminalCar::EState::Fleeing ||
+		 CriminalState == SimCopterCriminalCar::EState::SeekingBurglaryStop);
 	if (!Vehicle.HasMoveTarget() || Vehicle.IsHidden() || Vehicle.IsActorBeingDestroyed() ||
 		Vehicle.IsVehicleImmobilized() || Vehicle.IsVehicleTipped() || Vehicle.HasVehicleExploded() ||
 		Vehicle.IsAircraftTrafficBlocked() || Vehicle.IsStopOrdered() || Vehicle.IsStopped() ||
-		Vehicle.MissionEventId != INDEX_NONE || IsVehicleHeldInTrafficJam(Vehicle)) return false;
+		(Vehicle.IsCriminalCar() && !bDrivingBurglar) ||
+		(Vehicle.MissionEventId != INDEX_NONE && !bDrivingBurglar) || IsVehicleHeldInTrafficJam(Vehicle)) return false;
 	const auto* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(&Vehicle));
 	return State == nullptr || (!State->bMissionOnFire && !State->bInTrafficLightLine &&
 		(State->TrafficLightLineGraceSeconds <= 0.0f || State->IntersectionCommitSeconds > 0.0f));
@@ -9369,20 +9473,67 @@ int32 ASimCopterTrafficSystemActor::TrySpawnSpecialBuildingPeople(int32 TileX, i
 		EnsureServiceRoofCrew(TileX, TileY);
 		return PedestrianAgents.Num() - Before;
 	}
-	// Both roof buildings are tested for their own crew rather than for any pedestrian at all:
-	// their man stands on the roof, so a passer-by on the pavement below is not a duplicate of
-	// him, and letting one veto the spawn left busy cities with permanently empty helipads. The
-	// ball park and the plaza do put their people on the ground, where any pedestrian standing
-	// there really is the duplicate this test is for.
-	const float FootprintTiles = float(FMath::Max(1, GetBuildingFootprintSize(TileX, TileY)));
-	const bool bRoofCrewBuilding = BuildingId == 0xD1 || BuildingId == 0xD2;
-	const bool bAlreadyStaffed = bRoofCrewBuilding
-		? HasPedestrianInPersonStateNearTile(TileX, TileY, FootprintTiles, BuildingId == 0xD1 ? 5 : 7)
-		: HasAmbientPedestrianNearTile(TileX, TileY, FootprintTiles);
-	if (bAlreadyStaffed)
+	if (BuildingId == 0xD7)
 	{
-		return 0;
+		if (bPlayFullBaseballGames) return EnsureBaseballGame(TileX, TileY, AttemptsRemaining);
+		// SCHOOK: SpawnSpecialBuildingPeople 0x004c25b0 / ScriptedPerson 0x004c20b0.
+		// One class-4 batter and seven class-4 fielders, relative to the scene centre.
+		// The original duplicate check (004c1fb0) matches scripted building identity,
+		// not any passer-by. Resolve the footprint node so each scanned tile shares a team.
+		int32 NodeIndex = INDEX_NONE;
+		if (!TryResolvePedestrianNodeForTile(TileX, TileY, NodeIndex)) return 0;
+		const FSimCopterGroundRouteNode& Node = PedestrianNodes[NodeIndex];
+		const float TeamSpawnRadiusCm = FMath::Max(1, OriginalAmbientScanRadiusTiles) * ActiveTileSize;
+		if (FVector::DistSquared2D(Node.Location, GetPopulationFocusLocation()) > FMath::Square(TeamSpawnRadiusCm)) return 0;
+		const FVector2D Offsets[] = {
+			{70,-70}, {20,-70}, {20,-20}, {70,-20}, {45,-45}, {-40,-40}, {40,40}, {-40,40}
+		};
+		FVector Positions[8];
+		bool Occupied[8] = {};
+		for (int32 Slot = 0; Slot < 8; ++Slot)
+			Positions[Slot] = Node.Location + MakePeopleSpawnOffsetWorldFromOriginalUnits(
+				ActiveCityToWorldTransform, ActiveTileSize, Offsets[Slot]);
+		int32 TeamClothesOffset = INDEX_NONE;
+		for (const auto& AgentPtr : PedestrianAgents)
+		{
+			const ASimCopterGroundAgent* Agent = AgentPtr.Get();
+			if (!Agent || Agent->IsActorBeingDestroyed() || Agent->GetRouteTargetNode() != NodeIndex) continue;
+			if (Agent->InitialBehaviorProgramId == 1205) Occupied[0] = true;
+			else if (Agent->InitialBehaviorProgramId == 1206)
+			{
+				// Fielders stand at their authored offsets. Match surviving slots by proximity
+				// so old partial saves and individual distance culls can be repaired without
+				// restarting the batter's VM or stacking replacements on surviving fielders.
+				int32 Best = INDEX_NONE;
+				for (int32 Slot = 1; Slot < 8; ++Slot)
+					if (!Occupied[Slot] && (Best == INDEX_NONE ||
+						FVector::DistSquared2D(Agent->GetActorLocation(), Positions[Slot]) <
+						FVector::DistSquared2D(Agent->GetActorLocation(), Positions[Best]))) Best = Slot;
+				if (Best != INDEX_NONE) Occupied[Best] = true;
+				TeamClothesOffset = Agent->GetPedestrianFigureClothesOffset();
+			}
+		}
+		int32 Missing = 0;
+		for (bool bPresent : Occupied) Missing += !bPresent;
+		if (Missing == 0 || PedestrianAgents.Num() + Missing > MaxPedestrianAgents) return 0;
+		if (TeamClothesOffset == INDEX_NONE)
+			TeamClothesOffset = int32(FSimCopterPeopleCityRules::NextPeopleRandomBounded(PeopleRandomState, 10));
+		int32 Spawned = 0;
+		// Finish this bounded group even when the shared per-think budget has only one
+		// attempt left. Previously it left one player who then vetoed every future spawn.
+		for (int32 Slot = 0; Slot < 8; ++Slot)
+		{
+			if (Occupied[Slot]) continue;
+			AttemptsRemaining = FMath::Max(0, AttemptsRemaining - 1);
+			const int32 Color = Slot == 0
+				? int32(FSimCopterPeopleCityRules::NextPeopleRandomBounded(PeopleRandomState, 10)) : TeamClothesOffset;
+			Spawned += TrySpawnOriginalPersonAtTile(TileX, TileY, 4, 0,
+				Slot == 0 ? 1205 : 1206, &Offsets[Slot], Color);
+		}
+		return Spawned;
 	}
+	const float FootprintTiles = float(FMath::Max(1, GetBuildingFootprintSize(TileX, TileY)));
+	if (HasAmbientPedestrianNearTile(TileX, TileY, FootprintTiles)) return 0;
 
 	int32 Spawned = 0;
 	auto TryOne = [this, TileX, TileY, &AttemptsRemaining, &Spawned](
@@ -9454,29 +9605,6 @@ int32 ASimCopterTrafficSystemActor::TrySpawnSpecialBuildingPeople(int32 TileX, i
 		while (SpawnCount-- > 0)
 		{
 			TryOne(BehaviorClass, InitialState, INDEX_NONE, nullptr, INDEX_NONE, /*bOnRoof=*/true);
-		}
-		break;
-	}
-	case 0xD7:
-	{
-		const int32 BatterClothesOffset = int32(FSimCopterPeopleCityRules::NextPeopleRandomBounded(PeopleRandomState, 10));
-		const int32 TeamClothesOffset = int32(FSimCopterPeopleCityRules::NextPeopleRandomBounded(PeopleRandomState, 10));
-		const int32 BehaviorClass = ChooseScriptedBehaviorClass();
-		const FVector2D BatterOffset(70.0f, -70.0f);
-		TryOne(BehaviorClass, 0, 0x04b5, &BatterOffset, BatterClothesOffset);
-
-		const FVector2D FielderOffsets[] = {
-			FVector2D(20.0f, -70.0f),
-			FVector2D(20.0f, -20.0f),
-			FVector2D(70.0f, -20.0f),
-			FVector2D(45.0f, -45.0f),
-			FVector2D(-40.0f, -40.0f),
-			FVector2D(40.0f, 40.0f),
-			FVector2D(-40.0f, 40.0f),
-		};
-		for (const FVector2D& Offset : FielderOffsets)
-		{
-			TryOne(BehaviorClass, 0, 0x04b6, &Offset, TeamClothesOffset);
 		}
 		break;
 	}

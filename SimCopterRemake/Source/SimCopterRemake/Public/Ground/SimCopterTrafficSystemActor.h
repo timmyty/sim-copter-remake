@@ -266,6 +266,7 @@ public:
 	int32 SpawnCheckupCrew(ASimCopterHelicopterPawn& Helicopter, int32 ServiceCount);
 	// Ground equivalent of the cabin reservation: one deployed medic per casualty.
 	ASimCopterGroundAgent* FindAndClaimGroundPatient(ASimCopterGroundAgent& Medic) const;
+	ASimCopterGroundAgent* FindNearestGawkCasualty(const ASimCopterGroundAgent& From) const;
 	// FUN_004ca4f0(State, 0): state match whose visibility attribute is zero.
 	bool HasHiddenBehaviorPersonInState(int32 State) const;
 	// FUN_004c9f10: the crowd around a person - how many other people are within RadiusTiles, the
@@ -443,6 +444,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Population", meta = (ClampMin = "0"))
 	int32 MaxPedestrianAgents = 280;
+
+	// Requested full games; disable to retain retail's eight-person BHAV pantomime.
+	UPROPERTY(EditAnywhere, Category = "SimCopter|Population")
+	bool bPlayFullBaseballGames = true;
 
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Population|Original", meta = (ClampMin = "0"))
 	int32 OriginalAmbientRandomCap = 55;
@@ -835,10 +840,21 @@ private:
 	friend class FSimCopterCheckupCrewTest;
 	friend class FSimCopterPoliceDestinationTest;
 	friend class FSimCopterCageRecoveryTest;
+	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterCityTourRenderTest;
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterAmbientCuriosityTest;
+	friend class FSimCopterBaseballTest;
+	friend class FSimCopterBaseballGameTest;
+	friend class ASimCopterBaseballGame;
+	TMap<int32, TWeakObjectPtr<class ASimCopterBaseballGame>> BaseballGames;
+	void ClearBaseballGames();
+	void PruneBaseballGames();
+	int32 EnsureBaseballGame(int32 TileX, int32 TileY, int32& AttemptsRemaining);
+	friend class FSimCopterCasualtyGawkingTest;
+	friend class FSimCopterBehaviorAircraftTest;
 	friend class FSimCopterBandCelebrationTest;
 	friend class FSimCopterServicePostsTest;
 	friend class FSimCopterGroundMedicTest;

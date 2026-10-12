@@ -199,7 +199,11 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 
 	auto* Ambient=World->SpawnActor<ASimCopterAmbientVehiclesActor>(); auto& Boat=Ambient->Boats[0];
 	Boat.bVisible=true; Boat.ObjectId=SimCopterAmbientVehicles::CapsizedBoatObjectId; Boat.World=FVector(4000,4000,60);
+	Boat.Mesh=Ambient->CreateVehicleMesh(Boat.ObjectId,TEXT("HarborRecoveryHull"));
+	if (!TestNotNull(TEXT("Real capsized hull mesh loads"),Boat.Mesh.Get())) return false;
+	Boat.Direction=FVector(1,1,0).GetSafeNormal();
 	Boat.TowEventId=Missions->CreateMissionAt(70,70,TYPE_BoatTow);
+	const int32 BoatRecoveryEvent=Boat.TowEventId;
 	System->RefreshRecoveryWaypoints(); TestTrue(TEXT("Hull recovery activates harbor"),Harbor->IsWaypointActive());
 	auto* Survivor=World->SpawnActor<ASimCopterGroundAgent>(); Survivor->MissionEventId=Boat.EventId;
 	Survivor->SetActorLocation(Boat.World+FVector(100,0,100)); Ambient->BoatRiders.Add({Survivor});
@@ -212,9 +216,35 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 	{ FMemoryReader Reader(Saved); Ops->SerializeState(Reader); } Ops->ResolveSavedCargo();
 	TestTrue(TEXT("Boat cage survives save restore"),Ops->HasBoat() && !Ops->bCageOpen);
 	PositionCage(Yard->GetActorLocation()+FVector(0,0,70)); TestFalse(TEXT("Junkyard refuses boat"),Ops->TryDeliverCargo());
-	PositionCage(Harbor->GetActorLocation()+FVector(0,0,70)); Ops->OpenCargo();
+	FBox Hull; Ambient->GetBoatTowBounds(0,Hull);
+	const FVector HullCenterOffset=Hull.GetCenter()-Boat.World;
+	const double HullBottomOffset=Hull.Min.Z-Boat.World.Z;
+	AddInfo(FString::Printf(TEXT("Capsized hull world extent %s, center offset %s, bottom offset %.1f"),
+		*Hull.GetExtent().ToString(),*HullCenterOffset.ToString(),HullBottomOffset));
+	auto PositionHull=[&](FVector FootprintCenter)
+	{
+		// Place using the visible hull, while leaving the mesh at the preceding physics tick.
+		PositionCage(FootprintCenter-FVector(HullCenterOffset.X,HullCenterOffset.Y,HullBottomOffset));
+	};
+	PositionHull(Harbor->GetActorLocation()+FVector(320,0,250));
+	TestFalse(TEXT("A hull outside the lit ring is rejected"),Ops->TryDeliverCargo());
+	PositionHull(Harbor->GetActorLocation()+FVector(0,0,450));
+	TestFalse(TEXT("A hull too high above the harbor is rejected"),Ops->TryDeliverCargo());
+	PositionHull(Harbor->GetActorLocation()+FVector(0,0,-150));
+	TestFalse(TEXT("A hull below the harbor deck is rejected"),Ops->TryDeliverCargo());
+	PositionHull(Harbor->GetActorLocation()+FVector(100,0,250));
+	Ops->CargoVelocity=FVector(250,0,0);
+	TestFalse(TEXT("A fast hull flyby is rejected"),Ops->TryDeliverCargo());
+	Ops->CargoVelocity=FVector::ZeroVector;
+	const int32 ScoreBeforeBoat=Missions->MissionSystem.GetScore();
+	Ops->OpenCargo();
 	TestTrue(TEXT("OPEN delivers boat to harbor cradle"),!Ops->HasCargo() && !Boat.bTowAttached && Boat.RepairDisplaySeconds>0);
 	Missions->MissionSystem.Tick(0); System->RefreshRecoveryWaypoints();
+	TestFalse(TEXT("A short drop of the visible hull completes its recovery mission"),Missions->IsMissionEventActive(BoatRecoveryEvent));
+	TestEqual(TEXT("Hull recovery awards its completion once"),Missions->MissionSystem.GetScore(),ScoreBeforeBoat+100);
+	const int32 ScoreAfterBoat=Missions->MissionSystem.GetScore();
+	Ops->OpenCargo(); Ambient->FinishBoatTow(0); Missions->MissionSystem.Tick(0);
+	TestEqual(TEXT("Repeated release cannot award hull recovery twice"),Missions->MissionSystem.GetScore(),ScoreAfterBoat);
 	TestFalse(TEXT("Finished hull removes harbor waypoint"),Harbor->IsWaypointActive());
 
 	const FVector PoliceRoof(6000,6000,1200);
@@ -262,6 +292,25 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 		TestEqual(TEXT("Repeated OPEN cannot reward twice"),Missions->MissionSystem.GetScore(),Score);
 		RoofCar->Destroy();
 	}
+
+	Boat.bVisible=true; Boat.RepairDisplaySeconds=0; Boat.World=FVector(4000,4000,60);
+	Boat.TowEventId=Missions->CreateMissionAt(70,70,TYPE_BoatTow);
+	const int32 RoofBoatEvent=Boat.TowEventId;
+	Ambient->SetBoatMeshTransform(Boat,Boat.World,FRotator::ZeroRotator);
+	OpenEmptyCage(Boat.World); Ops->Update(0); Ops->Update(.4f);
+	TestTrue(TEXT("Second recovered hull is in the cage"),Ops->HasBoat());
+	PositionHull(PoliceRoof+FVector(850,0,250));
+	TestFalse(TEXT("Boat outside police roof is rejected"),Ops->TryDeliverCargo());
+	PositionHull(PoliceRoof+FVector(420,0,250));
+	const int32 BeforeRoofBoat=Missions->MissionSystem.GetScore();
+	Ops->OpenCargo(); Missions->MissionSystem.Tick(0);
+	TestTrue(TEXT("Police roof accepts a short drop of a boat"),!Boat.bTowAttached && Boat.RepairDisplaySeconds>0 && !Ops->HasCargo());
+	TestFalse(TEXT("Police boat delivery completes its recovery mission"),Missions->IsMissionEventActive(RoofBoatEvent));
+	TestEqual(TEXT("Police boat recovery rewards once"),Missions->MissionSystem.GetScore(),BeforeRoofBoat+100);
+	FBox DeliveredHull; Ambient->GetBoatTowBounds(0,DeliveredHull);
+	TestTrue(TEXT("Delivered upright hull rests on the police roof"),FMath::Abs(DeliveredHull.Min.Z-PoliceRoof.Z)<5);
+	Ops->OpenCargo(); Ambient->FinishBoatTow(0); Missions->MissionSystem.Tick(0);
+	TestEqual(TEXT("Repeated police boat delivery cannot pay twice"),Missions->MissionSystem.GetScore(),BeforeRoofBoat+100);
 
 	// Exercise the actual SOS hull and survivors. Optional towing cannot freeze rescue
 	// timers or reserve the original's sole capsized-boat slot indefinitely.

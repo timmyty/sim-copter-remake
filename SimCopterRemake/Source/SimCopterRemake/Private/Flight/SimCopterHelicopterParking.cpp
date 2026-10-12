@@ -81,18 +81,23 @@ void EnsureOwnedFleet(ASimCopterHangar* Hangar, const USimCopterCareerSubsystem*
 
 ASimCopterHelicopterPawn* ResolveCurrentAircraft(const UObject* WorldContext)
 {
+	const auto Usable = [](const ASimCopterHelicopterPawn* Aircraft)
+	{
+		return IsValid(Aircraft) && !Aircraft->IsActorBeingDestroyed() &&
+			!Aircraft->IsHidden() && !Aircraft->IsSupportAircraft();
+	};
 	APawn* Player = UGameplayStatics::GetPlayerPawn(WorldContext, 0);
-	if (ASimCopterHelicopterPawn* Possessed = Cast<ASimCopterHelicopterPawn>(Player)) return Possessed;
+	if (auto* Possessed = Cast<ASimCopterHelicopterPawn>(Player); Usable(Possessed)) return Possessed;
 	if (const auto* Pilot = Cast<ASimCopterOnFootPawn>(Player))
-		if (auto* Parked = Pilot->GetParkedHelicopter(); IsValid(Parked) && !Parked->IsSupportAircraft()) return Parked;
+		if (auto* Parked = Pilot->GetParkedHelicopter(); Usable(Parked)) return Parked;
 	// ExitHelicopter makes the on-foot pawn owned by the aircraft just exited.
 	if (Player != nullptr)
 	{
-		if (ASimCopterHelicopterPawn* Previous = Cast<ASimCopterHelicopterPawn>(Player->GetOwner()); IsValid(Previous)) return Previous;
+		if (ASimCopterHelicopterPawn* Previous = Cast<ASimCopterHelicopterPawn>(Player->GetOwner()); Usable(Previous)) return Previous;
 	}
 	TArray<AActor*> Aircraft;
 	UGameplayStatics::GetAllActorsOfClass(WorldContext, ASimCopterHelicopterPawn::StaticClass(), Aircraft);
-	Aircraft.RemoveAll([](AActor* Actor) { return CastChecked<ASimCopterHelicopterPawn>(Actor)->IsSupportAircraft(); });
+	Aircraft.RemoveAll([&Usable](AActor* Actor) { return !Usable(CastChecked<ASimCopterHelicopterPawn>(Actor)); });
 	Aircraft.Sort([](const AActor& A, const AActor& B)
 	{
 		// A newly spawned airport plane sorts before the map's BP helicopter by name.
@@ -177,6 +182,17 @@ void SortByDoorDistance(TArray<FPad>& Pads, const FVector& Door)
 		const double DB = FVector::DistSquared2D(B.Surface, Door);
 		return DA == DB ? A.Index < B.Index : DA < DB;
 	});
+}
+
+float GetAirportFacingYaw(const ASimCopterTrafficSystemActor* Traffic, const FVector& PadSurface)
+{
+	// Requested departure from FUN_00484790's zeroed orientation: a common world
+	// heading puts the tail/camera in the terminal on half of the perimeter pads.
+	// Opposite corners give the real centre even for rotated/scaled and fallback bases.
+	FVector CornerA, CornerB;
+	if (!Traffic || !Traffic->TryGetAirportPadWorldLocation(8,CornerA) ||
+		!Traffic->TryGetAirportPadWorldLocation(2,CornerB)) return 0.0f;
+	return ((CornerA+CornerB)*0.5f-PadSurface).GetSafeNormal2D().Rotation().Yaw;
 }
 
 bool OverlapsParkedAircraft(const FBox& Candidate, const TArray<FBox>& Occupants)
@@ -282,7 +298,7 @@ ASimCopterHelicopterPawn* SpawnOnFreePad(
 			}
 		}
 		if (bTileOccupied) continue;
-		NewAircraft->PlaceOnHelipad(Pad.Surface, 0.0f);
+		NewAircraft->PlaceOnHelipad(Pad.Surface, GetAirportFacingYaw(Traffic,Pad.Surface));
 		if (!OverlapsParkedAircraft(NewAircraft->GetParkingWorldBounds(), Occupants))
 		{
 			NewAircraft->SetActorEnableCollision(true);

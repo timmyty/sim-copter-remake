@@ -96,3 +96,17 @@ Original dispatch and SOS rescues take priority over optional vehicle/hull recov
 See [mission priority details](RadioVolumeAndStalledVehicles.md#mission-priority-and-police-roof-drops--october-11-2026)
 for the reduced breakdown rate, scheduler correction, helper priorities and repeat SOS
 behavior, including protection for survivors and attached cargo.
+
+## Harbor short drops and police-station boats — October 12, 2026
+
+Boats now use their visible rotated hull footprint for delivery, with the same short
+drop allowance as cars: most of the hull must overlap the harbor ring or police roof,
+its bottom must be no more than 3 m above the marker/roof, and cargo speed must be at
+most 2 m/s. Lower the sealed cage, slow down and use **OPEN / G / D-pad left**.
+This replaces the narrow boat-pivot height rule described earlier.
+
+Police-station roofs also accept recovered boats. An accepted drop seats the upright
+hull on the receiving surface and completes its recovery mission once. Actual hull
+geometry, harbor and police completion, rejected approaches, and duplicate-credit
+protection are covered by the headless cage test. See
+[megaphone and boat recovery fixes](MegaphoneAndBoatRecoveryFixes.md).

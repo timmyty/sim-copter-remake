@@ -5,6 +5,42 @@ Sound is strongest within 300 cm and fades over the next 4,000 cm. Returning to
 a theater restores its sound at the current movie time. Pausing mutes every
 theater; demolishing a theater mutes only that location.
 
+## Music volume correction — October 12, 2026
+
+The drive-in speakers previously forced their gain to `0.65` on creation and
+every tick. Music Volume, Game Volume and Auto-Quiet never reached that path.
+This reproduced the report of quiet HSI playback at 135% music, 100% game volume
+and Auto-Quiet disabled; even the music mute setting left the theaters audible.
+
+The speakers now use the same normalized music and Auto-Quiet setting as the
+radio, the displayed 0–200% boost, and the existing master-volume conversion.
+At the reported settings the speaker multiplier is `1.35`, about **6.35 dB**
+above the previous `0.65`. Changes apply during playback, on initial creation
+and when asynchronous media opening completes. Gain is applied once at each
+speaker, retaining the common decoder and spatial falloff. Pausing and demolished
+theaters still force silence. No media files or save formats change.
+
+FFmpeg measured the prepared HSI source at -12.8 dB mean and 0.0 dB peak, so the
+recording itself was not amplified. The prepared and installed copies match.
+The existing mixer test now checks 0%, 50%, 135% and 200% music, Auto-Quiet and
+the original master gain on all eight real Metropolis emitters. It also captures
+actual output at 135%, music mute and 200%, retaining the movie-switch,
+distance/re-entry, pause/resume, demolition and cleanup checks. Cheat confirmation
+cues are stopped in this fixture so they cannot contaminate movie measurements;
+their separate playback test still verifies those cues.
+
+Current build, regression and installation evidence:
+[volume results](validation/DriveInVolumeResults.json), with source snapshots,
+diffs and logs in `Docs/scratchpad/drive-in-volume/`. The mixer silences captured
+output before hardware playback; no manual flight or listening check is claimed.
+
+Editor, Shipping and Development builds succeeded; all 19 targeted tests passed,
+with existing synthetic-city attachment warnings in the audio fixture. The
+before-fix run reproduced 57 volume assertion failures. At 135%, captured near
+peaks now range from 0.325 to 0.407 across the eight theaters; music mute produces
+zero and the sampled 200% peak is 0.706. Both installed executable/symbol pairs
+match the built hashes and have verified backups. Publication is unchanged.
+
 ## Cause and implementation
 
 Unreal 5.8's `FMediaPlayerFacade::ProcessAudioSamples` uses a single primary audio
