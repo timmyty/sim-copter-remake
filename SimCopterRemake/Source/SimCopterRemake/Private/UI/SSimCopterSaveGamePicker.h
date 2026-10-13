@@ -49,6 +49,7 @@ public:
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
+	ESimCopterSessionKind Kind = ESimCopterSessionKind::Career;
 	TArray<TSharedPtr<FSimCopterSaveSummary>> Entries;
 	FOnSimCopterSaveGameChosen OnAccepted;
 	FSimpleDelegate OnCancelled;
@@ -62,4 +63,5 @@ private:
 		TSharedPtr<FSimCopterSaveSummary> Item,
 		const TSharedRef<STableViewBase>& OwnerTable);
 	void Accept();
+	void Browse();
 };

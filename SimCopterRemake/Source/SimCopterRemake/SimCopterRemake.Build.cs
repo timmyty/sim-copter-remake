@@ -1,6 +1,9 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using System.IO;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using EpicGames.Core;
 using UnrealBuildTool;
 
 public class SimCopterRemake : ModuleRules
@@ -14,6 +17,8 @@ public class SimCopterRemake : ModuleRules
 		// a file was added. Per-file compilation keeps those helpers properly private.
 		bUseUnity = false;
 		RuntimeDependencies.Add("$(ProjectDir)/Config/FigureAdjustments.json", StagedFileType.NonUFS);
+		RuntimeDependencies.Add("$(ProjectDir)/Config/HighQualityMusic.json", StagedFileType.NonUFS);
+		RuntimeDependencies.Add("$(ProjectDir)/Config/FLAC-LICENSE.txt", StagedFileType.NonUFS);
 		RuntimeDependencies.Add("$(ProjectDir)/Content/Briefings/*.wav", StagedFileType.NonUFS);
 		RuntimeDependencies.Add("$(ProjectDir)/Content/DriveInVideos/*.mp4", StagedFileType.NonUFS);
 
@@ -39,6 +44,8 @@ public class SimCopterRemake : ModuleRules
 		// as 0 off Windows, so the call sites stay guarded and this stays Windows-only.
 		if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
 		{
+			AddEngineThirdPartyPrivateStaticDependencies(Target, "libFLAC");
+			PublicSystemLibraries.Add("Comdlg32.lib");
 			PrivateDependencyModuleNames.AddRange(new string[] { "DLSSBlueprint", "StreamlineDLSSGBlueprint", "StreamlineReflexBlueprint" });
 		}
 		else
@@ -76,6 +83,23 @@ public class SimCopterRemake : ModuleRules
 			string OriginalGameRoot = Path.GetFullPath(Path.Combine(
 				ModuleDirectory, "..", "..", "..", "Reference", "SimCopterOriginalGame"));
 			string StagingRoot = Path.Combine("$(ProjectDir)", "Intermediate", "OriginalGameStaging");
+			var ReplacedMusic = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
+			if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
+			{
+				string MusicManifest = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Config", "HighQualityMusic.json"));
+				JsonObject Music = JsonObject.Read(new FileReference(MusicManifest));
+				foreach (JsonObject Track in Music.GetObjectArrayField("tracks"))
+				{
+					string RelativeFlac = Track.GetStringField("file");
+					if (!RelativeFlac.StartsWith("music-hq/") || RelativeFlac.Contains("..") || RelativeFlac.Contains('\\'))
+						throw new BuildException("Invalid shared soundtrack path: {0}", RelativeFlac);
+					string Flac = Path.Combine(OriginalGameRoot, "sound", RelativeFlac);
+					if (!File.Exists(Flac) || FileSha256(Flac) != Track.GetStringField("sha256"))
+						throw new BuildException("Missing or changed verified FLAC: {0}. Run Tools/Unreal/PrepareHighQualityMusic.py with the supplied soundtrack folder.", Flac);
+					foreach (JsonObject Original in Track.GetObjectArrayField("originals"))
+						ReplacedMusic.Add("sound/" + Original.GetStringField("path"), Original.GetStringField("sha256"));
+				}
+			}
 			for (int CityIndex = 0; CityIndex < 30; ++CityIndex)
 			{
 				if (!File.Exists(Path.Combine(OriginalGameRoot, "sound", "cityride", $"city{CityIndex}.wav")))
@@ -119,6 +143,12 @@ public class SimCopterRemake : ModuleRules
 					}
 
 					string RelativePath = Path.GetRelativePath(OriginalGameRoot, SourceFilePath);
+					// Only omit byte-verified originals. Custom songs with familiar names remain WAVs;
+					// the runtime applies the same protection. Genre and mix share one music-hq file.
+					if (ReplacedMusic.TryGetValue(RelativePath.Replace('\\', '/'), out string OriginalHash) &&
+						FileSha256(SourceFilePath) == OriginalHash) continue;
+					if (!Target.Platform.IsInGroup(UnrealPlatformGroup.Windows) &&
+						RelativePath.Replace('\\', '/').StartsWith("sound/music-hq/")) continue;
 					string TargetDiskPath = Path.Combine(ResolvedStagingRoot, RelativePath);
 					string StagedManifestPath = Path.Combine(StagingRoot, RelativePath);
 
@@ -149,5 +179,12 @@ public class SimCopterRemake : ModuleRules
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
 		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
+	}
+
+	private static string FileSha256(string FileName)
+	{
+		using SHA256 Hash = SHA256.Create();
+		using FileStream Stream = File.OpenRead(FileName);
+		return System.Convert.ToHexString(Hash.ComputeHash(Stream)).ToLowerInvariant();
 	}
 }

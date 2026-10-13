@@ -314,8 +314,7 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 	const auto* PC = Cast<APlayerController>(GetController());
 	const auto* SimPC = Cast<ASimCopterPlayerController>(PC);
 	const bool bShiftDown = PC && !PC->IsMoveInputIgnored() &&
-		(PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift) ||
-		 (SimPC && SimPC->IsControllerSprintEnabled()));
+		SimPC && SimPC->IsControllerSprintEnabled();
 	const bool bDog = Cheats && Cheats->bSuperpower && bShiftDown;
 	if (auto* Move = GetCharacterMovement())
 	{
@@ -419,7 +418,7 @@ void ASimCopterOnFootPawn::UpdateWalkingSound()
 
 	// FUN_004c1b50 restores the player-person to class 19 (pilot), whose own voice from
 	// FUN_004c71c0 is event 0x29: xFtBoots.wav. Use the original walk/run selector's
-	// speeds 4/8 for the actual gait, so holding Shift while stationary adds no footsteps.
+	// speeds 4/8 for the actual gait, so enabling Sprint Mode while stationary adds no footsteps.
 	const int32 OriginalWalkSpeed = SpeedAlpha > 1.05f ? 8 : 4;
 	UAudioComponent* WalkingSound = WalkingSoundComponent.Get();
 	if (WalkingSound == nullptr || !WalkingSound->IsPlaying())
@@ -575,6 +574,8 @@ void ASimCopterOnFootPawn::EnsureControllerOverlayWidget()
 
 	ControllerOverlayWidget =
 		SNew(SOverlay)
+		.Visibility_Lambda([this]() { const auto* PC = Cast<ASimCopterPlayerController>(GetController());
+			return PC && PC->IsPhotoModeActive() ? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible; })
 		+ SOverlay::Slot()
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Fill)
@@ -588,7 +589,7 @@ void ASimCopterOnFootPawn::EnsureControllerOverlayWidget()
 		[SNew(STextBlock).Text(FText::FromString(TEXT("+"))).Font(FCoreStyle::GetDefaultFontStyle("Bold", 24))
 		.Visibility_Lambda([this]() { return bTaserAiming ? EVisibility::HitTestInvisible : EVisibility::Collapsed; })]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(FMargin(0,0,0,90))
-		[SNew(STextBlock).Text_Lambda([this]() { return FText::FromString(FString::Printf(TEXT("Pilot %.0f%% | RMB / LT aim taser | LMB / RT fire | Walk up to carry downed people | G / X put down | P / B parachute: %s"), PilotHealth, bParachuteDeployed ? TEXT("OPEN") : TEXT("CLOSED"))); })];
+		[SNew(STextBlock).Text_Lambda([this]() { return FText::FromString(FString::Printf(TEXT("Pilot %.0f%% | Parachute: %s"), PilotHealth, bParachuteDeployed ? TEXT("OPEN") : TEXT("CLOSED"))); })];
 	GEngine->GameViewport->AddViewportWidgetContent(ControllerOverlayWidget.ToSharedRef(), 60);
 }
 

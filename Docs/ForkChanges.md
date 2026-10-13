@@ -1,5 +1,14 @@
 # Timmyty SimCopter gameplay fork
 
+## October 13 release v1.0.11
+
+Combines all completed work since v1.0.10: shared lossless original music,
+custom-city score/equipment progression and full-map rescue-site selection,
+aircraft-sized passenger parties, Photo Mode and day/night sliders, cleaner help
+and pause menus, Shift/L3 Sprint, idle-cursor hiding, and native browsing for cities
+and saved games. [Release notes](Releases/v1.0.11.md) and
+[combined validation](validation/WindowsRelease111Results.json).
+
 ## October 13 release v1.0.10
 
 Publishes all completed work since v1.0.9: medical alert pacing, wounded-first

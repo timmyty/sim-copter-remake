@@ -2396,8 +2396,11 @@ bool ASimCopterAmbientVehiclesActor::TryActivateBoatRescue(
 		}
 		Wreck.World.Z += FloatLift;
 		SetMeshTransform(Wreck.Mesh, Wreck.World, Wreck.Direction, Wreck.ExtraYawDegrees);
+		const auto* CapacityMission = ResolveMissionSystem();
+		const int32 Limit = CapacityMission ? CapacityMission->GetMissionPassengerLimit(false) : MAX_int32;
 		for (FVector Point : DeckPoints)
 		{
+			if (Spawned >= Limit) break;
 			Point.Z += FloatLift;
 			TArray<ASimCopterGroundAgent*> People;
 			Traffic->SpawnMissionSwimmersAtWorldLocation(1, Point, EventId,
@@ -2447,7 +2450,9 @@ bool ASimCopterAmbientVehiclesActor::TryActivateBoatRescue(
 
 	// Requested deviation from FUN_004b1950: survivors stand ON the overturned hull.
 	// Sample its rendered triangles, then retain local feet coordinates through yaw and swell.
-	const int32 Count = BoatRescueMinVictims + RandomStream.RandRange(0, BoatRescueVictimSpread-1);
+	const auto* CapacityMission = ResolveMissionSystem();
+	const int32 Count = FMath::Min(BoatRescueMinVictims + RandomStream.RandRange(0, BoatRescueVictimSpread-1),
+		CapacityMission ? CapacityMission->GetMissionPassengerLimit(false) : MAX_int32);
 	int32 Spawned = 0;
 	ClearBoatRiders();
 	if (auto* Traffic = ResolveTrafficSystem(); Traffic && Boat.Mesh)
@@ -2455,7 +2460,7 @@ bool ASimCopterAmbientVehiclesActor::TryActivateBoatRescue(
 		const FBox Bounds = Boat.Mesh->Bounds.GetBox();
 		for (int32 Index = 0; Index < Count; ++Index)
 		{
-			const double Along = (double(Index)/(Count-1)-0.5)*0.9;
+			const double Along = Count > 1 ? (double(Index)/(Count-1)-0.5)*0.9 : 0.0;
 			const FVector Candidate = Bounds.GetCenter() + Boat.Direction.GetSafeNormal2D()*Along*Bounds.GetSize().GetMax();
 			FVector Feet;
 			if (!SimCopterRescueDeck::FindSurface(Boat.Mesh, Candidate, Feet) &&
@@ -3027,7 +3032,9 @@ bool ASimCopterAmbientVehiclesActor::TryActivateTrainRescue(
 	// 1 + rand % 3 passengers (spawn mode 0x13), stranded on the roof of the first carriage - the
 	// flat-topped TRAIN2 - of a train that does not stop. Getting them off a moving train is the
 	// mission; the train only stops when it derails, which is the failure.
-	const int32 Count = TrainRescueMinVictims + RandomStream.RandRange(0, TrainRescueVictimSpread - 1);
+	const auto* CapacityMission = ResolveMissionSystem();
+	const int32 Count = FMath::Min(TrainRescueMinVictims + RandomStream.RandRange(0, TrainRescueVictimSpread - 1),
+		CapacityMission ? CapacityMission->GetMissionPassengerLimit(false) : MAX_int32);
 	int32 Spawned = 0;
 	ClearTrainRoofRiders();
 	if (ASimCopterTrafficSystemActor* TrafficSystem = ResolveTrafficSystem())

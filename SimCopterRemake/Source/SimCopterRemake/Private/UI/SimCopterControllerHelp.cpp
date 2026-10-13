@@ -15,6 +15,28 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 {
 	TArray<FPrompt> Rows;
 	const auto Add = [&Rows](const TCHAR* Icon, FString Label) { Rows.Add({Icon, MoveTemp(Label)}); };
+	if (State.bKeyboard)
+	{
+		if (State.bExpanded)
+		{
+			if (State.Context == EContext::OnFoot)
+			{
+				Add(TEXT(""), TEXT("WASD: move | Mouse: look | Shift: toggle sprint | Space: jump"));
+				Add(TEXT(""), TEXT("F: board | Walk up: carry | G: put down | P: parachute"));
+				Add(TEXT(""), TEXT("RMB: aim taser | LMB: fire"));
+			}
+			else
+			{
+				Add(TEXT(""), TEXT("W/S: forward/back | A/D: turn | Space/Ctrl: climb/descend"));
+				Add(TEXT(""), TEXT("Shift: toggle sprint | RMB + mouse: look | Wheel: zoom | C: camera"));
+				Add(TEXT(""), TEXT("F: exit | N: tools/dispatch | +/-: map zoom"));
+			}
+			Add(TEXT(""), TEXT("Ctrl+P: Photo Mode | F12: take photo in Photo Mode"));
+		}
+		Add(TEXT(""), State.bExpanded ? TEXT("F1: Hide controls") :
+			FString::Printf(TEXT("Shift: Sprint %s | F1: Controls | Ctrl+P: Photo Mode"), State.bSprintEnabled ? TEXT("ON") : TEXT("OFF")));
+		return Rows;
+	}
 	if (State.bExpanded)
 	{
 		switch (State.Context)

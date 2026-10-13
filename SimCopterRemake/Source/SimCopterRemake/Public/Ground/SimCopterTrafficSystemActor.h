@@ -207,6 +207,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SimCopter|Traffic")
 	bool RebuildSpawnData();
+	bool HasMissionPlacementData() const { return XbldTileIds.Num() == 128 * 128 && WaterTileFlags.Num() == 128 * 128; }
 
 	// Live BOMB-side traffic/population snapshot. Includes the active beamed agents, their
 	// mission/vehicle state, dispatch slots, whole-map records and both original RNG streams.

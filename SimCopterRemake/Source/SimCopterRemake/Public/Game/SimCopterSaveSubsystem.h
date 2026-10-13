@@ -37,7 +37,7 @@ class SIMCOPTERREMAKE_API USimCopterSaveGame : public USaveGame
 	GENERATED_BODY()
 
 public:
-	static constexpr int32 CurrentFormatVersion = 4;
+	static constexpr int32 CurrentFormatVersion = 5;
 	static const TCHAR* GetFormatMagic() { return TEXT("SimCopterRemakeSave"); }
 
 	UPROPERTY()
@@ -63,6 +63,11 @@ public:
 	// user-game save. Career games derive city<N>.sc2 from CareerCityIndex instead.
 	UPROPERTY()
 	FString UserCityFileName;
+
+	// Version 5: preserve cities browsed outside the installation. The basename above
+	// remains the portable fallback for older saves and saves moved with their city.
+	UPROPERTY()
+	FString UserCitySourcePath;
 
 	// CINF/UINF career record.
 	UPROPERTY()
@@ -220,6 +225,7 @@ public:
 	bool SaveCurrentGame(const UObject* WorldContextObject, FString& OutError);
 	bool SaveExitGame(const UObject* WorldContextObject, FString& OutError);
 	bool SaveCurrentGameAs(const UObject* WorldContextObject, const FString& DisplayName, FString& OutError);
+	// Accepts a managed slot or an absolute .sav path chosen in the native browser.
 	bool LoadGame(const FString& SlotName, ESimCopterSessionKind ExpectedKind, FString& OutError);
 
 	void GetSaveSummaries(ESimCopterSessionKind Kind, TArray<FSimCopterSaveSummary>& OutSaves) const;

@@ -269,7 +269,8 @@ FString ASimCopterPlayerController::ExecuteCheatCodes(const FString& Text)
 void ASimCopterPlayerController::PlayerTick(float DeltaSeconds)
 {
 	Super::PlayerTick(DeltaSeconds);
-	UpdateCheatViews();
+	UpdatePhotoMode();
+	if (!IsPhotoModeActive()) UpdateCheatViews();
 }
 
 void ASimCopterPlayerController::RemoveCheatViews()

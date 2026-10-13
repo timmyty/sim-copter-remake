@@ -365,8 +365,25 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 {
 	DifficultyTier = CareerCity.Difficulty + 1;
 	
-	float Sum = CareerCity.Weights[0] + CareerCity.Weights[1] + CareerCity.Weights[2] + 
-				CareerCity.Weights[3] + CareerCity.Weights[4] + CareerCity.Weights[5] + CareerCity.Weights[6];
+	float Weights[7];
+	for (int32 Index = 0; Index < 7; ++Index) Weights[Index] = CareerCity.Weights[Index];
+	if (World && World->UsesCitywideMissionPlacement())
+	{
+		const int32 Families[7][4] = {
+			{TYPE_BuildingFire, TYPE_CarFireEvent, TYPE_PlaneCrash, TYPE_TrainCrash},
+			{TYPE_Robber, TYPE_Mugger, TYPE_Arsonist, TYPE_Burglar},
+			{TYPE_RooftopRescue, TYPE_BoatRescue, TYPE_TrainRescue, 0},
+			{TYPE_Riot, 0, 0, 0}, {TYPE_TrafficJam, 0, 0, 0},
+			{TYPE_Medevac, 0, 0, 0}, {TYPE_Transport, 0, 0, 0}};
+		for (int32 Index = 0; Index < 7; ++Index)
+		{
+			bool bAvailable = false;
+			for (int32 Type : Families[Index]) bAvailable |= Type != 0 && World->IsMissionTypeAvailable(Type);
+			if (!bAvailable) Weights[Index] = 0;
+		}
+	}
+	float Sum = 0;
+	for (float Weight : Weights) Sum += Weight;
 	
 	if (Sum < 1.0f)
 	{
@@ -378,11 +395,13 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 	// as likely relative to other enabled jobs. Its existing difficulty mix includes robbers,
 	// muggers, arsonists and speeders. Even early cities gain crime, but all-zero/free roam
 	// settings above remain silent. Base weights are never mutated, so selling reverses it.
-	const float CrimeWeight = bCaptureCageOwned ? FMath::Max(CareerCity.Weights[1], Sum / 7.0f) * 3.0f : CareerCity.Weights[1];
-	Sum += CrimeWeight - CareerCity.Weights[1];
+	const bool bCanBoostCrime = !World || !World->UsesCitywideMissionPlacement() ||
+		World->IsMissionTypeAvailable(TYPE_Robber);
+	const float CrimeWeight = bCaptureCageOwned && bCanBoostCrime ? FMath::Max(Weights[1], Sum / 7.0f) * 3.0f : Weights[1];
+	Sum += CrimeWeight - Weights[1];
 	for (int i = 0; i < 7; ++i)
 	{
-		CumulativeWeights[i + 1] = static_cast<int32>(((i == 1 ? CrimeWeight : CareerCity.Weights[i]) * 100.0f) / Sum);
+		CumulativeWeights[i + 1] = static_cast<int32>(((i == 1 ? CrimeWeight : Weights[i]) * 100.0f) / Sum);
 	}
 
 	for (int i = 2; i <= 7; ++i)
@@ -394,6 +413,26 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 void FSimCopterMissionSystem::DispatchScheduledType(int32 Bucket)
 {
 	if (bTransportOnly) { CreateEventOfType(TYPE_Transport); return; }
+	if (World && World->UsesCitywideMissionPlacement())
+	{
+		// Pick among unlocked variants, so a locked subtype cannot starve an enabled family.
+		const TArray<TArray<int32>> Families = {
+			{}, {TYPE_BuildingFire, TYPE_CarFireEvent, TYPE_PlaneCrash, TYPE_TrainCrash},
+			{TYPE_Robber, TYPE_Mugger, TYPE_Arsonist, TYPE_Burglar},
+			{TYPE_RooftopRescue, TYPE_BoatRescue, TYPE_TrainRescue}, {TYPE_Riot},
+			{TYPE_TrafficJam}, {TYPE_Medevac}, {TYPE_Transport}};
+		if (!Families.IsValidIndex(Bucket)) return;
+		TArray<int32> Available;
+		for (int32 Type : Families[Bucket]) if (World->IsMissionTypeAvailable(Type)) Available.Add(Type);
+		if (!Available.IsEmpty())
+		{
+			const int32 Start = Rand.Rand() % Available.Num();
+			for (int32 Index = 0; Index < Available.Num(); ++Index)
+				if (CreateEventOfType(Available[(Start + Index) % Available.Num()]) != INDEX_NONE) return;
+		}
+		bRerollRequested = 1;
+		return;
+	}
 	int32 RandVal = Rand.Rand();
 	int16 Shf = static_cast<int16>(RandVal >> 15);
 	int16 Combined = static_cast<int16>((Shf << 16) | (RandVal & 0xffff));
@@ -481,6 +520,22 @@ void FSimCopterMissionSystem::DispatchScheduledType(int32 Bucket)
 
 int32 FSimCopterMissionSystem::CreateEventOfType(int32 TypeMask)
 {
+	if (World && !World->IsMissionTypeAvailable(TypeMask)) { bRerollRequested = 1; return INDEX_NONE; }
+	if (World && World->UsesCitywideMissionPlacement() && TypeMask != TYPE_PlaneCrash && TypeMask != TYPE_TrainCrash &&
+		TypeMask != TYPE_TrainRescue && TypeMask != TYPE_TrafficJam && TypeMask != TYPE_CarFireEvent)
+	{
+		for (int32 Attempt = 0; Attempt < 16; ++Attempt)
+		{
+			int32 X, Y;
+			if (!World->TryPickCityMissionTile(TypeMask, Rand.Rand(), X, Y)) continue;
+			if (TypeMask == TYPE_BuildingFire && (IsAnyFireNear(X, Y) || !IsBuildingFireTargetAllowedByDifficulty(X, Y))) continue;
+			const int32 Event = CreateEventAt(X, Y, TypeMask);
+			if (Event != INDEX_NONE) { NoteCreationResult(true); return Event; }
+		}
+		NoteCreationResult(false);
+		bRerollRequested = 1;
+		return INDEX_NONE;
+	}
 	bool bClearConsecutive = ConsecutivePlaceFailures > 0x13;
 	if (bClearConsecutive) ConsecutivePlaceFailures = 0;
 	bRerollRequested = bClearConsecutive ? 1 : 0;
@@ -751,6 +806,12 @@ void FSimCopterMissionSystem::PickRandomTileNear(const int32 OriginX, const int3
 	// SCHOOK: RandomTileNear 0x004abb30. iVar4 = (DAT_00506074 + 0x12) * DAT_004f9740 + 8; each axis
 	// takes the larger of two `(short)rand() % iVar4` draws, a third rand() picks its sign, and a
 	// result off the 128x128 map is thrown away for two fresh `rand() & 0x7f` coordinates.
+	if (World && World->UsesCitywideMissionPlacement())
+	{
+		if (World->TryPickCityMissionTile(TYPE_Transport, Rand.Rand(), OutTX, OutTY)) return;
+		OutTX = Rand.Rand() % 128; OutTY = Rand.Rand() % 128;
+		return;
+	}
 	int32 Range = (ConsecutivePlaceFailures + 18) * DifficultyTier + 8;
 
 	auto GetOffset = [&]() -> int32 {
@@ -1132,6 +1193,9 @@ const TCHAR* FSimCopterMissionSystem::GetTypeDisplayName(int32 TypeMask)
 
 int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 {
+	// Refuse before reserving an ambient boat/train or allocating a record with no survivors.
+	if (World && (TypeMask == TYPE_Medevac || TypeMask == TYPE_Transport || (TypeMask & TYPE_RescuePeople) != 0) &&
+		World->GetMissionPassengerLimit(TypeMask == TYPE_Medevac) == 0) return INDEX_NONE;
 	// SCHOOK: CreateMission 0x004a7a10. The creator walks the live record table and refuses a
 	// second riot before it allocates/spawns anything.
 	if (TypeMask == TYPE_Riot)
@@ -1232,7 +1296,7 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 		// `(short)rand() % (DAT_004f9740 + 1) + 1` passengers, where DAT_004f9740 is the difficulty
 		// tier, every one spawned at the pickup (+0x38), not at the destination.
 		bool bSpawned = false;
-		const int32 PartySize = (Rand.Rand() % (DifficultyTier + 1)) + 1;
+		const int32 PartySize = FMath::Min((Rand.Rand() % (DifficultyTier + 1)) + 1, World ? World->GetMissionPassengerLimit(false) : MAX_int32);
 		for (int32 i = 0; i < PartySize; ++i)
 		{
 			if (World && World->TrySpawnMissionPerson(4, -1, Rec.TertiaryX, Rec.TertiaryY, Rec.EventId))
@@ -1254,7 +1318,7 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 	else if (TypeMask == TYPE_Medevac)
 	{
 		bool bSpawned = false;
-		int32 Count = (Rand.Rand() % DifficultyTier) + 1;
+		int32 Count = FMath::Min((Rand.Rand() % DifficultyTier) + 1, World ? World->GetMissionPassengerLimit(true) : MAX_int32);
 		for (int32 i = 0; i < Count; ++i)
 		{
 			if (World && World->TrySpawnMissionPerson(6, -1, TX, TY, Rec.EventId))
@@ -1509,7 +1573,7 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 	}
 	else if (TypeMask == TYPE_RooftopRescue)
 	{
-		int32 Count = (Rand.Rand() % DifficultyTier) + 1;
+		int32 Count = FMath::Min((Rand.Rand() % DifficultyTier) + 1, World ? World->GetMissionPassengerLimit(false) : MAX_int32);
 		bool bSpawned = false;
 		for (int32 i = 0; i < Count; ++i)
 		{

@@ -441,6 +441,12 @@ class SIMCOPTERREMAKE_API ISimCopterMissionWorld
 {
 public:
 	virtual ~ISimCopterMissionWorld() = default;
+	// Player-requested mission constraints, queried at creation (also covers emergent rescues).
+	virtual int32 GetMissionPassengerLimit(bool bMedical) const { return MAX_int32; }
+	virtual bool IsMissionTypeAvailable(int32 TypeMask) const { return true; }
+	virtual bool UsesCitywideMissionPlacement() const { return false; }
+	virtual bool TryPickCityMissionTile(int32 TypeMask, int32 Random, int32& X, int32& Y) { return false; }
+
 
 	// --- map/tile queries ---
 	virtual int32 GetXbldTileId(int32 TileX, int32 TileY) const = 0;       // DAT_005910b0 grid

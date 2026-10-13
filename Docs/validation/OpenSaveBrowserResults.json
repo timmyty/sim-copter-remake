@@ -1,0 +1,99 @@
+{
+  "Date": "2026-10-13",
+  "VerifiedAtUtc": "2026-10-14T00:30:37.9120815Z",
+  "Scope": "Browse external saved games from Open User Game and Open Career Game; retain external custom-city paths",
+  "Builds": [
+    {
+      "Target": "Editor",
+      "Result": "Succeeded",
+      "Log": "Docs/scratchpad/open-save-browser/build-Editor-final.log",
+      "SHA256": "5B0D42C4913CB86038CDD83944E9BB0189DF3DA10C76782A0A7B80414E2034B3"
+    },
+    {
+      "Target": "Shipping",
+      "Result": "Succeeded",
+      "Log": "Docs/scratchpad/open-save-browser/build-Shipping-final.log",
+      "SHA256": "97A7E9BC868E6761F02E4CFAAAB8ACA253FF920B4EEDA94617EF14F6F0CF9591"
+    },
+    {
+      "Target": "Development",
+      "Result": "Succeeded",
+      "Log": "Docs/scratchpad/open-save-browser/build-Development-final.log",
+      "SHA256": "8AD8240A477943D3D52C714FD86AA3CD1DB84E826502739840593100FBB60D37"
+    }
+  ],
+  "Tests": {
+    "Report": "Docs/scratchpad/open-save-browser/validated/index.json",
+    "Passed": 21,
+    "Failed": 0,
+    "NotRun": 0,
+    "WarningCases": 1,
+    "Warning": "The ExternalFiles test deliberately opens Missing.sav and produces one expected LogStreaming read warning.",
+    "Names": [
+      "SimCopter.Career.CityTransition",
+      "SimCopter.Career.FinalCityEndsTheLadder",
+      "SimCopter.Career.OnFootAircraftAndCageTransfer",
+      "SimCopter.Career.OwnedFleetAirportTransfer",
+      "SimCopter.Career.WarpAircraftIdentity",
+      "SimCopter.FrontEnd.CareerProgression",
+      "SimCopter.FrontEnd.CareerSelectLayout",
+      "SimCopter.FrontEnd.CareerSelectNavigation",
+      "SimCopter.FrontEnd.IntroInput",
+      "SimCopter.FrontEnd.MainMenuLayout",
+      "SimCopter.FrontEnd.MainMenuNavigation",
+      "SimCopter.FrontEnd.MainMenuUpscaledArt",
+      "SimCopter.FrontEnd.MenuSkyLayout",
+      "SimCopter.FrontEnd.SaveBrowseMenus",
+      "SimCopter.FrontEnd.UserCityDisplayNames",
+      "SimCopter.SaveGame.ArchiveRoundTrip",
+      "SimCopter.SaveGame.ExternalFiles",
+      "SimCopter.SaveGame.FleetEquipmentRepair",
+      "SimCopter.SaveGame.Names",
+      "SimCopter.SaveGame.QuickSavePersistence",
+      "SimCopter.SaveGame.RestoreState"
+    ]
+  },
+  "OffscreenVisuals": [
+    "Docs/scratchpad/open-save-browser/open-career.png",
+    "Docs/scratchpad/open-save-browser/open-user.png"
+  ],
+  "Limits": [
+    "Native Windows file dialog was not manually exercised.",
+    "No interactive gameplay check.",
+    "Focused follow-up suite only; broader prior feature validation is recorded in CustomCityProgressionResults.json."
+  ],
+  "SourceManifest": "Docs/scratchpad/open-save-browser/source-manifest.json",
+  "SourceDiff": "Docs/scratchpad/open-save-browser/source.diff",
+  "Installation": {
+    "InstalledAtUtc": "2026-10-14T00:30:13.1884957Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "8C0E210F446154FCEF9959980853C3EBA57EA557BD742664E7271D20D11830CC",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\open-save-browser/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "6E7D67D01D04EA9B8783B0B9BCD7EC9C6217AE0CF0ED197D4801ECA54B7DDAA0"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "7A2FEF764669C76CBE97212B4BBF47A01D8851718279568DF788198442640AE9",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\open-save-browser/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "556A8EFA72AEA0B1B247AB2A1833495AD5AF12797727AB78F5BC7F0DB1056D26"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "725996E7725D1C0460736BED48189C882D93138ED4E679359DB7F715ED2AA442",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\open-save-browser/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "33B460170065E96E678F53307B9EC5F33DDCF7CDBD69F91DDBC66F72B083382E"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "5E9F36D60AEA8F131CFEB6EEABDD3FBECC056A48728C03AAEAFADDBA4BA570A0",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\open-save-browser/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "520C7DBEDE55A04ABE1C603CBD1FA405100536AD30FA4F2E32A1AADC710603E2"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "PublicationCheckoutChanged": false
+}

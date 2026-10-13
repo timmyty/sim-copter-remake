@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/SSimCopterSaveGamePicker.h"
+#include "UI/SimCopterFileBrowser.h"
 
 #include "Brushes/SlateColorBrush.h"
 #include "InputCoreTypes.h"
@@ -26,6 +27,7 @@ const FLinearColor ListText(0.08f, 0.08f, 0.09f, 1.0f);
 void SSimCopterSaveGamePicker::Construct(const FArguments& InArgs)
 {
 	OnAccepted = InArgs._OnAccepted;
+	Kind = InArgs._Kind;
 	OnCancelled = InArgs._OnCancelled;
 	for (const FSimCopterSaveSummary& Summary : InArgs._Saves)
 	{
@@ -89,7 +91,7 @@ void SSimCopterSaveGamePicker::Construct(const FArguments& InArgs)
 	{
 		AddAtPage(ListRect,
 			SNew(STextBlock)
-			.Text(LOCTEXT("NoSaves", "No compatible saved games were found."))
+			.Text(LOCTEXT("NoSaves", "No compatible saved games were found here.\n\nChoose Browse... to open a saved game from another folder."))
 			.Justification(ETextJustify::Center)
 			.AutoWrapText(true)
 			.Font(PageFont(17))
@@ -114,6 +116,10 @@ void SSimCopterSaveGamePicker::Construct(const FArguments& InArgs)
 				return FReply::Handled();
 			}),
 			ButtonStyles));
+
+	AddAtPage(FRect{70, ButtonY, 70 + ButtonWidth, ButtonY + ButtonHeight},
+		MakeButton(ArtObject, LOCTEXT("Browse", "Browse..."), ButtonFontHeight,
+			FOnClicked::CreateLambda([this]() { Browse(); return FReply::Handled(); }), ButtonStyles));
 
 	ChildSlot
 	[
@@ -159,6 +165,14 @@ void SSimCopterSaveGamePicker::Accept()
 	{
 		OnAccepted.ExecuteIfBound(Selected[0]->SlotName);
 	}
+}
+
+void SSimCopterSaveGamePicker::Browse()
+{
+	FString Path;
+	const FString Title = Kind == ESimCopterSessionKind::Career
+		? TEXT("Open a SimCopter Career Game") : TEXT("Open a SimCopter User Game");
+	if (SimCopterFileBrowser::Open(AsShared(), true, Title, Path)) OnAccepted.ExecuteIfBound(Path);
 }
 
 FReply SSimCopterSaveGamePicker::OnKeyDown(

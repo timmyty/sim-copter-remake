@@ -90,7 +90,9 @@ DECLARE_DELEGATE_OneParam(FOnSimCopterCitySettingsAccepted, const FSimCopterCity
 class SSimCopterCitySettings : public SSimCopterNavigableMenu
 {
 public:
-	SLATE_BEGIN_ARGS(SSimCopterCitySettings) {}
+	SLATE_BEGIN_ARGS(SSimCopterCitySettings) : _bProgressive(false) {}
+		SLATE_ARGUMENT(bool, bProgressive)
+		SLATE_ARGUMENT(FString, ProgressionText)
 		SLATE_ARGUMENT(TObjectPtr<USimCopterHangarArt>, Art)
 		SLATE_ARGUMENT(FSimCopterCitySettingsValues, Values)
 		SLATE_EVENT(FOnSimCopterCitySettingsAccepted, OnAccepted)

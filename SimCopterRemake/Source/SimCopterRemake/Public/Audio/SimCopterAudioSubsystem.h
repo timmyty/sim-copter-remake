@@ -22,6 +22,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Async/Future.h"
 #include "Audio/SimCopterSoundTable.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "SimCopterAudioSubsystem.generated.h"
@@ -320,6 +321,7 @@ private:
 	friend class FSimCopterDriveInPlaybackCommand;
 	friend class FSimCopterGortReturnTest;
 	friend class FSimCopterRadioSequentialTest;
+	friend class FSimCopterFlacPlaybackTest;
 	friend class FSimCopterAudioOverlapTest;
 	friend class FSimCopterVehicleTaserTest;
 	friend class FSimCopterApacheAftermathTest;
@@ -412,6 +414,10 @@ private:
 	TObjectPtr<UAudioComponent> MusicComponent = nullptr;
 
 	double RadioEndTime = 0.0;
+	TFuture<FSimCopterPcmClip> PendingRadioClip;
+	TSharedPtr<TAtomic<bool>, ESPMode::ThreadSafe> RadioDecodeCancelled;
+	float PendingRadioStartSeconds = 0.0f;
+	bool StartRadioClip(FSimCopterPcmClip&& Clip, float StartSeconds);
 
 	/** Dispatcher voice queue (SCHOOK: DispatchVoicePlay 0x0042a3b0). */
 	TArray<int32> DispatchVoiceQueue;
@@ -427,6 +433,7 @@ private:
 
 	/** Decode one RIFF/WAVE file. Shared by the cached slot loader and the uncached radio one. */
 	static bool DecodeWav(const FString& AbsolutePath, FSimCopterPcmClip& OutClip);
+	static bool DecodeAudio(const FString& AbsolutePath, FSimCopterPcmClip& OutClip);
 	bool EnsureSlotLoaded(int32 Id);
 	UAudioComponent* EnsureSlotComponent(int32 Id);
 

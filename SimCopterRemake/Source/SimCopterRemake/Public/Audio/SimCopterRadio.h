@@ -182,6 +182,7 @@ public:
 
 private:
 	friend class FSimCopterRadioSequentialTest;
+	friend class FSimCopterFlacPlaybackTest;
 	friend class FSimCopterCityIntroAudioTest;
 	bool bCityIntroSuspended = false;
 	bool IsSequentialStation() const;

@@ -1,0 +1,395 @@
+{
+  "method": "32-band log-spectrum correlation, three 90-second segments against all original radio songs and front-end music; exact file hashes anchor approved replacements. Same song may have different intro/outro or arrangement length.",
+  "tracks": [
+    {
+      "flac": "cptr_jazz1.flac",
+      "original": "radio/stations/jazz/music/jzz1m2eq.wav",
+      "score": 0.83586,
+      "segments": [
+        {
+          "correlation": 0.82012,
+          "flac_seconds": 39.381,
+          "original_seconds": 38.452
+        },
+        {
+          "correlation": 0.84461,
+          "flac_seconds": 131.332,
+          "original_seconds": 130.403
+        },
+        {
+          "correlation": 0.84286,
+          "flac_seconds": 223.283,
+          "original_seconds": 222.354
+        }
+      ],
+      "runner_up": "tkno5mx2.wav",
+      "runner_up_score": 0.15705,
+      "flac_sha256": "9590786ddc82b10b5fedf394ba8a59171a9ef67b8a1d5e7d7eec94180006dddd",
+      "original_sha256": "4f4cf32f823341b8d2f681f3686dad4c4b0b7716ece8d88d37a097ad2898f04b"
+    },
+    {
+      "flac": "cptr_jazz2.flac",
+      "original": "radio/stations/jazz/music/j2mx2eq1.wav",
+      "score": 0.80191,
+      "segments": [
+        {
+          "correlation": 0.82175,
+          "flac_seconds": 41.61,
+          "original_seconds": 40.681
+        },
+        {
+          "correlation": 0.78782,
+          "flac_seconds": 138.762,
+          "original_seconds": 137.834
+        },
+        {
+          "correlation": 0.79617,
+          "flac_seconds": 235.915,
+          "original_seconds": 234.986
+        }
+      ],
+      "runner_up": "op53.wav",
+      "runner_up_score": 0.19127,
+      "flac_sha256": "bd01a39ad5f07b4a1bfd7c1039e9946dd655bcedda3047140919aba06ae91cc9",
+      "original_sha256": "0fea22da9d813ba58f291b918107f7b48ebfd8950dce06d210a1973bccaee916"
+    },
+    {
+      "flac": "cptr_misc1_long (hanger).flac",
+      "original": "hangar.wav",
+      "score": 0.75919,
+      "segments": [
+        {
+          "correlation": 0.8029,
+          "flac_seconds": 38.452,
+          "original_seconds": 38.452
+        },
+        {
+          "correlation": 0.79737,
+          "flac_seconds": 128.174,
+          "original_seconds": 128.174
+        },
+        {
+          "correlation": 0.67731,
+          "flac_seconds": 217.896,
+          "original_seconds": 217.896
+        }
+      ],
+      "runner_up": "op57.wav",
+      "runner_up_score": 0.18177,
+      "flac_sha256": "cacb70cfb73d91e238ded126d096be32ae0fa90aa0be4013475b6178ee011d80",
+      "original_sha256": "bb479792775120139e427e8290cf70ab86f38a9fe265f0cf9b96620bfcf22d3c"
+    },
+    {
+      "flac": "cptr_rock1.flac",
+      "original": "radio/stations/rock/music/rock1mx2.wav",
+      "score": 0.801,
+      "segments": [
+        {
+          "correlation": 0.79003,
+          "flac_seconds": 37.523,
+          "original_seconds": 37.523
+        },
+        {
+          "correlation": 0.80047,
+          "flac_seconds": 125.016,
+          "original_seconds": 125.016
+        },
+        {
+          "correlation": 0.81251,
+          "flac_seconds": 212.695,
+          "original_seconds": 212.695
+        }
+      ],
+      "runner_up": "spring3.wav",
+      "runner_up_score": 0.24419,
+      "flac_sha256": "184a68c8f22c7d7398c586d0152656ec348b72f59c8c7a92ca2e1d7ba2b22677",
+      "original_sha256": "cfa0aa1cc1fbf542cad366ea99d912b38c95c56ac2831c8fb7ed43821c93337b"
+    },
+    {
+      "flac": "cptr_rock2.flac",
+      "original": "radio/stations/rock/music/rock2mx2.wav",
+      "score": 0.69458,
+      "segments": [
+        {
+          "correlation": 0.87162,
+          "flac_seconds": 32.879,
+          "original_seconds": 32.879
+        },
+        {
+          "correlation": 0.84395,
+          "flac_seconds": 110.155,
+          "original_seconds": 110.155
+        },
+        {
+          "correlation": 0.36817,
+          "flac_seconds": 185.574,
+          "original_seconds": 180.744
+        }
+      ],
+      "runner_up": "tkno3mx2.wav",
+      "runner_up_score": 0.27401,
+      "flac_sha256": "bd67b6d2e544ff41e2d0bb61789ee3236009379fdb5dde97f8c43d2ad175e843",
+      "original_sha256": "699bfcd5ba7568d27e79134a69e7860f3a820b75f8360f80b8ce5723342a4cce"
+    },
+    {
+      "flac": "cptr_rock3.flac",
+      "original": "radio/stations/rock/music/rock3mx2.wav",
+      "score": 0.79573,
+      "segments": [
+        {
+          "correlation": 0.80125,
+          "flac_seconds": 36.78,
+          "original_seconds": 36.78
+        },
+        {
+          "correlation": 0.79219,
+          "flac_seconds": 122.787,
+          "original_seconds": 122.787
+        },
+        {
+          "correlation": 0.79375,
+          "flac_seconds": 208.794,
+          "original_seconds": 208.794
+        }
+      ],
+      "runner_up": "op57.wav",
+      "runner_up_score": 0.18864,
+      "flac_sha256": "3636ff01bcc13a3edcfda8dec07e4a68c5cecb1e934df108ba2ac7210fb1ae48",
+      "original_sha256": "af3d85c1ac6fced72ab563c51619ea073bc9ccea6bd775967580c0eb9b729396"
+    },
+    {
+      "flac": "cptr_rock4.flac",
+      "original": "radio/stations/rock/music/rock4mx2.wav",
+      "score": 0.83915,
+      "segments": [
+        {
+          "correlation": 0.82523,
+          "flac_seconds": 40.496,
+          "original_seconds": 40.496
+        },
+        {
+          "correlation": 0.85447,
+          "flac_seconds": 135.233,
+          "original_seconds": 135.233
+        },
+        {
+          "correlation": 0.83775,
+          "flac_seconds": 229.97,
+          "original_seconds": 229.97
+        }
+      ],
+      "runner_up": "op57.wav",
+      "runner_up_score": 0.27902,
+      "flac_sha256": "9669ac8ca66f56db1d9a1b74f24ea35b944ea7c6ed7814d519a6ca3ddb630c60",
+      "original_sha256": "0c45a66d021023a47f93f8885576e884f93dfa9ff11d631d314f59aca3c887fb"
+    },
+    {
+      "flac": "cptr_rock5.flac",
+      "original": "radio/stations/rock/music/rock5mx1.wav",
+      "score": 0.79297,
+      "segments": [
+        {
+          "correlation": 0.7987,
+          "flac_seconds": 39.381,
+          "original_seconds": 39.381
+        },
+        {
+          "correlation": 0.78739,
+          "flac_seconds": 131.704,
+          "original_seconds": 131.704
+        },
+        {
+          "correlation": 0.79283,
+          "flac_seconds": 223.84,
+          "original_seconds": 223.84
+        }
+      ],
+      "runner_up": "valk.wav",
+      "runner_up_score": 0.19854,
+      "flac_sha256": "a333e2f90e1d5124e0e08a5d70fc7dc56116ffc8873b61c3151ced1d5fe196d8",
+      "original_sha256": "480b87434cd5c6189601c961bb894a6bfd0862406713b9533049fc6714ec95a9"
+    },
+    {
+      "flac": "cptr_rock6.flac",
+      "original": "radio/stations/rock/music/rock6mx1.wav",
+      "score": 0.82746,
+      "segments": [
+        {
+          "correlation": 0.82229,
+          "flac_seconds": 42.353,
+          "original_seconds": 42.353
+        },
+        {
+          "correlation": 0.84509,
+          "flac_seconds": 141.549,
+          "original_seconds": 141.549
+        },
+        {
+          "correlation": 0.815,
+          "flac_seconds": 240.744,
+          "original_seconds": 240.744
+        }
+      ],
+      "runner_up": "op57.wav",
+      "runner_up_score": 0.15916,
+      "flac_sha256": "2dfba51458f8c3f7281d06a2ccdcf566f31d9c48c4a505d5759e77fc01aa929e",
+      "original_sha256": "e1076f4d2fe8342d4cd7a409363b441639ba2e37716c4ba9e8e21d7c5abcf0ee"
+    },
+    {
+      "flac": "cptr_tkno1.flac",
+      "original": "radio/stations/techno/music/tkno1mx2.wav",
+      "score": 0.69214,
+      "segments": [
+        {
+          "correlation": 0.41378,
+          "flac_seconds": 48.112,
+          "original_seconds": 116.471
+        },
+        {
+          "correlation": 0.80693,
+          "flac_seconds": 160.496,
+          "original_seconds": 64.087
+        },
+        {
+          "correlation": 0.8557,
+          "flac_seconds": 272.695,
+          "original_seconds": 176.286
+        }
+      ],
+      "runner_up": "op57.wav",
+      "runner_up_score": 0.19037,
+      "flac_sha256": "618012d39cf175622a41e78d5a27427488b558ac8c73834fe35c7e1674df7724",
+      "original_sha256": "4518688f5b1591e7997d3ad73003b82cbf5eb84acd3f766c25975a76720ef80a"
+    },
+    {
+      "flac": "cptr_tkno2.flac",
+      "original": "radio/stations/techno/music/tkno2mx2.wav",
+      "score": 0.84898,
+      "segments": [
+        {
+          "correlation": 0.84415,
+          "flac_seconds": 33.994,
+          "original_seconds": 187.431
+        },
+        {
+          "correlation": 0.87758,
+          "flac_seconds": 113.499,
+          "original_seconds": 113.313
+        },
+        {
+          "correlation": 0.8252,
+          "flac_seconds": 193.004,
+          "original_seconds": 192.819
+        }
+      ],
+      "runner_up": "tkno3mx2.wav",
+      "runner_up_score": 0.23627,
+      "flac_sha256": "f0ad1efd91d53b3ef9d512a0e9fcbcd924a965272c05bc093b5f4ff452a560ed",
+      "original_sha256": "ebc7e5f97cbeb582405b32d6e56af683e91e752f422d962e4cee865a20e80552"
+    },
+    {
+      "flac": "cptr_tkno3.flac",
+      "original": "radio/stations/techno/music/tkno3mx2.wav",
+      "score": 0.72206,
+      "segments": [
+        {
+          "correlation": 0.83558,
+          "flac_seconds": 33.251,
+          "original_seconds": 33.065
+        },
+        {
+          "correlation": 0.7917,
+          "flac_seconds": 111.084,
+          "original_seconds": 110.899
+        },
+        {
+          "correlation": 0.53889,
+          "flac_seconds": 187.803,
+          "original_seconds": 17.461
+        }
+      ],
+      "runner_up": "tkno5mx2.wav",
+      "runner_up_score": 0.44841,
+      "flac_sha256": "aeaa10552d7611a77d37ad83c01ffb8d75937df335a7867c8e743f32278a62cc",
+      "original_sha256": "80f68d480903c78d09d7b0cfad05bfe1361e7cf1f25bf10c317c3565d24b0a80"
+    },
+    {
+      "flac": "cptr_tkno4.flac",
+      "original": "radio/stations/techno/music/tkno4mx2.wav",
+      "score": 0.76416,
+      "segments": [
+        {
+          "correlation": 0.73035,
+          "flac_seconds": 33.251,
+          "original_seconds": 33.065
+        },
+        {
+          "correlation": 0.7737,
+          "flac_seconds": 111.084,
+          "original_seconds": 110.899
+        },
+        {
+          "correlation": 0.78842,
+          "flac_seconds": 187.803,
+          "original_seconds": 187.617
+        }
+      ],
+      "runner_up": "tkno5mx2.wav",
+      "runner_up_score": 0.30412,
+      "flac_sha256": "44a91c75c0e454ccaa3ba91751c04730d72570afb1436b8faebfdbad72da43af",
+      "original_sha256": "7fb7cea7ae516098eea10bc23fbcd191a3dc6294f36b69ec84bf71c833c8c686"
+    },
+    {
+      "flac": "cptr_tkno5.flac",
+      "original": "radio/stations/techno/music/tkno5mx2.wav",
+      "score": 0.5574,
+      "segments": [
+        {
+          "correlation": 0.51318,
+          "flac_seconds": 40.496,
+          "original_seconds": 40.31
+        },
+        {
+          "correlation": 0.66707,
+          "flac_seconds": 135.047,
+          "original_seconds": 134.861
+        },
+        {
+          "correlation": 0.49196,
+          "flac_seconds": 229.599,
+          "original_seconds": 52.57
+        }
+      ],
+      "runner_up": "tkno4mx2.wav",
+      "runner_up_score": 0.27675,
+      "flac_sha256": "577ca048680d5078acb779e4c87f71e9ce3f38bb7809927add730d05c3dcaaf1",
+      "original_sha256": "769368f481781a896695eccfa82acf565687d4739b3e1cb9b1e54f2290c7cb4b"
+    },
+    {
+      "flac": "cptr_tkno6.flac",
+      "original": "radio/stations/techno/music/tkno6mx2.wav",
+      "score": 0.6873,
+      "segments": [
+        {
+          "correlation": 0.61991,
+          "flac_seconds": 36.037,
+          "original_seconds": 35.852
+        },
+        {
+          "correlation": 0.69829,
+          "flac_seconds": 120.372,
+          "original_seconds": 120.186
+        },
+        {
+          "correlation": 0.7437,
+          "flac_seconds": 204.707,
+          "original_seconds": 204.521
+        }
+      ],
+      "runner_up": "op57.wav",
+      "runner_up_score": 0.30595,
+      "flac_sha256": "756e7ead5c823ceacf75a4d2a7e9f549d53d38f569b99b8a7436b98bcdedec76",
+      "original_sha256": "fd0b9de286e607a5601f77f2121677a41c84bde198dab43b8fbf9d2c6920d5bd"
+    }
+  ]
+}

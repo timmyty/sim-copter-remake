@@ -36,7 +36,7 @@ constexpr float PageHeight = 433.0f;
 // English is language 1.)
 constexpr float ItemX = 102.0f;
 constexpr float ItemStride = 40.0f;
-constexpr int32 ItemFontHeight = 26;
+constexpr int32 ItemFontHeight = 22;
 
 // The page prints eight plates. Descriptor +0x1c/+0x20/+0x24/+0x34 come in two variants and the
 // only difference is whether the first plate is used:
@@ -57,11 +57,15 @@ constexpr float FirstItemYWithoutCitySettings = 104.0f;
 constexpr float HitLeft = 20.0f;
 constexpr float HitRight = 330.0f;
 
-// Row is the position on the page, 0..(VisibleCount-1), not the command id.
+// Remake: the same artwork supplies nine career / ten custom plates, including the
+// hidden Cheat Codes row above Continue. Reslice the authored 320px row strip to fit.
+constexpr int32 GetVisibleCount(bool bHasCitySettings) { return FullItemCount + (bHasCitySettings ? 1 : 0); }
+constexpr float GetItemStride(bool bHasCitySettings) { return 320.0f / (GetVisibleCount(bHasCitySettings) + 1); }
+
+// Row -1 is hidden; row 0 is Continue.
 constexpr float GetRowTop(const int32 Row, const bool bHasCitySettings)
 {
-	return (bHasCitySettings ? FirstItemYWithCitySettings : FirstItemYWithoutCitySettings)
-		+ ItemStride * static_cast<float>(Row);
+	return FirstItemYWithCitySettings + GetItemStride(bHasCitySettings) * static_cast<float>(Row + 1);
 }
 
 constexpr FRect GetRowTextRect(const int32 Row, const bool bHasCitySettings)
@@ -80,7 +84,7 @@ constexpr FRect GetRowHitRect(const int32 Row, const bool bHasCitySettings)
 constexpr FRect GetRowFocusRect(int32 Row, bool bHasCitySettings)
 {
 	const float Top = GetRowTop(Row, bHasCitySettings) - 3.0f;
-	return FRect{90.0f, Top, 300.0f, Top + 33.0f};
+	return FRect{90.0f, Top, 300.0f, Top + GetItemStride(bHasCitySettings) - 7.0f};
 }
 
 }
@@ -96,7 +100,8 @@ enum class ESimCopterSettingsItem : uint8
 	SaveGameAs = 5,
 	LeaveCity = 6,
 	Continue = 7,
-	CheatCodes = 8, // Remake guide on the career menu's unused top plate.
+	CheatCodes = 8, // Remake guide hidden above Continue in both session types.
+	PhotoMode = 9,
 };
 
 DECLARE_DELEGATE_OneParam(FOnSimCopterSettingsItemChosen, ESimCopterSettingsItem);
@@ -137,6 +142,7 @@ private:
 	int32 SelectedRow = 0;
 
 	TArray<TSharedRef<FButtonStyle>> ButtonStyles;
+	TArray<TSharedRef<FSlateBrush>> PlateBrushes;
 
 	void SetSelectedRow(int32 Row);
 	void ActivateSelected();

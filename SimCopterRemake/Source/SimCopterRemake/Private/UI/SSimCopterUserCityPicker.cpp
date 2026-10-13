@@ -1,6 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterUserCityPicker.h"
+#include "UI/SimCopterFileBrowser.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Misc/MessageDialog.h"
 
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Formats/SimCity2000Reader.h"
@@ -223,6 +228,9 @@ void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 			}),
 			ButtonStyles));
 
+	AddAtPage(FRect{ 70, ButtonY, 70 + ButtonWidth, ButtonY + ButtonHeight },
+		MakeButton(ArtObject, LOCTEXT("Browse", "Browse..."), ButtonFontHeight,
+			FOnClicked::CreateLambda([this]() { Browse(); return FReply::Handled(); }), ButtonStyles));
 	ChildSlot
 	[
 		MakeScaledScreen(Canvas)
@@ -242,6 +250,21 @@ TSharedRef<ITableRow> SSimCopterUserCityPicker::MakeRow(
 			.Font(PageFont(ListFontHeight))
 			.ColorAndOpacity(FSlateColor(ListText))
 		];
+}
+
+void SSimCopterUserCityPicker::Browse()
+{
+	FString Path;
+	if (!SimCopterFileBrowser::Open(AsShared(), false, TEXT("Open a SimCity 2000 city"), Path)) return;
+	FSimCity2000City City;
+	FString Error;
+	if (!FPaths::GetExtension(Path).Equals(TEXT("sc2"), ESearchCase::IgnoreCase) ||
+		!FSimCity2000Reader::LoadCityFromFile(Path, City, Error))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Unable to open this city.\n") + Error));
+		return;
+	}
+	OnAccepted.ExecuteIfBound(Path);
 }
 
 void SSimCopterUserCityPicker::Accept()

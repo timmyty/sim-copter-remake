@@ -34,6 +34,7 @@ bool FSimCopterPilotRunTest::RunTest(const FString&)
 	};
 	const auto KeyEvent=[&](FKey Key, bool bDown)
     {
+        PC->HandleKeyboardSprintKey(Key, bDown);
         PC->PlayerInput->InputKey(FInputKeyParams(Key, bDown ? IE_Pressed : IE_Released, bDown ? 1.0 : 0.0, false));
         PC->PlayerInput->ProcessInputStack(TArray<UInputComponent*>(), 1.0f/60, false);
     };
@@ -44,8 +45,9 @@ bool FSimCopterPilotRunTest::RunTest(const FString&)
 	for (const FKey Key : {EKeys::LeftShift,EKeys::RightShift})
 	{
 		KeyEvent(Key, true);
+		KeyEvent(Key, false);
 		Step(Walk*2);
-		TestEqual(TEXT("Either Shift doubles normal on-foot speed"),Move->MaxWalkSpeed,Walk*2);
+		TestEqual(TEXT("Either Shift tap doubles speed after release"),Move->MaxWalkSpeed,Walk*2);
 		TestEqual(TEXT("Running selects the shipped run animation"),Pilot->FigureAnim.Mnemonic,FString(TEXT("1Run")));
 		TestTrue(TEXT("Run clip has animated frames"),Pilot->FigureAnim.FrameCount>1);
 		Step(0);
@@ -56,17 +58,19 @@ bool FSimCopterPilotRunTest::RunTest(const FString&)
 		PC->SetIgnoreMoveInput(true); Step(Walk);
 		TestEqual(TEXT("Modal movement hold suppresses running"),Move->MaxWalkSpeed,Walk);
 		PC->SetIgnoreMoveInput(false);
-		KeyEvent(Key, false);
+		KeyEvent(Key, true); KeyEvent(Key, false);
 		Step(Walk);
-		TestEqual(TEXT("Release restores walking"),Move->MaxWalkSpeed,Walk);
-		TestEqual(TEXT("Release restores walk animation"),Pilot->FigureAnim.Mnemonic,FString(TEXT("1Wal")));
+		TestEqual(TEXT("Second tap restores walking"),Move->MaxWalkSpeed,Walk);
+		TestEqual(TEXT("Second tap restores walk animation"),Pilot->FigureAnim.Mnemonic,FString(TEXT("1Wal")));
 	}
 	KeyEvent(EKeys::LeftShift, true);
 	KeyEvent(EKeys::RightShift, true);
+	KeyEvent(EKeys::LeftShift, false); KeyEvent(EKeys::RightShift, false);
 	Step(Walk*2);
 	TestEqual(TEXT("Both Shift keys do not stack the multiplier"),Move->MaxWalkSpeed,Walk*2);
-	PC->PlayerInput->FlushPressedKeys(); Step(Walk);
-	TestEqual(TEXT("Focus-loss key flush cannot leave running stuck"),Move->MaxWalkSpeed,Walk);
+	PC->PlayerInput->FlushPressedKeys(); Step(Walk*2);
+	TestEqual(TEXT("Key flush preserves deliberate sprint toggle"),Move->MaxWalkSpeed,Walk*2);
+	PC->ResetControllerSprint(); Step(Walk);
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased(); Step(Walk*2);
 	TestEqual(TEXT("L3 Sprint Mode doubles walking speed"),Move->MaxWalkSpeed,Walk*2);
 	TestEqual(TEXT("L3 Sprint Mode uses the original run animation"),Pilot->FigureAnim.Mnemonic,FString(TEXT("1Run")));
@@ -75,6 +79,9 @@ bool FSimCopterPilotRunTest::RunTest(const FString&)
 	KeyEvent(EKeys::LeftShift,true); Step(Walk*2);
 	TestEqual(TEXT("Shift and L3 do not stack running speed"),Move->MaxWalkSpeed,Walk*2);
 	KeyEvent(EKeys::LeftShift,false);
+	Step(Walk);
+	TestEqual(TEXT("Shift turns off controller-enabled sprint"), Move->MaxWalkSpeed, Walk);
+	KeyEvent(EKeys::LeftShift,true); KeyEvent(EKeys::LeftShift,false);
 	KeyEvent(EKeys::Gamepad_RightThumbstick,true);
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	TestTrue(TEXT("R3+L3 opens on-foot help"),PC->IsControllerHelpExpanded());
@@ -100,10 +107,12 @@ bool FSimCopterPilotRunTest::RunTest(const FString&)
 	{
 		Cheats->bSuperpower=true;
 		KeyEvent(EKeys::LeftShift, true);
+		KeyEvent(EKeys::LeftShift, false);
 		Step(Walk*20);
 		TestEqual(TEXT("Superpower retains 20x without stacking normal run"),Move->MaxWalkSpeed,Walk*20);
 		TestEqual(TEXT("Superpower retains the dog figure"),Pilot->FigureAnim.FigureIndex,Pilot->FigureShared->Model.FindFigureIndex(TEXT("2DOGG")));
 		Cheats->bSuperpower=false;
+		KeyEvent(EKeys::LeftShift, true); KeyEvent(EKeys::LeftShift, false);
 		PC->PlayerInput->FlushPressedKeys(); Step(Walk);
 		TestEqual(TEXT("Ending superpower restores the walking pilot"),Pilot->FigureAnim.Mnemonic,FString(TEXT("1Wal")));
 	}

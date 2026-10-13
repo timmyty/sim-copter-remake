@@ -84,4 +84,5 @@ private:
 	static FString ReadEmbeddedCityName(const FString& FilePath);
 	TSharedRef<ITableRow> MakeRow(TSharedPtr<FSimCopterUserCityEntry> Item, const TSharedRef<STableViewBase>& OwnerTable);
 	void Accept();
+	void Browse();
 };

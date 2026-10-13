@@ -554,6 +554,7 @@ public:
 	float GetPassengerAlightSettleSeconds() const { return PassengerAlightSettleSeconds; }
 
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Missions")
+	FString GetToolInstructions() const;
 	int32 GetPassengerSeatCount() const { return FlightModel.Tuning.PassengerSeats; }
 
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Missions")
