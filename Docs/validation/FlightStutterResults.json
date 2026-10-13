@@ -1,0 +1,331 @@
+{
+  "date": "2026-10-12",
+  "issue": "Progressive stutter while flying with a police officer picked up by the cage",
+  "captured_session": "Witness-Performance_20261012_215028.utrace",
+  "confirmed": "Late ground-agent CPU stalls; moving-target full-path search bypasses retry interval in controlled reproduction",
+  "limitation": "Exact recorded flight not replayed; old trace lacks internal navigation scopes, so attribution to this particular function remains likely",
+  "before": {
+    "searches_in_0_8_simulated_seconds": 12,
+    "total_ms": 879.486,
+    "worst_query_ms": 74.991
+  },
+  "after": {
+    "searches_in_0_8_simulated_seconds": 1,
+    "total_ms": 13.826,
+    "worst_query_ms": 1.125
+  },
+  "simulated_six_minute_soak": [
+    {
+      "minute": 1,
+      "mean_query_ms": 0.991,
+      "peak_query_ms": 2.552
+    },
+    {
+      "minute": 2,
+      "mean_query_ms": 0.976,
+      "peak_query_ms": 2.49
+    },
+    {
+      "minute": 3,
+      "mean_query_ms": 0.936,
+      "peak_query_ms": 2.2
+    },
+    {
+      "minute": 4,
+      "mean_query_ms": 0.959,
+      "peak_query_ms": 2.237
+    },
+    {
+      "minute": 5,
+      "mean_query_ms": 0.945,
+      "peak_query_ms": 2.086
+    },
+    {
+      "minute": 6,
+      "mean_query_ms": 0.957,
+      "peak_query_ms": 2.65
+    }
+  ],
+  "original_frame_bins": [
+    {
+      "start": 0,
+      "frames": 7758,
+      "mean_ms": 2.876583629801508,
+      "p50_ms": 2.7642,
+      "p95_ms": 3.6584,
+      "p99_ms": 4.154,
+      "max_ms": 122.44969999999999,
+      "over50ms": 3,
+      "over100ms": 2
+    },
+    {
+      "start": 30,
+      "frames": 8716,
+      "mean_ms": 3.442322636530519,
+      "p50_ms": 2.6705,
+      "p95_ms": 3.7001999999999997,
+      "p99_ms": 13.374,
+      "max_ms": 2815.7944,
+      "over50ms": 6,
+      "over100ms": 3
+    },
+    {
+      "start": 60,
+      "frames": 2312,
+      "mean_ms": 12.97169762110726,
+      "p50_ms": 11.744599999999998,
+      "p95_ms": 13.093,
+      "p99_ms": 17.2835,
+      "max_ms": 2626.5399,
+      "over50ms": 1,
+      "over100ms": 1
+    },
+    {
+      "start": 90,
+      "frames": 2303,
+      "mean_ms": 13.028797438124196,
+      "p50_ms": 12.4461,
+      "p95_ms": 14.8097,
+      "p99_ms": 29.445700000000002,
+      "max_ms": 139.1915,
+      "over50ms": 8,
+      "over100ms": 2
+    },
+    {
+      "start": 120,
+      "frames": 2045,
+      "mean_ms": 14.667658044009778,
+      "p50_ms": 13.3237,
+      "p95_ms": 20.8426,
+      "p99_ms": 53.8241,
+      "max_ms": 230.5627,
+      "over50ms": 23,
+      "over100ms": 1
+    },
+    {
+      "start": 150,
+      "frames": 2037,
+      "mean_ms": 14.729156062837507,
+      "p50_ms": 13.6494,
+      "p95_ms": 20.207900000000002,
+      "p99_ms": 32.3885,
+      "max_ms": 145.5701,
+      "over50ms": 14,
+      "over100ms": 1
+    },
+    {
+      "start": 180,
+      "frames": 1983,
+      "mean_ms": 15.127024810892593,
+      "p50_ms": 14.411800000000001,
+      "p95_ms": 20.4786,
+      "p99_ms": 29.638399999999997,
+      "max_ms": 66.4375,
+      "over50ms": 2,
+      "over100ms": 0
+    },
+    {
+      "start": 210,
+      "frames": 2059,
+      "mean_ms": 14.571621515298668,
+      "p50_ms": 13.88,
+      "p95_ms": 19.2133,
+      "p99_ms": 29.4296,
+      "max_ms": 65.8652,
+      "over50ms": 4,
+      "over100ms": 0
+    },
+    {
+      "start": 240,
+      "frames": 1877,
+      "mean_ms": 15.983804475226465,
+      "p50_ms": 13.9611,
+      "p95_ms": 24.9703,
+      "p99_ms": 59.253,
+      "max_ms": 668.9781,
+      "over50ms": 27,
+      "over100ms": 3
+    },
+    {
+      "start": 270,
+      "frames": 2163,
+      "mean_ms": 13.867206888580665,
+      "p50_ms": 12.8014,
+      "p95_ms": 18.5289,
+      "p99_ms": 28.6629,
+      "max_ms": 108.1251,
+      "over50ms": 7,
+      "over100ms": 1
+    },
+    {
+      "start": 300,
+      "frames": 2457,
+      "mean_ms": 12.20662665852665,
+      "p50_ms": 12.1684,
+      "p95_ms": 13.549,
+      "p99_ms": 14.805499999999999,
+      "max_ms": 23.3637,
+      "over50ms": 0,
+      "over100ms": 0
+    },
+    {
+      "start": 330,
+      "frames": 2387,
+      "mean_ms": 12.57157440301635,
+      "p50_ms": 12.2112,
+      "p95_ms": 15.464200000000002,
+      "p99_ms": 19.1103,
+      "max_ms": 28.1751,
+      "over50ms": 0,
+      "over100ms": 0
+    },
+    {
+      "start": 360,
+      "frames": 2070,
+      "mean_ms": 14.49113966183576,
+      "p50_ms": 14.0238,
+      "p95_ms": 18.6418,
+      "p99_ms": 22.9647,
+      "max_ms": 57.201299999999996,
+      "over50ms": 2,
+      "over100ms": 0
+    },
+    {
+      "start": 390,
+      "frames": 1405,
+      "mean_ms": 21.389182989323817,
+      "p50_ms": 15.609,
+      "p95_ms": 36.2426,
+      "p99_ms": 128.4844,
+      "max_ms": 324.6559,
+      "over50ms": 68,
+      "over100ms": 58
+    },
+    {
+      "start": 420,
+      "frames": 916,
+      "mean_ms": 29.177442358078615,
+      "p50_ms": 15.5199,
+      "p95_ms": 133.45190000000002,
+      "p99_ms": 261.8073,
+      "max_ms": 277.1506,
+      "over50ms": 94,
+      "over100ms": 76
+    }
+  ],
+  "builds": {
+    "editor-final": {
+      "succeeded": true,
+      "log": "Docs/scratchpad/flight-stutter-2026-10-12/build-editor-final.log"
+    },
+    "shipping": {
+      "succeeded": true,
+      "log": "Docs/scratchpad/flight-stutter-2026-10-12/build-shipping.log"
+    },
+    "development": {
+      "succeeded": true,
+      "log": "Docs/scratchpad/flight-stutter-2026-10-12/build-development.log"
+    }
+  },
+  "tests": {
+    "validated": {
+      "succeeded": 14,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 5.8780107498168945,
+      "cases": [
+        "SimCopter.CaptureCage.ControlsMountsAndMissionWeights",
+        "SimCopter.CaptureCage.VehicleBoatRecoveryAndWaypoints",
+        "SimCopter.Dispatch.PoliceRoofBoarding",
+        "SimCopter.MedicalNavigation.DroppedMedics",
+        "SimCopter.MedicalNavigation.MovingTargetRepathBudget",
+        "SimCopter.MedicalNavigation.PatientMarkers",
+        "SimCopter.MedicalNavigation.SlicedSearchPreservesRoutes",
+        "SimCopter.MedicalNavigation.SteepHillReturn",
+        "SimCopter.NpcMedical.BandClusterAndSpacing",
+        "SimCopter.NpcMedical.BandObstacleRoutes",
+        "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+        "SimCopter.PoliceRecovery.DeployedOfficerRetrievesTasedSuspect",
+        "SimCopter.PoliceRecovery.NearestStationMapRoute",
+        "SimCopter.RooftopSafety.ExitAndContainment"
+      ]
+    },
+    "soak": {
+      "succeeded": 1,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 5.832818031311035,
+      "cases": [
+        "SimCopter.MedicalNavigation.MovingTargetRepathBudget"
+      ]
+    }
+  },
+  "installed": {
+    "InstalledAtUtc": "2026-10-13T03:23:20.4587262Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "6B36538D96E2B61A4ED5BC1848AFB98FF51B14F27488DE21C312860855FE90BE",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\flight-stutter-2026-10-12/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "061312479B3C5C790C93E1F0C468A743562F578D8D577E6DF052B6ACC5C810CA"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "2C1E47EAB14ACE56F89E6628F8AA4BDA6205F99A4C5433FDE4C6DC4D068F461D",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\flight-stutter-2026-10-12/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "2FA7A716CE235E44E9076089426B35CB0D6A46145927756187E01C5FB108D75B"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "035A4370BC11F08A48E3AF59D3FAFFB2A69C2B116B59C0BFC3A2DD36D399462F",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\flight-stutter-2026-10-12/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "DFDD9C738AC6E56ABB6CFA3A0A47D0193F392DD047EF699E7DAE1A4DB3F3B931"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "4EBA2AB38C98952AE690744508DD33FBDFDC913D0D94AAD104534DB9A71FCE1A",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\flight-stutter-2026-10-12/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "73316521AF7F704F12782B85188D61187AD99F9B648F9FAF76F9D4C2EB6278C1"
+      }
+    ],
+    "UniqueHeadlessPassed": 14,
+    "SimulatedFlightMinutes": 6,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "source_manifest": [
+    {
+      "path": "Private/Ground/SimCopterGroundAgent.cpp",
+      "sha256": "E7291861EDA581FB5F15E4BE4C1BAD38AC102E0EE4E1FE74B0EDC51DA2B84123"
+    },
+    {
+      "path": "Private/Ground/SimCopterTrafficSystemActor.cpp",
+      "sha256": "53FEF2F83820CB7170927F54F09360FD9235F5C7A37F49CC0F7F04B793BFFE88"
+    },
+    {
+      "path": "Private/Ground/SimCopterBandNavigation.cpp",
+      "sha256": "A18FCC0DB294D4FADFB71AC0E7D842ABD4583B080F9BFE8FEC3BC2E5489058C4"
+    },
+    {
+      "path": "Public/Ground/SimCopterGroundAgent.h",
+      "sha256": "C347971900BC8EC099EE4A689FF646C5FA0ADA9DAC0215DE1370CF8B6496AF24"
+    },
+    {
+      "path": "Public/Ground/SimCopterTrafficSystemActor.h",
+      "sha256": "D1FAE4CD458E726703A831279BD4046C9DF4D3F57D94523E097FBF80F2EB4B6F"
+    },
+    {
+      "path": "Public/Ground/SimCopterBandNavigation.h",
+      "sha256": "530597BD75E950A4629DC4B40221D3B59F208F8F707F4F3EA3196DE5A7DFFCF6"
+    },
+    {
+      "path": "Private/Tests/SimCopterMedicRouteTests.cpp",
+      "sha256": "EC948EF709F1630CF11A11020577AA1678D8D304A5CB6AF2B1BB0EF157F51B3C"
+    }
+  ],
+  "interactive_gameplay_verified": false,
+  "publication_checkout_changed": false
+}

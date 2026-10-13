@@ -827,6 +827,9 @@ private:
 	friend class FSimCopterTrafficFlowTest;
 	friend class FSimCopterPatientPlacementTest;
 	friend class FSimCopterMedicRouteTest;
+	friend class FSimCopterAmbientDispatchTest;
+	friend class FSimCopterDeployedMedicRiotTest;
+	friend class FSimCopterResponderRepathTest;
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterPatientMarkerTest;
 	friend class FSimCopterPatientCityPlacementTest;
@@ -1279,6 +1282,7 @@ public:
 	void BuildWholeMapPopulation();
 	void UpdateWholeMapPopulation(float DeltaSeconds);
 	bool TrySpawnAgent(bool bVehicle, const FVector& FocusLocation);
+	FString ChooseAmbientVehicleMesh();
 	int32 CountAmbientPedestrians() const;
 	bool TryRunOriginalAmbientPedestrianScan(const FVector& FocusLocation, int32 MaxSpawnAttempts);
 	bool TryRunAmbientTileSpawn(int32 TileX, int32 TileY, int32 SpawnAttemptCount, int32& AttemptsRemaining);

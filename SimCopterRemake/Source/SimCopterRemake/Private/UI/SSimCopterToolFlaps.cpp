@@ -49,7 +49,7 @@ constexpr int32 LabelFontSize = 11;
 // police pool, not a fourth service, so it lives one slot past EService::Count and resolves back
 // to Police when the player dispatches or clears it.
 constexpr int32 PoliceChaseDispatchEntry = static_cast<int32>(SimCopterDispatch::EService::Count);
-constexpr int32 DispatchEntryCount = PoliceChaseDispatchEntry + 3;
+constexpr int32 DispatchEntryCount = PoliceChaseDispatchEntry + 2;
 
 // Screen pixels between stacked panels. Matches the inset the pawn gives the whole column, so
 // the gap above the first panel and the gaps between them read the same.
@@ -286,7 +286,6 @@ FSlateFontInfo FlapFont(const int32 Size, const bool bBold)
 const TCHAR* GetDispatchServiceLabel(const int32 ServiceIndex)
 {
 	if(ServiceIndex==PoliceChaseDispatchEntry+1) return TEXT("AIR: MISSION");
-	if(ServiceIndex==PoliceChaseDispatchEntry+2) return TEXT("AIR: AUTO");
 	if (ServiceIndex == PoliceChaseDispatchEntry)
 	{
 		return TEXT("POLICE (CHASE)");
@@ -1588,7 +1587,7 @@ TSharedRef<SWidget> SSimCopterToolFlaps::BuildRemoteTaserFlap()
 	AddAtPage(*Canvas,12,16,107,20,
 		SNew(SButton).IsFocusable(false).ContentPadding(FMargin(2)).HAlign(HAlign_Center).VAlign(VAlign_Center)
 		.ButtonColorAndOpacity(FLinearColor(.22f,.29f,.34f)).ForegroundColor(FlapReadout)
-		.ToolTipText(FText::FromString(TEXT("Take off, then aim the nose taser while autopilot follows a criminal car or robber and seeks a clear shot. Move the mouse or right stick to aim; left click / A / RT fires. Hold right mouse for cockpit buttons. N switches modes; X opens Tools, then select Remote Taser / Fly Helicopter and press A.")))
+		.ToolTipText(FText::FromString(TEXT("Take off, then aim from a steady hover. Autopilot follows a criminal car or robber when range or cover requires it. Move the mouse or right stick to aim; wheel zooms 1x-4x, hold LT for 4x. Left click / A / RT fires. Hold right mouse for cockpit buttons. N switches modes; X opens Tools, then select Remote Taser / Fly Helicopter and press A.")))
 		.OnClicked_Lambda([this] { if (GetPawn()) GetPawn()->ToggleRemoteTaser(); return FReply::Handled(); })
 		[SNew(STextBlock).Font(FlapFont(GetScaledFontSize(12))).ColorAndOpacity(FlapReadout)
 		.Text_Lambda([this] { return FText::FromString(GetPawn() && GetPawn()->GetAirOperations()->IsRemoteTaserActive()?TEXT("FLY HELICOPTER"):TEXT("AIM TASER")); })]);
@@ -1864,9 +1863,9 @@ FReply SSimCopterToolFlaps::HandleDispatchServiceStep(const int32 Delta)
 
 FReply SSimCopterToolFlaps::HandleDispatch()
 {
-	if (SelectedDispatchEntry > PoliceChaseDispatchEntry)
+	if (SelectedDispatchEntry == PoliceChaseDispatchEntry+1)
 	{
-		if(auto* Heli=Pawn.Get()) Heli->RequestAirSupport(SelectedDispatchEntry==PoliceChaseDispatchEntry+2);
+		if(auto* Heli=Pawn.Get()) Heli->RequestAirSupport();
 		return FReply::Handled();
 	}
 	if (ASimCopterHelicopterPawn* Helicopter = GetPawn())

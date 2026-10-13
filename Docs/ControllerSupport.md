@@ -50,7 +50,10 @@ slide described above.
 ## Dispatch radial
 
 Press `X` to open Tools, then `X` again to switch to Dispatch. Select a service
-with the right stick, including ground services and the unlocked air-support options.
+with the right stick, including ground services and **Air: Map Mission**. Air support
+unlocks after passing the current level and waits for an order. Select the mission
+on the map, then confirm **Air: Map Mission** to assign that one job. The helper
+returns to standby afterward; each further mission requires another order.
 
 | Control in Dispatch | Action |
 | --- | --- |
@@ -77,7 +80,7 @@ equip the highlighted installed tool. Press `B` to cancel without changing tools
 | D-pad up/down with rescue harness selected | Raise/lower the harness |
 | D-pad left/right with megaphone selected | Select the previous/next message |
 
-The radial contains installed tools plus Remote Taser on helicopters and Passengers when the cabin is occupied. In remote mode, right stick aims and A or RT fires. Open Tools with X, select Fly Helicopter, and press A to return. Selecting an ordinary tool also returns to manual flight. Confirming an option does not perform a tool action on the same press. These menu options do not change equipment or save formats.
+The radial contains installed tools plus Remote Taser on helicopters and Passengers when the cabin is occupied. In remote mode, right stick aims, hold LT for 4x scope zoom, and A or RT fires. Release LT to return to the previous zoom. The mouse wheel adjusts zoom from 1x to 4x. The helicopter holds a steady firing position until range or sustained cover requires following again. Open Tools with X, select Fly Helicopter, and press A to return. Selecting an ordinary tool also returns to manual flight. Confirming an option does not perform a tool action on the same press. These menu options do not change equipment or save formats.
 
 ## Passengers
 

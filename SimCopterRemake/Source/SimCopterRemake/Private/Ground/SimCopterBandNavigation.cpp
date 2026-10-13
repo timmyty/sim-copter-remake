@@ -106,69 +106,96 @@ bool KeepsDistance(const FVector& From, const FVector& To, const FVector& Center
 	return (Start + Delta * Alpha).SizeSquared() >= RadiusSquared;
 }
 
+void FPathSearch::Reset()
+{
+	Phase = EPhase::Idle;
+	Nodes.Reset(); Indices.Reset(); Result.Reset();
+	Iteration = SmoothIndex = SmoothCandidate = 0;
+}
+
+void FPathSearch::Begin(const FVector& Start, const FVector& Goal)
+{
+	Reset(); Origin = Start; Destination = Goal; Phase = EPhase::Direct;
+}
+
+bool FPathSearch::Advance(TFunctionRef<bool(const FVector&, FVector&)> CanWalk, TArray<FVector>& OutPath,
+	int32 MaxWork, double MaxSeconds)
+{
+	OutPath.Reset();
+	const double BeginTime = FPlatformTime::Seconds();
+	constexpr float CellSize = 75;
+	constexpr int32 Radius = 48;
+	const FIntPoint Directions[] = {{1,0},{0,1},{-1,0},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
+	auto Finish = [&]() { OutPath = MoveTemp(Result); Reset(); return !OutPath.IsEmpty(); };
+	// Check the clock between bounded pieces of work, including path smoothing. Physics
+	// queries stay on the game thread; no worker reads a changing world or actor pointer.
+	for (int32 Work = 0; Work < MaxWork && IsPending(); ++Work)
+	{
+		if (Work > 0 && MaxSeconds > 0 && FPlatformTime::Seconds() - BeginTime >= MaxSeconds) break;
+		if (Phase == EPhase::Direct)
+		{
+			FVector GroundGoal = Destination;
+			if (CanWalk(Origin, GroundGoal)) { Result.Add(GroundGoal); return Finish(); }
+			Nodes.Add({FIntPoint::ZeroValue, INDEX_NONE, 0, Origin});
+			Indices.Add(FIntPoint::ZeroValue, 0); Phase = EPhase::Search;
+		}
+		else if (Phase == EPhase::Search)
+		{
+			if (Iteration >= 1024) { Reset(); return false; }
+			int32 Best = INDEX_NONE;
+			float BestScore = TNumericLimits<float>::Max();
+			for (int32 I = 0; I < Nodes.Num(); ++I)
+			{
+				const float Score = Nodes[I].Cost + FVector::Dist2D(Nodes[I].Location, Destination);
+				if (!Nodes[I].bClosed && Score < BestScore) { Best = I; BestScore = Score; }
+			}
+			if (Best == INDEX_NONE) { Reset(); return false; }
+			Nodes[Best].bClosed = true;
+			const FNode Current = Nodes[Best];
+			const FVector Here = Current.Location;
+			FVector GroundGoal = Destination;
+			if ((Iteration % 8 == 0 || FVector::Dist2D(Here, Destination) < CellSize * 1.5f) && CanWalk(Here, GroundGoal))
+			{
+				Result.Add(GroundGoal);
+				for (int32 I = Best; I > 0; I = Nodes[I].Parent) Result.Insert(Nodes[I].Location, 0);
+				Previous = Origin; SmoothCandidate = Result.Num() - 1; Phase = EPhase::Smooth;
+				continue;
+			}
+			for (const auto& Direction : Directions)
+			{
+				const FIntPoint Cell = Current.Cell + Direction;
+				if (FMath::Abs(Cell.X) > Radius || FMath::Abs(Cell.Y) > Radius) continue;
+				FVector Next = Origin + FVector(Cell.X * CellSize, Cell.Y * CellSize, 0);
+				Next.Z = Here.Z;
+				const float Cost = Current.Cost + FVector::Dist2D(Here, Next);
+				int32* Existing = Indices.Find(Cell);
+				if (Existing && (Nodes[*Existing].bClosed || Nodes[*Existing].Cost <= Cost)) continue;
+				if (!CanWalk(Here, Next)) continue;
+				if (Existing) { Nodes[*Existing].Parent = Best; Nodes[*Existing].Cost = Cost; Nodes[*Existing].Location = Next; }
+				else { Indices.Add(Cell, Nodes.Num()); Nodes.Add({Cell, Best, Cost, Next}); }
+			}
+			++Iteration;
+		}
+		else if (Phase == EPhase::Smooth)
+		{
+			if (SmoothIndex >= Result.Num()) return Finish();
+			FVector Candidate = Result[SmoothCandidate];
+			if (SmoothCandidate > SmoothIndex && !CanWalk(Previous, Candidate)) { --SmoothCandidate; continue; }
+			Result[SmoothCandidate] = Candidate;
+			if (SmoothCandidate > SmoothIndex) Result.RemoveAt(SmoothIndex, SmoothCandidate - SmoothIndex);
+			Previous = Result[SmoothIndex++]; SmoothCandidate = Result.Num() - 1;
+		}
+	}
+	return false;
+}
+
 bool FindPath(const FVector& Start, const FVector& Goal,
 	TFunctionRef<bool(const FVector&, FVector&)> CanWalk, TArray<FVector>& OutPath)
 {
-	OutPath.Reset();
-	FVector GroundGoal = Goal;
-	if (CanWalk(Start, GroundGoal)) { OutPath.Add(GroundGoal); return true; }
-	constexpr float CellSize = 75;
-	constexpr int32 Radius = 48;
-	struct FNode { FIntPoint Cell; int32 Parent; float Cost; FVector Location; bool bClosed = false; };
-	TArray<FNode> Nodes;
-	TMap<FIntPoint, int32> Indices;
-	Nodes.Add({FIntPoint::ZeroValue, INDEX_NONE, 0, Start});
-	Indices.Add(FIntPoint::ZeroValue, 0);
-	auto Position = [&](const FIntPoint& Cell) { return Start + FVector(Cell.X * CellSize, Cell.Y * CellSize, 0); };
-	const FIntPoint Directions[] = {{1,0},{0,1},{-1,0},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
-	int32 Last = INDEX_NONE;
-	for (int32 Iteration = 0; Iteration < 1024; ++Iteration)
-	{
-		int32 Best = INDEX_NONE;
-		float BestScore = TNumericLimits<float>::Max();
-		for (int32 I = 0; I < Nodes.Num(); ++I)
-		{
-			const float Score = Nodes[I].Cost + FVector::Dist2D(Position(Nodes[I].Cell), Goal);
-			if (!Nodes[I].bClosed && Score < BestScore) { Best = I; BestScore = Score; }
-		}
-		if (Best == INDEX_NONE) break;
-		Nodes[Best].bClosed = true;
-		const FNode Current = Nodes[Best];
-		const FVector Here = Current.Location;
-		GroundGoal = Goal;
-		// Once around a wall, connect to a visible distant goal. Requiring the goal to be
-		// inside the local grid stranded musicians on the far side of the airport.
-		if ((Iteration % 8 == 0 || FVector::Dist2D(Here, Goal) < CellSize * 1.5f) &&
-			CanWalk(Here, GroundGoal)) { Last = Best; break; }
-		for (const auto& Direction : Directions)
-		{
-			const FIntPoint Cell = Current.Cell + Direction;
-			if (FMath::Abs(Cell.X) > Radius || FMath::Abs(Cell.Y) > Radius) continue;
-			FVector Next = Position(Cell);
-			Next.Z = Here.Z;
-			const float Cost = Current.Cost + FVector::Dist2D(Here, Next);
-			int32* Existing = Indices.Find(Cell);
-			if (Existing && (Nodes[*Existing].bClosed || Nodes[*Existing].Cost <= Cost)) continue;
-			if (!CanWalk(Here, Next)) continue;
-			if (Existing) { Nodes[*Existing].Parent = Best; Nodes[*Existing].Cost = Cost; Nodes[*Existing].Location = Next; }
-			else { Indices.Add(Cell, Nodes.Num()); Nodes.Add({Cell, Best, Cost, Next}); }
-		}
-	}
-	if (Last == INDEX_NONE) return false;
-	OutPath.Add(GroundGoal);
-	for (int32 I = Last; I > 0; I = Nodes[I].Parent) OutPath.Insert(Nodes[I].Location, 0);
-	// Remove grid zigzags only where the physical walk probe accepts the full shortcut.
-	FVector Previous = Start;
-	for (int32 I = 0; I < OutPath.Num(); ++I)
-	{
-		int32 LastVisible = I;
-		for (int32 J = OutPath.Num() - 1; J > I; --J)
-		{
-			if (CanWalk(Previous, OutPath[J])) { LastVisible = J; break; }
-		}
-		if (LastVisible > I) OutPath.RemoveAt(I, LastVisible - I);
-		Previous = OutPath[I];
-	}
-	return true;
+	FPathSearch Search;
+	Search.Begin(Start, Goal);
+	while (Search.IsPending())
+		if (Search.Advance(CanWalk, OutPath, 4096, 0)) return true;
+	return false;
 }
 }

@@ -4,6 +4,8 @@
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Components/SceneComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Ground/SimCopterGroundAgent.h"
@@ -35,6 +37,14 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterGameplayPolishTest, "SimCopter.Polish
 bool FSimCopterGameplayPolishTest::RunTest(const FString& Parameters)
 {
 	auto* World = MakePolishWorld();
+	// Landed exits require actual support under the pilot, including the rotated door.
+	auto* Ground = World->SpawnActor<AActor>();
+	auto* Floor = NewObject<UBoxComponent>(Ground);
+	Ground->SetRootComponent(Floor);
+	Floor->SetBoxExtent(FVector(4000,4000,10));
+	Floor->SetCollisionResponseToAllChannels(ECR_Block);
+	Floor->RegisterComponent();
+	Ground->SetActorLocation(FVector(0,0,-10));
 	auto* Controller = World->SpawnActor<ASimCopterPlayerController>();
 	Controller->Player = NewObject<ULocalPlayer>(GEngine);
 	auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
@@ -46,7 +56,7 @@ bool FSimCopterGameplayPolishTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Centred stick/drift retain left exit"), Heli->PreferredExitSide, -1.0f);
 	Heli->bIsLanded = true;
 	Heli->GroundClearanceCm = 0;
-	Heli->SetActorLocation(FVector(0, 0, 250));
+	Heli->SetActorLocation(FVector(0, 0, Heli->CollisionComponent->GetScaledCapsuleHalfHeight()));
 	Heli->SetActorRotation(FRotator(0, 90, 0));
 	Heli->ExitHelicopter();
 	TestNotNull(TEXT("Exiting possesses pilot"), Cast<ASimCopterOnFootPawn>(Controller->GetPawn()));
@@ -65,6 +75,7 @@ bool FSimCopterGameplayPolishTest::RunTest(const FString& Parameters)
 	Heli->bIsLanded = true;
 	Heli->GroundClearanceCm = 0;
 	Heli->ExitHelicopter();
+	TestNotNull(TEXT("Right-side exit possesses pilot"), Cast<ASimCopterOnFootPawn>(Controller->GetPawn()));
 	if (Controller->GetPawn() != Heli)
 	{
 		TestTrue(TEXT("Pilot exits on airframe right"), FVector::DotProduct(

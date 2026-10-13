@@ -1,0 +1,65 @@
+{
+  "verifiedAtUtc": "2026-10-13T02:47:49.044774+00:00",
+  "scope": "Supported rooftop pilot exits and rendered-roof containment/recovery for posted rescue and service people",
+  "originalFailuresReproduced": 9,
+  "baselineReport": "Docs/scratchpad/rooftop-safety/reproduced/index.json",
+  "headless": {
+    "passed": 41,
+    "failed": 0,
+    "warningCases": 1,
+    "report": "Docs/scratchpad/rooftop-safety/validated/index.json"
+  },
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/rooftop-safety/build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/rooftop-safety/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/rooftop-safety/build-development.log"
+    }
+  },
+  "sourceManifest": "Docs/scratchpad/rooftop-safety/source-manifest.json",
+  "limitations": [
+    "Synthetic collision reproduction and actual fleet geometry; screenshot city/save not replayed",
+    "No interactive gameplay session"
+  ],
+  "publicationChanged": false,
+  "installed": {
+    "InstalledAtUtc": "2026-10-13T02:47:48.8995371Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "8287D62C806589BAB5EB67FCFE865A3D9A8F7562E00A0C5EE09AB137396827DA",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\rooftop-safety/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "7EB96C7D99D732F8D198FA25DE6900E3719C85C86083B230B4D02EC9E4C869FD"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "28E665666DE4020405AFCF900DB5FCC32D046F1F61D49487C896473B3B48BD4D",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\rooftop-safety/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "7516A757164837492042FD6CF98F16EB9C4FF3D96A3F03F24F05954746DFE6AC"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "E2733FCC9A52956146452882B63EDE19CFE8334CAF0BF46B0892DB48DCF6E6C9",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\rooftop-safety/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "A07F4ED03992A3D20E597BD2F0921D50DC2E8C6BA36498F9820707FE1F212A1F"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "71AA35958F8683584ABF1D08231ACE28CEC56F71277028D1388A0DF68DB50FFD",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\rooftop-safety/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "253FEAE1D2CA1E4592E301D0624D5A664DCD3B9792447A2C041AD6EBC95CF4E8"
+      }
+    ],
+    "HeadlessPassed": 41,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  }
+}

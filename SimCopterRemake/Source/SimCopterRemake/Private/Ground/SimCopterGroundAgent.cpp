@@ -1,11 +1,13 @@
 ﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterGroundAgent.h"
+#include "Ground/SimCopterWalkSupport.h"
 #include "Ground/SimCopterRescueDeck.h"
 #include "Flight/SimCopterAirOperations.h"
 #include "Ground/SimCopterBandNavigation.h"
 #include "EngineUtils.h"
 #include "ProfilingDebugging/CsvProfiler.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Camera/PlayerCameraManager.h"
@@ -1222,6 +1224,20 @@ bool ASimCopterGroundAgent::IsVehicleStepBlockedByAircraft(const FVector& Delta,
 
 void ASimCopterGroundAgent::MoveAgainstCityGeometry(const FVector& Delta, const FQuat& Rotation)
 {
+	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian && bHasHospitalRoofPost &&
+		Delta.SizeSquared2D() > KINDA_SMALL_NUMBER && !IsHospitalEntrancePost())
+	{
+		const int32 Steps = FMath::Max(1, FMath::CeilToInt(Delta.Size2D() / 16.0));
+		for (int32 Step = 1; Step <= Steps; ++Step)
+		{
+			if (!IsWithinHospitalRoofPost(GetActorLocation() + Delta * (double(Step) / Steps)))
+			{
+				CurrentVelocityCmPerSec = ExternalVelocityCmPerSec = BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
+				BehaviorStepTimeRemainingSeconds = 0;
+				return;
+			}
+		}
+	}
 	// Check the actual turn and displacement immediately before moving. The traffic
 	// coordinator's earlier forward probe cannot see a new landing or a corner cut.
 	if (IsVehicleStepBlockedByAircraft(Delta, Rotation))
@@ -1730,6 +1746,7 @@ void ASimCopterGroundAgent::SetPersistentHospitalRoofCrew(const bool bPersistent
 
 void ASimCopterGroundAgent::SetHospitalRoofPost(const FVector& RoofCenterWorldLocation, const float HalfExtentCm)
 {
+	bHasRoofSupportAnchor = false;
 	bPersistentHospitalRoofCrew = true;
 	HospitalRoofPostWorldLocation = RoofCenterWorldLocation;
 	HospitalRoofPostHalfExtentCm = FMath::Max(0.0f, HalfExtentCm);
@@ -1738,6 +1755,7 @@ void ASimCopterGroundAgent::SetHospitalRoofPost(const FVector& RoofCenterWorldLo
 
 void ASimCopterGroundAgent::SetMissionRoofPost(const FVector& RoofCenterWorldLocation, const float HalfExtentCm)
 {
+	bHasRoofSupportAnchor = false;
 	bPersistentHospitalRoofCrew = false;
 	HospitalRoofPostWorldLocation = RoofCenterWorldLocation;
 	HospitalRoofPostHalfExtentCm = FMath::Max(0.0f, HalfExtentCm);
@@ -1800,13 +1818,28 @@ bool ASimCopterGroundAgent::IsWithinHospitalRoofPost(const FVector& WorldLocatio
 	{
 		return true;
 	}
+	FVector Surface;
 	return IsWithinRoofPostSquare(
 		WorldLocation,
 		GetActorLocation(),
 		HospitalRoofPostWorldLocation,
 		HospitalRoofPostHalfExtentCm + (ExtentFraction >= 1.0f && IsHospitalEntrancePost() ? HospitalRoofPostAggroMarginCm : 0.0f),
 		CollisionComponent != nullptr ? CollisionComponent->GetScaledCapsuleRadius() : 0.0f,
-		ExtentFraction);
+		ExtentFraction) && (IsHospitalEntrancePost() || !GetWorld() || !GetWorld()->GetPhysicsScene() ||
+			TryGetRoofPostSurface(WorldLocation, Surface));
+}
+
+bool ASimCopterGroundAgent::TryGetRoofPostSurface(const FVector& Location, FVector& OutFeet) const
+{
+	// FUN_004c9470's cell-height gate cannot describe a setback or a hole in rendered geometry.
+	// Keep posted people on the actual deck they were assigned, with clearance for the whole body.
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(SimCopterRoofSupport), true, this);
+	const FVector Feet(Location.X, Location.Y, HospitalRoofPostWorldLocation.Z);
+	if (!SimCopterWalkSupport::FindSurface(GetWorld(), Feet, GetCollisionRadiusCm() + 2, 20, 20, Query, OutFeet)) return false;
+	const float Radius = GetCollisionRadiusCm();
+	const float Half = GetCapsuleHalfHeightCm();
+	return !GetWorld()->OverlapBlockingTestByChannel(OutFeet + FVector(0,0,Half+2), FQuat::Identity,
+		ECC_Camera, FCollisionShape::MakeCapsule(Radius, FMath::Max(Radius, Half-1)), Query);
 }
 
 ASimCopterGroundAgent::ERoofPostContainment ASimCopterGroundAgent::ClampToHospitalRoofPost(
@@ -1874,7 +1907,7 @@ bool ASimCopterGroundAgent::ContainToHospitalRoofPost()
 	// ordinary MoveStep patrols still use the smaller idle square, and walls still block.
 	const bool bEntrancePost = IsHospitalEntrancePost();
 	FVector Contained = FVector::ZeroVector;
-	const ERoofPostContainment Result = ClampToHospitalRoofPost(
+	ERoofPostContainment Result = ClampToHospitalRoofPost(
 		GetActorLocation(),
 		HospitalRoofPostWorldLocation,
 		HospitalRoofPostHalfExtentCm + (bEntrancePost ? HospitalRoofPostAggroMarginCm : 0.0f),
@@ -1882,12 +1915,48 @@ bool ASimCopterGroundAgent::ContainToHospitalRoofPost()
 		CollisionComponent != nullptr ? CollisionComponent->GetScaledCapsuleHalfHeight() : 0.0f,
 		HospitalRoofPostFallToleranceCm,
 		Contained,
-		!bEntrancePost);
+		bPersistentHospitalRoofCrew && !bEntrancePost);
 
 	if (Result == ERoofPostContainment::Abandoned)
 	{
 		bHasHospitalRoofPost = false;
 		return false;
+	}
+	if (!bEntrancePost && GetWorld() && GetWorld()->GetPhysicsScene())
+	{
+		if (bHasRoofSupportAnchor && GetActorLocation().Equals(RoofSupportAnchor, 0.1f)) return false;
+		FVector Surface;
+		if (!TryGetRoofPostSurface(Contained, Surface))
+		{
+			bool bFound = bHasRoofSupportAnchor && TryGetRoofPostSurface(RoofSupportAnchor, Surface);
+			if (!bFound)
+			{
+				// Old saves may already have a victim down the facade, with no valid anchor.
+				// Search the posted area for the nearest real deck, never fabricate a floor.
+				double BestDistance = TNumericLimits<double>::Max();
+				const float Limit = FMath::Max(1.0f, HospitalRoofPostHalfExtentCm - GetCollisionRadiusCm() - 2);
+				for (int32 X = -8; X <= 8; ++X)
+					for (int32 Y = -8; Y <= 8; ++Y)
+					{
+						const FVector Candidate = HospitalRoofPostWorldLocation + FVector(X * Limit / 8, Y * Limit / 8, 0);
+						const double Distance = FVector::DistSquared2D(Candidate, Contained);
+						FVector CandidateSurface;
+						if (Distance < BestDistance && TryGetRoofPostSurface(Candidate, CandidateSurface))
+						{
+							BestDistance = Distance; Surface = CandidateSurface; bFound = true;
+						}
+					}
+			}
+			if (!bFound) { bHasHospitalRoofPost = false; bHasRoofSupportAnchor = false; return false; }
+			Contained = Surface + FVector(0,0,GetCapsuleHalfHeightCm()+1);
+		}
+		else if (Contained.Z < Surface.Z + GetCapsuleHalfHeightCm())
+		{
+			Contained.Z = Surface.Z + GetCapsuleHalfHeightCm() + 1;
+		}
+		RoofSupportAnchor = Surface + FVector(0,0,GetCapsuleHalfHeightCm()+1);
+		bHasRoofSupportAnchor = true;
+		if (!Contained.Equals(GetActorLocation(), 0.5f)) Result = ERoofPostContainment::Contained;
 	}
 	if (Result == ERoofPostContainment::AtPost)
 	{
@@ -1900,6 +1969,9 @@ bool ASimCopterGroundAgent::ContainToHospitalRoofPost()
 	CurrentVelocityCmPerSec = FVector::ZeroVector;
 	ExternalVelocityCmPerSec = FVector::ZeroVector;
 	SetActorLocation(Contained, false);
+	// The wall sweep must not undo recovery using its old anchor down the building's side.
+	WallContainmentAnchor = Contained;
+	bHasWallContainmentAnchor = true;
 	return true;
 }
 
@@ -2588,11 +2660,15 @@ ESimCopterBehaviorStepResult ASimCopterGroundAgent::StepTowardSelectedObject(FSi
 		int32 Facing;
 		if (!GetMedicWaypoint(Context.SelectedLocation, Context.SelectedObject.Get(), Waypoint))
 		{
-			if (auto* Patient = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get()); Patient && Patient->HospitalPatientClaim.Get() == this)
-				Patient->HospitalPatientClaim.Reset(); // Another medic may have a reachable approach.
+			// A bounded search is still working. Keep its patient claim and VM selection,
+			// but do not walk until a complete, physically checked route is available.
 			BehaviorStepVelocityCmPerSec = FVector::ZeroVector;
 			BehaviorStepTimeRemainingSeconds = 0;
 			Context.PendingAnimMnemonic = TEXT("NoMo");
+			if (MedicPathSearch.IsPending() || MedicPathTarget.Get() != Context.SelectedObject.Get())
+				return ESimCopterBehaviorStepResult::Moving;
+			if (auto* Patient = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get()); Patient && Patient->HospitalPatientClaim.Get() == this)
+				Patient->HospitalPatientClaim.Reset(); // Another medic may have a reachable approach.
 			return ESimCopterBehaviorStepResult::Blocked;
 		}
 		if (TryGetBehaviorFacingOctantToward(Waypoint, Facing)) Context.Attributes[EBhavAttr::Facing] = uint16(Facing);
@@ -6095,6 +6171,7 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 	SerializeAgentBool(Reader, bPersistentHospitalRoofCrew);
 	SerializeAgentBool(Reader, bHasHospitalRoofPost);
 	Reader << HospitalRoofPostWorldLocation << HospitalRoofPostHalfExtentCm;
+	bHasRoofSupportAnchor = false;
 	SerializeAgentBool(Reader, bPassengerFallActive);
 	SerializeAgentBool(Reader, bPassengerFallStarted);
 	Reader << PassengerFallStartZ << PassengerFallInjuryDistanceCm << PassengerFallSourceEventId;
@@ -7768,15 +7845,21 @@ bool ASimCopterGroundAgent::CanWalkMedicSegment(const FVector& From, const FVect
 
 bool ASimCopterGroundAgent::GetMedicWaypoint(const FVector& Goal, AActor* Target, FVector& OutWaypoint)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(SimCopterResponderNavigation);
 	const FVector Here = GetActorLocation();
 	const double Now = GetWorld()->GetTimeSeconds();
-	const bool bNewGoal = MedicPathTarget.Get() != Target ||
+	const bool bNewTarget = MedicPathTarget.Get() != Target;
+	const bool bNewGoal = bNewTarget ||
 		FVector::DistSquared(Goal, MedicPathGoal) > FMath::Square(60.0);
 	while (!MedicPath.IsEmpty() && FVector::Dist2D(Here, MedicPath[0]) < 12) MedicPath.RemoveAt(0);
-	if (bNewGoal) { MedicPath.Reset(); bMedicPathAttempted = false; }
+	if (bNewTarget) { MedicPath.Reset(); MedicPathSearch.Reset(); }
 	if (!MedicPath.IsEmpty() && !CanWalkMedicSegment(Here, MedicPath[0], Target)) MedicPath.Reset();
-	if (!bMedicPathAttempted || (MedicPath.IsEmpty() && Now >= NextMedicPathTime))
+	// Goal motion and patient reselection must not reset the retry clock. Previously
+	// every 60 cm of aircraft travel (or change of patient) triggered a full A* again.
+	if (!MedicPathSearch.IsPending() && (!bMedicPathAttempted ||
+		(Now >= NextMedicPathTime && (bNewGoal || MedicPath.IsEmpty()))))
 	{
+		MedicPath.Reset();
 		bMedicPathAttempted = true;
 		NextMedicPathTime = Now + 1.0;
 		MedicPathTarget = Target;
@@ -7788,10 +7871,22 @@ bool ASimCopterGroundAgent::GetMedicWaypoint(const FVector& Goal, AActor* Target
 				MedicPathNeighbors.Add(*It);
 		// Same bounded physical A* as the parade. This is a requested remake adaptation of
 		// FUN_004ca940's straight bearing; it does not bypass collision or change BHAV outcomes.
-		SimCopterBandNavigation::FindPath(Here, FVector(Goal.X, Goal.Y, Here.Z),
-			[this, Target](const FVector& A, FVector& B) { return CanWalkMedicSegment(A, B, Target, &B); }, MedicPath);
+		MedicPathSearch.Begin(Here, FVector(Goal.X, Goal.Y, Here.Z));
+	}
+	// BHAV catch-up can call us four times in one frame. Spend one slice only, and
+	// retain the search snapshot while its target moves so difficult routes can finish.
+	if (MedicPathSearch.IsPending() && MedicPathLastAdvanceTime != Now)
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(SimCopterResponderPathSearch);
+		MedicPathLastAdvanceTime = Now;
+		MedicPathSearch.Advance([this, Target](const FVector& A, FVector& B)
+			{ return CanWalkMedicSegment(A, B, Target, &B); }, MedicPath);
+		if (!MedicPathSearch.IsPending()) NextMedicPathTime = Now + 1.0;
 	}
 	if (MedicPath.IsEmpty()) return false;
+	// Actors/obstacles may have moved while the search was pending. Never use its
+	// first segment without checking it against the current world and current start.
+	if (!CanWalkMedicSegment(Here, MedicPath[0], Target)) { MedicPath.Reset(); return false; }
 	OutWaypoint = MedicPath[0];
 	return true;
 }

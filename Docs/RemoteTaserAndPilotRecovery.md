@@ -4,15 +4,17 @@ Requested October 10, 2026. These are deliberate remake additions.
 
 Every helicopter has a small yellow-and-black, twin-electrode taser on a gimbal at
 the nose. The **REMOTE TASER** cockpit panel is always present, with an **AIM TASER**
-button. In flight, that button (or N / R3+Y) transfers flight to automatic orbit and
+button. In flight, that button (or N, or X → Remote Taser → A) transfers flight to automatic hover/follow and
 opens the remote helmet sight. No police passenger or equipment purchase is required.
 The former officer/passenger camera has been removed.
 
 Move the mouse directly, or use the right stick, to aim. Hold right mouse to release
 the cockpit cursor. Left click,
-controller X, or RT fires. The centre reticle, persistent control instructions and
+controller A, or RT fires. Roll the mouse wheel for 1x–4x scope zoom; hold LT for
+4x and release to restore the previous zoom. Both mouse and stick sensitivity
+scale with magnification. Zoom resets on leaving the sight. The centre reticle, persistent control instructions and
 READY/RECHARGING readout explain the mode. The button becomes **FLY HELICOPTER**;
-click it or press N / R3+Y to resume manual control. The shot starts at the visible
+click it, press N, or select Fly Helicopter in the X Tools menu and press A to resume manual control. The shot starts at the visible
 weapon muzzle, preserves the nonlethal custody rules, has 60 m range and a 1.25 s
 recharge. The moving suspect or criminal car remains the pursuit focus. Transport planes do not have
 this equipment.
@@ -21,15 +23,20 @@ The October 11 control update gives the sight continuous 360-degree horizontal
 rotation and vertical aim from -85 to +85 degrees. Yaw wraps smoothly; pitch input
 does not accumulate against either limit, so reversing direction responds
 immediately. Mouse and controller share these limits. The idle readout shows only
-`N / R3+Y`; officer-requirement wording has been removed from the readout, tooltip
+`N / X: Tools`; officer-requirement wording has been removed from the readout, tooltip
 and takeoff status.
 
 The pursuit update acquires criminal cars and uncaptured robbers within 60 m,
 favors the sight and clear visibility, and preserves a current pursuit until the
 player sights another criminal or the target becomes unavailable. A burglar leaving
 or re-entering their getaway car can transfer the pursuit between car and person.
-The aircraft matches target speed, leads movement, and chooses a nearby trailing,
-side or elevated vantage with a clear firing line. Full-airframe sweeps still govern
+The aircraft holds its current position once a clear target is within 35 m. It
+keeps that hover until the target is 48 m away or the line stays blocked for 0.8 s,
+avoiding constant movement beneath the sight. While following, it leads movement
+and chooses a trailing, side or elevated vantage at most once every two seconds
+(except when acquiring or resuming a pursuit), with a smoothed approach goal.
+The nose heading stays steady during remote movement; returning to flight still
+faces the suspect. Full-airframe sweeps still govern
 travel. If a target has no clear vantage, it makes a bounded climb and retries;
 with no target it holds position and searches. The later [energy taser and free-aim
 update](EnergyTaserAndFreeAim.md) keeps the sight under the player's control in world

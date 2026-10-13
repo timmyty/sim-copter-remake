@@ -1,0 +1,216 @@
+{
+  "date": "2026-10-13",
+  "changes": [
+    "Medical mission HUD/radio announcements admit one full report per 60 seconds; all patients, missions and markers remain active.",
+    "Hospital medics unload living patients in ascending health order, preserve reservations, then recover bodies.",
+    "Deployed medics filter candidates through BHAV 262 eight-tile pickup range before reserving, so out-of-range casualties cannot mask reachable injured rioters.",
+    "Ambient emergency selection uses a two-percent chance and at most one circulating ambient unit per service.",
+    "Available ambient emergency actors join the existing road-time comparison against service HQs; the winning actor becomes the real responding unit."
+  ],
+  "tests": [
+    {
+      "report": "Docs/scratchpad/medical-alert-pacing/validated/index.json",
+      "succeeded": 72,
+      "succeededWithWarnings": 2,
+      "failed": 0,
+      "notRun": 0,
+      "warningTests": [
+        "SimCopter.Missions.PlaneDeckRescue",
+        "SimCopter.Missions.SafePassengerLanding"
+      ],
+      "tests": [
+        "SimCopter.Dispatch.AmbientAvailability",
+        "SimCopter.Dispatch.ArrivalAction",
+        "SimCopter.Dispatch.EmergencyCrewStates",
+        "SimCopter.Dispatch.Failures",
+        "SimCopter.Dispatch.HospitalParamedicRespawn",
+        "SimCopter.Dispatch.HospitalRoofPost",
+        "SimCopter.Dispatch.MedevacHandoffGates",
+        "SimCopter.Dispatch.PoliceRoofBoarding",
+        "SimCopter.Dispatch.Selection",
+        "SimCopter.Dispatch.Spiral",
+        "SimCopter.Dispatch.StationScan",
+        "SimCopter.Dispatch.TargetSnap",
+        "SimCopter.Dispatch.TileRules",
+        "SimCopter.MedicalNavigation.DeployedMedicRiot",
+        "SimCopter.MedicalNavigation.DroppedMedics",
+        "SimCopter.MedicalNavigation.MovingTargetRepathBudget",
+        "SimCopter.MedicalNavigation.PatientMarkers",
+        "SimCopter.MedicalNavigation.SlicedSearchPreservesRoutes",
+        "SimCopter.MedicalNavigation.SteepHillReturn",
+        "SimCopter.Missions.ArsonistRenderedBuildingTarget",
+        "SimCopter.Missions.BaseLocationRecord",
+        "SimCopter.Missions.BuildingFireDifficulty",
+        "SimCopter.Missions.BurglarCarStaysOpen",
+        "SimCopter.Missions.CrimeIdentityAndSpawn",
+        "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+        "SimCopter.Missions.CrimePlacementNeedsBuilding",
+        "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+        "SimCopter.Missions.CustodyStopsCrimePenalties",
+        "SimCopter.Missions.DispatchLocationVoice",
+        "SimCopter.Missions.FireAnnouncementBurst",
+        "SimCopter.Missions.FireDouse",
+        "SimCopter.Missions.FireDouseAcrossFootprint",
+        "SimCopter.Missions.FireLifecycle",
+        "SimCopter.Missions.HospitalSites",
+        "SimCopter.Missions.IncrementalUpdateTextAndPenalties",
+        "SimCopter.Missions.MapFocusRules",
+        "SimCopter.Missions.MarkerCoordinates",
+        "SimCopter.Missions.MarkerLabelFits",
+        "SimCopter.Missions.MarkerOverlap",
+        "SimCopter.Missions.MarkerUiAvoidance",
+        "SimCopter.Missions.MedevacAnnouncementBurst",
+        "SimCopter.Missions.MedevacAnnouncementCadence",
+        "SimCopter.Missions.MedevacCasualtyHasNoDeliveryReward",
+        "SimCopter.Missions.MedevacRecordLayout",
+        "SimCopter.Missions.OriginalMissionAvailability",
+        "SimCopter.Missions.OriginalPickupMessage",
+        "SimCopter.Missions.ParamedicAlightsOnHelipad",
+        "SimCopter.Missions.ParamedicCabinHandoff",
+        "SimCopter.Missions.PassengersAboardNeverFailMission",
+        "SimCopter.Missions.PlaneDeckRescue",
+        "SimCopter.Missions.PostAnnouncementVoice",
+        "SimCopter.Missions.PRNGParity",
+        "SimCopter.Missions.RecoveryDoesNotDisplaceOriginalJobs",
+        "SimCopter.Missions.RiotCountsRewardsAndPenaltyErosion",
+        "SimCopter.Missions.RiotViability",
+        "SimCopter.Missions.RooftopRescueCountsPhasesRewardsAndVoices",
+        "SimCopter.Missions.RuntimeSaveRoundTrip",
+        "SimCopter.Missions.SafePassengerLanding",
+        "SimCopter.Missions.SaveFocusAndTransportLayout",
+        "SimCopter.Missions.SchedulerParity",
+        "SimCopter.Missions.ServiceFireSuppressionUsesFlameOffset",
+        "SimCopter.Missions.SessionStart",
+        "SimCopter.Missions.TrafficJamCarClearCompletes",
+        "SimCopter.Missions.TransportPassengerSpawnOutsideBuildings",
+        "SimCopter.Missions.TransportSchedulerTimer",
+        "SimCopter.Missions.TypeDisplayNames",
+        "SimCopter.Missions.UserCityDefaultSettings",
+        "SimCopter.Missions.WeightTableParity",
+        "SimCopter.Missions.XbldPropertyTable",
+        "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+        "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+        "SimCopter.ServicePosts.ActualHospitalGeometry",
+        "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+        "SimCopter.ServicePosts.SpacingEntrancesAndImpact"
+      ]
+    },
+    {
+      "report": "Docs/scratchpad/medical-alert-pacing/safety-validation/index.json",
+      "succeeded": 35,
+      "succeededWithWarnings": 12,
+      "failed": 0,
+      "notRun": 0,
+      "warningTests": [
+        "SimCopter.Safety.CityPatients.career.city14",
+        "SimCopter.Safety.CityPatients.career.city19",
+        "SimCopter.Safety.CityPatients.career.city22",
+        "SimCopter.Safety.CityPatients.career.city23",
+        "SimCopter.Safety.CityPatients.career.city24",
+        "SimCopter.Safety.CityPatients.career.city25",
+        "SimCopter.Safety.CityPatients.career.city26",
+        "SimCopter.Safety.CityPatients.career.city27",
+        "SimCopter.Safety.CityPatients.career.city28",
+        "SimCopter.Safety.CityPatients.career.city29",
+        "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+        "SimCopter.Safety.CityPatients.TOKYO"
+      ],
+      "tests": [
+        "SimCopter.Safety.CityPatients.career.city0",
+        "SimCopter.Safety.CityPatients.career.city1",
+        "SimCopter.Safety.CityPatients.career.city10",
+        "SimCopter.Safety.CityPatients.career.city11",
+        "SimCopter.Safety.CityPatients.career.city12",
+        "SimCopter.Safety.CityPatients.career.city13",
+        "SimCopter.Safety.CityPatients.career.city14",
+        "SimCopter.Safety.CityPatients.career.city15",
+        "SimCopter.Safety.CityPatients.career.city16",
+        "SimCopter.Safety.CityPatients.career.city17",
+        "SimCopter.Safety.CityPatients.career.city18",
+        "SimCopter.Safety.CityPatients.career.city19",
+        "SimCopter.Safety.CityPatients.career.city2",
+        "SimCopter.Safety.CityPatients.career.city20",
+        "SimCopter.Safety.CityPatients.career.city21",
+        "SimCopter.Safety.CityPatients.career.city22",
+        "SimCopter.Safety.CityPatients.career.city23",
+        "SimCopter.Safety.CityPatients.career.city24",
+        "SimCopter.Safety.CityPatients.career.city25",
+        "SimCopter.Safety.CityPatients.career.city26",
+        "SimCopter.Safety.CityPatients.career.city27",
+        "SimCopter.Safety.CityPatients.career.city28",
+        "SimCopter.Safety.CityPatients.career.city29",
+        "SimCopter.Safety.CityPatients.career.city3",
+        "SimCopter.Safety.CityPatients.career.city4",
+        "SimCopter.Safety.CityPatients.career.city5",
+        "SimCopter.Safety.CityPatients.career.city6",
+        "SimCopter.Safety.CityPatients.career.city7",
+        "SimCopter.Safety.CityPatients.career.city8",
+        "SimCopter.Safety.CityPatients.career.city9",
+        "SimCopter.Safety.CityPatients.arcocity",
+        "SimCopter.Safety.CityPatients.cancer",
+        "SimCopter.Safety.CityPatients.CAPE_WELLS",
+        "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+        "SimCopter.Safety.CityPatients.glorioso",
+        "SimCopter.Safety.CityPatients.happylnd",
+        "SimCopter.Safety.CityPatients.hawaii",
+        "SimCopter.Safety.CityPatients.KATHY'S_RETREAT",
+        "SimCopter.Safety.CityPatients.la-isla",
+        "SimCopter.Safety.CityPatients.lakeland",
+        "SimCopter.Safety.CityPatients.rio",
+        "SimCopter.Safety.CityPatients.stchrisc",
+        "SimCopter.Safety.CityPatients.THE_BAHAMAS",
+        "SimCopter.Safety.CityPatients.TOKYO",
+        "SimCopter.Safety.CityPatients.volcano",
+        "SimCopter.Safety.OutdoorPatients",
+        "SimCopter.Safety.ParkedAircraftTraffic"
+      ]
+    }
+  ],
+  "warnings": "Two existing mission fixtures report world/mobility warnings; twelve city cases report background HTTP connectivity-check timeouts. Builds retain the existing SurfaceZ C4701 warning outside changed code.",
+  "totalPassed": 121,
+  "baselineEvidence": [
+    {
+      "report": "Docs/scratchpad/medical-alert-pacing/reproduced-fixed-fixture/index.json",
+      "failures": [
+        {
+          "test": "SimCopter.Missions.MedevacAnnouncementBurst",
+          "assertions": 8
+        },
+        {
+          "test": "SimCopter.Missions.MedevacAnnouncementCadence",
+          "assertions": 13
+        }
+      ]
+    },
+    {
+      "report": "Docs/scratchpad/medical-alert-pacing/medic-reproduced/index.json",
+      "failures": [
+        {
+          "test": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+          "assertions": 2
+        }
+      ]
+    },
+    {
+      "report": "Docs/scratchpad/medical-alert-pacing/dispatch-and-range-reproduced/index.json",
+      "failures": [
+        {
+          "test": "SimCopter.MedicalNavigation.DeployedMedicRiot",
+          "assertions": 3
+        }
+      ]
+    }
+  ],
+  "baselineLimitations": "The new ambient-dispatch test was first discovered by UBT after implementation; no pre-fix automated dispatch result is claimed.",
+  "buildLogs": [
+    "Docs/scratchpad/medical-alert-pacing/build-editor-final.log",
+    "Docs/scratchpad/medical-alert-pacing/build-shipping.log",
+    "Docs/scratchpad/medical-alert-pacing/build-development.log"
+  ],
+  "sourceManifest": "Docs/scratchpad/medical-alert-pacing/source-manifest.json",
+  "sourceDiff": "Docs/scratchpad/medical-alert-pacing/source.diff",
+  "installationReceipt": "Docs/scratchpad/medical-alert-pacing/installation.json",
+  "interactiveGameplayChecked": false,
+  "manualListeningChecked": false,
+  "publicationCheckoutChanged": false
+}

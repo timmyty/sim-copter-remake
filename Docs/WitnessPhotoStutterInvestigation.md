@@ -1,5 +1,7 @@
 # Witness photo stutter investigation — October 12, 2026
 
+The later 9:50–9:57 PM flight has now been decoded separately: [progressive flight stutter](FlightStutterInvestigation.md). It shows large ground-agent CPU stalls near the end and led to a reproduced responder pathfinding fix. This does not establish the cause of the earlier photograph-related report below.
+
 The user reported severe choppy frames after the robber photograph appeared in
 the latest GPU-diagnostics run. The slowdown cleared after roughly 25–35 seconds
 and **continued after the photograph disappeared**.

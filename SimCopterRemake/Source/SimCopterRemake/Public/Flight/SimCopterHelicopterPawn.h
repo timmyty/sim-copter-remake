@@ -288,7 +288,7 @@ public:
 	ASimCopterHelicopterPawn();
 	class USimCopterAirOperationsComponent* GetAirOperations() const { return AirOperations; }
 	void SetAutopilotTransform(const FVector& Location, const FRotator& Rotation, float DeltaSeconds);
-	void RequestAirSupport(bool bAutomatic = false);
+	void RequestAirSupport();
 	void ToggleRemoteTaser();
 	FVector GetCargoAnchorWorldLocation() const { return GetRopeAnchorWorldLocation(); }
 	// Skid frame follows the visible airframe's bank, bottom and width across model changes.
@@ -524,6 +524,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Interaction")
 	void ExitHelicopter();
+	bool FindLandedPilotExit(FVector& OutCenter) const;
 
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Flight")
 	bool IsEngineRunning() const { return bEngineRunning; }
@@ -1673,6 +1674,7 @@ private:
 	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterNpcMedicalTest;
+	friend class FSimCopterDeployedMedicRiotTest;
 	friend class FSimCopterApacheAftermathTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterNpcAppearanceRenderTest;
@@ -1714,6 +1716,7 @@ private:
 	bool bCameraViewSmoothingInitialized = false;
 	friend class FSimCopterSpotlightCameraRuntimeTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
+	friend class FSimCopterRooftopSafetyTest;
 	static constexpr int32 CameraModeCount = 4;
 	TStaticArray<FSimCopterCameraViewDebugOffset, CameraModeCount> CameraViewDebugOffsets;
 

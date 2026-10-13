@@ -9,7 +9,7 @@
 // and camera adjustment during the same frame.
 namespace SimCopterControllerInput
 {
-constexpr int32 DispatchSlotCount = 7;
+constexpr int32 DispatchSlotCount = 6;
 constexpr int32 RecallAllServiceIndex = 102;
 struct FDispatchSelection
 {

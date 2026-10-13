@@ -30,6 +30,7 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 {
 	GENERATED_BODY()
 	friend class FSimCopterRescuePilotRuntimeTest;
+	friend class FSimCopterRooftopSafetyTest;
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterShoulderAimTest;
 	friend class FSimCopterNpcAppearanceTest;
@@ -96,6 +97,7 @@ public:
 	// False for a short window after the player manually drops a person, so the auto-pickup logic
 	// does not instantly re-grab someone they just set down on the ground.
 	bool CanPickUpMissionPersonNow() const { return MissionPickupCooldownSeconds <= 0.0f; }
+	float GetMaxStepHeightCm() const { return MaxStepHeightCm; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SimCopter|Components")

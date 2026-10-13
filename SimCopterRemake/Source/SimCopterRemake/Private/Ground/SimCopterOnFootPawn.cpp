@@ -245,7 +245,9 @@ void ASimCopterOnFootPawn::BeginPlay()
 	}
 	JumpMaxCount = 1;
 
-	SnapToGround(); // initial placement; the movement component keeps us grounded thereafter
+	// Helicopter exits already selected a supported spot (or a deliberate airborne drop).
+	// A second long ground snap can pull that placement through an edge down to the street.
+	if (ParkedHelicopter == nullptr) SnapToGround();
 	LoadOriginalBodySprite();
 	if (bFindOrSpawnParkedHelicopterOnBeginPlay)
 	{

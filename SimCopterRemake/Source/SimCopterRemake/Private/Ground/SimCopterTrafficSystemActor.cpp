@@ -2661,6 +2661,8 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindPoliceRecoveryTarget(co
 
 ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(ASimCopterGroundAgent& Medic) const
 {
+	int32 MedicX, MedicY;
+	if (!Medic.TryGetTileCoordinate(MedicX, MedicY)) return nullptr;
 	TArray<ASimCopterGroundAgent*> Candidates;
 	for (const auto& Weak : PedestrianAgents)
 	{
@@ -2668,11 +2670,20 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(A
 		if (!Patient || Patient == &Medic || Patient->IsActorBeingDestroyed() ||
 			!Patient->IsBehaviorActive() || !Patient->IsMedevacVictim() ||
 			Patient->HasMissionResolutionReported() || Patient->IsMissionPatientDead() ||
-			Patient->GetBehaviorCarrier() || Patient->GetBehaviorAttribute(EBhavAttr::Visible) == 0) continue;
+			Patient->GetBehaviorCarrier() || Patient->IsMissionCarried() || Patient->IsPassengerFalling() ||
+			Patient->IsHidden() || Patient->GetBehaviorAttribute(EBhavAttr::Visible) == 0) continue;
+		// BHAV 262 rec[1] accepts an eight-tile square, while FUN_004ca350 ranks by Manhattan
+		// distance. Filter before reserving: a closer patient outside that square otherwise
+		// fails the VM's probe forever and hides a reachable injured rioter on the diagonal.
+		int32 PatientX, PatientY;
+		if (Medic.GetBehaviorAttribute(EBhavAttr::State) == 5 &&
+			(!Patient->TryGetTileCoordinate(PatientX, PatientY) ||
+			 FMath::Max(FMath::Abs(PatientX - MedicX), FMath::Abs(PatientY - MedicY)) > 8)) continue;
 		if (Medic.GetBehaviorAttribute(EBhavAttr::State) == 7 &&
 			(Patient->IsMissionCarried() || Patient->IsPassengerFalling() || Patient->IsHidden() ||
 			 FVector::DistSquared(Medic.GetActorLocation(),Patient->GetActorLocation()) >= FMath::Square(ActiveTileSize * 30.f))) continue;
-		if (Medic.bMedicPathAttempted && Medic.MedicPathTarget.Get() == Patient && Medic.MedicPath.IsEmpty() &&
+		if (Medic.bMedicPathAttempted && !Medic.MedicPathSearch.IsPending() &&
+			Medic.MedicPathTarget.Get() == Patient && Medic.MedicPath.IsEmpty() &&
 			GetWorld()->GetTimeSeconds() < Medic.NextMedicPathTime) continue;
 		Candidates.Add(Patient);
 	}
@@ -3177,6 +3188,7 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindMedevacPassengerAboard(
 		if (const auto* Heli = Cast<ASimCopterHelicopterPawn>(Carrier); Heli &&
 			FMath::Abs(RequestingMedic->GetActorLocation().Z - RequestingMedic->GetCapsuleHalfHeightCm() -
 				Heli->GetPassengerDropWorldLocation().Z) > 150) return nullptr;
+	TArray<ASimCopterGroundAgent*> Candidates;
 	for (const TWeakObjectPtr<ASimCopterGroundAgent>& AgentPtr : PedestrianAgents)
 	{
 		ASimCopterGroundAgent* Agent = AgentPtr.Get();
@@ -3191,10 +3203,23 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindMedevacPassengerAboard(
 			(Agent->GetBehaviorAttribute(EBhavAttr::State) == 6 ||
 				Agent->GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0))
 		{
-			if (RequestingMedic && !Agent->TryClaimHospitalPatient(RequestingMedic)) continue;
-			return Agent;
+			Candidates.Add(Agent);
 		}
 	}
+	// Requested triage override to FUN_004cc830's first-seat choice: preserve an approaching
+	// medic's reservation, then help the lowest-health living patient before recovering bodies.
+	if (RequestingMedic)
+		for (auto* Patient : Candidates)
+			if (Patient->HospitalPatientClaim.Get() == RequestingMedic && Patient->TryClaimHospitalPatient(RequestingMedic)) return Patient;
+	Candidates.StableSort([](const ASimCopterGroundAgent& A, const ASimCopterGroundAgent& B)
+	{
+		const bool ADead = A.IsMissionPatientDead() || A.GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0;
+		const bool BDead = B.IsMissionPatientDead() || B.GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0;
+		if (ADead != BDead) return !ADead;
+		return int16(A.GetBehaviorAttribute(EBhavAttr::MedevacHealth)) < int16(B.GetBehaviorAttribute(EBhavAttr::MedevacHealth));
+	});
+	for (auto* Patient : Candidates)
+		if (!RequestingMedic || Patient->TryClaimHospitalPatient(RequestingMedic)) return Patient;
 	return nullptr;
 }
 
@@ -4069,6 +4094,30 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 			TryGetDispatchVehicleTile(Vehicle, Slot.Tile);
 		}
 	}
+	// Ambient service bodies used to be decorative cars, invisible to dispatch. Offer the
+	// actual actor alongside HQs, using the same road travel-time comparison below. Only
+	// unassigned, driveable cars qualify, and promotion still needs a real service-pool slot.
+	const int32 AmbientPoolSlot = Slots.IndexOfByPredicate([](const auto& Slot) { return !Slot.bSpawned; });
+	TArray<ASimCopterGroundAgent*> AmbientCandidates;
+	if (AmbientPoolSlot != INDEX_NONE)
+	{
+		for (const auto& Weak : VehicleAgents)
+		{
+			auto* Agent = Weak.Get();
+			if (!Agent || Agent->IsActorBeingDestroyed() || Agent->IsHidden() || IsInTunnelTransit(Agent) ||
+				IsDispatchVehicle(*Agent) || Agent->MissionEventId != INDEX_NONE || Agent->IsCriminalCar() ||
+				Agent->IsVehicleImmobilized() || Agent->IsVehicleTipped() || Agent->HasVehicleExploded() ||
+				!Agent->GetMeshTableName().Equals(GetDispatchMeshName(Service), ESearchCase::IgnoreCase)) continue;
+			if (const auto* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(Agent));
+				State && (State->bMissionOnFire || State->bMissionJammed || State->MissionEventId != INDEX_NONE)) continue;
+			SimCopterDispatch::FVehicleSlotView Slot;
+			if (!TryGetPeopleTileCoordinateAtWorldLocation(Agent->GetActorLocation(), Slot.Tile.X, Slot.Tile.Y) ||
+				!RoadNodeIndexByTile.Contains(Slot.Tile)) continue;
+			Slot.bSpawned = Slot.bIdle = true;
+			Slots.Add(Slot);
+			AmbientCandidates.Add(Agent);
+		}
+	}
 
 	auto RouteQuery = [this](const FIntPoint& From, const FIntPoint& To)
 	{
@@ -4098,7 +4147,20 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 		return Outcome.Result;
 	}
 
-	FSimCopterDispatchVehicle& Vehicle = Vehicles[Outcome.SlotIndex];
+	const bool bActivateAmbient = Outcome.bRedirectedExistingVehicle && Outcome.SlotIndex >= Vehicles.Num();
+	FSimCopterDispatchVehicle& Vehicle = Vehicles[bActivateAmbient ? AmbientPoolSlot : Outcome.SlotIndex];
+	if (bActivateAmbient)
+	{
+		ASimCopterGroundAgent* Agent = AmbientCandidates[Outcome.SlotIndex - Vehicles.Num()];
+		Vehicle = FSimCopterDispatchVehicle();
+		Vehicle.Agent = Agent;
+		Vehicle.HomeTile = Slots[Outcome.SlotIndex].Tile;
+		// Dispatch now owns routing, scene work and retirement. Ambient culling must not remove
+		// this unit or overwrite its response route. It never consumes an HQ launch allocation.
+		VehicleAgents.Remove(Agent);
+		Agent->MovementSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
+		Agent->SetTrafficSpeedScale(1.0f);
+	}
 
 	if (!Outcome.bRedirectedExistingVehicle)
 	{
@@ -9793,6 +9855,30 @@ bool ASimCopterTrafficSystemActor::TrySpawnOriginalPersonAtTile(
 	return true;
 }
 
+FString ASimCopterTrafficSystemActor::ChooseAmbientVehicleMesh()
+{
+	TArray<FString, TInlineAllocator<16>> Civilian, Emergency;
+	for (const FString& Mesh : VehicleMeshNames)
+	{
+		int32 Service = INDEX_NONE;
+		for (int32 I = 0; I < DispatchServiceCount; ++I)
+			if (Mesh.Equals(GetDispatchMeshName(static_cast<SimCopterDispatch::EService>(I)), ESearchCase::IgnoreCase)) { Service = I; break; }
+		if (Service == INDEX_NONE) { Civilian.Add(Mesh); continue; }
+		auto Matches = [&Mesh](const auto& Weak)
+		{
+			const auto* Agent = Weak.Get();
+			return Agent && !Agent->IsActorBeingDestroyed() && Agent->GetMeshTableName().Equals(Mesh, ESearchCase::IgnoreCase);
+		};
+		if (!VehicleAgents.ContainsByPredicate(Matches) &&
+			!TunnelTransits.ContainsByPredicate([&](const auto& Transit) { return Matches(Transit.Agent); })) Emergency.Add(Mesh);
+	}
+	// Requested lighter emergency traffic: two percent of ambient choices, with at most one
+	// circulating copy of each service. Explicit responses retain their normal pool capacity.
+	if (!Emergency.IsEmpty() && RandomStream.RandRange(0,49) == 0)
+		return Emergency[RandomStream.RandRange(0,Emergency.Num()-1)];
+	return Civilian.IsEmpty() ? TEXT("AUTO") : Civilian[RandomStream.RandRange(0,Civilian.Num()-1)];
+}
+
 bool ASimCopterTrafficSystemActor::TrySpawnAgent(bool bVehicle, const FVector& FocusLocation)
 {
 	const TArray<FSimCopterGroundRouteNode>& Nodes = bVehicle ? RoadNodes : PedestrianNodes;
@@ -9895,7 +9981,7 @@ bool ASimCopterTrafficSystemActor::TrySpawnAgent(bool bVehicle, const FVector& F
 	}
 
 	const FString MeshName = bVehicle && VehicleMeshNames.Num() > 0
-		? VehicleMeshNames[RandomStream.RandRange(0, VehicleMeshNames.Num() - 1)]
+		? ChooseAmbientVehicleMesh()
 		: (!bVehicle && PedestrianMeshNames.Num() > 0 ? PedestrianMeshNames[RandomStream.RandRange(0, PedestrianMeshNames.Num() - 1)] : FString());
 
 	if (!bVehicle)

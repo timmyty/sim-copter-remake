@@ -55,6 +55,40 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  auto* System=World->GetSubsystem<USimCopterAirOperationsSubsystem>();
  TestNotNull(TEXT("Recovery world subsystem exists"),System);
 
+ // An available helper must not claim work until the player orders a mission.
+ const int32 UnorderedJob=Missions->MissionSystem.CreateIncidentMedevacAt(20,20);
+ TestTrue(TEXT("Standby fixture has an active emergency"),UnorderedJob!=INDEX_NONE);
+ System->SupportHelicopter=Heli;
+ System->SupportHome=Heli->GetActorLocation();
+ System->UpdateSupport(0.05f);
+ TestEqual(TEXT("Available helper leaves emergencies unassigned without an order"),System->AssignedEvent,INDEX_NONE);
+
+ // Read the pre-change byte layout: older saves enabled automatic work by default.
+ TArray<uint8> LegacySupport;
+ {
+  FMemoryWriter Writer(LegacySupport,true);
+  bool Automatic=true, Returning=false;
+  int32 Event=UnorderedJob;
+  float Work=1, Attempt=30, Stalled=75;
+  FVector Home(3000,3000,2200);
+  Writer << Automatic << Returning << Event << Work << Attempt << Stalled << Home;
+ }
+ {
+  FMemoryReader Reader(LegacySupport,true); System->SerializeState(Reader);
+  TestFalse(TEXT("Legacy automatic support save remains readable"),Reader.IsError());
+  TestEqual(TEXT("Legacy support reader consumes the unchanged layout"),Reader.Tell(),Reader.TotalSize());
+ }
+ TestEqual(TEXT("Loading legacy automatic work discards its unrequested assignment"),System->AssignedEvent,INDEX_NONE);
+ System->SupportHelicopter=Heli;
+ Heli->SetActorLocation(System->SupportHome);
+ System->UpdateSupport(0.05f); System->UpdateSupport(0.05f);
+ TestEqual(TEXT("Legacy helper stays idle after reaching base"),System->AssignedEvent,INDEX_NONE);
+ TestEqual(TEXT("Legacy migration preserves the unrelated breakdown countdown"),System->StalledCarSeconds,75.0f);
+ System->SupportHelicopter.Reset(); System->AssignedEvent=INDEX_NONE; System->bReturning=false;
+ System->WorkSeconds=0; System->MissionAttemptSeconds=0; System->StalledCarSeconds=150;
+ Heli->SetActorLocation(FVector::ZeroVector);
+ Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
+
  auto* PC=World->SpawnActor<ASimCopterPlayerController>(); PC->Player=NewObject<ULocalPlayer>(GEngine); PC->Possess(Heli);
  // This synthetic world never begins play, so explicitly register its player controller.
  World->AddController(PC);
@@ -100,7 +134,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Heli->ControllerCancelPressed();
  TestTrue(TEXT("B closes the wheel"),Heli->ControllerMode==ESimCopterControllerMode::None);
  TestEqual(TEXT("Map mission helper dispatch entry"),SimCopterControllerInput::GetDispatchSelection(4).ServiceIndex,100);
- TestFalse(TEXT("Helper locked before a passed level"),System->OrderSupport(1,true));
+ TestFalse(TEXT("Helper locked before a passed level"),System->OrderSupport(1));
 
  const FString Root=FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()/TEXT("../Reference/SimCopterOriginalGame"));
  auto Model=MakeShared<FPeopleBehaviorModel>(); FString Error;
@@ -227,10 +261,25 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  ServiceCar->AgentKind=ESimCopterGroundAgentKind::Vehicle; ServiceCar->SetActorLocation(FVector(3500,3500,25)); ServiceCar->SetVehicleStalled(false);
  Ops->ReleaseCargo(); Ops->bDeployed=false; Ops->bCage=false; Ops->SetSupportAircraft(true);
  Heli->SetDebugToolGrant(ESimCopterHelicopterTool::CaptureCage,true);
- System->SupportHelicopter=Heli; System->AssignedEvent=ServiceCar->GetTowMissionId(); System->bAutomatic=false;
+ System->SupportHelicopter=Heli; System->AssignedEvent=ServiceCar->GetTowMissionId();
  System->SupportHome=FVector(3500,3500,600); Heli->SetActorLocation(System->SupportHome);
- for(int32 K=0;K<1200 && !ServiceCar->HasMissionResolutionReported();++K) { System->UpdateSupport(0.05f); Ops->Update(0.05f); }
+ bool bLoadedCargoMigrated=false;
+ for(int32 K=0;K<1200 && !ServiceCar->HasMissionResolutionReported();++K)
+ {
+  System->UpdateSupport(0.05f); Ops->Update(0.05f);
+  if (!bLoadedCargoMigrated && Ops->HasCargo())
+  {
+   FMemoryReader Reader(LegacySupport,true); System->SerializeState(Reader);
+   System->SupportHelicopter=Heli;
+   TestTrue(TEXT("Retiring a legacy automatic assignment preserves its loaded vehicle"),Ops->GetTowVehicle()==ServiceCar);
+   TestEqual(TEXT("Loaded legacy helper clears automatic assignment"),System->AssignedEvent,INDEX_NONE);
+   bLoadedCargoMigrated=true;
+  }
+ }
+ TestTrue(TEXT("Legacy cargo migration exercised after actual pickup"),bLoadedCargoMigrated);
  TestTrue(TEXT("AI helper independently delivers its assigned car"),ServiceCar->HasMissionResolutionReported());
+ System->UpdateSupport(0.05f);
+ TestEqual(TEXT("Legacy helper takes no new job after cargo delivery"),System->AssignedEvent,INDEX_NONE);
 
  // Helper cabin releases must use distinct door positions, not a shared destination point.
  FVector HelperPad; Traffic->TryGetAirportPadWorldLocation(0,HelperPad);
@@ -382,7 +431,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestFalse(TEXT("An unfinished city cannot dispatch a helper"),System->IsSupportUnlocked());
  Career->SetAirSupportUnlocked(true);
  TestFalse(TEXT("Legacy carried unlock cannot enable an unfinished city"),System->IsSupportUnlocked());
- TestFalse(TEXT("Manual automatic order cannot bypass graduation"),System->OrderSupport(INDEX_NONE,true));
+ TestFalse(TEXT("Mission order cannot bypass graduation"),System->OrderSupport(INDEX_NONE));
  TestTrue(TEXT("Graduation fixture loads actual career thresholds"),Missions->MissionSystem.LoadCareerData(
   FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()/TEXT("../Reference/SimCopterOriginalGame/tweak/career.twk"))));
  Missions->MissionSystem.SelectCareerCity(0);
@@ -392,6 +441,58 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Missions->MissionSystem.AddScore(1);
  Missions->MissionSystem.AdvanceCareerIfComplete();
  TestTrue(TEXT("Passing current city permits helper"),System->IsSupportUnlocked());
+ // Exercise the public dispatch entry points and actual mission lifecycle.
+ Ops->ReleaseCargo(); Heli->RemoveMissionPassengers(100); Ops->SetSupportAircraft(true);
+ System->SupportHelicopter=Heli; System->AssignedEvent=INDEX_NONE;
+ const int32 OrderedJob=Missions->MissionSystem.CreateIncidentMedevacAt(18,18);
+ const int32 WaitingJob=Missions->MissionSystem.CreateIncidentMedevacAt(19,19);
+ TestTrue(TEXT("Two dispatch jobs are active"),OrderedJob!=INDEX_NONE && WaitingJob!=INDEX_NONE);
+ const int32 BaseEvent=Missions->MissionSystem.EnsureBaseLocationRecord(8,8);
+ TestFalse(TEXT("Dispatch rejects the base marker"),System->OrderSupport(BaseEvent));
+ TestFalse(TEXT("Dispatch rejects an empty selection"),System->OrderSupport(INDEX_NONE));
+ System->UpdateSupport(0);
+ TestEqual(TEXT("Graduation leaves active missions waiting for a player order"),System->AssignedEvent,INDEX_NONE);
+ const int32 OrderedIndex=Missions->GetMissionRecords().IndexOfByPredicate([&](const auto& R){return R.EventId==OrderedJob;});
+ Missions->MissionSystem.SetMapFocusRecordIndex(OrderedIndex,EMapFocusReason::CycledNext);
+ Heli->RequestAirSupport();
+ TestEqual(TEXT("Cockpit order assigns only the selected map mission"),System->AssignedEvent,OrderedJob);
+ TArray<uint8> ManualSupport;
+ { FMemoryWriter Writer(ManualSupport,true); System->SerializeState(Writer); }
+ System->RecallSupport();
+ {
+  FMemoryReader Reader(ManualSupport,true); System->SerializeState(Reader);
+  TestFalse(TEXT("Explicit mission save reads"),Reader.IsError());
+  TestEqual(TEXT("Manual save retains the legacy field layout"),Reader.TotalSize(),int64(LegacySupport.Num()));
+ }
+ TestEqual(TEXT("A saved explicit mission order resumes"),System->AssignedEvent,OrderedJob);
+ System->EnsureSupport();
+ TestTrue(TEXT("Loading reconnects the existing helper"),System->GetSupportHelicopter()==Heli);
+ Missions->MissionSystem.PostEvent(EVT_MedevacDelivered,OrderedJob,1);
+ Missions->MissionSystem.UpdateLifecycle();
+ const auto* CompletedOrder=Missions->MissionSystem.FindRecord(OrderedJob);
+ TestTrue(TEXT("Assigned mission completes through its delivery event"),!CompletedOrder || !CompletedOrder->bActive || CompletedOrder->Category==CAT_CompleteNow);
+ System->UpdateSupport(0.05f);
+ TestEqual(TEXT("Completing an order does not claim the waiting job"),System->AssignedEvent,INDEX_NONE);
+ TestFalse(TEXT("Completed jobs cannot be ordered again"),System->OrderSupport(OrderedJob));
+ const int32 WaitingIndex=Missions->GetMissionRecords().IndexOfByPredicate([&](const auto& R){return R.EventId==WaitingJob;});
+ Missions->MissionSystem.SetMapFocusRecordIndex(WaitingIndex,EMapFocusReason::CycledNext);
+ Heli->ControllerRadialIndex=4; Heli->DispatchControllerSelection();
+ TestEqual(TEXT("Controller can explicitly order the next mission"),System->AssignedEvent,WaitingJob);
+ auto* BusyRider=Person(1,Heli->GetActorLocation());
+ TestTrue(TEXT("Busy helper carries a real passenger"),BusyRider->BoardCarrier(Heli,false,true));
+ TestFalse(TEXT("An order cannot interrupt an onboard passenger delivery"),System->OrderSupport(WaitingJob));
+ TestEqual(TEXT("Rejected busy order preserves the current assignment"),System->AssignedEvent,WaitingJob);
+ Heli->RemoveMissionPassengers(100); BusyRider->Destroy();
+ Heli->ControllerRadialIndex=5; Heli->DispatchControllerSelection();
+ TestEqual(TEXT("Controller Recall All cancels the helper assignment"),System->AssignedEvent,INDEX_NONE);
+ Heli->SetActorLocation(System->SupportHome);
+ System->UpdateSupport(0.05f); System->UpdateSupport(0.05f);
+ TestEqual(TEXT("Recalled helper stays idle with jobs available"),System->AssignedEvent,INDEX_NONE);
+ TestTrue(TEXT("Helper remains dispatchable after recall"),System->OrderSupport(WaitingJob));
+ System->UpdateSupport(181.0f);
+ TestEqual(TEXT("Unreachable order is abandoned without choosing another job"),System->AssignedEvent,INDEX_NONE);
+ System->UpdateSupport(0.05f); System->UpdateSupport(0.05f);
+ TestEqual(TEXT("Timeout returns to standby until another order"),System->AssignedEvent,INDEX_NONE);
  Missions->MissionSystem.SelectCareerCity(1);
  Missions->MissionSystem.ContinueSession(1000);
  TestFalse(TEXT("Fresh session after a transfer or warp requires graduation again"),System->IsSupportUnlocked());
@@ -405,17 +506,16 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Missions->MissionSystem=FSimCopterMissionSystem();
  Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
  Missions->MissionSystem.EnsureBaseLocationRecord(8,8);
- System->AssignedEvent=INDEX_NONE; System->bAutomatic=true; System->bReturning=false;
+ System->AssignedEvent=INDEX_NONE; System->bReturning=false;
  System->UpdateSupport(0.05f);
- TestEqual(TEXT("Automatic helper never treats Base Location as a mission"),System->AssignedEvent,INDEX_NONE);
+ TestEqual(TEXT("Idle helper never treats Base Location as a mission"),System->AssignedEvent,INDEX_NONE);
 
  const int32 NearbyRecovery=Missions->CreateMissionAt(64,64,TYPE_VehicleTow);
  const int32 OriginalJob=Missions->MissionSystem.CreateIncidentMedevacAt(20,20);
  TestTrue(TEXT("Original dispatch fixture creates a medical incident"),OriginalJob!=INDEX_NONE);
- System->AssignedEvent=NearbyRecovery;
  System->UpdateSupport(0);
- TestEqual(TEXT("Automatic helper prefers original work over a nearby unladen tow assignment"),System->AssignedEvent,OriginalJob);
- System->bAutomatic=false; System->AssignedEvent=NearbyRecovery;
+ TestEqual(TEXT("Idle helper does not claim an emergency or recovery"),System->AssignedEvent,INDEX_NONE);
+ System->AssignedEvent=NearbyRecovery;
  System->UpdateSupport(0);
  TestEqual(TEXT("Manual recovery assignment remains respected"),System->AssignedEvent,NearbyRecovery);
  auto* WaitingCar=World->SpawnActor<ASimCopterGroundAgent>(); WaitingCar->AgentKind=ESimCopterGroundAgentKind::Vehicle; WaitingCar->SetOwner(Traffic);
@@ -433,7 +533,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
 	for (auto Existing : Traffic->PedestrianAgents) if (Existing.IsValid()) Existing->Destroy();
 	Traffic->PedestrianAgents.Reset();
  Ops->SetSupportAircraft(true); Heli->SwitchHelicopterModel(0);
- System->SupportHelicopter=Heli; System->bAutomatic=false; System->bReturning=false;
+ System->SupportHelicopter=Heli; System->bReturning=false;
  City->WaterGameplayTerrainClasses.Init(10,128*128);
  const FVector Pickup(-20000,-18000,0), Hospital(-12000,-18000,300);
  auto Box=[&](const FVector& At,const FVector& Half)
@@ -457,11 +557,17 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Patient->BehaviorContext.Attributes[EBhavAttr::MedevacHealth]=1;
  System->AssignedEvent=RescueId; System->MissionAttemptSeconds=0; System->WorkSeconds=0;
  Heli->SetAutopilotTransform(Pickup+FVector(0,0,1500),FRotator::ZeroRotator,0.05f);
- bool bHitBuilding=false,bBoarded=false;
+ bool bHitBuilding=false,bBoarded=false,bRecalledWithPatient=false;
  for(int32 Step=0;Step<2400 && !Patient->HasMissionResolutionReported();++Step)
  {
   System->UpdateSupport(0.05f); Ops->Update(0.05f); Patient->UpdateOriginalBehavior(0.05f);
   bBoarded |= Patient->GetBehaviorCarrier()==Heli;
+  if (bBoarded && !bRecalledWithPatient)
+  {
+   System->RecallSupport();
+   TestTrue(TEXT("Recall keeps the rescued patient aboard for delivery"),Patient->GetBehaviorCarrier()==Heli);
+   bRecalledWithPatient=true;
+  }
   bHitBuilding |= Heli->GetParkingWorldBounds().Intersect(Building->GetComponentsBoundingBox());
  }
  TestTrue(TEXT("Helper boards the assigned real patient"),bBoarded);
@@ -547,7 +653,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
   TestTrue(TEXT("New destination stays in its original neighbourhood"),FVector::Dist2D(FreshDrop,DropCenter)<=3200);
  }
  auto* Fare=Person(4,WaitCenter+FVector(0,0,24)); Fare->MissionEventId=TransportId;
- System->AssignedEvent=TransportId; System->bReturning=false; System->bAutomatic=false;
+ System->AssignedEvent=TransportId; System->bReturning=false;
  System->MissionAttemptSeconds=0; System->WorkSeconds=0; System->bHasLandingSurface=false;
  Heli->SetAutopilotTransform(WaitCenter+FVector(-2000,0,1800),FRotator::ZeroRotator,0.05f);
  bool bFareBoarded=false,bTouchedBuilding=false,bRecalled=false;

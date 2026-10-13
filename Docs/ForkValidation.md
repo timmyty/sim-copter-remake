@@ -1,5 +1,11 @@
 # Fork validation
 
+## October 13 release v1.0.10
+
+Editor, Shipping and Development builds succeeded. Headless validation passed 497/499 distinct cases after correcting and rerunning an outdated landed-exit fixture that had no ground. The broad run initially passed 496/499; the same two pre-existing ReferenceCity fixture and FlapLayout mask-expectation failures remain. The staged launcher and its Shipping child survived a hidden 31-second startup with an isolated profile. All 443 source/configuration/project/build/launcher files match the publication checkout. All cooked and loose runtime assets match v1.0.9; only the two game executables changed. No interactive gameplay, controller-feel, listening or live FPS check was performed. NullRHI visual-only tests may be no-ops.
+
+Fresh staging verifies 916 runtime files and 903 NonUFS dependencies. [Detailed results](validation/WindowsRelease110Results.json) and [release notes](Releases/v1.0.10.md).
+
 ## October 12 release v1.0.9
 
 Editor, Shipping and Development builds succeeded. The full NullRHI automation run passed 490/492 cases; the same two pre-existing ReferenceCity fixture and FlapLayout mask-expectation failures remain. All three focused offscreen cases passed: full baseball capture, drive-in video playback and the isolated Windows audio mixer. The staged launcher and its Shipping child survived a hidden 31-second startup with an isolated profile. All 439 source/configuration/project/build/launcher files match the publication checkout. No interactive gameplay, physical-controller, listening or live FPS check was performed.

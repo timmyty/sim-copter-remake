@@ -196,6 +196,76 @@ bool FSimCopterMedicRouteTest::RunTest(const FString& Parameters)
 		*ProgramMedic->GetActorLocation().ToString(), *GetNameSafe(ProgramPatient->GetBehaviorCarrier())));
 	return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterDeployedMedicRiotTest, "SimCopter.MedicalNavigation.DeployedMedicRiot",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterDeployedMedicRiotTest::RunTest(const FString& Parameters)
+{
+	auto* World = CreateMedicalWorld();
+	ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+	MedicalBox(World, FVector(0,0,-10), FVector(10000,10000,10));
+	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+	Traffic->ActiveTileSize = 400;
+	Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
+	Traffic->TileCenterWorldZ.Init(0, FSimCity2000City::TileCount);
+	Traffic->WaterTileFlags.Init(0, FSimCity2000City::TileCount);
+	Traffic->XbldTileIds.Init(0x1d, FSimCity2000City::TileCount);
+	auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+	Missions->MissionSystem.Initialize(nullptr, 1);
+	const FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Reference/SimCopterOriginalGame"));
+	auto Model = MakeShared<FPeopleBehaviorModel>();
+	FString Error;
+	if (!TestTrue(TEXT("Original medic and riot programs load"), FSimCopterPeopleReader::LoadFromFile(FSimCopterPeopleReader::ResolvePeoplePath(Root), *Model, Error))) return false;
+	auto Person = [&](int32 State, const FVector& At)
+	{
+		auto* Agent = World->SpawnActor<ASimCopterGroundAgent>();
+		Agent->SetOwner(Traffic);
+		Agent->InitialPersonState = State;
+		Agent->SetInitialBehaviorClass(State == 5 ? 12 : 0);
+		Agent->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian, TEXT(""), Root, 85);
+		Agent->BehaviorModel = Model;
+		Agent->bBehaviorActive = true;
+		Agent->BehaviorContext.ResetToState(State);
+		Agent->BehaviorContext.Attributes[EBhavAttr::Visible] = 1;
+		Agent->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 100;
+		Agent->SetActorLocation(At + FVector(0,0,Agent->GetCapsuleHalfHeightCm()+1));
+		Traffic->PedestrianAgents.Add(Agent);
+		return Agent;
+	};
+	auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
+	Heli->SetActorLocation(FVector(-700,0,Heli->GetSimpleCollisionHalfHeight()+1));
+	Heli->GroundClearanceCm = 1;
+	auto* Controller = World->SpawnActor<ASimCopterPlayerController>();
+	World->AddController(Controller);
+	Controller->Player = NewObject<ULocalPlayer>(GEngine);
+	Controller->ChangeState(NAME_Playing);
+	Controller->Possess(Heli);
+	// The original BHAV 262 probes an eight-tile square. A Manhattan-nearer casualty just
+	// outside that square must not hide an eligible injured rioter on its diagonal.
+	auto* OutsideSearch = Person(6, FVector(3500,0,0));
+	auto* Patient = Person(3, FVector(1900,2600,0));
+	TestTrue(TEXT("An injured rioter becomes a live medical patient"), Patient->CollapseIntoMedevacVictim(Patient->BehaviorContext));
+	TestTrue(TEXT("Former rioter is eligible for medical rescue"), Patient->IsMedevacVictim() && !Patient->HasMissionResolutionReported());
+	auto* Medic = Person(5, FVector(-900,0,0));
+	Medic->SetPersistentHospitalRoofCrew(true);
+	TestTrue(TEXT("Medic boards the player's helicopter"), Medic->BoardCarrier(Heli,false));
+	TestTrue(TEXT("Player deploys medic through the actual passenger drop action"), Heli->DropPassengerAtSlot(0));
+	bool bPickedUp = false;
+	for (int32 Frame = 0; Frame < 5400 && Patient->GetBehaviorCarrier() != Heli && !Medic->IsActorBeingDestroyed(); ++Frame)
+	{
+		World->Tick(LEVELTICK_TimeOnly,1.0f/60);
+		Medic->Tick(1.0f/60);
+		bPickedUp |= Patient->GetBehaviorCarrier() == Medic;
+	}
+	AddInfo(FString::Printf(TEXT("Deployed medic %s, state %d, falling %d; patient carrier %s; stack %d/%d"),
+		*Medic->GetActorLocation().ToString(), Medic->GetBehaviorAttribute(EBhavAttr::State), Medic->IsPassengerFalling(),
+		*GetNameSafe(Patient->GetBehaviorCarrier()), Medic->BehaviorContext.Stack.IsEmpty() ? -1 : Medic->BehaviorContext.Stack.Last().ProgramId,
+		Medic->BehaviorContext.Stack.IsEmpty() ? -1 : Medic->BehaviorContext.Stack.Last().RecordIndex));
+	TestTrue(TEXT("Manually deployed medic physically retrieves the injured rioter"), bPickedUp);
+	TestTrue(TEXT("Manually deployed medic brings the injured rioter to the helicopter"), Patient->GetBehaviorCarrier() == Heli);
+	TestNull(TEXT("A casualty outside the initial rescue radius remains unclaimed"), OutsideSearch->HospitalPatientClaim.Get());
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMedicHillTest, "SimCopter.MedicalNavigation.SteepHillReturn",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FSimCopterMedicHillTest::RunTest(const FString& Parameters)
@@ -267,9 +337,17 @@ bool FSimCopterMedicHillTest::RunTest(const FString& Parameters)
 		TestFalse(TEXT("Hill routing still rejects a direct path through a wall"),
 			Medic->CanWalkMedicSegment(Medic->GetActorLocation(),Goal,Heli));
 		FVector Waypoint;
-		TestTrue(TEXT("Uphill detour has a route"), Medic->GetMedicWaypoint(Goal,Heli,Waypoint));
+		bool bHasRoute = false;
+		for (int32 Update = 0; Update < 200 && !bHasRoute; ++Update)
+		{
+			World->Tick(LEVELTICK_TimeOnly,1.0f/15);
+			bHasRoute = Medic->GetMedicWaypoint(Goal,Heli,Waypoint);
+			if (!bHasRoute && !Medic->MedicPathSearch.IsPending()) break;
+		}
+		TestTrue(TEXT("Uphill detour has a route after bounded search updates"), bHasRoute);
 		if (SeatsFree != 2) Wall->Destroy();
 		Medic->MedicPath.Reset();
+		Medic->MedicPathSearch.Reset();
 		Medic->bMedicPathAttempted = false;
 		// Resume BHAV 262 at the post-pickup vehicle selection, as in the real rescue loop.
 		Medic->BehaviorContext.Stack.Reset();
@@ -300,6 +378,117 @@ bool FSimCopterMedicHillTest::RunTest(const FString& Parameters)
 		}
 		if (SeatsFree == 2) TestTrue(TEXT("Medic boards after patient when seat remains"), Medic->GetBehaviorCarrier() == Heli);
 		else TestNull(TEXT("Medic cannot overfill cabin"), Medic->GetBehaviorCarrier());
+	}
+	return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterResponderRepathTest, "SimCopter.MedicalNavigation.MovingTargetRepathBudget",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterResponderRepathTest::RunTest(const FString& Parameters)
+{
+	auto* World = CreateMedicalWorld();
+	ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+	MedicalBox(World, FVector(0,0,-10), FVector(20000,20000,10));
+	auto* Wall = MedicalBox(World, FVector(500,0,200), FVector(50,10000,200));
+	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+	Traffic->ActiveTileSize = 400;
+	Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
+	Traffic->TileCenterWorldZ.Init(0, FSimCity2000City::TileCount);
+	Traffic->WaterTileFlags.Init(0, FSimCity2000City::TileCount);
+	Traffic->XbldTileIds.Init(0x1d, FSimCity2000City::TileCount);
+	auto* Responder = World->SpawnActor<ASimCopterGroundAgent>();
+	Responder->SetOwner(Traffic);
+	Responder->SetActorLocation(FVector(0,0,Responder->GetCapsuleHalfHeightCm()+1));
+	auto* Target = World->SpawnActor<ASimCopterHelicopterPawn>();
+	FVector Waypoint;
+	int32 Searches = 0;
+	double WorstMs = 0;
+	const double Begin = FPlatformTime::Seconds();
+	for (int32 Step = 0; Step < 12; ++Step)
+	{
+		World->Tick(LEVELTICK_TimeOnly, 1.0f/15);
+		Target->SetActorLocation(FVector(1000,Step*100,1000));
+		const double PreviousDeadline = Responder->NextMedicPathTime;
+		const double Start = FPlatformTime::Seconds();
+		TestFalse(TEXT("Responder cannot walk through the wall"), Responder->GetMedicWaypoint(Target->GetActorLocation(), Target, Waypoint));
+		WorstMs = FMath::Max(WorstMs, (FPlatformTime::Seconds()-Start)*1000);
+		Searches += Responder->NextMedicPathTime != PreviousDeadline;
+	}
+	AddInfo(FString::Printf(TEXT("Moving blocked aircraft: %d searches in 0.8 simulated seconds; %.3f ms total; %.3f ms worst query"),
+		Searches,(FPlatformTime::Seconds()-Begin)*1000,WorstMs));
+	TestEqual(TEXT("Moving aircraft must not bypass the one-second search interval"), Searches, 1);
+	const double FirstDeadline = Responder->NextMedicPathTime;
+	auto* OtherTarget = World->SpawnActor<ASimCopterHelicopterPawn>();
+	OtherTarget->SetActorLocation(FVector(-300,0,1000));
+	World->Tick(LEVELTICK_TimeOnly, 0.01f);
+	Responder->GetMedicWaypoint(OtherTarget->GetActorLocation(), OtherTarget, Waypoint);
+	TestEqual(TEXT("Switching targets must not bypass the search interval"), Responder->NextMedicPathTime, FirstDeadline);
+	// Keep changing the unreachable goal for six simulated minutes. Completed failures
+	// must retire their work and retry without accumulating searches or returning a partial route.
+	int32 Restarts = 0;
+	bool bCrossedWall = false;
+	for (int32 Minute = 0; Minute < 6; ++Minute)
+	{
+		double TotalMs = 0, PeakMs = 0;
+		for (int32 Step = 0; Step < 900; ++Step)
+		{
+			World->Tick(LEVELTICK_TimeOnly,1.0f/15);
+			Target->SetActorLocation(FVector(1000,(Step%13-6)*100,1000));
+			const bool bWasPending = Responder->MedicPathSearch.IsPending();
+			const double Start = FPlatformTime::Seconds();
+			bCrossedWall |= Responder->GetMedicWaypoint(Target->GetActorLocation(),Target,Waypoint);
+			const double Ms = (FPlatformTime::Seconds()-Start)*1000;
+			TotalMs += Ms; PeakMs = FMath::Max(PeakMs,Ms);
+			Restarts += !bWasPending && Responder->MedicPathSearch.IsPending();
+		}
+		AddInfo(FString::Printf(TEXT("Blocked-flight soak minute %d: %.3f ms mean query, %.3f ms peak"),Minute+1,TotalMs/900,PeakMs));
+	}
+	TestFalse(TEXT("Repeated searches never return a route through the wall"),bCrossedWall);
+	TestTrue(TEXT("Failed searches finish and retry within the fixed interval"),Restarts>1 && Restarts<=360);
+	Wall->SetActorEnableCollision(false);
+	Wall->Destroy();
+	World->Tick(LEVELTICK_TimeOnly, 1.1f);
+	TestTrue(TEXT("Retry finds a route to the reachable replacement target"), Responder->GetMedicWaypoint(OtherTarget->GetActorLocation(), OtherTarget, Waypoint));
+	TestTrue(TEXT("Retry routes to the current target position"), FVector::Dist2D(Waypoint,OtherTarget->GetActorLocation())<1);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterSlicedPathTest, "SimCopter.MedicalNavigation.SlicedSearchPreservesRoutes",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterSlicedPathTest::RunTest(const FString& Parameters)
+{
+	for (const bool bReachable : {false, true})
+	{
+		int32 Probes = 0;
+		auto CanWalk = [&](const FVector& A, FVector& B)
+		{
+			++Probes;
+			for (int32 I = 0; I <= 64; ++I)
+			{
+				const FVector P = FMath::Lerp(A,B,float(I)/64);
+				if (P.X >= 150 && P.X <= 300 && (!bReachable || FMath::Abs(P.Y)<200)) return false;
+			}
+			B.Z = B.X * 0.1; // Endpoints still retain the physical walk-probe height.
+			return true;
+		};
+		const FVector Goal(600,0,0);
+		TArray<FVector> Eager, Sliced;
+		TestEqual(TEXT("Synchronous route result"), SimCopterBandNavigation::FindPath(FVector::ZeroVector,Goal,CanWalk,Eager), bReachable);
+		SimCopterBandNavigation::FPathSearch Search;
+		Search.Begin(FVector::ZeroVector,Goal);
+		int32 Updates = 0;
+		while (Search.IsPending() && Updates++ < 2048)
+		{
+			Probes = 0;
+			Search.Advance(CanWalk,Sliced,4,0);
+			TestTrue(TEXT("Each update bounds expensive world probes"), Probes <= 4*9);
+			if (Search.IsPending()) TestTrue(TEXT("No incomplete route is used for movement"),Sliced.IsEmpty());
+		}
+		TestFalse(TEXT("Search finishes without losing its original node limit"), Search.IsPending());
+		TestTrue(TEXT("Sliced and synchronous routes match including elevations"), Eager == Sliced);
+		TestTrue(TEXT("Difficult search spans multiple updates"), Updates > 1);
+		Search.Begin(FVector::ZeroVector,Goal);
+		Search.Reset();
+		TestFalse(TEXT("Target cancellation discards pending work"),Search.IsPending());
 	}
 	return true;
 }

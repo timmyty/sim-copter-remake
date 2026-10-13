@@ -1,0 +1,94 @@
+{
+  "verifiedAtUtc": "2026-10-13T04:57:30.617583+00:00",
+  "scope": "Stable remote taser hover/follow platform and 1x-4x scope zoom",
+  "baseline": {
+    "reproducedAssertions": 2,
+    "report": "Docs/scratchpad/remote-taser-stability/reproduced/index.json",
+    "failures": [
+      "Aircraft drifts during four seconds with a clear nearby stationary suspect",
+      "Aircraft turns underneath the free-aim sight"
+    ]
+  },
+  "headless": {
+    "reportedPassed": 24,
+    "exercised": 22,
+    "visualOnlyNullRhiNoOps": 2,
+    "failed": 0,
+    "warningCases": 0,
+    "report": "Docs/scratchpad/remote-taser-stability/validated/index.json"
+  },
+  "coverage": [
+    "Stationary hover and nearby target movement",
+    "Brief occlusion grace and clear-line reset",
+    "Separate acquisition and departure distance thresholds",
+    "Resume pursuit before leaving weapon range; retain a vantage for two seconds",
+    "Fixed nose heading during following",
+    "Mouse wheel through actual camera axis; flight zoom preserved",
+    "1x and 4x optical magnification limits and centre-ray alignment",
+    "Zoom-scaled mouse and stick sensitivity",
+    "LT hold/release restores selected zoom",
+    "Menu input ownership and reset on exit",
+    "Zoom transition consistency at 30/60/120 Hz",
+    "Actual four-times zoomed shot stuns aimed suspect",
+    "Existing moving criminal car, car-to-person handoff, wall clearance, sprint cap, custody/recovery/save and controller regressions",
+    "Existing exit-heading regression across all nine helicopters"
+  ],
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/remote-taser-stability/build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/remote-taser-stability/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/remote-taser-stability/build-development.log"
+    }
+  },
+  "sourceManifest": "Docs/scratchpad/remote-taser-stability/source-manifest.json",
+  "installed": {
+    "InstalledAtUtc": "2026-10-13T04:56:56.1559205Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "D039EA377AC14F1D4F76FB99055ACC1A9D7B07832346125647F913FE29F44B4A",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-stability/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "7929A45220B38E18E8612B5DCD4C4CCA4AAC0A672E394AFBCFACC6DEAD8418D0"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "B4FB3F20ADB3317E56B405749AF5AF5529FDA60C89586EC7256415922E2721D4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-stability/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "F4AF95D29E437E67929ECF8D989FE565CA7345FC915604FFB2885FD77F808D16"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "3CD0DEE690E3A79A49D00100B38551CBAA4A2F4B68606CAA55FEEAED70AC1121",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-stability/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "E9CB8F722A1A5406C6A9037D8A2AC381DE72F3EE717014BC39C83A9786133A3B"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "02080F4B2985164F0DDEC01E9620540D32B93C48BC12A3B8E3D9422F06BBD842",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-stability/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "A9176338D9FA4B83CD5398B5DE1798F3A5B7697528DB41F5DDA6406ADCA75E94"
+      }
+    ],
+    "HeadlessPassed": 24,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "limitations": [
+    "No interactive flight or physical-controller feel check",
+    "No GPU scope/HUD visual capture; the two visual-only cases were no-ops under NullRHI",
+    "No live-session frame-time comparison; this is an aiming-platform behavior change"
+  ],
+  "environmentNotes": [
+    "The first sandboxed headless launch failed before tests because the derived-data cache had no writable node; rerunning with approved cache access succeeded.",
+    "Executable installation required approved write access after the sandbox denied replacement."
+  ],
+  "publicationChanged": false
+}

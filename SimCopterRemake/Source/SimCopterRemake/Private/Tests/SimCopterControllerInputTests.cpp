@@ -73,6 +73,9 @@ bool FSimCopterControllerRadialSelectionTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Police chase uses the same police service"), Chase.ServiceIndex, Police.ServiceIndex);
 	TestFalse(TEXT("Normal Police does not chase"), Police.bChaseSpotlight);
 	TestTrue(TEXT("Police (Chase) is a distinct wheel command"), Chase.bChaseSpotlight);
+	TestEqual(TEXT("Air support dispatch selects one map mission"), GetDispatchSelection(4).ServiceIndex, 100);
+	TestEqual(TEXT("Recall follows the single air-support order"), GetDispatchSelection(5).ServiceIndex, RecallAllServiceIndex);
+	TestEqual(TEXT("Removed automatic-support slot cannot dispatch"), GetDispatchSelection(6).ServiceIndex, INDEX_NONE);
 	TestEqual(TEXT("Invalid dispatch slot cannot dispatch"), GetDispatchSelection(7).ServiceIndex, INDEX_NONE);
 	float LastAnalog = 0;
 	TestFalse(TEXT("Idle stick noise is not device use"), UpdateAnalogActivity(0.05f, LastAnalog));

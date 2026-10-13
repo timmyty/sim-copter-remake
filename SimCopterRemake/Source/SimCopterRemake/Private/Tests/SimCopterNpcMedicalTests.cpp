@@ -183,9 +183,13 @@ bool FSimCopterNpcMedicalTest::RunTest(const FString& Parameters)
 	ExportPart(TEXT("occupants"),Cabin);
 	FFileHelper::SaveStringToFile(Obj,*(FPaths::ProjectDir()/TEXT("../Docs/scratchpad/npc-medical-update/agusta.obj")));
 	auto* MedicA=Person(5,FVector(160,-200,0)); auto* MedicB=Person(5,FVector(180,-200,0));
+	Victim->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 80;
+	BurnVictim->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 15;
 	auto* First=Traffic->FindMedevacPassengerAboard(Heli,MedicA);
+	TestTrue(TEXT("Hospital medic unloads the most wounded living patient first, regardless of spawn or seat order"), First == BurnVictim);
 	MedicA->BehaviorContext.SelectedObject=Heli; // BHAV 263 changes selection during approach
 	auto* Second=Traffic->FindMedevacPassengerAboard(Heli,MedicB);
+	TestTrue(TEXT("Second medic takes the next unclaimed patient"), Second == Victim);
 	TestTrue(TEXT("Two roof workers reserve different patients while approaching"), First && Second && First!=Second);
 	TestTrue(TEXT("First medic retains own reservation"), Traffic->FindMedevacPassengerAboard(Heli,MedicA)==First);
 	if(First && Second)
@@ -195,6 +199,19 @@ bool FSimCopterNpcMedicalTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Second patient can be carried at the same time"),Second->BoardCarrier(MedicB,false,false,true));
 		TestEqual(TEXT("Parallel handoff frees both seats"),Heli->GetMissionPassengerCount(MedicalEvent,ESimCopterMissionPassengerKind::Medevac),0);
 	}
+	// A written-off passenger must remain recoverable, but must not delay a living casualty.
+	auto* TriageCarrier = World->SpawnActor<AActor>();
+	auto* Body = Person(0,FVector::ZeroVector);
+	Body->BehaviorCarrier = TriageCarrier;
+	Body->BehaviorContext.Attributes[EBhavAttr::WrittenOff] = 1;
+	Body->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 0;
+	auto* Critical = Person(6,FVector::ZeroVector);
+	Critical->BehaviorCarrier = TriageCarrier;
+	Critical->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 1;
+	TestTrue(TEXT("A living critical patient takes priority over a body"), Traffic->FindMedevacPassengerAboard(TriageCarrier) == Critical);
+	Critical->BehaviorCarrier.Reset();
+	TestTrue(TEXT("Bodies are still recoverable after living patients"), Traffic->FindMedevacPassengerAboard(TriageCarrier) == Body);
+	Body->Destroy(); Critical->Destroy(); TriageCarrier->Destroy();
 	Heli->RefreshCabinOccupants();
 	Cabin=Heli->CabinOccupantsMesh->GetProcMeshSection(0);
 	TestEqual(TEXT("Unloaded patients disappear from cabin"),Cabin ? Cabin->ProcVertexBuffer.Num():0,PilotVertices);

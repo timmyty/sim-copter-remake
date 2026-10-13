@@ -1,0 +1,76 @@
+{
+  "verifiedAtUtc": "2026-10-13T03:09:49.012888+00:00",
+  "scope": "Face the current criminal when returning from remote taser aim to flight, including a just-stunned pedestrian",
+  "reproducedHeadingAssertions": 45,
+  "baselineFixtureNote": "Initial fixture also lacked a camera manager for 18 new view-target assertions; added the real manager before final validation. All 45 heading failures were independent of this fixture omission.",
+  "baselineReport": "Docs/scratchpad/remote-taser-exit-heading/reproduced/index.json",
+  "headless": {
+    "reportedPassed": 21,
+    "exercised": 19,
+    "visualOnlyNullRhiNoOps": 2,
+    "failed": 0,
+    "warningCases": 0,
+    "report": "Docs/scratchpad/remote-taser-exit-heading/validated/index.json"
+  },
+  "coverage": [
+    "All nine helicopters against live criminal cars and pedestrians",
+    "Flight tick retains heading; immediate exit preserves position, velocity, health and restores aircraft view",
+    "Stunned suspect remains the return direction after pursuit ends",
+    "No-crime, directly-below and destroyed targets preserve heading",
+    "Save/possession/destruction cleanup does not rotate the aircraft",
+    "Existing free aim, bounded pursuit, recovery, custody, persistence, energy taser and controller checks"
+  ],
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/remote-taser-exit-heading/build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/remote-taser-exit-heading/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/remote-taser-exit-heading/build-development.log"
+    }
+  },
+  "sourceManifest": "Docs/scratchpad/remote-taser-exit-heading/source-manifest.json",
+  "limitations": [
+    "No interactive gameplay check",
+    "No rendering changes or new assets; no GPU capture run for this heading-only correction"
+  ],
+  "publicationChanged": false,
+  "installed": {
+    "InstalledAtUtc": "2026-10-13T03:09:48.9030165Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "061312479B3C5C790C93E1F0C468A743562F578D8D577E6DF052B6ACC5C810CA",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-exit-heading/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "8287D62C806589BAB5EB67FCFE865A3D9A8F7562E00A0C5EE09AB137396827DA"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "2FA7A716CE235E44E9076089426B35CB0D6A46145927756187E01C5FB108D75B",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-exit-heading/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "28E665666DE4020405AFCF900DB5FCC32D046F1F61D49487C896473B3B48BD4D"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "DFDD9C738AC6E56ABB6CFA3A0A47D0193F392DD047EF699E7DAE1A4DB3F3B931",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-exit-heading/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "E2733FCC9A52956146452882B63EDE19CFE8334CAF0BF46B0892DB48DCF6E6C9"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "73316521AF7F704F12782B85188D61187AD99F9B648F9FAF76F9D4C2EB6278C1",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-exit-heading/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "71AA35958F8683584ABF1D08231ACE28CEC56F71277028D1388A0DF68DB50FFD"
+      }
+    ],
+    "HeadlessPassed": 21,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  }
+}

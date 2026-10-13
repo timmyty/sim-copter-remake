@@ -50,6 +50,7 @@
 #include "Ground/SimCopterFlashingLights.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterOnFootPawn.h"
+#include "Ground/SimCopterWalkSupport.h"
 #include "Ground/SimCopterParticleFX.h"
 #include "Ground/SimCopterEffectFX.h"
 #include "Ground/SimCopterInteraction.h"
@@ -4319,6 +4320,41 @@ FReply ASimCopterHelicopterPawn::HandlePassengerSlotClicked(int32 SlotIndex)
 	return FReply::Handled();
 }
 
+bool ASimCopterHelicopterPawn::FindLandedPilotExit(FVector& OutCenter) const
+{
+	if (!GetWorld() || !ExitPawnClass) return false;
+	const auto* Pilot = ExitPawnClass->GetDefaultObject<ASimCopterOnFootPawn>();
+	const float Radius = Pilot->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	const float Half = Pilot->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const double DeckZ = GetActorLocation().Z - (CollisionComponent ? CollisionComponent->GetScaledCapsuleHalfHeight() : 0);
+	FBox Bounds(ForceInit);
+	TryGetAirframeLocalBoundsCm(Bounds);
+	const FRotationMatrix Frame(FRotator(0,GetActorRotation().Yaw,0));
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(SimCopterPilotExitSupport), true, this);
+	// Prefer the remembered door, then its opposite. Small fore/aft offsets handle a corner
+	// landing without ever choosing a remote roof or a lower floor down the building's side.
+	for (const float Row : {0.0f, -32.0f, 32.0f, -64.0f, 64.0f})
+		for (const float Side : {PreferredExitSide, -PreferredExitSide})
+		{
+			const FVector2D Door = ComputePassengerDoorOffsetCm(Bounds, Side > 0 ? 0 : 1,
+				FMath::Max(ExitClearanceCm, Radius+4), FVector2D(ExitOffset.X, ExitOffset.Y));
+			FVector Feet = GetActorLocation() + Frame.GetUnitAxis(EAxis::X)*(Door.X+Row) + Frame.GetUnitAxis(EAxis::Y)*Door.Y;
+			Feet.Z = DeckZ;
+			FVector Surface;
+			if (!SimCopterWalkSupport::FindSurface(GetWorld(), Feet, Radius+2, 10,
+				Pilot->GetMaxStepHeightCm(), Query, Surface)) continue;
+			const FVector Center = Surface + FVector(0,0,Half+2);
+			const FCollisionShape Body = FCollisionShape::MakeCapsule(Radius+1, Half);
+			if (GetWorld()->OverlapBlockingTestByChannel(Center, FQuat::Identity, ECC_Pawn, Body, Query)) continue;
+			FHitResult Hit;
+			const FVector DoorCenter = Center - Frame.GetUnitAxis(EAxis::X)*Row;
+			if (GetWorld()->SweepSingleByChannel(Hit, DoorCenter, Center, FQuat::Identity, ECC_Pawn, Body, Query)) continue;
+			OutCenter = Center;
+			return true;
+		}
+	return false;
+}
+
 void ASimCopterHelicopterPawn::ExitHelicopter()
 {
 	if (!CanExitHelicopter() || GetWorld() == nullptr || ExitPawnClass == nullptr)
@@ -4331,6 +4367,9 @@ void ASimCopterHelicopterPawn::ExitHelicopter()
 	{
 		return;
 	}
+	FVector SafeLandedExit = FVector::ZeroVector;
+	// Refuse before changing possession, audio or HUD if there is no place to stand.
+	if (bIsLanded && !FindLandedPilotExit(SafeLandedExit)) return;
 	// SCHOOK: HelicopterDismountSound 0x0048a580 (command 0x1a) queues slots 0x25 then 0x26.
 	// The requested player-transition mapping uses only DORCLS on exit; boarding owns DOROPN.
 	// The original also stops the winch here, which cannot run unattended.
@@ -4388,36 +4427,20 @@ void ASimCopterHelicopterPawn::ExitHelicopter()
 		YawFrame.GetUnitAxis(EAxis::X) * DoorOffset.X +
 		YawFrame.GetUnitAxis(EAxis::Y) * DoorOffset.Y;
 
-	// DOWNWARD ONLY, from just above that deck. This used to start 1200 cm ABOVE the actor origin -
-	// some fourteen metres up - and take the first blocking hit on the way down, so stepping out
-	// next to anything taller than the aircraft put the pilot on ITS roof, high in the air, falling.
-	// Starting at the deck means the probe can only find the surface the aircraft is on, or a lower
-	// one where the door opens over the lip of a pad. ECC_Camera is the channel walkable surfaces
-	// answer here (the ground agents' own probes use it).
-	const FVector TraceStart = FVector(ExitLocation.X, ExitLocation.Y, DeckZ + PassengerDropProbeLiftCm);
-	const FVector TraceEnd = FVector(ExitLocation.X, ExitLocation.Y, DeckZ - PassengerDropProbeDepthCm);
-	FHitResult Hit;
-	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SimCopterHelicopterExit), false, this);
-	if (bIsLanded && GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Camera, QueryParams) &&
-		Hit.bBlockingHit)
-	{
-		// Never above the aircraft: the lift only exists so the probe starts clear of the deck.
-		DeckZ = FMath::Min(Hit.ImpactPoint.Z, DeckZ);
-	}
-	// Feet on that surface: the on-foot pawn's origin is the middle of its 92 cm capsule.
 	ExitLocation.Z = DeckZ + 94.0;
+	if (bIsLanded) ExitLocation = SafeLandedExit;
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	ASimCopterOnFootPawn* OnFootPawn = GetWorld()->SpawnActor<ASimCopterOnFootPawn>(
+	// Landed placement already checked the capsule. Spawn adjustment must not move it off the lip.
+	// Bind the aircraft before BeginPlay: that tells the pilot this height was already resolved.
+	const FTransform ExitTransform(FRotator(0.0f, GetActorRotation().Yaw, 0.0f), ExitLocation);
+	ASimCopterOnFootPawn* OnFootPawn = GetWorld()->SpawnActorDeferred<ASimCopterOnFootPawn>(
 		ExitPawnClass,
-		ExitLocation,
-		FRotator(0.0f, GetActorRotation().Yaw, 0.0f),
-		SpawnParams);
+		ExitTransform,
+		this, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	if (OnFootPawn != nullptr)
 	{
 		OnFootPawn->SetParkedHelicopter(this);
+		OnFootPawn->FinishSpawning(ExitTransform);
 		if (!bIsLanded)
 		{
 			OnFootPawn->BeginAirborneExit(ExitLocation, VelocityCmPerSec);
@@ -4544,7 +4567,7 @@ void ASimCopterHelicopterPawn::DispatchControllerSelection()
 {
 	const auto Selection = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex);
 	if (Selection.ServiceIndex == SimCopterControllerInput::RecallAllServiceIndex) { ClearAllDispatchVehicles(); return; }
-	if (Selection.ServiceIndex >= 100) { RequestAirSupport(Selection.ServiceIndex == 101); return; }
+	if (Selection.ServiceIndex == 100) { RequestAirSupport(); return; }
 	if (Selection.ServiceIndex != INDEX_NONE)
 	{
 		RequestDispatch(Selection.ServiceIndex, Selection.bChaseSpotlight, /*bClearInstead=*/false);
@@ -4836,7 +4859,7 @@ void ASimCopterHelicopterPawn::UpdateControllerInput(const float DeltaSeconds)
 	bControllerEngineStartHeld = Routing.CollectiveCommand > 0;
 	bControllerEngineShutdownHeld = Routing.CollectiveCommand < 0;
 
-	if (bCameraAdjust)
+	if (bCameraAdjust && !AirOperations->IsRemoteTaserActive())
 	{
 		if (!FMath::IsNearlyZero(Routing.CameraZoomCommand))
 		{
@@ -5053,6 +5076,7 @@ void ASimCopterHelicopterPawn::StopCameraPanDrag()
 
 void ASimCopterHelicopterPawn::ZoomCamera(float Value)
 {
+	if (AirOperations->IsRemoteTaserActive()) { AirOperations->ZoomRemoteTaser(Value); return; }
 	if (!FMath::IsNearlyZero(Value))
 	{
 		CameraZoomAlpha = FMath::Clamp(CameraZoomAlpha - Value * 0.08f, 0.0f, 1.0f);

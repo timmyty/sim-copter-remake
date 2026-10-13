@@ -63,7 +63,7 @@ void USimCopterAirOperationsSubsystem::Tick(float DeltaSeconds)
 				if (auto* Career=GI->GetSubsystem<USimCopterCareerSubsystem>(); Career && !Career->IsAirSupportUnlocked())
 				{
 					Career->SetAirSupportUnlocked(true);
-					Mission->ShowAirOperationsMessage(TEXT("Level passed! Air Support is now helping. Keep flying, assign a mission in Dispatch, or choose Next Level in the hangar."));
+					Mission->ShowAirOperationsMessage(TEXT("Level passed! Air Support is available. Select a map mission and choose AIR: MISSION in Dispatch to request help."));
 				}
 		EnsureSupport();
 	}
@@ -237,21 +237,21 @@ void USimCopterAirOperationsSubsystem::EnsureSupport()
 	Heli->GetAirOperations()->SetStatus(TEXT("AIR SUPPORT: available"));
 	SupportHelicopter=Heli;
 }
-bool USimCopterAirOperationsSubsystem::OrderSupport(int32 EventId,bool bEnableAutomatic)
+bool USimCopterAirOperationsSubsystem::OrderSupport(int32 EventId)
 {
 	if(!IsSupportUnlocked()) return false;
 	EnsureSupport(); if(!SupportHelicopter.IsValid()) return false;
 	if(SupportHelicopter->GetPassengerCount()>0 || SupportHelicopter->GetAirOperations()->HasCargo()) return false;
-	if(!bEnableAutomatic && (!Missions() || !Missions()->GetMissionRecords().ContainsByPredicate(
-		[&](const auto& Record){return Record.EventId==EventId && CanAssignAirSupport(Record);}))) return false;
-	this->bAutomatic=bEnableAutomatic; AssignedEvent=bEnableAutomatic?INDEX_NONE:EventId;
+	if(!Missions() || !Missions()->GetMissionRecords().ContainsByPredicate(
+		[&](const auto& Record){return Record.EventId==EventId && CanAssignAirSupport(Record);})) return false;
+	AssignedEvent=EventId;
 	WorkSeconds=0; MissionAttemptSeconds=0; bReturning=false;
 	bHasLandingSurface=false;
 	return true;
 }
 void USimCopterAirOperationsSubsystem::RecallSupport()
 {
-	bAutomatic=false; AssignedEvent=INDEX_NONE; bReturning=true;
+	AssignedEvent=INDEX_NONE; bReturning=true;
 	WorkSeconds=0; MissionAttemptSeconds=0;
 }
 FString USimCopterAirOperationsSubsystem::GetSupportStatus() const
@@ -355,30 +355,13 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 		}
 		return;
 	}
-	// With nobody aboard, automatic support may leave an optional recovery for an
-	// original emergency. Manual assignments and cargo already being delivered stay put.
-	if (Record && bAutomatic && SimCopterMissions::IsRecoveryMission(Record->TypeMask) &&
-		Records.ContainsByPredicate([](const auto& R) { return CanAssignAirSupport(R) && !SimCopterMissions::IsRecoveryMission(R.TypeMask); })) Record=nullptr;
-	if(!Record && bAutomatic && !bReturning)
-	{
-		const int32 PlayerIndex=Mission->GetMapFocusRecordIndex();
-		float Nearest=MAX_flt;
-		bool bBestIsRecovery=true;
-		for(const auto& R:Records)
-		{
-			if(!CanAssignAirSupport(R)) continue;
-			FVector Point; if(!Road->TryGetTileCenterWorldLocation(R.TileX,R.TileY,Point)) continue;
-			float D=FVector::DistSquared(Heli->GetActorLocation(),Point);
-			if(Records.IsValidIndex(PlayerIndex) && Records[PlayerIndex].EventId==R.EventId) D+=100000000;
-			const bool bRecovery=SimCopterMissions::IsRecoveryMission(R.TypeMask);
-			if ((!bRecovery && bBestIsRecovery) || (bRecovery==bBestIsRecovery && D<Nearest))
-			{ bBestIsRecovery=bRecovery; Nearest=D; Record=&R; AssignedEvent=R.EventId; WorkSeconds=0; MissionAttemptSeconds=0; }
-		}
-	}
+	// Each player order authorizes one event. Finishing or losing that event never
+	// claims a different emergency, even when other work is waiting nearby.
 	if(!Record || bReturning)
 	{
 		AssignedEvent=INDEX_NONE; Ops->SetSupportGoal(SupportHome);
-		Ops->SetStatus(bReturning?TEXT("AIR SUPPORT: recalled to base"):TEXT("AIR SUPPORT: waiting for a mission"));
+		WorkSeconds=0; MissionAttemptSeconds=0;
+		Ops->SetStatus(bReturning?TEXT("AIR SUPPORT: recalled to base"):TEXT("AIR SUPPORT: awaiting orders"));
 		if(FVector::Distance(Heli->GetActorLocation(),SupportHome)<100) bReturning=false;
 		return;
 	}
@@ -474,6 +457,13 @@ void USimCopterAirOperationsSubsystem::UpdateSupport(float DeltaSeconds)
 }
 void USimCopterAirOperationsSubsystem::SerializeState(FArchive& Ar)
 {
-	Ar << bAutomatic << bReturning << AssignedEvent << WorkSeconds << MissionAttemptSeconds << StalledCarSeconds << SupportHome;
-	if(Ar.IsLoading()) { SupportHelicopter.Reset(); ThinkSeconds=0; bHasLandingSurface=false; LandingPerson.Reset(); }
+	// Keep the legacy byte layout. Automatic assignments from older saves were not
+	// player orders; retire them, but UpdateSupport still delivers loaded cargo/people.
+	bool bLegacyAutomatic=false;
+	Ar << bLegacyAutomatic << bReturning << AssignedEvent << WorkSeconds << MissionAttemptSeconds << StalledCarSeconds << SupportHome;
+	if(Ar.IsLoading())
+	{
+		if(bLegacyAutomatic) RecallSupport();
+		SupportHelicopter.Reset(); ThinkSeconds=0; bHasLandingSurface=false; LandingPerson.Reset();
+	}
 }
