@@ -1587,6 +1587,113 @@ bool FSimCopterDispatchLocationVoiceTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMedevacAnnouncementBurstTest,
+	"SimCopter.Missions.MedevacAnnouncementBurst",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterMedevacAnnouncementBurstTest::RunTest(const FString& Parameters)
+{
+	for (int32 Difficulty = 0; Difficulty < 4; ++Difficulty)
+	{
+		FSimCopterTestMissionWorld World;
+		FSimCopterMissionSystem System;
+		System.Initialize(&World, 1);
+		System.BeginSession();
+		FSimCopterCareerCity City;
+		City.Difficulty = Difficulty;
+		System.SetCareerCity(City);
+		int32 LastEvent = INDEX_NONE;
+		for (int32 I = 0; I < 12; ++I)
+		{
+			// Scheduled cases, incidental injuries, and player-caused injuries all use the same budget.
+			LastEvent = I % 3 == 0 ? System.CreateEventAt(30 + I, 30, TYPE_Medevac) :
+				I % 3 == 1 ? System.CreateIncidentMedevacAt(30 + I, 30) :
+				System.CreatePlayerCausedMedevacAt(30 + I, 30);
+			const auto* Record = System.FindRecord(LastEvent);
+			if (TestNotNull(TEXT("Every casualty retains its mission record"), Record))
+			{
+				TestTrue(TEXT("Suppressed reports retain active patients and their map location"),
+					Record->bActive && Record->MedevacVictims > 0 && Record->TileX == 30 + I && Record->TileY == 30);
+				TestEqual(TEXT("Player-caused reward suppression survives"), Record->bSuppressCompletionRewards, I % 3 == 2);
+			}
+		}
+		const int32 Reports = World.UiMessages.FilterByPredicate([](const FSimCopterMissionUiMessage& Message)
+		{ return Message.Kind == 5; }).Num();
+		TestEqual(*FString::Printf(TEXT("Tier %d: twelve medical incidents produce one HUD alert"), Difficulty + 1), Reports, 1);
+		TestEqual(*FString::Printf(TEXT("Tier %d: one intact four-part medical dispatch"), Difficulty + 1), World.RadioVoiceCalls.Num(), 4);
+		TestEqual(TEXT("Every player-caused injury still incurs its fine"),
+			System.GetCash(), FSimCopterMissionSystem::SessionStartingCash - 4 * FSimCopterMissionSystem::PlayerCausedInjuryFine);
+		System.PostEvent(EVT_VictimPickedUp, LastEvent, 1, true);
+		System.PostEvent(EVT_MedevacDelivered, LastEvent, 1, true);
+		System.Tick(0.0f);
+		TestNull(TEXT("A patient whose report was suppressed can still complete the mission"), System.FindRecord(LastEvent));
+	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMedevacAnnouncementCadenceTest,
+	"SimCopter.Missions.MedevacAnnouncementCadence",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterMedevacAnnouncementCadenceTest::RunTest(const FString& Parameters)
+{
+	FSimCopterTestMissionWorld World;
+	FSimCopterMissionSystem System;
+	System.Initialize(&World, 1);
+	System.Tuning.FireSpreadInterval = MAX_int32;
+	auto MedicalReports = [&World]()
+	{
+		return World.UiMessages.FilterByPredicate([](const FSimCopterMissionUiMessage& Message)
+		{ return Message.Kind == 5 && (Message.TypeMask & TYPE_Medevac) != 0; }).Num();
+	};
+	System.CreateIncidentMedevacAt(30, 30);
+	System.Tick(0.0f);
+	System.CreateIncidentMedevacAt(31, 30);
+	TestEqual(TEXT("Zero elapsed time cannot release another medical alert"), MedicalReports(), 1);
+	System.Tick(59.0f);
+	System.CreateIncidentMedevacAt(32, 30);
+	TestEqual(TEXT("Further casualties stay quiet for the full minute"), MedicalReports(), 1);
+	TestEqual(TEXT("Suppressed calls queue no location or closing fragments"), World.RadioVoiceCalls.Num(), 4);
+	System.Tick(1.0f);
+	TestEqual(TEXT("Cooldown expiry does not replay suppressed alerts"), MedicalReports(), 1);
+	System.CreateIncidentMedevacAt(33, 30);
+	TestEqual(TEXT("A new casualty can be reported after one minute"), MedicalReports(), 2);
+	TestEqual(TEXT("Both admitted reports retain their complete phrases"), World.RadioVoiceCalls.Num(), 8);
+	System.CreateEventAt(50, 30, TYPE_BuildingFire);
+	System.CreateEventOfType(TYPE_CarFireEvent);
+	System.CreateEventAt(54, 30, TYPE_BuildingFire);
+	System.CreateEventAt(64, 64, TYPE_Robber);
+	TestEqual(TEXT("Existing fire burst and a crime dispatch remain audible"), World.RadioVoiceCalls.Num(), 20);
+	System.CreateIncidentMedevacAt(34, 30);
+	TestEqual(TEXT("Other mission types cannot reopen the medical budget"), MedicalReports(), 2);
+	System.Tick(60.0f);
+	System.CreateIncidentMedevacAt(35, 30);
+	System.CreateIncidentMedevacAt(36, 30);
+	TestEqual(TEXT("Sustained casualties remain capped at one new report per minute"), MedicalReports(), 3);
+
+	TArray<uint8> Saved;
+	FMemoryWriter Writer(Saved);
+	System.SerializeRuntimeState(Writer);
+	FMemoryReader Reader(Saved);
+	TestTrue(TEXT("Medical alert pacing preserves mission save compatibility"), System.SerializeRuntimeState(Reader));
+	System.CreateIncidentMedevacAt(37, 30);
+	System.CreateIncidentMedevacAt(38, 30);
+	TestEqual(TEXT("Load starts a fresh medical alert budget without a backlog"), MedicalReports(), 4);
+	System.BeginSession();
+	System.CreateIncidentMedevacAt(39, 30);
+	System.CreateIncidentMedevacAt(40, 30);
+	TestEqual(TEXT("A new session resets medical alert pacing"), MedicalReports(), 5);
+	System.ContinueSession(1000);
+	System.CreateIncidentMedevacAt(41, 30);
+	System.CreateIncidentMedevacAt(42, 30);
+	TestEqual(TEXT("The next career session resets medical alert pacing"), MedicalReports(), 6);
+	System.Initialize(&World, 2);
+	System.CreateIncidentMedevacAt(43, 30);
+	System.CreateIncidentMedevacAt(44, 30);
+	TestEqual(TEXT("Reinitializing a city resets medical alert pacing"), MedicalReports(), 7);
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterFireAnnouncementBurstTest,
 	"SimCopter.Missions.FireAnnouncementBurst",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)

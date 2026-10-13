@@ -90,6 +90,8 @@ public:
 	void ToggleRemoteTaser();
 	void FireRemoteTaser();
 	void AimRemoteTaser(float Yaw, float Pitch, float DeltaSeconds);
+	void ZoomRemoteTaser(float Steps);
+	float GetRemoteTaserZoom() const { return RemoteScopeZoom; }
 	void UpdateRemoteTaserControls(float MouseYaw, float MousePitch, float StickYaw, float StickPitch, float DeltaSeconds);
 	bool IsRemoteTaserActive() const { return bRemoteTaserActive; }
 	FVector GetRemoteTaserMuzzle() const;
@@ -128,6 +130,7 @@ private:
 	void UpdateRemoteTaserMount();
 	void SetRemoteTaserCursor(bool bVisible);
 	void OffsetRemoteTaserAim(float YawDegrees, float PitchDegrees);
+	bool CanControlRemoteTaser() const;
 	void SelectRemoteTaserTarget();
 	FVector FindRemoteTaserPursuitOffset(const FVector& Velocity) const;
 	void UpdatePilotRecovery(float DeltaSeconds);
@@ -152,6 +155,7 @@ private:
 	TWeakObjectPtr<ASimCopterGroundAgent> TaserImpactTarget;
 	float TaserImpactSeconds = 0.0f;
 	TWeakObjectPtr<ASimCopterGroundAgent> RemoteTaserTarget;
+	TWeakObjectPtr<ASimCopterGroundAgent> LastRemoteTaserTarget;
 	TWeakObjectPtr<ASimCopterOnFootPawn> RecoveryPilot;
 	TWeakObjectPtr<ASimCopterGroundAgent> RecoveryPassenger;
 	FVector RecoveryHoldLocation = FVector::ZeroVector;
@@ -167,6 +171,11 @@ private:
 	FVector RemotePursuitOffset = FVector::ZeroVector;
 	float RemoteTargetSearchSeconds = 0;
 	float RemotePursuitPlanSeconds = 0;
+	FVector RemotePursuitGoal = FVector::ZeroVector;
+	float RemoteObstructedSeconds = 0;
+	bool bRemoteHolding = false;
+	float RemoteScopeZoom = 1;
+	float RemoteScopeZoomTarget = 1;
 	TWeakObjectPtr<ASimCopterGroundAgent> TowVehicle;
 	TArray<TWeakObjectPtr<ASimCopterGroundAgent>> CagePeople;
 	TArray<FName> SavedCargoNames;
@@ -209,7 +218,7 @@ public:
 	void RefreshRecoveryWaypoints();
 	ASimCopterRecoverySite* FindRecoverySite(const FVector& From, bool bBoat) const;
 	const TArray<TWeakObjectPtr<ASimCopterRecoverySite>>& GetSites() const { return Sites; }
-	bool OrderSupport(int32 EventId, bool bAutomatic);
+	bool OrderSupport(int32 EventId);
 	void RecallSupport();
 	void SerializeState(FArchive& Ar);
 	FString GetSupportStatus() const;
@@ -232,7 +241,6 @@ private:
 	mutable TMap<uint8,TArray<FVector>> ServiceRoofs;
 	TWeakObjectPtr<ASimCopterHelicopterPawn> SupportHelicopter;
 	bool bSitesReady = false;
-	bool bAutomatic = true;
 	bool bReturning = false;
 	int32 AssignedEvent = INDEX_NONE;
 	float ThinkSeconds = 0.0f;

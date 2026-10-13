@@ -496,6 +496,7 @@ public:
 	static bool IsHelicopterSettledForAlight(const ASimCopterHelicopterPawn& Helicopter);
 
 private:
+	friend class FSimCopterDeployedMedicRiotTest;
 	void CollapseBuilding(int32 TileX, int32 TileY, int32 FootprintSize, bool bSuppressNewInjuryRewards);
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCageRecoveryTest;

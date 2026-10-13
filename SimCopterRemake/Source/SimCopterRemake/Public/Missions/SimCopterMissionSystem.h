@@ -818,10 +818,11 @@ private:
 	int32 LifecyclePassCounter = 0;   // riot recenter cadence (every 13th pass)
 	int32 FocusRecordIndex = INDEX_NONE; // DAT_0057f9d8 (the map's selected record; see SetMapFocusRecordIndex)
 
-	// Fire globals.
-	// Presentation-only burst cap: keep every incident/marker, but never queue a chorus of fires.
+	// Presentation-only limits: keep every incident/marker without a radio backlog.
+	float MedevacAnnouncementQuietTimeRemaining = 0;
 	int32 FireAnnouncementsInBurst = 0;
 	float FireAnnouncementQuietTimeRemaining = 0;
+	// Fire globals.
 	int32 ActiveFlameCount = 0;       // DAT_00505f58
 	int32 SpreadAccumulator = 0;      // DAT_00505f80
 

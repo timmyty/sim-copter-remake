@@ -1,0 +1,207 @@
+{
+  "version": "v1.0.10",
+  "verified_at_utc": "2026-10-13T06:00:44.486810+00:00",
+  "baseline_commit": "690a6ba923a61b5dec835b2c23e7d7d78b4f7331",
+  "source_verification": {
+    "file_count": 443,
+    "source_publication_match": true,
+    "manifest_sha256": "e11fd4ec6d18b4dbb7fb26582f12d0389ae9cd62184c0dbf11248d80b5d7ae63"
+  },
+  "builds": [
+    {
+      "target": "editor",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.10/build-editor.log",
+      "log_sha256": "87b9cf1261756ce83a48b707290754e29d34ceb5a25f82955f0c7c988e97586f"
+    },
+    {
+      "target": "shipping",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.10/build-shipping.log",
+      "log_sha256": "4e08be19203a61aaa6d62dc81d9fdd25308acee45fd3de3db5c7fff53ff22f11"
+    },
+    {
+      "target": "development",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.10/build-development.log",
+      "log_sha256": "569921f9daaff9a124868d82ef6716f493096eee3a57c9a4ce35895a81044d77"
+    }
+  ],
+  "tests": [
+    {
+      "mode": "Complete SimCopter suite, NullRHI, isolated profile with config writes",
+      "counts": {
+        "succeeded": 476,
+        "succeededWithWarnings": 20,
+        "failed": 3,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 224.20907592773438,
+      "failures": [
+        {
+          "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+          "messages": [
+            "Expected 'Finds flat land ALTM sample' to be not null.",
+            "Expected 'Finds water ALTM sample' to be not null.",
+            "Expected 'Finds sloped ALTM sample' to be not null."
+          ]
+        },
+        {
+          "test": "SimCopter.Polish.ControlsAudioAndPeople",
+          "messages": [
+            "Expected 'Exiting possesses pilot' to be not null."
+          ]
+        },
+        {
+          "test": "SimCopter.UI.FlapLayout",
+          "messages": [
+            "Expected 'The four flaps between them cover every career equipment bit' to be 95, but it was 31."
+          ]
+        }
+      ],
+      "warnings": [
+        {
+          "test": "SimCopter.Cheats.CityEffects",
+          "warnings": 17
+        },
+        {
+          "test": "SimCopter.Cheats.GortOriginalAssets",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.City.BuildingDemolition",
+          "warnings": 34
+        },
+        {
+          "test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Hangar.DismountMenuInput",
+          "warnings": 2
+        },
+        {
+          "test": "SimCopter.Missions.PlaneDeckRescue",
+          "warnings": 11
+        },
+        {
+          "test": "SimCopter.Missions.SafePassengerLanding",
+          "warnings": 12
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city19",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city22",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city23",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city25",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city26",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city27",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city28",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city29",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.CAPE_WELLS",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+          "warnings": 1
+        },
+        {
+          "test": "SimCopter.Traffic.TunnelTransit",
+          "warnings": 4
+        },
+        {
+          "test": "SimCopter.UI.HangarPurchaseParking",
+          "warnings": 3
+        },
+        {
+          "test": "SimCopter.Water.SupplyGeometry",
+          "warnings": 11
+        }
+      ],
+      "report": "Docs/scratchpad/release-v1.0.10/tests-full/index.json",
+      "report_sha256": "665b93a4aab8604a55dea8b4d0a6fcb41d20f25137399638188a5bb30fe3a83f"
+    },
+    {
+      "mode": "Polish and rooftop safety after adding physical ground to the landed-exit fixture",
+      "counts": {
+        "succeeded": 4,
+        "succeededWithWarnings": 0,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 0.20579299330711365,
+      "failures": [],
+      "report": "Docs/scratchpad/release-v1.0.10/tests-fixture/index.json",
+      "report_sha256": "196572ea6b8cf85b543e17f6180eda4f5552c38eb21182fdd7956c2b30246e28"
+    }
+  ],
+  "final_distinct_cases": {
+    "passed": 497,
+    "total": 499,
+    "known_failures": 2
+  },
+  "runtime": {
+    "files": 916,
+    "bytes": 2353060895,
+    "nonufs_verified": 903,
+    "maps": 45,
+    "kinv_tracks": 21,
+    "drive_in_movies": 2,
+    "flyover_soundtracks": 30,
+    "shipping_sha256": "5b7fbdfb9002a839b2ae60763ff8215080c0a9505f1c90a224713696f658a999"
+  },
+  "startup": {
+    "mode": "NullRHI, unattended, no audio, isolated user directory",
+    "launcher_exited": false,
+    "children": [
+      {
+        "pid": 81580,
+        "cpu_seconds": 0.703125,
+        "path": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.10\\SimCopterRemake-v1.0.10-Windows-x64\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "working_set_bytes": 670572544,
+        "window_handle": 0
+      }
+    ],
+    "seconds": 30.694896,
+    "launcher_pid": 100860,
+    "limitation": "Checks bootstrap and startup survival only; no visible rendering or gameplay check."
+  },
+  "assembly": "Fresh staging with current Shipping and Development executables; all other runtime files verified against the v1.0.9 inventory; no recook.",
+  "changed_runtime_files": [
+    "SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+    "SimCopterRemake/Binaries/Win64/SimCopterRemake.exe"
+  ],
+  "archive_gate": "Every decompressed ZIP entry must match staging SHA-256; both GitHub asset digests must match before publishing.",
+  "receipt_location": "Docs/scratchpad/release-v1.0.10/",
+  "limitations": [
+    "Two pre-existing automation fixture failures remain.",
+    "NullRHI visual-only cases may be no-ops; no offscreen or interactive visual check in this release pass.",
+    "No interactive gameplay, physical-controller, manual listening or FPS benchmark.",
+    "Witness-photo slowdown and recurring GPU compute crash remain unresolved."
+  ]
+}

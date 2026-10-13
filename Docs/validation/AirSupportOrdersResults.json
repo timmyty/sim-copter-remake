@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-12",
+  "verifiedAtUtc": "2026-10-13T03:58:46.668624+00:00",
+  "scope": "Air support waits for a player order, handles one selected mission, then returns to standby",
+  "cause": "The subsystem defaulted to automatic mission selection and restored that mode from saved games",
+  "reproducedAssertions": 5,
+  "baselineReport": "Docs/scratchpad/air-support-orders/reproduced/index.json",
+  "fixtureCorrection": "The first validation fixture tried to create a traffic jam without a mission-world traffic adapter. Replaced it with an incident medevac and its actual delivery/lifecycle events.",
+  "coverage": [
+    "New and graduated helpers leave unrequested emergencies and recovery jobs alone",
+    "Cockpit and controller orders select the focused mission; controller Recall All remains reachable",
+    "Completed, missing, unreachable and recalled work cannot trigger another assignment",
+    "Locked cities, base markers, empty selections and completed jobs reject orders",
+    "Busy passenger delivery rejects reassignment",
+    "Legacy automatic saves migrate without changing their byte layout or breakdown countdown",
+    "Explicit saved assignments survive and reconnect the existing helper",
+    "Actual loaded vehicle delivery survives legacy migration and then stays unassigned",
+    "A recalled critical patient is delivered alive; existing transport, cage, controller and save tests pass"
+  ],
+  "headless": {
+    "reportedPassed": 26,
+    "exercised": 25,
+    "failed": 0,
+    "warningCases": 0,
+    "visualOnlyNullRhiNoOps": [
+      "SimCopter.AirOperations.TaserVisuals"
+    ],
+    "report": "Docs/scratchpad/air-support-orders/validated-final/index.json"
+  },
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/air-support-orders/build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/air-support-orders/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/air-support-orders/build-development.log"
+    }
+  },
+  "sourceManifest": "Docs/scratchpad/air-support-orders/source-manifest.json",
+  "diff": "Docs/scratchpad/air-support-orders/source.diff",
+  "limitations": [
+    "No interactive gameplay or physical controller check",
+    "No new rendering or cooked assets; no visual capture run"
+  ],
+  "publicationChanged": false,
+  "installed": {
+    "InstalledAtUtc": "2026-10-13T03:58:46.5659308Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "7929A45220B38E18E8612B5DCD4C4CCA4AAC0A672E394AFBCFACC6DEAD8418D0",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\air-support-orders/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "6B36538D96E2B61A4ED5BC1848AFB98FF51B14F27488DE21C312860855FE90BE"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "F4AF95D29E437E67929ECF8D989FE565CA7345FC915604FFB2885FD77F808D16",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\air-support-orders/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "2C1E47EAB14ACE56F89E6628F8AA4BDA6205F99A4C5433FDE4C6DC4D068F461D"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "E9CB8F722A1A5406C6A9037D8A2AC381DE72F3EE717014BC39C83A9786133A3B",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\air-support-orders/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "035A4370BC11F08A48E3AF59D3FAFFB2A69C2B116B59C0BFC3A2DD36D399462F"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "A9176338D9FA4B83CD5398B5DE1798F3A5B7697528DB41F5DDA6406ADCA75E94",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\air-support-orders/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "4EBA2AB38C98952AE690744508DD33FBDFDC913D0D94AAD104534DB9A71FCE1A"
+      }
+    ],
+    "HeadlessPassed": 26,
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  }
+}

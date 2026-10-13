@@ -7,6 +7,9 @@
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Flight/SimCopterHelicopterPawn.h"
@@ -89,7 +92,7 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	ControllerKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released);
 	Ops->Update(.05f);
 	TestTrue(TEXT("Weapon gimbal and sight share the firing direction"),Ops->RemoteTaserWeapon->GetForwardVector().Equals(Ops->GetRemoteTaserDirection(),.001));
-	TestTrue(TEXT("Readout announces automatic orbit"),Ops->GetRemoteTaserReadout().Contains(TEXT("AUTO ORBIT")));
+	TestTrue(TEXT("Readout announces a steady hover and magnification"),Ops->GetRemoteTaserReadout().Contains(TEXT("HOLD")) && Ops->GetRemoteTaserReadout().Contains(TEXT("1.0x")));
 	Ops->AimRemoteTaser(1,0,3); Ops->UpdateRemoteTaser(0);
 	TestTrue(TEXT("Taser yaw moves beyond the former 100-degree limit"),Ops->RemoteTaserAim.Yaw>130);
 	Ops->AimRemoteTaser(1,0,1); Ops->UpdateRemoteTaser(0);
@@ -104,6 +107,78 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	TestTrue(TEXT("Taser aims nearly straight down"),FMath::IsNearlyEqual(Ops->RemoteTaserAim.Pitch,-85.f,.1f));
 	TestTrue(TEXT("Weapon still follows the expanded sight direction"),Ops->RemoteTaserWeapon->GetForwardVector().Equals(Ops->GetRemoteTaserDirection(),.001));
 	TestFalse(TEXT("Remote sight captures mouse for direct aiming"),PC->bShowMouseCursor);
+	// A clear nearby suspect should not make the platform continually hunt for a new vantage.
+	const FVector StablePosition=Heli->GetActorLocation();
+	const FRotator StableFacing=Heli->GetActorRotation();
+	for (int32 Frame=0; Frame<240; ++Frame) Ops->UpdateRemoteTaser(1.f/60);
+	TestTrue(TEXT("Clear in-range target holds a stable firing platform for four seconds"),Heli->GetActorLocation().Equals(StablePosition,.1));
+	TestTrue(TEXT("Hover does not turn the nose under the sight"),Heli->GetActorRotation().Equals(StableFacing,.01));
+	const FVector StableSuspectPosition=Suspect->GetActorLocation();
+	for (int32 Frame=0; Frame<120; ++Frame)
+	{
+		Suspect->SetActorLocation(StableSuspectPosition+FVector(0,Frame*5,0));
+		Ops->UpdateRemoteTaser(1.f/60);
+	}
+	TestTrue(TEXT("Small target movement does not reposition the hover"),Heli->GetActorLocation().Equals(StablePosition,.1));
+	Suspect->SetActorLocation(StableSuspectPosition);
+	auto* BriefCover=Box(FMath::Lerp(Ops->GetRemoteTaserMuzzle(),StableSuspectPosition,.5),FVector(60));
+	TestFalse(TEXT("Transient-cover fixture blocks the sight"),Ops->HasClearLine(Ops->GetRemoteTaserMuzzle(),StableSuspectPosition,Suspect));
+	for (int32 Frame=0; Frame<24; ++Frame) Ops->UpdateRemoteTaser(1.f/60);
+	TestTrue(TEXT("Brief cover does not disturb the firing platform"),Heli->GetActorLocation().Equals(StablePosition,.1));
+	BriefCover->GetOwner()->Destroy(); Ops->UpdateRemoteTaser(.1f);
+	TestEqual(TEXT("Clear sight resets the obstruction grace period"),Ops->RemoteObstructedSeconds,0.f);
+	Suspect->SetActorLocation(StablePosition+FVector(3800,0,-1700));
+	Ops->UpdateRemoteTaser(.1f);
+	TestTrue(TEXT("Hover hysteresis avoids repositioning just beyond acquisition range"),Heli->GetActorLocation().Equals(StablePosition,.1));
+	Suspect->SetActorLocation(StablePosition+FVector(5200,0,-1700));
+	for (int32 Frame=0; Frame<24; ++Frame) Ops->UpdateRemoteTaser(1.f/60);
+	TestTrue(TEXT("Pursuit resumes before the target leaves weapon range"),!Ops->bRemoteHolding && !Heli->GetActorLocation().Equals(StablePosition,1));
+	TestTrue(TEXT("Following retains the chosen vantage instead of half-second replans"),Ops->RemotePursuitPlanSeconds>1.5f);
+	TestTrue(TEXT("Following does not swing the nose camera"),Heli->GetActorRotation().Equals(StableFacing,.01));
+	Heli->SetAutopilotTransform(StablePosition,StableFacing,.05f);
+	Suspect->SetActorLocation(StableSuspectPosition); Ops->UpdateRemoteTaser(.05f);
+	// Zoom goes through the bound camera axis, preserving the normal flight camera.
+	const float FlightZoom=Heli->CameraZoomAlpha;
+	const auto ZoomAxis=[&](float Value)
+	{
+		for (auto& Binding:ControllerInput->AxisBindings)
+			if (Binding.AxisName==TEXT("SimCopterCameraZoom")) Binding.AxisDelegate.Execute(Value);
+	};
+	const auto SettleScope=[&]() { for (int32 Frame=0; Frame<120; ++Frame) Ops->UpdateRemoteTaser(1.f/60); };
+	ZoomAxis(100); SettleScope();
+	TestTrue(TEXT("Wheel clamps scope at four-times magnification"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),4.f,.001f));
+	TestEqual(TEXT("Scope wheel leaves flight camera zoom unchanged"),Heli->CameraZoomAlpha,FlightZoom);
+	const float ScopeFov=Ops->RemoteTaserCamera->GetCameraComponent()->FieldOfView;
+	TestTrue(TEXT("Four-times scope uses optical projection magnification"),FMath::IsNearlyEqual(FMath::Tan(FMath::DegreesToRadians(22.5f))/FMath::Tan(FMath::DegreesToRadians(ScopeFov*.5f)),4.f,.001f));
+	TestTrue(TEXT("Scope retains the muzzle centre ray"),Ops->RemoteTaserCamera->GetActorLocation().Equals(Ops->GetRemoteTaserMuzzle(),.001) && Ops->RemoteTaserCamera->GetActorForwardVector().Equals(Ops->GetRemoteTaserDirection(),.001));
+	Ops->RemoteTaserAim=FRotator::ZeroRotator; Ops->UpdateRemoteTaserControls(4,0,0,0,1.f/60);
+	const float ScopedMouseYaw=Ops->RemoteTaserAim.Yaw;
+	Ops->RemoteTaserAim=FRotator::ZeroRotator; Ops->AimRemoteTaser(1,0,.1f);
+	const float ScopedStickYaw=Ops->RemoteTaserAim.Yaw;
+	ZoomAxis(-100); SettleScope();
+	TestTrue(TEXT("Wheel clamps scope at the original field of view"),FMath::IsNearlyEqual(Ops->RemoteTaserCamera->GetCameraComponent()->FieldOfView,45.f,.001f));
+	Ops->RemoteTaserAim=FRotator::ZeroRotator; Ops->UpdateRemoteTaserControls(4,0,0,0,1.f/60);
+	TestTrue(TEXT("Zoom reduces mouse sensitivity by magnification"),FMath::IsNearlyEqual(Ops->RemoteTaserAim.Yaw,ScopedMouseYaw*4,.001f));
+	Ops->RemoteTaserAim=FRotator::ZeroRotator; Ops->AimRemoteTaser(1,0,.1f);
+	TestTrue(TEXT("Zoom reduces stick sensitivity by magnification"),FMath::IsNearlyEqual(Ops->RemoteTaserAim.Yaw,ScopedStickYaw*4,.001f));
+	ZoomAxis(2); SettleScope();
+	Heli->ControllerLeftTrigger(1); SettleScope();
+	TestTrue(TEXT("Holding LT engages four-times scope"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),4.f,.001f));
+	Heli->ControllerLeftTrigger(0); SettleScope();
+	TestTrue(TEXT("Releasing LT restores wheel-selected zoom"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),2.f,.001f));
+	ControllerKey(EKeys::Gamepad_FaceButton_Left);
+	ZoomAxis(3); Heli->ControllerLeftTrigger(1); SettleScope();
+	TestTrue(TEXT("Tool menu blocks both scope inputs"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),2.f,.001f) && Ops->RemoteScopeZoomTarget==2.f);
+	ControllerKey(EKeys::Gamepad_FaceButton_Right); Heli->ControllerLeftTrigger(0);
+	float ZoomAt30=0;
+	for (int32 Rate : {30,60,120})
+	{
+		Ops->RemoteScopeZoom=1; Ops->RemoteScopeZoomTarget=4;
+		for (int32 Frame=0; Frame<Rate/5; ++Frame) Ops->UpdateRemoteTaser(1.f/Rate);
+		if (Rate==30) ZoomAt30=Ops->GetRemoteTaserZoom();
+		else TestTrue(TEXT("Scope transition is frame-rate independent"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),ZoomAt30,.001f));
+	}
+	ZoomAxis(-100); SettleScope();
 	Ops->RemoteTaserAim=FRotator::ZeroRotator;
 	Ops->UpdateRemoteTaserControls(6,-2,0,0,1.f/30);
 	const FRotator MouseAt30=Ops->RemoteTaserAim;
@@ -111,10 +186,15 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	Ops->UpdateRemoteTaserControls(3,-1,0,0,1.f/60); Ops->UpdateRemoteTaserControls(3,-1,0,0,1.f/60);
 	TestTrue(TEXT("Equal mouse travel aims equally at 30 and 60 fps"),Ops->RemoteTaserAim.Equals(MouseAt30,.001));
 	TestTrue(TEXT("Mouse movement aims without right mouse held"),MouseAt30.Yaw>0 && MouseAt30.Pitch>0);
+	ZoomAxis(100); SettleScope();
+	Ops->RemoteTaserAim=(Suspect->GetActorLocation()-Ops->RemoteTaserMount->GetComponentLocation()).Rotation();
+	Ops->UpdateRemoteTaser(0); Ops->ShotCooldown=0; Ops->FireRemoteTaser();
+	TestTrue(TEXT("A fully zoomed centre-reticle shot stuns the aimed suspect"),Suspect->IsTaserStunned());
 	Ops->SetRemoteTaserCursor(true);
 	TestTrue(TEXT("Cockpit cursor can be released from the sight"),PC->bShowMouseCursor);
 	SelectRemoteOption();
 	TestFalse(TEXT("Return to flight stops orbit"),Ops->IsAIPiloted());
+	TestEqual(TEXT("Leaving remote mode clears scope zoom"),Ops->GetRemoteTaserZoom(),1.f);
 	TestTrue(TEXT("Return to flight restores the cockpit cursor"),PC->bShowMouseCursor);
 	auto Panel=SNew(SSimCopterToolFlaps).Pawn(Heli);
 	TestFalse(TEXT("Cockpit controls cannot steal keyboard focus"),Panel->SupportsKeyboardFocus());
@@ -157,7 +237,7 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	}
 	TestFalse(TEXT("Every pursuit step is bounded by the actual airframe sprint speed"),bExceededSprint);
 	TestTrue(TEXT("Fixture getaway car moves faster than the old 350 cm/s orbit"),BurglarCar->GetCurrentVelocityCmPerSec().Size2D()>350);
-	TestTrue(TEXT("Helicopter keeps a moving getaway car in taser range"),FVector::Distance(Heli->GetActorLocation(),BurglarCar->GetActorLocation())<2500);
+	TestTrue(TEXT("Helicopter keeps a moving getaway car in taser range"),FVector::Distance(Heli->GetActorLocation(),BurglarCar->GetActorLocation())<5500);
 	TestTrue(TEXT("Moving-car pursuit never drags the player's sight"),Ops->RemoteTaserAim.Equals(EntryAim));
 	Ops->AimRemoteTaser(.25f,0,.2f);
 	const FRotator SightOffset=Ops->RemoteTaserAim;
@@ -177,7 +257,7 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 		Burglar->SetActorLocation(RobberStart+FVector(0,Frame*15,0)); Burglar->CurrentVelocityCmPerSec=FVector(0,300,0);
 		Ops->UpdateRemoteTaser(.05f);
 	}
-	TestTrue(TEXT("Helicopter follows a robber running on foot"),FVector::Distance(Heli->GetActorLocation(),Burglar->GetActorLocation())<2500);
+	TestTrue(TEXT("Helicopter keeps a running robber within the stable firing range"),FVector::Distance(Heli->GetActorLocation(),Burglar->GetActorLocation())<5500);
 	Burglar->StunForArrest(); Ops->UpdateRemoteTaser(.3f);
 	TestFalse(TEXT("Captured robber is no longer pursued"),Ops->RemoteTaserTarget.IsValid());
 	const FVector Hold=Heli->GetActorLocation(); Ops->UpdateRemoteTaser(.5f);
@@ -201,6 +281,58 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	TestFalse(TEXT("Pursuit keeps the full airframe out of the building"),bCrossedWall);
 	TestTrue(TEXT("Pursuit repositions to restore a clear firing line"),Ops->HasClearLine(Ops->GetRemoteTaserMuzzle(),HiddenRobber->GetActorLocation(),HiddenRobber));
 	Heli->ToggleRemoteTaser(); HiddenRobber->Destroy(); Wall->GetOwner()->Destroy();
+
+	// A free gimbal can look back at a suspect while pursuit flies away to its vantage.
+	// Returning to flight must face the live suspect, including after a successful stun.
+	PC->PlayerCameraManager=World->SpawnActor<APlayerCameraManager>();
+	PC->PlayerCameraManager->InitializeFor(PC);
+	for (int32 Model=0; Model<9; ++Model)
+	{
+		Heli->SwitchHelicopterModel(Model);
+		for (bool bVehicle : {false,true})
+		{
+			auto* Target=bVehicle ? MakeCar(FVector(1200,-600,100),true) : World->SpawnActor<ASimCopterGroundAgent>();
+			if (!bVehicle) { Target->InitialPersonState=13; Target->BehaviorContext.ResetToState(13); Target->SetActorLocation(FVector(1200,-600,24)); }
+			Heli->SetAutopilotTransform(FVector(-300,200,1800),FRotator(0,150,0),.05f);
+			Heli->ToggleRemoteTaser();
+			TestTrue(TEXT("Exit-heading fixture acquires the criminal"),Ops->RemoteTaserTarget.Get()==Target);
+			Ops->RemoteTaserAim=FRotator(-30,80,0); // Free aim need not face the pursuit target.
+			Target->AddActorWorldOffset(FVector(100,250,0)); // Use current position, not the last pursuit update.
+			const FVector Expected=(Target->GetActorLocation()-Heli->GetActorLocation()).GetSafeNormal2D();
+			const FVector ExitPosition=Heli->GetActorLocation(), ExitVelocity=Heli->VelocityCmPerSec;
+			const int32 ExitHealth=Heli->FlightModel.HitPoints;
+			Heli->ToggleRemoteTaser();
+			const FString Case=FString::Printf(TEXT("Model %d %s"),Model,bVehicle?TEXT("car"):TEXT("person"));
+			TestTrue(Case+TEXT(" returns facing the live criminal"),FVector::DotProduct(Heli->GetActorForwardVector(),Expected)>.9999f);
+			TestTrue(Case+TEXT(" exit preserves position and velocity"),Heli->GetActorLocation().Equals(ExitPosition) && Heli->VelocityCmPerSec.Equals(ExitVelocity));
+			TestTrue(Case+TEXT(" restores aircraft view and visibility"),PC->GetViewTarget()==Heli && !PC->HiddenActors.Contains(Heli));
+			Heli->Tick(.05f);
+			TestTrue(Case+TEXT(" flight tick preserves the target-facing heading"),FVector::DotProduct(Heli->GetActorForwardVector(),Expected)>.9999f);
+			TestEqual(Case+TEXT(" exit preserves health"),Heli->FlightModel.HitPoints,ExitHealth);
+			if (!bVehicle)
+			{
+				Heli->SetAutopilotTransform(ExitPosition,FRotator(0,150,0),.05f);
+				Heli->ToggleRemoteTaser(); Target->StunForArrest(); Ops->UpdateRemoteTaser(.3f);
+				TestFalse(TEXT("Stun ends pursuit before returning to flight"),Ops->RemoteTaserTarget.IsValid());
+				Heli->ToggleRemoteTaser();
+				TestTrue(Case+TEXT(" returns facing the just-stunned criminal"),FVector::DotProduct(Heli->GetActorForwardVector(),Expected)>.9999f);
+			}
+			Target->Destroy();
+		}
+	}
+	Heli->SwitchHelicopterModel(4);
+	Heli->SetAutopilotTransform(FVector(0,0,1800),FRotator(0,-125,0),.05f);
+	Heli->ToggleRemoteTaser(); Ops->RemoteTaserAim=FRotator(-30,55,0);
+	const FRotator EmptyExitRotation=Heli->GetActorRotation();
+	Heli->ToggleRemoteTaser();
+	TestTrue(TEXT("A new session without criminals preserves flight heading"),Heli->GetActorRotation().Equals(EmptyExitRotation));
+	auto* ExitSuspect=World->SpawnActor<ASimCopterGroundAgent>(); ExitSuspect->InitialPersonState=13; ExitSuspect->BehaviorContext.ResetToState(13);
+	ExitSuspect->SetActorLocation(FVector(0,0,24)); Heli->ToggleRemoteTaser(); Heli->ToggleRemoteTaser();
+	TestTrue(TEXT("A suspect directly below cannot invent a horizontal heading"),Heli->GetActorRotation().Equals(EmptyExitRotation));
+	ExitSuspect->SetActorLocation(FVector(1000,500,24)); Heli->ToggleRemoteTaser(); Ops->EndRemoteTaser();
+	TestTrue(TEXT("Cleanup without a player return does not rotate the aircraft"),Heli->GetActorRotation().Equals(EmptyExitRotation));
+	Heli->ToggleRemoteTaser(); ExitSuspect->Destroy(); Heli->ToggleRemoteTaser();
+	TestTrue(TEXT("A destroyed target cannot rotate the returning aircraft"),Heli->GetActorRotation().Equals(EmptyExitRotation));
 
 	// Reproduce Space held during startup/exit; test the actual possession transition and ticks.
 	Heli->SetActorLocation(FVector(0,0,800)); Heli->SeedFlightModelFromActor();

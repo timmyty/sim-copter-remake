@@ -23,7 +23,7 @@ bool FSimCopterControllerWheelPresentationTest::RunTest(const FString& Parameter
 	{
 		const TArray<FString> Labels = bTools
 			? TArray<FString>{TEXT("Water Cannon"), TEXT("Water Bucket"), TEXT("Rescue Harness"), TEXT("Megaphone"), TEXT("Tear Gas"), TEXT("Capture Cage"), TEXT("Machine Gun"), TEXT("Missile"), TEXT("Remote Taser"), TEXT("Passengers")}
-			: TArray<FString>{TEXT("Fire Truck"), TEXT("Police"), TEXT("Ambulance"), TEXT("Police (Chase)"), TEXT("Air: Map Mission"), TEXT("Air: Automatic"), TEXT("Recall All")};
+			: TArray<FString>{TEXT("Fire Truck"), TEXT("Police"), TEXT("Ambulance"), TEXT("Police (Chase)"), TEXT("Air: Map Mission"), TEXT("Recall All")};
 		TSharedRef<SSimCopterRadialWheel> Widget = SNew(SSimCopterRadialWheel)
 			.Labels(Labels).Title(FText::FromString(bTools ? TEXT("SELECT TOOL") : TEXT("DISPATCH")))
 			.Instructions(FText::FromString(bTools ? TEXT("A: SELECT   X: DISPATCH\nB: CANCEL")

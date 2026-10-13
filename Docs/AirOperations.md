@@ -19,6 +19,7 @@ Implemented 2026-10-05. These are user-requested additions to the original SimCo
 | Open cage / deliver over active recovery ring | D-pad left | G or OPEN |
 | Enter / leave remote taser mode | X opens Tools; select Remote Taser / Fly Helicopter, then A | N or cockpit AIM TASER / FLY HELICOPTER button |
 | Aim / fire in remote taser mode | Right stick / A or RT | Move mouse / left click; hold right mouse for cockpit cursor |
+| Remote taser scope zoom | Hold LT for 4x; release to restore zoom | Mouse wheel adjusts 1x–4x |
 | Aim / fire taser on foot | LT / RT | Right mouse / left mouse |
 | Carry downed person | Walk up; automatic | Walk up; automatic |
 | Enter helicopter on foot | Y (or walk close) | F (or walk close) |
@@ -34,7 +35,7 @@ X opens Tools and toggles between Tools and Dispatch. Outside a menu, A uses the
 
 Buy a **Capture Cage ($1,800)** from the hangar equipment catalog. This per-aircraft fitting replaces the tow clamp; legacy purchases upgrade automatically. It extends from 1.4 to 18 meters, with clearance for the carried object's height.
 
-Career advancement retains the helicopter the pilot last used and its purchased equipment, including the capture cage, even when choosing Next Level on foot. The airport plane and automatic helper cannot replace that aircraft in the transfer.
+Career advancement retains the helicopter the pilot last used and its purchased equipment, including the capture cage, even when choosing Next Level on foot. The airport plane and support helper cannot replace that aircraft in the transfer.
 
 Junkyards occupy suitable clear, flat ground beside roads. Harbor sites occupy clear shoreline water and contain a crane, deck, and hull support cradle. Sites are generated for the current city; inland cities have no harbor. Their small minimap markers grow slightly when relevant missions activate. Active destinations also have pulsing world-space light rings. The cargo HUD reports the matching site's bearing and distance.
 
@@ -52,11 +53,13 @@ Released NPCs use the existing falling and medical systems. Water landings creat
 
 ## AI helicopter and remote taser mode
 
-Passing a level unlocks a second helicopter and starts automatic mission response while the player remains in that city. Each new city, including a career cheat warp, requires graduation again before the helper appears. **AIR: MISSION** in Dispatch assigns the mission currently selected on the map; **AIR: AUTO** restores autonomous work. Both require the current level to be passed. Recall returns it toward base after completing any loaded passenger or cargo delivery. The helper cruises at 600 cm/s and uses real NPCs, vehicles, mission events, and service destinations. It cannot be entered or sold by the player.
+Passing a level unlocks a second helicopter that waits for your orders. Select a mission on the map, then choose **AIR: MISSION** in the cockpit Dispatch panel or **Air: Map Mission** in the controller Dispatch wheel. Each order authorizes that one mission; after completing it, or if it becomes unavailable or unreachable, the helper returns to base and waits. It never chooses the next mission on its own, and the former **AIR: AUTO** option has been removed.
+
+Each new city, including a career cheat warp, requires graduation again before the helper appears. Recall returns it toward base after completing any loaded passenger or cargo delivery. The helper cruises at 600 cm/s and uses real NPCs, vehicles, mission events, and service destinations. It cannot be entered or sold by the player. Older saves retain explicit mission orders; legacy automatic assignments are recalled, with any loaded people or cargo delivered first.
 
 Click **L3** to toggle Sprint Mode, or hold either **Shift** key, for 30% faster horizontal helicopter travel with a steeper flight tilt. On foot, L3 toggles the existing doubled running speed and animation. **R3+L3** shows or hides controller help; the sprint status remains visible. Boarding, exiting and loading clear the toggle. With `superpowermultiply` active, either input retains its existing turbo/dog behavior without stacking multipliers. See [Sprint Mode and GPU diagnostics](GpuCrashAndSprint.md) and [traffic and flight pacing](TrafficFlowAndFlightPacing.md).
 
-Every helicopter has a visible nose-mounted remote taser. Once airborne, click **AIM TASER** on its cockpit panel press **N**, or open Tools with **X**, select **Remote Taser**, and press **A**. No officer or purchase is required. Autopilot circles the suspect while you control the weapon through the remote helmet sight. Move the mouse or right stick to aim; left click, A or RT fires. Hold right mouse for the cockpit cursor. Click **FLY HELICOPTER**, press N, or select **Fly Helicopter** through X then A to return. Successful 60-meter taser shots preserve health and immobilize living suspects for retrieval, handcuffing and police delivery. Recharge takes 1.25 seconds. The former police passenger view has been removed.
+Every helicopter has a visible nose-mounted remote taser. Once airborne, click **AIM TASER** on its cockpit panel press **N**, or open Tools with **X**, select **Remote Taser**, and press **A**. No officer or purchase is required. Autopilot holds a steady hover while the suspect is in range with a clear shot, following again when range or sustained cover requires it. Move the mouse or right stick to aim; roll the mouse wheel for 1x–4x zoom, or hold LT for the 4x scope. Aiming sensitivity reduces with magnification. Left click, A or RT fires. Hold right mouse for the cockpit cursor. Click **FLY HELICOPTER**, press N, or select **Fly Helicopter** through X then A to return. Successful 60-meter taser shots preserve health and immobilize living suspects for retrieval, handcuffing and police delivery. Recharge takes 1.25 seconds. The former police passenger view has been removed.
 
 Each helicopter discharge leaves two continuous white electrical trails for 0.3 seconds and plays the original laser cue. Successful disables add a separate impact cue; blocked shots and misses do not. Vehicle hits also animate electricity around the car's oriented body for 0.7 seconds. The car remains disabled for 16 seconds.
 
@@ -77,6 +80,25 @@ The first moving helicopter contact dents, tips and ignites the car, posts the o
 Runtime saves include the helper's assignment and unlock, slung cargo identities, cable state, custody state, car impacts, boat recovery state, and pilot health. Existing save versions remain readable. Remote taser aiming ends when loading. Automatic pilot recovery reconnects to the saved helicopter, including a pilot attached to its harness. Occupied sling fittings and a helicopter carrying slung cargo cannot be sold.
 
 ## Validation
+
+### One mission per order — October 12, 2026
+
+The helper previously enabled automatic selection by default, including when loading
+an older save. Five pre-fix assertions reproduced unsolicited assignments, saved
+automatic work and the obsolete controller option. Automatic selection is now
+removed from the subsystem and both Dispatch interfaces. The legacy save field is
+still consumed, preserving the byte layout; explicit assignments remain valid.
+
+Editor, Shipping and Development builds passed. The focused headless suite reported
+26 successes: 25 exercised cases and one existing taser visual case that does no work
+under NullRHI. Coverage includes idle/graduated helpers, both order routes, completed
+and unreachable jobs, recall, invalid selections, busy delivery rejection, saved
+explicit orders, legacy migration with actual loaded vehicle delivery, and a critical
+patient delivered alive after recall. No interactive flight or controller check was
+performed. Build logs, source comparisons and installation/backup hashes are indexed
+in [the validation receipt](validation/AirSupportOrdersResults.json).
+
+### Original air-operations implementation
 
 The Editor and Shipping builds passed through `RebuildUnrealCpp.bat`. The final headless run passed **90 tests**: 88 clean passes and two passes with existing fixture warnings, zero failures or skipped tests. The warnings concern component mobility and a contextless synthetic world in `PlaneDeckRescue` and `SafePassengerLanding`.
 

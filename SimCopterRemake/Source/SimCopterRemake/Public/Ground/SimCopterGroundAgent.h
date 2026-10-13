@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Ground/SimCopterBehaviorVM.h"
+#include "Ground/SimCopterBandNavigation.h"
 #include "Ground/SimCopterPopulationFigure.h"
 #include "Replay/SimCopterReplayRecordable.h"
 #include "UObject/NoExportTypes.h"
@@ -75,6 +76,7 @@ class SIMCOPTERREMAKE_API ASimCopterGroundAgent
 	friend class FSimCopterCityWeaponTest;
 	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
+	friend class FSimCopterRooftopSafetyTest;
 
 public:
 	ASimCopterGroundAgent();
@@ -360,6 +362,8 @@ public:
 	FVector MedicPathGoal = FVector::ZeroVector;
 	double NextMedicPathTime = 0;
 	bool bMedicPathAttempted = false;
+	SimCopterBandNavigation::FPathSearch MedicPathSearch;
+	double MedicPathLastAdvanceTime = -1;
 	bool CanTakeBandStep(const FVector& To);
 	FVector BandListenerCenter = FVector::ZeroVector;
 	float BandListenerClearance = 0;
@@ -1308,6 +1312,7 @@ private:
 	friend class FSimCopterCasualtyGawkingTest;
 	friend class FSimCopterBehaviorAircraftTest;
 	friend class FSimCopterMedicRouteTest;
+	friend class FSimCopterDeployedMedicRiotTest;
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterBandCelebrationTest;
@@ -1501,6 +1506,10 @@ private:
 	bool bHasHospitalRoofPost = false;
 	FVector HospitalRoofPostWorldLocation = FVector::ZeroVector;
 	float HospitalRoofPostHalfExtentCm = 0.0f;
+	// Transient, revalidated after moving/loading; the saved post remains the roof identity.
+	bool bHasRoofSupportAnchor = false;
+	FVector RoofSupportAnchor = FVector::ZeroVector;
+	bool TryGetRoofPostSurface(const FVector& Location, FVector& OutFeet) const;
 	// Keeps the posted worker over its own roof. Returns true when it had to intervene.
 	bool ContainToHospitalRoofPost();
 	// Entrance identity comes from the saved post, not the medic's changing walking position.

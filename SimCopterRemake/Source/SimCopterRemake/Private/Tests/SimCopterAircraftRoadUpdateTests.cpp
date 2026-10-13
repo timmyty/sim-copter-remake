@@ -59,7 +59,7 @@ bool FSimCopterAircraftRoadUpdateTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Plane carries one fare"), Heli->GetPassengerSeatCount(), 1);
 	for (int32 Tool=0;Tool<int32(ESimCopterHelicopterTool::Count);++Tool)
 		TestFalse(TEXT("Plane has no emergency tools"),Heli->IsToolAvailable(static_cast<ESimCopterHelicopterTool>(Tool)));
-	Heli->RequestAirSupport(true);
+	Heli->RequestAirSupport();
 	TestTrue(TEXT("Plane cannot order emergency air support"),Heli->LastToolStatus.Contains(TEXT("Transport only")));
 	TestEqual(TEXT("Plane rejects medical manifest"), Heli->AddMissionPassengersForMission(1,12,ESimCopterMissionPassengerKind::Medevac), 0);
 	auto* Person = World->SpawnActor<ASimCopterGroundAgent>();

@@ -2,6 +2,45 @@
 
 Implemented 2026-10-05 in the Unreal 5.8 project. These gameplay changes are requested deviations from original SimCopter behavior.
 
+## Medical dispatch, triage and emergency traffic — October 13, 2026
+
+New medical incidents now produce at most one complete HUD/radio announcement per
+60 seconds of simulation, including late-level and mass-casualty bursts. Suppressed
+reports are discarded rather than queued. Every patient, mission, marker, fine and
+completion award remains active. Starting, continuing or loading a session resets
+the announcement timer without changing the save format.
+
+Hospital medics select the lowest-health living helicopter patient first, retain
+their reservation during the approach, and recover bodies after living patients.
+This is the requested triage override to `FUN_004cc830`'s first-seat selection.
+Deployed medics now apply BHAV 262's eight-tile pickup range before reserving a
+patient. Previously, a Manhattan-nearer casualty outside that square could mask a
+reachable injured rioter. A regression test boards and manually drops a medic,
+runs the original behavior program, and verifies physical pickup and return to the
+landed helicopter in that arrangement.
+
+Emergency vehicles now have a 2% chance in ambient vehicle choices, with at most
+one circulating ambient copy per service. Existing loaded vehicles cycle out
+normally; explicit dispatch capacity is unchanged. Available ambient responders
+join the same road-travel-time comparison as service HQs. A winning street vehicle
+becomes the actual responding actor, with dispatch owning its route and scene work.
+HQ launches when its route is quicker. Busy, immobilized and mission-owned vehicles
+are excluded. Promoted responders and their assignments survive save/load.
+
+Editor, Shipping and Development builds passed. All 121 selected headless cases
+passed: 107 clean and 14 with warnings. Two existing fixtures emitted world/mobility
+warnings; twelve city cases captured the engine's background connectivity-check
+timeouts. Alert, triage and deployed-medic failures were reproduced before their
+fixes (21, two and three assertions respectively). The dispatch regression first
+ran after implementation. The builds retain an existing `SurfaceZ` compiler warning
+outside the changed code. No interactive gameplay or listening check was performed.
+
+Both local executables and their symbols were installed with verified backups and
+SHA-256 checks. The publication checkout was not updated. Exact source hashes,
+test paths and installation evidence are in
+[MedicalDispatchAndResponseResults.json](validation/MedicalDispatchAndResponseResults.json)
+and `Docs/scratchpad/medical-alert-pacing/`.
+
 ## Changes
 
 - Pedestrian movement checks live building flames, burning vehicles/wrecks and burning debris, with a safety margin. Contact converts the existing living NPC into a medical patient and creates a MedEvac mission. It does not duplicate the victim, charge the pilot an injury fine, or repeatedly create missions for the same patient. Heights are checked so roof fires do not injure people on the street below.

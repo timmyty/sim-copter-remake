@@ -1,5 +1,18 @@
 # Remote taser and unattended pilot recovery
 
+## Return heading follow-up — October 12, 2026
+
+The explicit active-mode branch in `ToggleRemoteTaser` faces the live pursuit
+target on return to flight and synchronizes `FlightModel.Heading` in tenth-degrees.
+Do not use `SetAutopilotTransform` for this: it would replace velocity and reset
+other flight state. `LastRemoteTaserTarget` retains a just-stunned pedestrian for
+retrieval after the pursuit query excludes custody, but resets on entry/cleanup.
+Hidden, carried, handcuffed, dead, resolved, destroyed or out-of-range targets do
+not cause a turn. Horizontal coincidence preserves heading. Keep this outside
+`EndRemoteTaser`, which also runs on save load, possession loss and destruction.
+All nine models pass live car/person, stunned-person and next-tick assertions.
+See [validation receipt](../validation/RemoteTaserExitHeadingResults.json).
+
 ## Pilot-level landing follow-up — October 11, 2026
 
 No-harness landing now waits for the pilot's fall to finish, searches around the

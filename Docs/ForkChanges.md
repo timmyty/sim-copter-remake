@@ -1,5 +1,14 @@
 # Timmyty SimCopter gameplay fork
 
+## October 13 release v1.0.10
+
+Publishes all completed work since v1.0.9: medical alert pacing, wounded-first
+unloading and deployed-medic retrieval; reduced ambient emergency traffic with
+nearest street vehicle/HQ dispatch; rooftop exit and crew safety; bounded
+responder navigation; stable remote taser aiming, zoom and exit heading; and
+explicit orders for each AI helper mission. [Release notes](Releases/v1.0.10.md)
+and [combined validation](validation/WindowsRelease110Results.json).
+
 ## October 12 release v1.0.9
 
 Publishes all completed work since v1.0.8: full nearby baseball games and the

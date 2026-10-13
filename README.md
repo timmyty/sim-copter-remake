@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.9 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.9.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.10 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.10.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -15,7 +15,7 @@ recovery systems are deliberate additions to the remake.
 
 ## Start playing
 
-1. Download **`SimCopterRemake-v1.0.9-Windows-x64.zip`** from the latest release.
+1. Download **`SimCopterRemake-v1.0.10-Windows-x64.zip`** from the latest release.
 2. Extract the **entire ZIP** and run **`SimCopterRemake.exe`** in the extracted folder.
 3. Choose **New Career Game** or **New User Game**, then select a city.
 
@@ -23,7 +23,20 @@ Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the lau
 Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 `Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
 
-## New in v1.0.9: baseball, city life and clearer drive-in audio
+## New in v1.0.10: emergency response and flight stability
+
+Medical alerts are limited to one per minute, medics unload the most wounded
+first, and dropped medics can retrieve previously ignored injured rioters.
+Emergency vehicles appear less often, and dispatch activates the nearest
+available street vehicle or sends one from HQ when its road journey is quicker.
+
+Rooftop exits and posted personnel have stronger footing checks. Responder
+pathfinding spreads expensive work across frames to address a reproduced source
+of stutter. Remote taser aiming holds the aircraft steady, adds 1x–4x scope zoom,
+and returns to flight facing the target. The AI helper now waits for an explicit
+order for each mission. [Release notes](Docs/Releases/v1.0.10.md)
+
+## Also included from v1.0.9: baseball, city life and clearer drive-in audio
 
 [![A live Canyon baseball game with red visitors, blue defenders and a fixed stadium scoreboard](Docs/screenshots/baseball-stadium-v1.0.9.png)](Docs/screenshots/baseball-stadium-v1.0.9.png)
 

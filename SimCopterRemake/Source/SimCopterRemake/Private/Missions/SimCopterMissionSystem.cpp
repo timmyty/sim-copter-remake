@@ -101,6 +101,7 @@ bool FSimCopterMissionSystem::LoadCareerData(const FString& TweakFilePath)
 
 void FSimCopterMissionSystem::BeginSession()
 {
+	MedevacAnnouncementQuietTimeRemaining = 0;
 	FireAnnouncementsInBurst = 0;
 	FireAnnouncementQuietTimeRemaining = 0;
 	Score = 0;
@@ -109,6 +110,7 @@ void FSimCopterMissionSystem::BeginSession()
 
 void FSimCopterMissionSystem::ContinueSession(const int32 InCash)
 {
+	MedevacAnnouncementQuietTimeRemaining = 0;
 	FireAnnouncementsInBurst = 0;
 	FireAnnouncementQuietTimeRemaining = 0;
 	Score = 0;
@@ -224,6 +226,7 @@ void FSimCopterMissionSystem::Initialize(ISimCopterMissionWorld* InWorld, uint32
 	FocusRecordIndex = INDEX_NONE;
 	ActiveFlameCount = 0;
 	SpreadAccumulator = 0;
+	MedevacAnnouncementQuietTimeRemaining = 0;
 	FireAnnouncementsInBurst = 0;
 	FireAnnouncementQuietTimeRemaining = 0;
 	for (int32 i = 0; i < 16; ++i)
@@ -260,6 +263,8 @@ FSimCopterCareerCity FSimCopterMissionSystem::MakeUserCityDefaults(const FSimCop
 
 void FSimCopterMissionSystem::Tick(float DeltaSeconds)
 {
+	MedevacAnnouncementQuietTimeRemaining = FMath::Max(0.0f,
+		MedevacAnnouncementQuietTimeRemaining - FMath::Max(0.0f, DeltaSeconds));
 	FireAnnouncementQuietTimeRemaining = FMath::Max(0.0f,
 		FireAnnouncementQuietTimeRemaining - FMath::Max(0.0f, DeltaSeconds));
 	if (FireAnnouncementQuietTimeRemaining == 0) FireAnnouncementsInBurst = 0;
@@ -862,14 +867,18 @@ void FSimCopterMissionSystem::AnnounceCreated(const FSimCopterMissionRecord& Rec
 void FSimCopterMissionSystem::PostMissionAnnouncement(const FSimCopterMissionRecord& Record)
 {
 	// Requested departure from FUN_004a7a10/004ab480: admit whole reports, not individual
-	// audio clips, so the location/closing cannot outlive a suppressed fire headline.
+	// audio clips, so the location/closing cannot outlive a suppressed headline.
 	// Unannounced incidents remain active and selectable. Never defer them into a backlog.
+	// A mass casualty event can create one record per person. Report medical work at most once
+	// per minute at every difficulty, whether scheduled, incidental, or caused by the player.
+	if ((Record.TypeMask & TYPE_Medevac) != 0 && MedevacAnnouncementQuietTimeRemaining > 0) return;
 	if ((Record.TypeMask & (TYPE_BuildingFire | TYPE_CarFire)) != 0)
 	{
 		if (FireAnnouncementsInBurst >= 2) return;
 		++FireAnnouncementsInBurst;
 		FireAnnouncementQuietTimeRemaining = 30.0f;
 	}
+	if ((Record.TypeMask & TYPE_Medevac) != 0) MedevacAnnouncementQuietTimeRemaining = 60.0f;
 	PostTypedUiMessage(5, &Record, Record.EventId, GetTypeTextId(Record.TypeMask), 0, 0, false);
 	PostAnnouncementVoice(Record);
 }
@@ -3473,6 +3482,7 @@ bool FSimCopterMissionSystem::SerializeRuntimeState(FArchive& Archive)
 	{
 		CurrentCityIndex = FMath::Clamp(CurrentCityIndex, 0, FMath::Max(0, CareerCities.Num() - 1));
 		// Notification queues are transient; retain the existing save layout.
+		MedevacAnnouncementQuietTimeRemaining = 0;
 		FireAnnouncementsInBurst = 0;
 		FireAnnouncementQuietTimeRemaining = 0;
 		DifficultyTier = FMath::Clamp(DifficultyTier, 1, 4);

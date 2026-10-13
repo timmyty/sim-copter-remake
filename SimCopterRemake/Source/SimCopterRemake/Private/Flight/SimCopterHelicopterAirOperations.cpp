@@ -53,7 +53,7 @@ void ASimCopterHelicopterPawn::ControllerRightBumperReleased()
 {
 	bBumperRightHeld=false;
 }
-void ASimCopterHelicopterPawn::RequestAirSupport(bool bAutomatic)
+void ASimCopterHelicopterPawn::RequestAirSupport()
 {
 	if (IsFixedWingAircraft()) { LastToolStatus=TEXT("Transport only - board a helicopter for emergency response."); return; }
 	auto* Ops=GetWorld()?GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>():nullptr;
@@ -65,8 +65,8 @@ void ASimCopterHelicopterPawn::RequestAirSupport(bool bAutomatic)
 		const int32 Selected=Missions->GetMapFocusRecordIndex();
 		if(Records.IsValidIndex(Selected)) EventId=Records[Selected].EventId;
 	}
-	if(Ops && Ops->OrderSupport(EventId,bAutomatic))
-		LastToolStatus=bAutomatic?TEXT("Air Support: automatic mission response enabled."):TEXT("Air Support assigned to the mission selected on the map.");
+	if(Ops && Ops->OrderSupport(EventId))
+		LastToolStatus=TEXT("Air Support assigned to the selected map mission. It will await orders afterward.");
 	else LastToolStatus=Ops && !Ops->IsSupportUnlocked()?TEXT("Pass a level to unlock Air Support."):TEXT("Select an active map mission. Air Support must finish its current passenger/cargo delivery first.");
 	if(Missions) Missions->ShowAirOperationsMessage(LastToolStatus);
 }

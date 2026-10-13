@@ -62,6 +62,7 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			break;
 		case EContext::RemoteTaser:
 			Add(TEXT("rs"), TEXT("Aim remote taser"));
+			Add(TEXT("lt"), TEXT("Hold for 4x scope zoom"));
 			Add(TEXT("a"), TEXT("Fire remote taser"));
 			Add(TEXT("rt"), TEXT("Fire remote taser"));
 			Add(TEXT("x"), TEXT("Options / select Fly Helicopter"));
