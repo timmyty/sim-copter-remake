@@ -133,6 +133,8 @@ bool FSimCopterRadioMenuWidgetTest::RunTest(const FString&)
 	ON_SCOPE_EXIT { World->DestroyWorld(false); };
 	auto* Radio = World->GetSubsystem<USimCopterRadioSubsystem>();
 	int32 Closed = 0;
+	FString OptionalMusicRoot;
+	if (FParse::Value(FCommandLine::Get(), TEXT("OptionalMusicRoot="), OptionalMusicRoot)) Radio->ScanMusicCollections(OptionalMusicRoot);
 	auto Menu = SNew(SSimCopterRadioMenu).Radio(Radio).OnClosed(FSimpleDelegate::CreateLambda([&] { ++Closed; }));
 	TestEqual(TEXT("All stations shown"), Menu->Stations.Num(), Radio->GetStationCount());
 	TestTrue(TEXT("Current station is initially browsed"), Menu->SelectedStation == Radio->GetStationIndex());
@@ -253,6 +255,16 @@ bool FSimCopterRadioMenuWidgetTest::RunTest(const FString&)
 	TestEqual(TEXT("Controller RB advances track"),Radio->GetCurrentTitle(),Radio->GetStationPlaylist(Artist)[18].Title);
 	TestEqual(TEXT("Next-track control keeps selected row synchronized"),Menu->TrackList->GetSelectedItems()[0]->Title,Radio->GetCurrentTitle());
 	TestEqual(TEXT("Transport actions do not close radio"),Closed,1);
+	if (!OptionalMusicRoot.IsEmpty())
+	{
+		int32 Longest = 0;
+		for (int32 I = 0; I < Radio->GetStationCount(); ++I)
+			if (Radio->GetStations()[I].CallSign.Len() > Radio->GetStations()[Longest].CallSign.Len()) Longest = I;
+		Menu->StationList->SetSelection(Menu->Stations[Longest]);
+		TestEqual(TEXT("Optional collection shows every track"), Menu->Tracks.Num(), Radio->GetStationPlaylist(Longest).Num());
+		Capture(TEXT("radio-menu-optional-4x3"), FVector2D(1280, 960));
+		Capture(TEXT("radio-menu-optional-wide"), FVector2D(1280, 720));
+	}
 	Menu->Radio.Reset(); Menu->SelectStation(INDEX_NONE);
 	TestTrue(TEXT("Unavailable radio produces empty list"), Menu->Tracks.IsEmpty());
 	Menu->PlaySelection(); Menu->TuneStation();

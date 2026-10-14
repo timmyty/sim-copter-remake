@@ -104,16 +104,20 @@ void SSimCopterRadioMenu::Construct(const FArguments& Args)
 		.SetHoveredBarImage(FSlateColorBrush(FLinearColor::White)).SetBarThickness(3.f);
 	if (const auto* RadioPtr = Radio.Get())
 		for (int32 I = 0; I < RadioPtr->GetStationCount(); ++I) Stations.Add(MakeShared<int32>(I));
+	const bool HasCollections = Radio.IsValid() && Radio->GetStations().ContainsByPredicate([](const auto& Station) { return Station.bMusicCollection; });
+	const float StationWidth = HasCollections ? 222.f : 122.f;
 
 	SAssignNew(StationList, SListView<TSharedPtr<int32>>)
 		.ListItemsSource(&Stations).ListViewStyle(&ListStyle).SelectionMode(ESelectionMode::Single)
-		.OnGenerateRow_Lambda([this](TSharedPtr<int32> Item, const TSharedRef<STableViewBase>& Owner)
+		.OnGenerateRow_Lambda([this, StationWidth](TSharedPtr<int32> Item, const TSharedRef<STableViewBase>& Owner)
 		{
 			const auto* RadioPtr = Radio.Get();
-			const FString Sign = RadioPtr && RadioPtr->GetStations().IsValidIndex(*Item)
-				? RadioPtr->GetStations()[*Item].CallSign.ToUpper() : FString();
+			const auto* Station = RadioPtr && RadioPtr->GetStations().IsValidIndex(*Item) ? &RadioPtr->GetStations()[*Item] : nullptr;
+			const bool IsCollection = Station && Station->bMusicCollection;
+			const FString Sign = Station ? (IsCollection ? Station->CallSign : Station->CallSign.ToUpper()) : FString();
 			return SNew(STableRow<TSharedPtr<int32>>, Owner).Style(&RowStyle).Padding(FMargin(8, 5))
-			[SNew(STextBlock).Text(FText::FromString(Sign)).Font(PageFont(18, true))];
+			.ToolTipText(FText::FromString(Sign))
+			[SNew(STextBlock).Text(FText::FromString(Sign)).Font(PageFont(IsCollection ? 14 : 18, true)).WrapTextAt(StationWidth - 50.f)];
 		})
 		.OnSelectionChanged_Lambda([this](TSharedPtr<int32> Item, ESelectInfo::Type)
 		{ if (Item) SelectStation(*Item); });
@@ -212,7 +216,7 @@ void SSimCopterRadioMenu::Construct(const FArguments& Args)
 		+SVerticalBox::Slot().AutoHeight()[PlaybackControls])]
 	+ SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 5)
 	[SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(132)
+		+ SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(StationWidth + 10.f)
 			[SNew(STextBlock).Text(LOCTEXT("Stations", "STATIONS")).Font(PageFont(13, true)).ColorAndOpacity(Lettering)]]
 		+ SHorizontalBox::Slot().FillWidth(1)
 			[SNew(STextBlock).Text_Lambda([this]
@@ -220,11 +224,11 @@ void SSimCopterRadioMenu::Construct(const FArguments& Args)
 				const auto* R = Radio.Get();
 				const FString Sign = R && R->GetStations().IsValidIndex(SelectedStation) ? R->GetStations()[SelectedStation].CallSign.ToUpper() : TEXT("PLAYLIST");
 				return FText::FromString(FString::Printf(TEXT("%s / %d TRACKS / PLAYS IN ORDER"), *Sign, Tracks.Num()));
-			}).Font(PageFont(13, true)).ColorAndOpacity(Lettering)]]
+			}).Font(PageFont(13, true)).ColorAndOpacity(Lettering).AutoWrapText(true)]]
 	+ SVerticalBox::Slot().FillHeight(1)
 	[SNew(SHorizontalBox)
 		+ SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 10, 0)
-			[SNew(SBox).WidthOverride(122)[Inset(StationList.ToSharedRef())]]
+			[SNew(SBox).WidthOverride(StationWidth)[Inset(StationList.ToSharedRef())]]
 		+ SHorizontalBox::Slot().FillWidth(1)
 		[Inset(SNew(SOverlay)
 			+ SOverlay::Slot()[TrackList.ToSharedRef()]

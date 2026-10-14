@@ -206,6 +206,7 @@ public:
 private:
 	friend class FSimCopterRadioSequentialTest;
 	friend class FSimCopterOptionalMusicTest;
+	friend class FSimCopterRadioMenuWidgetTest;
 	friend class FSimCopterRadioMenuPlaybackTest;
 	friend class FSimCopterFlacPlaybackTest;
 	friend class FSimCopterCityIntroAudioTest;
