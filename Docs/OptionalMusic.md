@@ -1,14 +1,15 @@
 # Optional game music
 
 The v1.0.14 release offers **959 recordings across 32 game collections**, about
-36 hours of music. Download individual game ZIPs or the **Music-All-Games** bundle
+36 hours of music. Choose from **19 named music packs** (five combined packs and 14 larger single-game
+collections), or download the **Music-All-Games** bundle
 from the [release](https://github.com/timmyty/sim-copter-remake/releases/tag/v1.0.14).
 Music is optional; the normal game keeps its existing soundtrack and FLAC masters.
 
 ## Install
 
 1. Install the full **SimCopter Remake v1.0.14 or newer** game.
-2. Download a game ZIP, or all three numbered `Music-All-Games.7z` parts. Keep all bundle
+2. Download a music pack ZIP, or all three numbered `Music-All-Games.7z` parts. Keep all bundle
    parts in the same folder and open `.7z.001` with 7-Zip. Extract completely.
 3. Double-click **Install-Music.cmd** and select the game folder containing the
    root `SimCopterRemake.exe`. A successful install reports its destination.
@@ -34,58 +35,63 @@ radio controls support track selection, previous/next, pause, seeking and volume
 Collections do not insert original radio commercials or DJs. Long game titles wrap
 in a wider station column, with full titles available as tooltips.
 
-## Downloads by game
+## Optional music downloads
 
-Choose individual collections **or** the All-Games bundle; their files are identical.
-Platform versions and alternate arrangements are identified in track names.
+The full game is the only required download. These packs add music to it.
+Choose the packs you want **or** the complete All-Games bundle; their music files
+are identical. Already-installed matching tracks are skipped.
+
+### All 32 game collections in one bundle
+
+**959 recordings; 4.56 GB total. Download all three parts:**
+
+[Part 1 (1.89 GB)](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-All-Games.7z.001) + [Part 2 (1.89 GB)](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-All-Games.7z.002) + [Part 3 (784.3 MB)](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-All-Games.7z.003)
+
+Keep the parts together and extract `.001` with 7-Zip, then run **Install-Music.cmd**.
+
+### Smaller collections, combined into five packs
+
+Each ZIP includes its installer and keeps the listed games in separate Radio collections. Sizes use decimal MB.
+
+| Included game collections | Recordings | Download |
+| --- | ---: | --- |
+| SimCity 3000 Unlimited; SimCity 4 Rush Hour | 26 | [137.7 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-3000-Unlimited-and-SimCity-4-Rush-Hour.zip) |
+| SimCity Creator DS; SimCity Creator Wii | 70 | [114.2 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Creator-DS-and-Wii.zip) |
+| SimCity Jr; SimCity BuildIt; SimCity Social; SimCity Societies Destinations | 25 | [97.2 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Jr-BuildIt-Social-and-Societies-Destinations.zip) |
+| SimFarm; SimIsle; SimLife; SimHealth; SimPark; SimSafari | 48 | [98.7 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimFarm-SimIsle-SimLife-SimHealth-SimPark-SimSafari.zip) |
+| Theme Park; Sid Meier's SimGolf; SimTower; SimTown | 38 | [116.4 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Theme-Park-SimGolf-SimTower-SimTown.zip) |
+
+### Larger collections, one game per download
 
 | Game collection | Recordings | Download |
 | --- | ---: | --- |
-| Sid Meier's SimGolf | 4 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Sid-Meier-s-SimGolf.zip) |
-| Sim Theme Park | 5 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Sim-Theme-Park.zip) |
-| SimAnt | 89 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimAnt.zip) |
-| SimCity | 93 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity.zip) |
-| SimCity 2000 | 246 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-2000.zip) |
-| SimCity 3000 | 18 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-3000.zip) |
-| SimCity 3000 Unlimited | 14 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-3000-Unlimited.zip) |
-| SimCity 4 | 34 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-4.zip) |
-| SimCity 4 Rush Hour | 12 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-4-Rush-Hour.zip) |
-| SimCity 64 | 17 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-64.zip) |
-| SimCity BuildIt | 3 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-BuildIt.zip) |
-| SimCity Creator DS | 13 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Creator-DS.zip) |
-| SimCity Creator Wii | 57 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Creator-Wii.zip) |
-| SimCity DS | 32 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-DS.zip) |
-| SimCity Jr. | 10 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Jr.zip) |
-| SimCity Social | 5 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Social.zip) |
-| SimCity Societies | 34 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Societies.zip) |
-| SimCity Societies Destinations | 7 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Societies-Destinations.zip) |
-| SimCoaster | 9 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCoaster.zip) |
-| SimEarth | 54 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimEarth.zip) |
-| SimFarm | 16 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimFarm.zip) |
-| SimHealth | 1 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimHealth.zip) |
-| SimIsle | 15 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimIsle.zip) |
-| SimLife | 9 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimLife.zip) |
-| SimMars | 22 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimMars.zip) |
-| SimPark | 6 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimPark.zip) |
-| SimSafari | 1 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimSafari.zip) |
-| SimTower | 10 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimTower.zip) |
-| SimTown | 3 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimTown.zip) |
-| SimTunes | 64 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimTunes.zip) |
-| Streets of SimCity | 35 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Streets-of-SimCity.zip) |
-| Theme Park | 21 | [ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Theme-Park.zip) |
+| Sim Theme Park | 5 | [347.5 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Sim-Theme-Park.zip) |
+| SimAnt | 89 | [222.5 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimAnt.zip) |
+| SimCity | 93 | [478.0 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity.zip) |
+| SimCity 2000 | 246 | [824.5 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-2000.zip) |
+| SimCity 3000 | 18 | [115.9 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-3000.zip) |
+| SimCity 4 | 34 | [276.1 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-4.zip) |
+| SimCity 64 | 17 | [217.1 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-64.zip) |
+| SimCity DS | 32 | [228.1 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-DS.zip) |
+| SimCity Societies | 34 | [189.1 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Societies.zip) |
+| SimCoaster | 9 | [267.0 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCoaster.zip) |
+| SimEarth | 54 | [194.7 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimEarth.zip) |
+| SimMars | 22 | [105.9 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimMars.zip) |
+| SimTunes | 64 | [285.9 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimTunes.zip) |
+| Streets of SimCity | 35 | [269.4 MB ZIP](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Streets-of-SimCity.zip) |
 
-## SimEverything preservation download
+## Optional preservation: complete original SimEverything archive
 
-The [SimEverything collection](https://archive.org/details/SimEverything) is also
-available in its **complete, untouched original form** as
-`SimEverything-Original-Preservation.7z.001` and `.002` on this release. Keep both
-parts together and extract `.001` with 7-Zip. Joining the two parts reproduces the
-user-supplied archive byte for byte, including all 854 MP3s and its cover image.
+This is the untouched [SimEverything soundtrack collection](https://archive.org/details/SimEverything):
+**854 original MP3s plus its cover image**, preserving music, radio commercials,
+news, original filenames and artwork. It is a separate **2.58 GB archival download**.
 
-That original archive preserves names, artwork, commercials and news material.
-For automatic in-game installation, use the game packages or All-Games bundle
-above: they include SimEverything's selected music in the correct game folders,
-with the installer. The original preservation archive itself has no installer.
+**Download both parts:** [Part 1 of 2](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimEverything-Original-Preservation.7z.001) + [Part 2 of 2](https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimEverything-Original-Preservation.7z.002).
+
+Keep both parts together and extract `.001` with 7-Zip. Joining them reproduces
+the supplied original archive byte for byte. This preservation archive has **no
+installer**. For automatic installation into SimCopter, use the music packs or
+All-Games bundle above, which already contain the selected additional SimEverything music.
 
 ## Sources, comparison and quality
 
@@ -143,5 +149,13 @@ interactive playback and manual listening were not performed.
 See [catalog](OptionalMusicCatalog.json), [validation receipt](validation/OptionalMusicResults.json)
 and [release notes](Releases/v1.0.14.md). `Tools/Unreal/PrepareOptionalMusic.py` stages
 reviewed sources; `PackageOptionalMusic.py` creates and verifies game ZIPs and the
-multipart bundle. Source downloads and audit working files stay in the ignored
+multipart bundle. Run `GroupOptionalMusic.py <original-assets> <new-output>` afterward
+to consolidate the 18 smaller collections into five named packs and generate the
+32-game/19-pack download catalog. Publish the new ZIPs and catalog alongside the
+unchanged large ZIPs and multipart bundles. Keep the original assets directory as
+a local backup. Source downloads and audit working files stay in the ignored
 `Docs/scratchpad/optional-music` directory; audio is distributed as release assets.
+
+Download regrouping was separately verified: every one of the 1,005 music payload
+files matches the original bundle, and all five grouped installers passed fresh
+installation and repeated-installation checks. See [packaging receipt](validation/OptionalMusicDownloadGroups.json).
