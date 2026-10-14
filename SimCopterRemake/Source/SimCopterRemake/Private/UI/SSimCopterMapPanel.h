@@ -56,8 +56,9 @@ public:
 	void ActivateButton(SimCopterMap::EButton Button);
 
 private:
+	friend class FSimCopterMedevacMapGuideTest;
 	friend class FSimCopterPoliceDestinationTest;
-	friend class FSimCopterControllerSprintTest;
+	friend class FSimCopterControllerTurboTest;
 	TWeakObjectPtr<ASimCopterHelicopterPawn> Pawn;
 	TWeakObjectPtr<USimCopterHangarArt> Art;
 	float Scale = 2.0f;

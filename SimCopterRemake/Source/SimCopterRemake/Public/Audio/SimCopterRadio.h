@@ -65,6 +65,14 @@ struct FSimCopterRadioStation
 	bool HasContent() const { return Music.Num() > 0 || Dj.Num() > 0 || Jingle.Num() > 0; }
 };
 
+/** A numbered entry in the remake's station browser; indices resolve to discovered media only. */
+struct FSimCopterRadioTrack
+{
+	ESimCopterRadioSlot Slot = ESimCopterRadioSlot::Music;
+	int32 TrackIndex = INDEX_NONE;
+	FString Title;
+};
+
 /**
  * SCHOOK: RadioTick 0x0042f160
  *
@@ -85,6 +93,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual TStatId GetStatId() const override;
 	virtual bool IsTickable() const override { return Stations.Num() > 0; }
+	virtual bool IsTickableWhenPaused() const override { return true; }
 
 	// --- controls ---
 
@@ -115,6 +124,18 @@ public:
 	void NextStation() { StepStation(+1); }
 	void PreviousStation() { StepStation(-1); }
 	void StepStation(int32 Delta);
+
+	/** Songs, commercials, DJ clips, then jingles; KINV contains only its ordered songs. */
+	TArray<FSimCopterRadioTrack> GetStationPlaylist(int32 Index) const;
+	/** Start at zero, then follow the displayed playlist in order, wrapping at the end. */
+	bool PlayStationTrack(int32 Index, int32 PlaylistIndex);
+	int32 GetSelectedPlaylistIndex() const { return ManualPlaylistIndex; }
+	bool StepTrack(int32 Delta);
+	void TogglePlaybackPaused();
+	bool IsPlaybackPaused() const;
+	bool SeekPlayback(float Seconds);
+	float GetPlaybackPosition() const;
+	float GetPlaybackDuration() const;
 
 	/**
 	 * Where the needle sits, 0 at the left end of the printed scale and 1 at the right.
@@ -182,6 +203,7 @@ public:
 
 private:
 	friend class FSimCopterRadioSequentialTest;
+	friend class FSimCopterRadioMenuPlaybackTest;
 	friend class FSimCopterFlacPlaybackTest;
 	friend class FSimCopterCityIntroAudioTest;
 	bool bCityIntroSuspended = false;
@@ -193,6 +215,10 @@ private:
 	double SequentialStartTime = 0.0;
 	double LastProgressSave = 0.0;
 	bool bSequentialPlaying = false;
+	int32 ManualPlaylistIndex = INDEX_NONE;
+	TArray<FSimCopterRadioTrack> ManualPlaylist;
+	bool PlayManualTrack(USimCopterAudioSubsystem* Audio);
+	const TArray<FString>& GetStationList(int32 Index, ESimCopterRadioSlot Slot) const;
 
 	UPROPERTY(Transient)
 	TArray<FSimCopterRadioStation> Stations;

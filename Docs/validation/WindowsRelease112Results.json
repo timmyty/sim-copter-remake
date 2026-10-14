@@ -1,0 +1,269 @@
+{
+  "version": "v1.0.12",
+  "verified_at_utc": "2026-10-14T01:50:46.92098-05:00",
+  "baseline_commit": "b5f70b2639b2695aae703e5c4bb08a44453ea576",
+  "source_verification": {
+    "file_count": 464,
+    "source_publication_match": true,
+    "manifest_sha256": "e2c3ee375aa049187687e009025a402fe357196ee2da793ee9921ba78accdcc6",
+    "post_validation_normalization": "Removed extra blank line at EOF from one existing test file; no code or assertion changes."
+  },
+  "builds": [
+    {
+      "target": "editor-final",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.12/build-editor-final.log",
+      "log_sha256": "76168db83d711300d45031a124300767ad38aff19c10549dd35810c523d32293"
+    },
+    {
+      "target": "shipping",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.12/build-shipping.log",
+      "log_sha256": "6be3bd868251e56455a6bb879f1244a994bea960ac6f5711a4d2c6363136ddf8"
+    },
+    {
+      "target": "development",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/release-v1.0.12/build-development.log",
+      "log_sha256": "539e3e4fa1ab86f419cf699da5b95856d6434721410f582a84df490124d96767"
+    }
+  ],
+  "tests": [
+    {
+      "report": "Docs/scratchpad/release-v1.0.12/tests-full/index.json",
+      "sha256": "9078ae69dcff1d569d5d84b4c226b5544d6426514f24bbfc47df536fcbba7a2e",
+      "mode": "NullRHI, isolated profile with config writes",
+      "counts": {
+        "succeeded": 493,
+        "succeededWithWarnings": 25,
+        "failed": 2,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 309.20281982421875,
+      "failures": [
+        {
+          "test": "SimCopter.AircraftDestruction.PlaneControlsAndPropeller",
+          "messages": [
+            "Expected 'Version-two aircraft save migrates' to be true."
+          ]
+        },
+        {
+          "test": "SimCopter.CustomCities.HelpAndCursor",
+          "messages": [
+            "Expected 'Collapsed keyboard panel is a single shortcut row' to be 1, but it was 0."
+          ]
+        }
+      ],
+      "warnings": [
+        {
+          "test": "SimCopter.Cheats.CityEffects",
+          "count": 17
+        },
+        {
+          "test": "SimCopter.Cheats.GortOriginalAssets",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.City.BuildingDemolition",
+          "count": 34
+        },
+        {
+          "test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "count": 2
+        },
+        {
+          "test": "SimCopter.Hangar.DismountMenuInput",
+          "count": 2
+        },
+        {
+          "test": "SimCopter.MedicalNavigation.MovingTargetRepathBudget",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Missions.PlaneDeckRescue",
+          "count": 11
+        },
+        {
+          "test": "SimCopter.Missions.SafePassengerLanding",
+          "count": 12
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city12",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city19",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city22",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city23",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city24",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city25",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city26",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city27",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city28",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.career.city29",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.stchrisc",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Safety.CityPatients.TOKYO",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.SaveGame.ExternalFiles",
+          "count": 1
+        },
+        {
+          "test": "SimCopter.Traffic.TunnelTransit",
+          "count": 4
+        },
+        {
+          "test": "SimCopter.UI.HangarPurchaseParking",
+          "count": 3
+        },
+        {
+          "test": "SimCopter.Water.SupplyGeometry",
+          "count": 11
+        }
+      ]
+    },
+    {
+      "report": "Docs/scratchpad/release-v1.0.12/tests-fixture-corrections/index.json",
+      "sha256": "dd5317674fa45ecb38da46c33b6eedef5ea7e9e9299003a80228d6584df74d4e",
+      "mode": "NullRHI, isolated profile with config writes",
+      "counts": {
+        "succeeded": 2,
+        "succeededWithWarnings": 0,
+        "failed": 0,
+        "notRun": 0,
+        "inProcess": 0
+      },
+      "duration_seconds": 0.2879441976547241,
+      "failures": [],
+      "warnings": []
+    }
+  ],
+  "final_distinct_cases": {
+    "passed": 520,
+    "total": 520,
+    "outstanding_failures": 0
+  },
+  "fixture_corrections": [
+    "Advance normal frames through bounded responder search/retry deadline, preserving route and work-limit assertions.",
+    "Remove v3 throttle/gear and v4 autopilot suffix when constructing legacy v2 plane save.",
+    "Expect collapsed help in minimap header, with expanded help coverage retained."
+  ],
+  "runtime": {
+    "files": 904,
+    "bytes": 2769359234,
+    "nonufs_verified": 891,
+    "maps": 45,
+    "kinv_tracks": 21,
+    "drive_in_movies": 2,
+    "flyover_soundtracks": 30,
+    "shared_flac_files": 15,
+    "omitted_matched_wavs": 29,
+    "shipping_sha256": "b25d4972812c7688a9374eb19f8b72e70f59600a2917b5b843956c963a82c991"
+  },
+  "startup": {
+    "seconds": 30.8557156,
+    "limitation": "Checks bootstrap and startup survival only; no visible rendering or gameplay check.",
+    "launcher_pid": 116064,
+    "mode": "NullRHI, unattended, no audio, isolated user directory",
+    "children": [
+      {
+        "cpu_seconds": 13.0625,
+        "path": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.12\\SimCopterRemake-v1.0.12-Windows-x64\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "working_set_bytes": 689221632,
+        "window_handle": 0,
+        "pid": 116804
+      }
+    ],
+    "launcher_exited": false
+  },
+  "assembly": "Fresh Unreal staging/container packaging with unchanged cooked assets and newly built executables; source/config audit found no assets requiring a recook.",
+  "archive_gate": "Every extracted 7z entry must match staging SHA-256; both GitHub asset digests must match before publication.",
+  "included_recent_work": [
+    "Hangar catalog controller selection",
+    "Medic ground rescue, cabin-seat reservation and patient disembarkation",
+    "Cockpit radio menu and controller playback navigation",
+    "Saved remote-taser autopilot switch",
+    "Nearest-hospital medical map guide",
+    "Turbo HUD and controls header",
+    "Saved bucket/harness correction",
+    "Empty mission-panel correction",
+    "Automation baseline repairs"
+  ],
+  "receipt_location": "Docs/scratchpad/release-v1.0.12/",
+  "limitations": [
+    "No interactive gameplay, physical controller or manual listening check.",
+    "NullRHI visual-only cases can be no-ops.",
+    "Previously reported witness-photo slowdown and GPU compute crash remain unresolved.",
+    "The earlier unavailable Heven hospital state was not reproduced; fixes address separately reproduced deployment/capacity failures."
+  ],
+  "local_installation": {
+    "InstalledAtUtc": "2026-10-14T06:51:51.8422779Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "B25D4972812C7688A9374EB19F8B72E70F59600A2917B5B843956C963A82C991",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.12/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "70480D055153B1043EB57E800CB4E2ACBD4AE5B0C78E6C8DD29CB625906899F2"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "6CD2E35899D5D0D8C4EB94FC614EF3C250751826C3942157ED226790A646E076",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.12/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "B98F7C71FDB20C406BCB1197A702D06CB67A2D28258064C838FD02F666BDD5BD"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "FCCEE09FA4F0AFF33143F62B7A36701FCFDFE54001A30024915380F042A8C5DD",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.12/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "7DB395AC242F8DE56901F1FD345CE41DDDB84E554CEAAB8E2C5272FF15D946B4"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "DDFF5E8E90B69AD34EAC3ECDC5821CC0C6AE62F1F2977322332C3C79999F8782",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.12/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "98E0BC2462C654D6279DA65070B6C9A5067AEA34EF225370CA4816DE78431933"
+      }
+    ],
+    "InteractiveGameplayChecked": false
+  }
+}

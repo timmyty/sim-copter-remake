@@ -1,0 +1,239 @@
+{
+  "change": "Repair reference-city fixture assumptions and original/capture-cage equipment coverage",
+  "verified_at_utc": "2026-10-14T01:39:01.9855716Z",
+  "source_audit": {
+    "baseline": "Docs/scratchpad/release-v1.0.11/source-manifest.json",
+    "audited_files": 458,
+    "changed_files": [
+      "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCity2000ReaderTests.cpp",
+      "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFlapLayoutTests.cpp"
+    ]
+  },
+  "source_files": [
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCity2000ReaderTests.cpp",
+      "sha256": "82e0b5bea7969959f79bdbb3227489ca5f190b903e1f436d3fd417cc58ba8358"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFlapLayoutTests.cpp",
+      "sha256": "fa05846f5840fad66720f85a60d90c0c0934a82100390a2e324ce25be1259522"
+    }
+  ],
+  "editor_build": {
+    "result": "Succeeded",
+    "command": "cmd /c \"RebuildUnrealCpp.bat < nul\"",
+    "log": "Docs/scratchpad/test-baseline-repair/build-editor.log",
+    "log_sha256": "817a67c9c510bd97d4f7b6bf2be520a84b4ca851b2acc0cf22f399948a7dfe93"
+  },
+  "baseline": {
+    "report": "Docs/scratchpad/test-baseline-repair/baseline/index.json",
+    "report_sha256": "dcd0a4c5ff7b93a5527aff8f659fab11936c0e489afbbaf90180142847efbaef",
+    "engine_log": "Docs/scratchpad/test-baseline-repair/baseline-engine.log",
+    "engine_log_sha256": "d3eeeefccc7b94ef5c2a212cee66e514d808cbadcc45a76abe6ba91b1a0f64cb",
+    "duration_seconds": 0.13294050097465515,
+    "counts": {
+      "succeeded": 1,
+      "succeededWithWarnings": 0,
+      "failed": 2,
+      "notRun": 0,
+      "inProcess": 0
+    },
+    "failures": [
+      {
+        "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+        "messages": [
+          "Expected 'Finds flat land ALTM sample' to be not null.",
+          "Expected 'Finds water ALTM sample' to be not null.",
+          "Expected 'Finds sloped ALTM sample' to be not null."
+        ]
+      },
+      {
+        "test": "SimCopter.UI.FlapLayout",
+        "messages": [
+          "Expected 'The four flaps between them cover every career equipment bit' to be 95, but it was 31."
+        ]
+      }
+    ],
+    "warnings": []
+  },
+  "focused": {
+    "report": "Docs/scratchpad/test-baseline-repair/focused/index.json",
+    "report_sha256": "d69907819a4637e4ccdae8cdc342758c29f2b17d763ffcf2cd5fff617973ec38",
+    "engine_log": "Docs/scratchpad/test-baseline-repair/focused-engine.log",
+    "engine_log_sha256": "1a6c0c7b5a18fbce10775ce6e38a792b80272999d24e936e0d5691149aeea481",
+    "duration_seconds": 0.4237844944000244,
+    "counts": {
+      "succeeded": 5,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "inProcess": 0
+    },
+    "failures": [],
+    "warnings": []
+  },
+  "full_suite": {
+    "report": "Docs/scratchpad/test-baseline-repair/full/index.json",
+    "report_sha256": "8d05fa3fc3c7aef7f6c4bf291c0bcde7e0d9478fc666b6765c9f3552055c467f",
+    "engine_log": "Docs/scratchpad/test-baseline-repair/full-engine.log",
+    "engine_log_sha256": "6c87462758687ca00063cf3fe02477b568f90f8c38b54e8ccfb165bb2b0df41b",
+    "duration_seconds": 286.9947509765625,
+    "counts": {
+      "succeeded": 484,
+      "succeededWithWarnings": 27,
+      "failed": 0,
+      "notRun": 0,
+      "inProcess": 0
+    },
+    "failures": [],
+    "warnings": [
+      {
+        "test": "SimCopter.BaseballGames.CompleteGame",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Cheats.CityEffects",
+        "count": 17
+      },
+      {
+        "test": "SimCopter.Cheats.GortOriginalAssets",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.City.BuildingDemolition",
+        "count": 34
+      },
+      {
+        "test": "SimCopter.Effects.RuntimeSaveRoundTrip",
+        "count": 2
+      },
+      {
+        "test": "SimCopter.Hangar.DismountMenuInput",
+        "count": 2
+      },
+      {
+        "test": "SimCopter.MedicalNavigation.MovingTargetRepathBudget",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Missions.PlaneDeckRescue",
+        "count": 11
+      },
+      {
+        "test": "SimCopter.Missions.SafePassengerLanding",
+        "count": 12
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city12",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city18",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city21",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city22",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city24",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city25",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city26",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city27",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city28",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.career.city29",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.CAPE_WELLS",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.EGYPT_FALLS",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.stchrisc",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Safety.CityPatients.TOKYO",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.SaveGame.ExternalFiles",
+        "count": 1
+      },
+      {
+        "test": "SimCopter.Traffic.TunnelTransit",
+        "count": 4
+      },
+      {
+        "test": "SimCopter.UI.HangarPurchaseParking",
+        "count": 3
+      },
+      {
+        "test": "SimCopter.Water.SupplyGeometry",
+        "count": 11
+      }
+    ]
+  },
+  "affected_test_results": [
+    {
+      "test": "SimCopter.CaptureCage.ControlsMountsAndMissionWeights",
+      "state": "Success",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "test": "SimCopter.Formats.SimCity2000.AltitudeDecoding",
+      "state": "Success",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+      "state": "Success",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "test": "SimCopter.Formats.SimCity2000.Rle",
+      "state": "Success",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "test": "SimCopter.UI.FlapLayout",
+      "state": "Success",
+      "errors": 0,
+      "warnings": 0
+    }
+  ],
+  "scope": [
+    "Both original tests remain enabled; one independent altitude-decoding case was added.",
+    "No production code, original game files, shipping binaries or saved games changed.",
+    "Headless NullRHI suite with an isolated profile and MultiprocessSaveConfig.",
+    "Existing warning cases and visual-only NullRHI no-ops remain; no interactive gameplay validation.",
+    "Local development and publication working copies only; no commit, push or new release."
+  ]
+}

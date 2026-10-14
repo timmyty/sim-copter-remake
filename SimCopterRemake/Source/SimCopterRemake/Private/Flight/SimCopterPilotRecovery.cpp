@@ -23,7 +23,7 @@ bool IsLandingAtPilotLevel(const ASimCopterHelicopterPawn* Heli, const ASimCopte
 void USimCopterAirOperationsComponent::BeginPilotRecovery(ASimCopterOnFootPawn* Pilot)
 {
 	auto* Heli=Helicopter();
-	if (!Heli || !Pilot || Heli->IsFixedWingAircraft() || Heli->FlightModel.State==ESimCopterFlightState::Dying) return;
+	if (!bAutopilotEnabled || !Heli || !Pilot || Heli->IsFixedWingAircraft() || Heli->FlightModel.State==ESimCopterFlightState::Dying) return;
 	EndRemoteTaser();
 	Heli->ResetTransientInputState();
 	RecoveryPilot=Pilot; RecoveryHoldLocation=Heli->GetActorLocation(); RecoveryHoldSeconds=2.0f;
@@ -55,6 +55,7 @@ void USimCopterAirOperationsComponent::EndPilotRecovery()
 	if (auto* Heli=Helicopter(); Heli && bRecoveryHarnessActive && !RecoveryPassenger.IsValid())
 	{
 		Heli->WinchState=SimCopterWinch::FWinchState();
+		Heli->bHarnessRopeEndSelected=false; // The reset winch names the bucket, including in saves.
 		Heli->bRopeDeployed=false; Heli->bHarnessRiderAttached=false;
 		Heli->RopeFirstActiveNode=SimCopterWinch::StowedNode;
 		Heli->UpdateRopeVisuals(0);

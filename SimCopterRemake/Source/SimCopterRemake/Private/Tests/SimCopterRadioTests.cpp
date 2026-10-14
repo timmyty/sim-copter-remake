@@ -72,7 +72,7 @@ bool FSimCopterRadioSequentialTest::RunTest(const FString& Parameters)
 		Radio->SetPlayerInHelicopter(true);
 		Radio->Tick(0.0f);
 		TestEqual(TEXT("Album opens with Expectations Increasing"), Radio->GetCurrentTitle(), FString(TEXT("Expectations Increasing")));
-		Radio->SequentialStartTime -= 12.0;
+		Audio->RadioEndTime -= 12.0; // Progress now follows the audio clock, including pause/seek.
 		Radio->SetVolume(0.35f);
 		Radio->SetStationIndex(0);
 		TestEqual(TEXT("Changing station preserves runtime volume"), Radio->GetVolume(), 0.35f);

@@ -11,9 +11,16 @@ EStyle DetectStyle(const FString& Identity)
 	return EStyle::Xbox;
 }
 
+FString GetHelpShortcut(const FState& State)
+{
+	if (State.bKeyboard) return State.bExpanded ? TEXT("F1: Hide controls") : TEXT("F1: Controls");
+	return State.bExpanded ? TEXT("L3 + R3: Hide help") : TEXT("L3 + R3: Show help");
+}
+
 TArray<FPrompt> BuildPrompts(const FState& State)
 {
 	TArray<FPrompt> Rows;
+	if (!State.bExpanded) return Rows; // Persistent status and shortcuts live on the metal plates.
 	const auto Add = [&Rows](const TCHAR* Icon, FString Label) { Rows.Add({Icon, MoveTemp(Label)}); };
 	if (State.bKeyboard)
 	{
@@ -21,20 +28,18 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 		{
 			if (State.Context == EContext::OnFoot)
 			{
-				Add(TEXT(""), TEXT("WASD: move | Mouse: look | Shift: toggle sprint | Space: jump"));
+				Add(TEXT(""), TEXT("WASD: move | Mouse: look | Space: jump"));
 				Add(TEXT(""), TEXT("F: board | Walk up: carry | G: put down | P: parachute"));
 				Add(TEXT(""), TEXT("RMB: aim taser | LMB: fire"));
 			}
 			else
 			{
 				Add(TEXT(""), TEXT("W/S: forward/back | A/D: turn | Space/Ctrl: climb/descend"));
-				Add(TEXT(""), TEXT("Shift: toggle sprint | RMB + mouse: look | Wheel: zoom | C: camera"));
+				Add(TEXT(""), TEXT("Shift: toggle Turbo Mode | RMB + mouse: look | Wheel: zoom | C: camera"));
 				Add(TEXT(""), TEXT("F: exit | N: tools/dispatch | +/-: map zoom"));
+				Add(TEXT(""), TEXT("Ctrl+R / Double-click radio: station and track menu"));
 			}
-			Add(TEXT(""), TEXT("Ctrl+P: Photo Mode | F12: take photo in Photo Mode"));
 		}
-		Add(TEXT(""), State.bExpanded ? TEXT("F1: Hide controls") :
-			FString::Printf(TEXT("Shift: Sprint %s | F1: Controls | Ctrl+P: Photo Mode"), State.bSprintEnabled ? TEXT("ON") : TEXT("OFF")));
 		return Rows;
 	}
 	if (State.bExpanded)
@@ -112,16 +117,11 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 	{
 		Add(TEXT("r3"), TEXT("+ D-pad up / down: minimap zoom"));
 		Add(TEXT("r3"), TEXT("+ D-pad left / right: map mission"));
+		Add(TEXT("r3"), TEXT("+ View / Touchpad: open Radio"));
 		Add(TEXT("l3"), TEXT("+ D-pad up: toggle mission markers"));
 		Add(TEXT("l3"), TEXT("+ D-pad down: toggle service markers"));
 	}
-	// Always the final row: collapsing help never hides the way to bring it back.
-	if (State.bSprintAvailable)
-	{
-		Add(TEXT("l3"), State.bSprintEnabled ? TEXT("Sprint Mode: ON (click to stop)") : TEXT("Sprint Mode: OFF (click to sprint)"));
-		Add(TEXT("l3"), State.bExpanded ? TEXT("R3 + L3: Hide help") : TEXT("R3 + L3: Show help"));
-	}
-	else Add(TEXT("l3"), State.bExpanded ? TEXT("Hide help") : TEXT("Show help"));
+	if (State.bTurboAvailable && State.Context != EContext::OnFoot) Add(TEXT("l3"), TEXT("Toggle Turbo Mode"));
 	return Rows;
 }
 }

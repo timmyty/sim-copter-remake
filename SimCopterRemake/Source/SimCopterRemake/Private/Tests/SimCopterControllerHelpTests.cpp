@@ -2,6 +2,7 @@
 #include "Misc/AutomationTest.h"
 #include "UI/SimCopterControllerHelp.h"
 #include "UI/SSimCopterControllerHelp.h"
+#include "UI/SSimCopterMapPanel.h"
 #include "UI/SSimCopterToolGlow.h"
 #include "UI/SimCopterHangarArt.h"
 #include "Game/SimCopterPlayerController.h"
@@ -37,16 +38,14 @@ bool FSimCopterHelpContextsTest::RunTest(const FString&)
 	{
 		State.Context = Context;
 		const auto Rows = BuildPrompts(State);
-		TestEqual(TEXT("Hidden help keeps sprint and the help chord visible"), Rows.Num(), 2);
-		TestEqual(TEXT("Toggle uses a stick-click icon"), Rows[0].Icon, FString(TEXT("l3")));
-		TestTrue(TEXT("Sprint toggle reports its current state"), Rows[0].Label.Contains(TEXT("Sprint Mode: OFF")));
-		TestEqual(TEXT("Toggle explains how to restore help"), Rows.Last().Label, FString(TEXT("R3 + L3: Show help")));
+		TestEqual(TEXT("Hidden help has no floating text overlay"), Rows.Num(), 0);
+		TestEqual(TEXT("Plate explains how to restore help"), GetHelpShortcut(State), FString(TEXT("L3 + R3: Show help")));
 	}
-	State.bSprintEnabled = true;
-	TestTrue(TEXT("Enabled sprint stays visible with help collapsed"), BuildPrompts(State)[0].Label.Contains(TEXT("Sprint Mode: ON")));
-	State.bSprintAvailable = false;
-	TestEqual(TEXT("Airplanes retain their original help shortcut"), BuildPrompts(State)[0].Label, FString(TEXT("Show help")));
-	State.bSprintAvailable = true;
+	State.bTurboEnabled = true;
+	TestTrue(TEXT("Turbo state does not restore the removed overlay"), BuildPrompts(State).IsEmpty());
+	State.bTurboAvailable = false;
+	TestEqual(TEXT("Airplanes share the controller help plate"), GetHelpShortcut(State), FString(TEXT("L3 + R3: Show help")));
+	State.bTurboAvailable = true;
 	State.Context = EContext::Flight;
 	State.bExpanded = true;
 	auto Rows = BuildPrompts(State);
@@ -65,7 +64,15 @@ bool FSimCopterHelpContextsTest::RunTest(const FString&)
 	State.Context = EContext::Camera;
 	Rows = BuildPrompts(State);
 	TestFalse(TEXT("Camera help has no D-pad spotlight aim"), Rows.ContainsByPredicate([](const FPrompt& Row) { return Row.Icon.Contains(TEXT("dpad")) || Row.Icon == TEXT("vertical"); }));
-	TestEqual(TEXT("Expanded help still ends with the same toggle"), Rows.Last().Icon, FString(TEXT("l3")));
+	TestEqual(TEXT("Expanded help explains Turbo"), Rows.Last().Label, FString(TEXT("Toggle Turbo Mode")));
+	State.bKeyboard = true;
+	State.bExpanded = false;
+	TestEqual(TEXT("Keyboard plate shows F1"), GetHelpShortcut(State), FString(TEXT("F1: Controls")));
+	TestTrue(TEXT("Keyboard collapsed help has no floating text"), BuildPrompts(State).IsEmpty());
+	State.bExpanded = true;
+	TestEqual(TEXT("Keyboard expanded plate explains closing"), GetHelpShortcut(State), FString(TEXT("F1: Hide controls")));
+	TestFalse(TEXT("Keyboard help removes Photo Mode overlay"), BuildPrompts(State).ContainsByPredicate(
+		[](const FPrompt& Row) { return Row.Label.Contains(TEXT("Ctrl+P")) || Row.Label.Contains(TEXT("Sprint")); }));
 	return true;
 }
 
@@ -117,22 +124,24 @@ bool FSimCopterHelpPresentationTest::RunTest(const FString&)
 	if (!TestNotNull(TEXT("Tool card artwork loaded"), Card) || !TestNotNull(TEXT("Map artwork loaded"), Map)) return false;
 	const EContext Contexts[] = {EContext::Flight, EContext::Flight, EContext::Flight,
 		EContext::OnFoot, EContext::Camera, EContext::RemoteTaser, EContext::ToolWheel,
-		EContext::DispatchWheel, EContext::Passengers, EContext::ConfirmPassenger};
+		EContext::DispatchWheel, EContext::Passengers, EContext::ConfirmPassenger, EContext::Flight, EContext::OnFoot};
 	constexpr int32 Width = 1280, Height = 720;
 	for (int32 Variant = 0; Variant < UE_ARRAY_COUNT(Contexts); ++Variant)
 	{
 		FState State;
 		State.Context = Contexts[Variant];
 		State.bExpanded = Variant != 2;
+		State.bKeyboard = Variant >= 10;
 		State.bHasTool = true;
 		State.bMegaphone = true;
 		State.Message = TEXT("Evacuate");
 		State.bCanExit = true;
 		State.bCanBoard = State.bCarryingPerson = State.bHasPassengers = true;
 		TSharedRef<SSimCopterControllerHelp> Help = SNew(SSimCopterControllerHelp).State(State)
+			.StandaloneStatus(State.Context == EContext::OnFoot)
 			.IconStyle(Variant % 2 == 1 ? EStyle::PlayStation : EStyle::Xbox);
 		Help->SlatePrepass(1.0f);
-		TestTrue(TEXT("Expanded help fits above the map at 720p"), Help->GetDesiredSize().Y <= Height - 296 - 32);
+		TestTrue(TEXT("Expanded help fits above the taller map at 720p"), Help->GetDesiredSize().Y <= Height - 340 - 32);
 		TestTrue(TEXT("Expanded help leaves room for the tool card"), Help->GetDesiredSize().X <= 940);
 		TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
 		Canvas->AddSlot().Offset(FMargin(0, 0, Width, Height)).Alignment(FVector2D::ZeroVector)
@@ -143,7 +152,8 @@ bool FSimCopterHelpPresentationTest::RunTest(const FString&)
 			+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Left).Padding(FMargin(16, 0, 0, 16))
 			[Help]
 			+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Left)
-			[SNew(SBox).WidthOverride(370).HeightOverride(296)[SNew(SImage).Image(Map)]]
+			[SNew(SSimCopterMapPanel).Art(Art.Get()).Scale(2)
+				.Visibility(State.Context == EContext::OnFoot ? EVisibility::Collapsed : EVisibility::HitTestInvisible)]
 		];
 		Canvas->AddSlot().Offset(FMargin(970, 34, 276, 116)).Alignment(FVector2D::ZeroVector)
 		[SNew(SSimCopterToolGlow).Active(true)[SNew(SImage).Image(Card)]];
@@ -164,7 +174,7 @@ bool FSimCopterHelpPresentationTest::RunTest(const FString&)
 		TestTrue(TEXT("Glow leaves the tool artwork visible instead of filling the card"), VisibleArtworkPixels > 6000);
 		TArray64<uint8> Png;
 		FImageUtils::PNGCompressImageArray(Width, Height, Pixels, Png);
-		const FString Path = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Docs/scratchpad") /
+		const FString Path = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Docs/scratchpad/turbo-hud") /
 			FString::Printf(TEXT("controller-help-%d.png"), Variant));
 		TestTrue(TEXT("Preview saved"), FFileHelper::SaveArrayToFile(Png, *Path));
 	}

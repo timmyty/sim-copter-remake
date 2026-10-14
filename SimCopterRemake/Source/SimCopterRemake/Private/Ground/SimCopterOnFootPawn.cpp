@@ -314,12 +314,12 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 	const auto* PC = Cast<APlayerController>(GetController());
 	const auto* SimPC = Cast<ASimCopterPlayerController>(PC);
 	const bool bShiftDown = PC && !PC->IsMoveInputIgnored() &&
-		SimPC && SimPC->IsControllerSprintEnabled();
+		SimPC && SimPC->IsControllerTurboEnabled();
 	const bool bDog = Cheats && Cheats->bSuperpower && bShiftDown;
 	if (auto* Move = GetCharacterMovement())
 	{
 		// Running only changes grounded travel. In-flight exits and parachute control retain
-		// their own movement limits. Shift and controller Sprint Mode share the same gait.
+		// their own movement limits. Shift and controller Turbo Mode share the same gait.
 		const bool bRun = bShiftDown && Move->IsMovingOnGround();
 		Move->MaxWalkSpeed = WalkSpeedCmPerSec * (bDog ? 20.0f : bRun ? RunSpeedScale : 1.0f);
 		Move->MaxAcceleration = MaxAccelerationCmPerSec2 * (bDog ? 20.0f / 3.0f : 1.0f);
@@ -418,7 +418,7 @@ void ASimCopterOnFootPawn::UpdateWalkingSound()
 
 	// FUN_004c1b50 restores the player-person to class 19 (pilot), whose own voice from
 	// FUN_004c71c0 is event 0x29: xFtBoots.wav. Use the original walk/run selector's
-	// speeds 4/8 for the actual gait, so enabling Sprint Mode while stationary adds no footsteps.
+	// speeds 4/8 for the actual gait, so enabling Turbo Mode while stationary adds no footsteps.
 	const int32 OriginalWalkSpeed = SpeedAlpha > 1.05f ? 8 : 4;
 	UAudioComponent* WalkingSound = WalkingSoundComponent.Get();
 	if (WalkingSound == nullptr || !WalkingSound->IsPlaying())
@@ -589,7 +589,7 @@ void ASimCopterOnFootPawn::EnsureControllerOverlayWidget()
 		[SNew(STextBlock).Text(FText::FromString(TEXT("+"))).Font(FCoreStyle::GetDefaultFontStyle("Bold", 24))
 		.Visibility_Lambda([this]() { return bTaserAiming ? EVisibility::HitTestInvisible : EVisibility::Collapsed; })]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(FMargin(0,0,0,90))
-		[SNew(STextBlock).Text_Lambda([this]() { return FText::FromString(FString::Printf(TEXT("Pilot %.0f%% | Parachute: %s"), PilotHealth, bParachuteDeployed ? TEXT("OPEN") : TEXT("CLOSED"))); })];
+		[SNew(STextBlock).Text_Lambda([this]() { return FText::FromString(FString::Printf(TEXT("Pilot %.0f%%"), PilotHealth)); })];
 	GEngine->GameViewport->AddViewportWidgetContent(ControllerOverlayWidget.ToSharedRef(), 60);
 }
 
@@ -831,7 +831,7 @@ bool ASimCopterOnFootPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		}
 	}
 
-	if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->ResetControllerSprint();
+	if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->ResetControllerTurbo();
 	SetActorTransform(Transform, false, nullptr, ETeleportType::TeleportPhysics);
 	if (UCharacterMovementComponent* Move = GetCharacterMovement())
 	{

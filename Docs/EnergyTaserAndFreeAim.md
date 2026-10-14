@@ -36,7 +36,7 @@ active, or designated fleeing speeders. Generic fleeing traffic and stale pooled
 getaway cars are excluded. With no target it holds position. With a target it
 accelerates along the existing swept, full-airframe path to a nearby clear
 position, capped at that airframe's normal maximum speed times the existing 1.3
-sprint factor. It follows moving targets and can seek a clearer elevated or side
+turbo factor. It follows moving targets and can seek a clearer elevated or side
 position around buildings. It does not warp to a pursuit position.
 
 Implementation uses the existing cooked vertex-colour and particle materials and
@@ -54,7 +54,7 @@ The weapon capture measured 44,945 changed pixels during transformation, 1,900
 blue-green pixels and 2,460 visible weapon pixels from the actual shoulder camera.
 Idle, charged, fading, expired, flight and impact captures were inspected.
 
-The first regression run exposed a missing base-travel multiplier in the sprint
+The first regression run exposed a missing base-travel multiplier in the turbo
 cap and fixtures relying on the former automatic sight snap or non-production car
 speeds. Those were corrected before the passing run. The visual fixture required
 its sun to exist before the weapon's first exposure query, and a mean-error
@@ -115,7 +115,7 @@ a clear nearby stationary suspect.
 
 The requested aiming assist now holds a clear firing position within 35 m and
 keeps it until the target reaches 48 m or remains obscured for 0.8 s. Following
-replans at two-second intervals, smooths the approach goal, retains the sprint
+replans at two-second intervals, smooths the approach goal, retains the turbo
 speed cap and full-airframe sweeps, and keeps the nose heading steady. New
 targets and a required departure from hover can replan immediately. This is a
 remake gameplay change, not a claim about original-game flight behavior.

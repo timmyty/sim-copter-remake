@@ -88,6 +88,8 @@ public:
 	void ResolveSavedCargo();
 
 	void ToggleRemoteTaser();
+	void SetAutopilotEnabled(bool bEnabled);
+	bool IsAutopilotEnabled() const { return bAutopilotEnabled; }
 	void FireRemoteTaser();
 	void AimRemoteTaser(float Yaw, float Pitch, float DeltaSeconds);
 	void ZoomRemoteTaser(float Steps);
@@ -96,7 +98,7 @@ public:
 	bool IsRemoteTaserActive() const { return bRemoteTaserActive; }
 	FVector GetRemoteTaserMuzzle() const;
 	FVector GetRemoteTaserDirection() const { return RemoteTaserAim.Vector(); }
-	FString GetRemoteTaserReadout() const;
+	FString GetRemoteTaserReadout(bool bCompact = false) const;
 	void BeginPilotRecovery(ASimCopterOnFootPawn* Pilot);
 	void EndPilotRecovery();
 	bool TryLoadRecoveryPassenger(ASimCopterOnFootPawn* Pilot);
@@ -115,6 +117,7 @@ private:
 	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterPoliceRecoveryTest;
 	friend class FSimCopterRemoteRecoveryTest;
+	friend class FSimCopterRemoteAutopilotTest;
 	friend class FSimCopterVehicleTaserTest;
 	ASimCopterHelicopterPawn* Helicopter() const;
 	void EnsureMesh();
@@ -184,6 +187,7 @@ private:
 	bool bCage = false;
 	bool bCageOpen = false;
 	bool bRemoteTaserActive = false;
+	bool bAutopilotEnabled = true;
 	bool bSupportAircraft = false;
 	bool bSavedCargoPending = false;
 	int32 BoatIndex = INDEX_NONE;

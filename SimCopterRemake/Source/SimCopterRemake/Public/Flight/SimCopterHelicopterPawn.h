@@ -279,6 +279,7 @@ class SIMCOPTERREMAKE_API ASimCopterHelicopterPawn
 	GENERATED_BODY()
 	friend class USimCopterAirOperationsComponent;
 	friend class FSimCopterRemoteRecoveryTest;
+	friend class FSimCopterRemoteAutopilotTest;
 	friend class FSimCopterPlaneControlsTest;
 	friend class FSimCopterWeaponDamageTest;
 	friend class FSimCopterCityWeaponTest;
@@ -1676,6 +1677,7 @@ private:
 	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterNpcMedicalTest;
 	friend class FSimCopterDeployedMedicRiotTest;
+	friend class FSimCopterMedicDeploymentTest;
 	friend class FSimCopterApacheAftermathTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterNpcAppearanceRenderTest;
@@ -1686,7 +1688,7 @@ private:
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterControllerContextsTest;
 	friend class FSimCopterSteeringResponseTest;
-	friend class FSimCopterControllerSprintTest;
+	friend class FSimCopterControllerTurboTest;
 	// The decompiled original flight simulation; the pawn feeds it inputs and
 	// city geometry and mirrors its position/attitude onto the actor.
 	FSimCopterFlightModel FlightModel;

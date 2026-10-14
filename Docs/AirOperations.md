@@ -23,7 +23,7 @@ Implemented 2026-10-05. These are user-requested additions to the original SimCo
 | Aim / fire taser on foot | LT / RT | Right mouse / left mouse |
 | Carry downed person | Walk up; automatic | Walk up; automatic |
 | Enter helicopter on foot | Y (or walk close) | F (or walk close) |
-| Toggle Sprint Mode in helicopters / on foot | Click L3 | Hold either Shift key |
+| Toggle Turbo Mode in helicopters / on foot | Click L3 | Tap either Shift key |
 | Show / hide help in helicopters / on foot | Hold R3 + click L3 | — |
 | Exit helicopter | Y | F |
 | Toggle parachute while falling | B | P |
@@ -57,7 +57,7 @@ Passing a level unlocks a second helicopter that waits for your orders. Select a
 
 Each new city, including a career cheat warp, requires graduation again before the helper appears. Recall returns it toward base after completing any loaded passenger or cargo delivery. The helper cruises at 600 cm/s and uses real NPCs, vehicles, mission events, and service destinations. It cannot be entered or sold by the player. Older saves retain explicit mission orders; legacy automatic assignments are recalled, with any loaded people or cargo delivered first.
 
-Click **L3** to toggle Sprint Mode, or hold either **Shift** key, for 30% faster horizontal helicopter travel with a steeper flight tilt. On foot, L3 toggles the existing doubled running speed and animation. **R3+L3** shows or hides controller help; the sprint status remains visible. Boarding, exiting and loading clear the toggle. With `superpowermultiply` active, either input retains its existing turbo/dog behavior without stacking multipliers. See [Sprint Mode and GPU diagnostics](GpuCrashAndSprint.md) and [traffic and flight pacing](TrafficFlowAndFlightPacing.md).
+Click **L3** to toggle Turbo Mode, or tap either **Shift** key, for 30% faster horizontal helicopter travel with a steeper flight tilt. On foot, L3 toggles the existing doubled running speed and animation. **R3+L3** shows or hides controller help; the minimap Turbo indicator remains visible while flying. Boarding, exiting and loading clear the toggle. With `superpowermultiply` active, either input retains its existing turbo/dog behavior without stacking multipliers. See [Turbo Mode and GPU diagnostics](GpuCrashAndSprint.md) and [traffic and flight pacing](TrafficFlowAndFlightPacing.md).
 
 Every helicopter has a visible nose-mounted remote taser. Once airborne, click **AIM TASER** on its cockpit panel press **N**, or open Tools with **X**, select **Remote Taser**, and press **A**. No officer or purchase is required. Autopilot holds a steady hover while the suspect is in range with a clear shot, following again when range or sustained cover requires it. Move the mouse or right stick to aim; roll the mouse wheel for 1x–4x zoom, or hold LT for the 4x scope. Aiming sensitivity reduces with magnification. Left click, A or RT fires. Hold right mouse for the cockpit cursor. Click **FLY HELICOPTER**, press N, or select **Fly Helicopter** through X then A to return. Successful 60-meter taser shots preserve health and immobilize living suspects for retrieval, handcuffing and police delivery. Recharge takes 1.25 seconds. The former police passenger view has been removed.
 

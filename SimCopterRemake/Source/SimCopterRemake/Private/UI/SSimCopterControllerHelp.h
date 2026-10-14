@@ -10,14 +10,16 @@ class SVerticalBox;
 class SSimCopterControllerHelp : public SCompoundWidget
 {
 public:
-	SLATE_BEGIN_ARGS(SSimCopterControllerHelp) : _IconStyle(SimCopterControllerHelp::EStyle::Xbox), _Scale(1.0f) {}
+	SLATE_BEGIN_ARGS(SSimCopterControllerHelp) : _IconStyle(SimCopterControllerHelp::EStyle::Xbox), _Scale(1.0f), _StandaloneStatus(false) {}
 		SLATE_ATTRIBUTE(SimCopterControllerHelp::FState, State)
 		SLATE_ATTRIBUTE(SimCopterControllerHelp::EStyle, IconStyle)
 		SLATE_ARGUMENT(float, Scale)
+		SLATE_ARGUMENT(bool, StandaloneStatus)
 	SLATE_END_ARGS()
 	void Construct(const FArguments& Args);
 	virtual void Tick(const FGeometry&, double, float) override;
 	static TSharedRef<SWidget> ForPawn(TWeakObjectPtr<APawn> Pawn, float Scale = 1.0f);
+	static SimCopterControllerHelp::FState ReadState(APawn* Pawn, bool bIncludeInstructions = true);
 private:
 	TAttribute<SimCopterControllerHelp::FState> State;
 	TAttribute<SimCopterControllerHelp::EStyle> IconStyle;

@@ -228,14 +228,14 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	TestTrue(TEXT("Automatic orbit acquires criminal cars instead of ordinary traffic"),Ops->RemoteTaserTarget.Get()==BurglarCar);
 	TestTrue(TEXT("Entering remote mode neither teleports nor snaps the sight to a criminal"),Heli->GetActorLocation().Equals(EntryPosition) && Ops->RemoteTaserAim.Equals(EntryAim));
 	BurglarCar->SetMoveTarget(FVector(40000,0,100));
-	bool bExceededSprint=false;
+	bool bExceededTurbo=false;
 	for (int32 Frame=0; Frame<200; ++Frame)
 	{
 		const FVector Before=Heli->GetActorLocation(); BurglarCar->Tick(.05f); Ops->UpdateRemoteTaser(.05f);
-		const float Sprint=Heli->GetMaxForwardSpeedCmPerSec()*SimCopterFixed::ToFloat(Heli->FlightModel.BaseTravelScale)*SimCopterFixed::ToFloat(FSimCopterFlightModel::TravelBoostScale);
-		bExceededSprint|=FVector::Distance(Before,Heli->GetActorLocation())>Sprint*.05f+.01f;
+		const float Turbo=Heli->GetMaxForwardSpeedCmPerSec()*SimCopterFixed::ToFloat(Heli->FlightModel.BaseTravelScale)*SimCopterFixed::ToFloat(FSimCopterFlightModel::TravelBoostScale);
+		bExceededTurbo|=FVector::Distance(Before,Heli->GetActorLocation())>Turbo*.05f+.01f;
 	}
-	TestFalse(TEXT("Every pursuit step is bounded by the actual airframe sprint speed"),bExceededSprint);
+	TestFalse(TEXT("Every pursuit step is bounded by the actual airframe turbo speed"),bExceededTurbo);
 	TestTrue(TEXT("Fixture getaway car moves faster than the old 350 cm/s orbit"),BurglarCar->GetCurrentVelocityCmPerSec().Size2D()>350);
 	TestTrue(TEXT("Helicopter keeps a moving getaway car in taser range"),FVector::Distance(Heli->GetActorLocation(),BurglarCar->GetActorLocation())<5500);
 	TestTrue(TEXT("Moving-car pursuit never drags the player's sight"),Ops->RemoteTaserAim.Equals(EntryAim));
@@ -559,6 +559,65 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 		}
 		TestTrue(*FString::Printf(TEXT("Scenario %d deploys harness"),Scenario),bHarnessStarted);
 		TestTrue(*FString::Printf(TEXT("Scenario %d retrieves pilot"),Scenario),RescuePC->GetPawn()==RescueHeli);
+		if (Scenario==1 && RescuePC->GetPawn()==RescueHeli)
+		{
+			// A completed automatic lift used to reset the winch to Bucket but leave the
+			// displayed rope end at Harness. Saving preserved that disagreement indefinitely.
+			TestFalse(TEXT("Completed recovery clears the harness presentation"),RescueHeli->IsHarnessRopeEndSelected());
+			RescueHeli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::WaterBucket,true);
+			auto* WinchInput=NewObject<UInputComponent>(RescueHeli); RescueHeli->SetupPlayerInputComponent(WinchInput);
+			const auto WinchKey=[&](FKey Key,EInputEvent Event=IE_Pressed)
+			{
+				for (auto& Binding:WinchInput->KeyBindings)
+					if (Binding.Chord.Key==Key && Binding.KeyEvent==Event) Binding.KeyDelegate.Execute(Key);
+			};
+			const auto SelectTool=[&](ESimCopterHelicopterTool Tool)
+			{
+				WinchKey(EKeys::Gamepad_FaceButton_Left);
+				const int32 Slot=RescueHeli->ControllerToolWheelTools.IndexOfByKey(Tool);
+				TestTrue(TEXT("Requested installed attachment is in the controller wheel"),Slot!=INDEX_NONE);
+				const FVector2D Direction=SimCopterControllerInput::GetRadialSlotDirection(Slot,RescueHeli->GetControllerToolWheelSlotCount());
+				RescueHeli->ControllerRightX(Direction.X); RescueHeli->ControllerRightY(Direction.Y);
+				RescueHeli->UpdateControllerRadialSelection();
+				RescueHeli->ControllerRightX(0); RescueHeli->ControllerRightY(0);
+				WinchKey(EKeys::Gamepad_FaceButton_Bottom); WinchKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released);
+				TestTrue(TEXT("Controller confirms the requested attachment"),RescueHeli->GetActiveTool()==Tool);
+			};
+			const auto DriveWinch=[&](FKey Direction)
+			{
+				WinchKey(Direction);
+				for (int32 Step=0; Step<128; ++Step)
+				{
+					RescueHeli->UpdateControllerToolManipulation(); RescueHeli->StepRopeState();
+				}
+				WinchKey(Direction,IE_Released); RescueHeli->UpdateControllerToolManipulation();
+				RescueHeli->UpdateRopeVisuals(0);
+			};
+			for (bool bLegacySave : {false,true})
+			{
+				// Also emulate already-written saves after the producer has been corrected.
+				if (bLegacySave) RescueHeli->bHarnessRopeEndSelected=true;
+				TArray<uint8> SavedWinch;
+				TestTrue(TEXT("Post-recovery aircraft saves"),RescueHeli->CaptureRuntimeSaveState(SavedWinch));
+				TestTrue(TEXT("Post-recovery aircraft reloads"),RescueHeli->RestoreRuntimeSaveState(SavedWinch));
+				TestFalse(TEXT("Reload reconciles the saved harness presentation with the bucket winch"),RescueHeli->IsHarnessRopeEndSelected());
+				SelectTool(ESimCopterHelicopterTool::WaterBucket); DriveWinch(EKeys::Gamepad_DPad_Down);
+				TestFalse(TEXT("First bucket selection after reload deploys the bucket"),RescueHeli->WinchState.bBucketStowed);
+				TestTrue(TEXT("First bucket selection leaves the harness stowed"),RescueHeli->WinchState.bHarnessStowed);
+				TestFalse(TEXT("First bucket selection displays the bucket without a tool round trip"),RescueHeli->IsHarnessRopeEndSelected());
+				TestTrue(TEXT("Actual bucket mesh is visible after reload"),RescueHeli->OriginalBucketMeshComponent->IsVisible());
+				TestFalse(TEXT("Harness mesh stays hidden for the selected bucket"),RescueHeli->OriginalHarnessMeshComponent->IsVisible());
+				SelectTool(ESimCopterHelicopterTool::RescueHarness); DriveWinch(EKeys::Gamepad_DPad_Down);
+				TestTrue(TEXT("Switching to harness still exchanges the deployed attachment"),RescueHeli->IsHarnessRopeEndSelected() && !RescueHeli->WinchState.bHarnessStowed);
+				TestTrue(TEXT("Deployed harness saves"),RescueHeli->CaptureRuntimeSaveState(SavedWinch));
+				TestTrue(TEXT("Deployed harness reloads"),RescueHeli->RestoreRuntimeSaveState(SavedWinch));
+				TestTrue(TEXT("Reload preserves a genuinely deployed harness"),RescueHeli->IsHarnessRopeEndSelected() && !RescueHeli->WinchState.bHarnessStowed);
+				SelectTool(ESimCopterHelicopterTool::WaterBucket); DriveWinch(EKeys::Gamepad_DPad_Down);
+				TestFalse(TEXT("Switching back to bucket displays the bucket"),RescueHeli->IsHarnessRopeEndSelected());
+				DriveWinch(EKeys::Gamepad_DPad_Up);
+				TestTrue(TEXT("Controller raises both attachments for the next save"),RescueHeli->WinchState.IsFullyStowed());
+			}
+		}
 		if (Scenario==4) TestTrue(TEXT("Test exercised automatic walk-up loading"),bWalkedUp);
 		if (Patient)
 		{

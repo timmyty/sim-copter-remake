@@ -82,7 +82,8 @@ bool FSimCopterPlaneControlsTest::RunTest(const FString&)
 	TestTrue(TEXT("Plane restores"),Restored->RestoreRuntimeSaveState(Data));
 	TestEqual(TEXT("Throttle persists"),Restored->GetPlaneThrottle(),.63f);
 	TestFalse(TEXT("Gear target persists"),Restored->IsPlaneLandingGearDown());
-	Data[4]=2; Data.SetNum(Data.Num()-5);
+	// Version 2 predates the v3 throttle/gear fields and the v4 autopilot byte.
+	Data[4]=2; Data.SetNum(Data.Num()-sizeof(float)-2*sizeof(uint8));
 	TestTrue(TEXT("Version-two aircraft save migrates"),Restored->RestoreRuntimeSaveState(Data));
 	TestTrue(TEXT("Old saves default to safe gear down"),Restored->IsPlaneLandingGearDown());
 	// The tour drives presentation time explicitly while normal simulation is paused.

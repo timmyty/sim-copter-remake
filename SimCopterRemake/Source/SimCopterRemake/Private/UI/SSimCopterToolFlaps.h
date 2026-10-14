@@ -106,6 +106,7 @@ public:
 private:
 	friend class FSimCopterCaptureCageTest;
 	friend class FSimCopterRemoteRecoveryTest;
+	friend class FSimCopterRemoteAutopilotTest;
 	// The dispatch strip's page width. Wider than a tool flap to carry full artwork and controls.
 	static constexpr float DispatchPageWidth = 232.0f;
 

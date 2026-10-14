@@ -11,8 +11,8 @@ struct FState
 	bool bExpanded = false;
 	bool bKeyboard = false;
 	FString Instructions;
-	bool bSprintAvailable = true;
-	bool bSprintEnabled = false;
+	bool bTurboAvailable = true;
+	bool bTurboEnabled = false;
 	bool bHasTool = false;
 	bool bCanExit = false;
 	bool bHasPassengers = false;
@@ -31,4 +31,5 @@ struct FPrompt
 // Hardware identity belongs to the device producing the event, never an arbitrary attached pad.
 SIMCOPTERREMAKE_API EStyle DetectStyle(const FString& HardwareIdentity);
 SIMCOPTERREMAKE_API TArray<FPrompt> BuildPrompts(const FState& State);
+SIMCOPTERREMAKE_API FString GetHelpShortcut(const FState& State);
 }

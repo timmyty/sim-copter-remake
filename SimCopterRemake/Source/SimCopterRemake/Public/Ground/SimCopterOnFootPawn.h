@@ -35,7 +35,7 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 	friend class FSimCopterShoulderAimTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterPilotRunTest;
-	friend class FSimCopterControllerSprintTest;
+	friend class FSimCopterControllerTurboTest;
 	friend class FSimCopterEnergyTaserTest;
 	friend class FSimCopterApacheAftermathTest;
 	friend class FSimCopterEnergyTaserVisualTest;

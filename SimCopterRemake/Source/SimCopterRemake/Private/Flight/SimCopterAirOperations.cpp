@@ -603,7 +603,7 @@ void USimCopterAirOperationsComponent::Update(float DeltaSeconds)
 	if (!Helicopter() || !GetWorld()) return;
 	// Saves retain the on-foot pilot's parked aircraft and the aircraft's engine state.
 	// Reconnect that real pair after loading instead of persisting a transient camera or pointer.
-	if (!IsAIPiloted() && !Cast<APlayerController>(Helicopter()->GetController()) && Helicopter()->IsEngineRunning() && !Helicopter()->bIsLanded && !Helicopter()->IsFixedWingAircraft())
+	if (bAutopilotEnabled && !IsAIPiloted() && !Cast<APlayerController>(Helicopter()->GetController()) && Helicopter()->IsEngineRunning() && !Helicopter()->bIsLanded && !Helicopter()->IsFixedWingAircraft())
 		for (TActorIterator<ASimCopterOnFootPawn> It(GetWorld());It;++It)
 			if (Cast<APlayerController>(It->GetController()) && It->GetParkedHelicopter()==Helicopter()) { BeginPilotRecovery(*It); break; }
 	ResolveSavedCargo();
@@ -740,12 +740,30 @@ FVector USimCopterAirOperationsComponent::GetRemoteTaserMuzzle() const
 {
 	return RemoteTaserWeapon ? RemoteTaserWeapon->GetComponentTransform().TransformPosition(FVector(28,0,0)) : Helicopter()->GetActorLocation();
 }
-FString USimCopterAirOperationsComponent::GetRemoteTaserReadout() const
+FString USimCopterAirOperationsComponent::GetRemoteTaserReadout(bool bCompact) const
 {
 	if (!bRemoteTaserActive) return TEXT("N / X: Tools");
+	if (bCompact) return FString::Printf(TEXT("%.1fx  |  %s"),RemoteScopeZoom,ShotCooldown>0 ? TEXT("RECHARGING") : TEXT("READY"));
 	const TCHAR* Target = !RemoteTaserTarget.IsValid() ? TEXT("SEARCHING") :
 		(RemoteTaserTarget->GetAgentKind()==ESimCopterGroundAgentKind::Vehicle ? TEXT("CAR") : TEXT("SUSPECT"));
 	return FString::Printf(TEXT("%s | %s | %.1fx | %s"),bRemoteHolding ? TEXT("HOLD") : TEXT("FOLLOW"),Target,RemoteScopeZoom,ShotCooldown>0 ? TEXT("RECHARGING") : TEXT("READY"));
+}
+void USimCopterAirOperationsComponent::SetAutopilotEnabled(bool bEnabled)
+{
+	if (bAutopilotEnabled==bEnabled) return;
+	bAutopilotEnabled=bEnabled;
+	if (!bEnabled) EndPilotRecovery();
+	// Replan from the current hover when enabled again, never from a stale pursuit goal.
+	RemotePursuitPlanSeconds=0; RemotePursuitSpeed=0; RemoteObstructedSeconds=0;
+	if (auto* Heli=Helicopter())
+	{
+		RemotePursuitGoal=Heli->GetActorLocation();
+		if (bRemoteTaserActive && !bEnabled)
+		{
+			bRemoteHolding=true;
+			Heli->SetAutopilotTransform(RemotePursuitGoal,Heli->GetActorRotation(),.01f);
+		}
+	}
 }
 void USimCopterAirOperationsComponent::ToggleRemoteTaser()
 {
@@ -759,7 +777,7 @@ void USimCopterAirOperationsComponent::ToggleRemoteTaser()
 		const bool bStunnedSuspect=IsValid(Target) && Target->IsTaserStunned() && !Target->IsHandcuffed() &&
 			!Target->IsActorBeingDestroyed() && !Target->IsHidden() && !Target->HasMissionResolutionReported() &&
 			!Target->IsMissionCarried() && !Target->GetBehaviorCarrier() && !Target->IsMedevacVictim() && !Target->IsMissionPatientDead();
-		if (Heli && (IsRemotePursuitTarget(Target) || bStunnedSuspect) &&
+		if (bAutopilotEnabled && Heli && (IsRemotePursuitTarget(Target) || bStunnedSuspect) &&
 			FVector::DistSquared(Heli->GetActorLocation(),Target->GetActorLocation())<FMath::Square(9000.f))
 		{
 			const FVector Direction=(RemotePursuitFocus(Target)-Heli->GetActorLocation()).GetSafeNormal2D();
@@ -787,7 +805,7 @@ void USimCopterAirOperationsComponent::ToggleRemoteTaser()
 		SimCopterFixed::ToFloat(Heli->FlightModel.BaseTravelScale)*SimCopterFixed::ToFloat(FSimCopterFlightModel::TravelBoostScale));
 	RemoteTargetSearchSeconds=RemotePursuitPlanSeconds=0;
 	RemotePursuitGoal=Heli->GetActorLocation();
-	RemoteObstructedSeconds=0; bRemoteHolding=false;
+	RemoteObstructedSeconds=0; bRemoteHolding=!bAutopilotEnabled;
 	RemoteScopeZoom=RemoteScopeZoomTarget=1;
 	SelectRemoteTaserTarget();
 	RemoteTaserCamera=GetWorld()->SpawnActor<ACameraActor>(); if (!RemoteTaserCamera) return;
@@ -933,7 +951,7 @@ void USimCopterAirOperationsComponent::UpdateRemoteTaser(float DeltaSeconds)
 	if (!Cast<APlayerController>(Helicopter()->GetController())) { EndRemoteTaser(); return; }
 	RemoteTargetSearchSeconds-=DeltaSeconds;
 	if (RemoteTargetSearchSeconds<=0) { SelectRemoteTaserTarget(); RemoteTargetSearchSeconds=.25f; }
-	if (auto* Target=RemoteTaserTarget.Get(); IsRemotePursuitTarget(Target))
+	if (auto* Target=RemoteTaserTarget.Get(); bAutopilotEnabled && IsRemotePursuitTarget(Target))
 	{
 		RemoteTaserFocus=RemotePursuitFocus(Target);
 		const FVector Velocity=Target->GetCurrentVelocityCmPerSec().GetClampedToMaxSize2D(4000);
@@ -959,10 +977,10 @@ void USimCopterAirOperationsComponent::UpdateRemoteTaser(float DeltaSeconds)
 			const FVector Goal=RemoteTaserFocus+Velocity*.4f+RemotePursuitOffset;
 			const float Dt=FMath::Clamp(DeltaSeconds,0.f,.1f);
 			RemotePursuitGoal=FMath::Lerp(RemotePursuitGoal,Goal,1.f-FMath::Exp(-3.f*Dt));
-			const float SprintSpeed=Helicopter()->GetMaxForwardSpeedCmPerSec()*
+			const float TurboSpeed=Helicopter()->GetMaxForwardSpeedCmPerSec()*
 				SimCopterFixed::ToFloat(Helicopter()->FlightModel.BaseTravelScale)*SimCopterFixed::ToFloat(FSimCopterFlightModel::TravelBoostScale);
-			const float Speed=FMath::Clamp(Velocity.Size2D()+FVector::Distance(Helicopter()->GetActorLocation(),RemotePursuitGoal)*1.8f,0.f,SprintSpeed);
-			RemotePursuitSpeed=FMath::FInterpConstantTo(RemotePursuitSpeed,Speed,Dt,SprintSpeed);
+			const float Speed=FMath::Clamp(Velocity.Size2D()+FVector::Distance(Helicopter()->GetActorLocation(),RemotePursuitGoal)*1.8f,0.f,TurboSpeed);
+			RemotePursuitSpeed=FMath::FInterpConstantTo(RemotePursuitSpeed,Speed,Dt,TurboSpeed);
 			AdvanceAutopilot(RemotePursuitGoal,DeltaSeconds,RemotePursuitSpeed,true);
 		}
 	}

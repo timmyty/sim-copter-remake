@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-13",
+  "feature": "Nearest hospital white guide for selected active MedEvac missions",
+  "builds": {
+    "editor": true,
+    "Shipping": true,
+    "Development": true
+  },
+  "tests": {
+    "succeeded": 14,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0
+  },
+  "testCases": [
+    {
+      "path": "SimCopter.Map.Buttons",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.HeadingOrientation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.Layout",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.MedevacNearestHospitalGuide",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.MissionCycle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.Overlays",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.TileColors",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.Zoom",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.HospitalSites",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.MapFocusRules",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.MarkerCoordinates",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.MedevacRecordLayout",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.SaveFocusAndTransportLayout",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.PoliceRecovery.NearestStationMapRoute",
+      "state": "Success"
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "Docs/memory/MEMORY.md",
+      "sha256": "b0ae6a285dbeaa2e5491e874e0040d3b5afd919116381bc5e80d8f347537bb3b"
+    },
+    {
+      "path": "Docs/memory/simcopter-map-selection-base-location.md",
+      "sha256": "373090a8db17037255155385491ced3dd6a52fdd4a23bec95ae55a00e30900ee"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMapTests.cpp",
+      "sha256": "42fb610eb220d8c383eb5ee1dae55c7b7b521bde19c39e1e602c36d16d71a037"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMapPanel.cpp",
+      "sha256": "15ca554883f72ff434490dfa41f9d22bf755f4d73a22234a7b942c46530741ce"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMapPanel.h",
+      "sha256": "c33ece5891ca051b7490f4e357f0a83274e0d9be07efebda18b96af73717b86f"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterTrafficSystemActor.h",
+      "sha256": "a360dbb3f2aad00f1bc8c39b84cc8940dfc8d42528495f1b7f66a2220c1a0398"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystemActor.h",
+      "sha256": "323dcc566060617f37dfd72231e48004b0ce55fdadbbb99ae0653585190a1e5c"
+    }
+  ],
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T04:21:54.0152903Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "16FF5B3214BE4DFCDA1978FF8FB87E6E37E59262F7B98CE8507A40642B4EEF37",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\medevac-map-guide/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "91D9C2F44B5F2D2ED8D05F15C39DE49E8BE0ADD50F503390B9A34B0C6E31B06C"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "8020CC435BBF3398D42AB5E43BFC2102BEE203078569301C2F3DD835E8641A48",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\medevac-map-guide/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "423553750EAA6CD9F8433390961816EEFC199F40B5F74847CD07A64A0D37CFD2"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "A87C12868E0C0035F407CE80E69FD06F0D8D8B3E3CECE74B578D0047DCBC1EE9",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\medevac-map-guide/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "6ACBAF222F4080ADCEBF402F6732E526883330CA502B32F121F3F200DFDE8EC0"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "BDCE38F1C0CBB03BFE5EB75882C4612289211E8BADC028C26F3D99B62133E6C6",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\medevac-map-guide/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "A03531569E3EAE89F19685F334517265C0115C2FAF66C1F5F02F38862730A025"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "limitations": [
+    "No interactive in-game verification",
+    "No public release or publication checkout update"
+  ]
+}

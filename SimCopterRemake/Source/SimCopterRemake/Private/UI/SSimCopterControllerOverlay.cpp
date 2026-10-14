@@ -57,7 +57,8 @@ void SSimCopterControllerOverlay::Construct(const FArguments& InArgs)
 			const auto* H=Pawn.Get(); if(!H) return FText::GetEmpty();
 			auto* Ops=H->GetAirOperations(); FString Text;
 			if(Ops->IsRemoteTaserActive() || Ops->IsDeployed()) Text=Ops->GetStatus();
-			if(Ops->IsRemoteTaserActive()) Text=TEXT("REMOTE TASER  |  Steady hover; follows when needed\nMouse / right stick: aim   |   Wheel: zoom   |   Hold LT: 4x scope   |   Left click / A / RT: fire\nHold RMB: cockpit cursor   |   N / X then Fly Helicopter: return\n")+Ops->GetRemoteTaserReadout();
+			if(Ops->IsRemoteTaserActive()) Text=FString(Ops->IsAutopilotEnabled()?TEXT("REMOTE TASER  |  Autopilot ON: follows when needed"):TEXT("REMOTE TASER  |  Autopilot OFF: steady hover; automatic pickup disabled"))+
+				TEXT("\nMouse / right stick: aim   |   Wheel: zoom   |   Hold LT: 4x scope   |   Left click / A / RT: fire\nHold RMB: cockpit cursor   |   N / X then Fly Helicopter: return\n")+Ops->GetRemoteTaserReadout();
 			if(Ops->IsDeployed())
 			{
 				Text+=FString::Printf(TEXT("\nCable %.1fm | PgUp/PgDn or D-pad up/down winch | A / click grab | G / D-pad left release"),Ops->GetCableLength()/100);

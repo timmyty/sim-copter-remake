@@ -103,6 +103,8 @@ class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public S
 	friend class FSimCopterPilotConversationTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterPatientMarkerTest;
+	friend class FSimCopterMedevacMapGuideTest;
+	friend class FSimCopterMissionMessageVisibilityTest;
 	
 public:	
 	ASimCopterMissionSystemActor();
@@ -134,7 +136,7 @@ public:
 	virtual bool GetPlayerTile(int32& OutTileX, int32& OutTileY) const override;
 	virtual bool IsPlayerOnFoot() const override;
 	virtual bool IsCrimeInCustody(int32 EventId) const override;
-	friend class FSimCopterControllerSprintTest;
+	friend class FSimCopterControllerTurboTest;
 	virtual bool IsModalUiActive() const override;
 	virtual int32 GetMissionPassengerLimit(bool bMedical) const override;
 	virtual bool IsMissionTypeAvailable(int32 TypeMask) const override;
@@ -511,6 +513,7 @@ public:
 
 private:
 	friend class FSimCopterDeployedMedicRiotTest;
+	friend class FSimCopterMedicDeploymentTest;
 	void CollapseBuilding(int32 TileX, int32 TileY, int32 FootprintSize, bool bSuppressNewInjuryRewards);
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterCageRecoveryTest;
@@ -713,6 +716,7 @@ private:
 		FVector& OutWorld) const;
 
 	TArray<FSimCopterMissionLogEntry> MissionMessageLog;
+	bool bHudHiddenForReplay = false;
 	TSharedPtr<SWidget> MessageLogWidget;
 	TSharedPtr<SWidget> MessageLogPanel;
 	TSharedPtr<SVerticalBox> MessageLogBox;

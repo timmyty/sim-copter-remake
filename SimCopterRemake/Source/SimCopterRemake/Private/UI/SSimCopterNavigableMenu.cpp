@@ -10,6 +10,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SCheckBox.h"
 #include "Widgets/Input/SComboButton.h"
+#include "Widgets/Input/SSlider.h"
 #include "Widgets/Layout/SScrollBox.h"
 
 namespace
@@ -40,6 +41,7 @@ int32 SSimCopterNavigableMenu::FindSpatialTarget(const TArray<FSlateRect>& Rects
 	const FSlateRect& From = Rects[Current];
 	const FVector2D Centre((From.Left + From.Right) * 0.5, (From.Top + From.Bottom) * 0.5);
 	double BestScore = TNumericLimits<double>::Max();
+	bool bBestAligned = false;
 	int32 Best = Current;
 	for (int32 Index = 0; Index < Rects.Num(); ++Index)
 	{
@@ -54,7 +56,11 @@ int32 SSimCopterNavigableMenu::FindSpatialTarget(const TArray<FSlateRect>& Rects
 			: FMath::Max(0.0f, FMath::Max(To.Left - From.Right, From.Left - To.Right));
 		const double Side = FMath::Abs(Delta.X * Direction.Y - Delta.Y * Direction.X);
 		const double Score = Forward + Side * 0.25 + Gap * 4.0;
-		if (Score < BestScore) { BestScore = Score; Best = Index; }
+		const bool bAligned = Gap <= 1.0;
+		if ((bAligned && !bBestAligned) || (bAligned == bBestAligned && Score < BestScore))
+		{
+			BestScore = Score; Best = Index; bBestAligned = bAligned;
+		}
 	}
 	return Best;
 }
@@ -66,7 +72,8 @@ void SSimCopterNavigableMenu::CollectControls(const TSharedRef<SWidget>& Widget,
 	const FString Type = Widget->GetTypeAsString();
 	const bool bSlider = Type == TEXT("SSimCopterCheckupSlider");
 	if (bSlider && !StaticCastSharedRef<SSimCopterCheckupSlider>(Widget)->CanAdjust()) return;
-	if (Type == TEXT("SButton") || Type == TEXT("SCheckBox") || bSlider ||
+	if (Type == TEXT("SSlider") && !StaticCastSharedRef<SSlider>(Widget)->IsInteractable()) return;
+	if (Type == TEXT("SButton") || Type == TEXT("SCheckBox") || bSlider || Type == TEXT("SSlider") ||
 		Type.StartsWith(TEXT("SComboBox")) || Type.StartsWith(TEXT("SListView")) ||
 		Type == TEXT("SEditableTextBox"))
 	{
@@ -111,6 +118,15 @@ void SSimCopterNavigableMenu::MoveSelection(FVector2D Direction, uint32 UserInde
 	{
 		if (Selected->GetTypeAsString() == TEXT("SSimCopterCheckupSlider"))
 			StaticCastSharedPtr<SSimCopterCheckupSlider>(Selected)->AdjustForController(Direction);
+		else if (Selected->GetTypeAsString() == TEXT("SSlider"))
+		{
+			// Native sliders use navigation events to commit bound values. The menu owns the
+			// edit lock, so these controls opt out of SSlider's second, internal controller lock.
+			const EUINavigation Navigation=Direction.X<0?EUINavigation::Left:Direction.X>0?EUINavigation::Right:
+				Direction.Y<0?EUINavigation::Up:EUINavigation::Down;
+			Selected->OnNavigation(Selected->GetCachedGeometry(),FNavigationEvent(FModifierKeysState(),UserIndex,
+				Navigation,ENavigationGenesis::Controller));
+		}
 		else
 			ForwardControlKey(ArrowForDirection(Direction), UserIndex);
 		return;

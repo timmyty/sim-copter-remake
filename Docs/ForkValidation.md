@@ -1,5 +1,9 @@
 # Fork validation
 
+## October 14 release v1.0.12
+
+Editor, Shipping and Development builds succeeded. All 520 distinct automation cases have passing final results: the complete NullRHI sweep passed 518/520 (493 clean, 25 with warnings), then both outdated fixtures passed after corrections for the v4 aircraft-save suffix and the minimap help header. No tests were removed or left unrun. The new cases cover repeated controller catalog selection and actual one/two-medic rescue and unloading, including hospital drop tiles, two-seat capacity, patient identity/delivery and airborne-drop safety. Warnings include synthetic-world/missing-file fixtures and background connectivity timeouts. Unreal staging verified 891 NonUFS dependencies in a 904-file runtime. The staged launcher and Shipping child survived a hidden 30-second startup. All 464 source/configuration/project/build/launcher files match the publication checkout. No interactive gameplay, physical-controller or manual listening check was performed; visual-only cases can be no-ops under NullRHI. [Detailed results](validation/WindowsRelease112Results.json).
+
 ## October 13 release v1.0.11
 
 Editor, Shipping and Development builds succeeded. The complete headless suite passed 508/510 cases; the two pre-existing ReferenceCity terrain-fixture and FlapLayout equipment-mask failures are unchanged. All three FLAC tests passed, including exact PCM checksums for all 15 masters, shared-file mapping, custom-WAV preservation, hangar playback, asynchronous radio decode, seeking, mute and cancellation. Unreal staging verified 891 NonUFS dependencies; the 904-file runtime contains 15 shared FLACs and none of the 29 replaced WAV copies. The staged launcher and Shipping child survived a hidden 30-second startup. All 458 source/configuration/project/build/launcher files match the publication checkout. No interactive gameplay, native dialog, physical-controller or manual listening check was performed. NullRHI visual-only tests may be no-ops. [Detailed results](validation/WindowsRelease111Results.json).
@@ -366,6 +370,10 @@ damage/death interactions. The “sniper” labels and generic crash impact have
 removed from this role. No live visual, controller-feel or sound-mix check is claimed.
 
 ## Two previously documented failures
+
+Resolved in the October 13, 2026 local test repair; see
+[the corrected fixtures and assertions](memory/test-baseline-repair.md). The
+items below describe the historical publication baseline, not the repaired suite.
 
 1. `SimCopter.Formats.SimCity2000.ReferenceCity`: the local city fixture lacks three
    exact flat/water/sloped altitude samples expected by this test.

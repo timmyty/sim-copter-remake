@@ -1,4 +1,4 @@
-﻿# SimCopter hangar shell
+# SimCopter hangar shell
 
 *"Where the hangar shell's text and layout actually live (exe STRINGTABLE, not .rdata), and the traps in the catalog/upgrades/inventory art"*
 
@@ -131,7 +131,7 @@ The old LB+RB tool-wheel chord latched both steering inputs off until both bumpe
 were released. X now owns Tools/Dispatch, so that legacy chord/latch is removed.
 Opposed bumpers cancel while both are held, and the remaining one resumes immediately.
 Normal single-bumper cruise steering was already symmetric: the regression drives
-actual bindings through all nine flight models, forward held/released and Sprint
+actual bindings through all nine flight models, forward held/released and Turbo
 on/off. Four overlap assertions reproduced the latch defect before the fix; this
 does not establish that every reported physical-controller failure had this cause.
 

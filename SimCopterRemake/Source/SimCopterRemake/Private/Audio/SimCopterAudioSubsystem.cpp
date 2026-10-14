@@ -149,13 +149,7 @@ TStatId USimCopterAudioSubsystem::GetStatId() const
 void USimCopterAudioSubsystem::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (PendingRadioClip.IsValid() && PendingRadioClip.IsReady())
-	{
-		FSimCopterPcmClip Clip = PendingRadioClip.Get();
-		PendingRadioClip = TFuture<FSimCopterPcmClip>();
-		RadioDecodeCancelled.Reset();
-		if (Clip.IsValid()) StartRadioClip(MoveTemp(Clip), PendingRadioStartSeconds);
-	}
+	UpdateRadioPlayback();
 
 	const double Now = FPlatformTime::Seconds();
 	for (int32 Index = OneShots.Num() - 1; Index >= 0; --Index)
@@ -477,6 +471,7 @@ bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float 
 		StopRadio();
 		SetRadioVolumeMultiplier(VolumeMultiplier);
 		PendingRadioStartSeconds = StartSeconds;
+		RadioPath = AbsolutePath;
 		RadioDecodeCancelled = MakeShared<TAtomic<bool>, ESPMode::ThreadSafe>(false);
 		// Only plain samples cross threads. Stop/tuning/world teardown cancel the worker;
 		// a finished old request can never restart audio after the user has left the radio.
@@ -495,7 +490,17 @@ bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float 
 	}
 	StopRadio();
 	SetRadioVolumeMultiplier(VolumeMultiplier);
+	RadioPath = AbsolutePath;
 	return StartRadioClip(MoveTemp(Clip), StartSeconds);
+}
+
+void USimCopterAudioSubsystem::UpdateRadioPlayback()
+{
+	if (!PendingRadioClip.IsValid() || !PendingRadioClip.IsReady()) return;
+	FSimCopterPcmClip Clip = PendingRadioClip.Get();
+	PendingRadioClip = TFuture<FSimCopterPcmClip>();
+	RadioDecodeCancelled.Reset();
+	if (!Clip.IsValid() || !StartRadioClip(MoveTemp(Clip), PendingRadioStartSeconds)) StopRadio();
 }
 
 bool USimCopterAudioSubsystem::StartRadioClip(FSimCopterPcmClip&& Clip, float StartSeconds)
@@ -505,6 +510,7 @@ bool USimCopterAudioSubsystem::StartRadioClip(FSimCopterPcmClip&& Clip, float St
 
 	// Procedural waves cannot seek; discard complete interleaved PCM frames before queueing.
 	const int32 Frames = Clip.Pcm16.Num() / (2 * Clip.Channels);
+	RadioDurationSeconds = static_cast<float>(Frames) / Clip.SampleRate;
 	const int32 SkipFrames = FMath::Clamp(FMath::FloorToInt(FMath::Max(0.0f, StartSeconds) * Clip.SampleRate), 0, Frames);
 	if (SkipFrames >= Frames) { return false; }
 	Clip.Pcm16.RemoveAt(0, SkipFrames * 2 * Clip.Channels, EAllowShrinking::No);
@@ -534,6 +540,8 @@ bool USimCopterAudioSubsystem::StartRadioClip(FSimCopterPcmClip&& Clip, float St
 	ApplyRadioVolume();
 	RadioEndTime = FPlatformTime::Seconds() + static_cast<double>(Clip.Duration);
 	RadioComponent->Play();
+	RadioPauseTime = FPlatformTime::Seconds();
+	RadioComponent->SetPaused(bRadioPaused);
 	return true;
 }
 
@@ -558,6 +566,7 @@ void USimCopterAudioSubsystem::StopRadio()
 	RadioDecodeCancelled.Reset();
 	PendingRadioClip = TFuture<FSimCopterPcmClip>();
 	RadioEndTime = 0.0;
+	RadioPath.Reset(); RadioDurationSeconds = 0; RadioPauseTime = 0; bRadioPaused = false;
 	if (RadioComponent != nullptr)
 	{
 		RadioComponent->Stop();
@@ -566,7 +575,7 @@ void USimCopterAudioSubsystem::StopRadio()
 
 bool USimCopterAudioSubsystem::IsRadioPlaying() const
 {
-	return PendingRadioClip.IsValid() || (RadioEndTime > 0.0 && FPlatformTime::Seconds() < RadioEndTime);
+	return PendingRadioClip.IsValid() || (RadioEndTime > 0.0 && (bRadioPaused ? RadioPauseTime : FPlatformTime::Seconds()) < RadioEndTime);
 }
 
 float USimCopterAudioSubsystem::GetRadioRemainingSeconds() const
@@ -576,7 +585,36 @@ float USimCopterAudioSubsystem::GetRadioRemainingSeconds() const
 	{
 		return 0.0f;
 	}
-	return static_cast<float>(RadioEndTime - FPlatformTime::Seconds());
+	return static_cast<float>(RadioEndTime - (bRadioPaused ? RadioPauseTime : FPlatformTime::Seconds()));
+}
+
+float USimCopterAudioSubsystem::GetRadioPositionSeconds() const
+{
+	if (PendingRadioClip.IsValid()) return PendingRadioStartSeconds;
+	return FMath::Clamp(RadioDurationSeconds - GetRadioRemainingSeconds(), 0.f, RadioDurationSeconds);
+}
+
+void USimCopterAudioSubsystem::SetRadioPaused(bool bPaused)
+{
+	if (bRadioPaused == bPaused || !IsRadioPlaying()) return;
+	const double Now = FPlatformTime::Seconds();
+	if (bPaused) RadioPauseTime = Now;
+	else if (RadioEndTime > 0) RadioEndTime += Now - RadioPauseTime;
+	bRadioPaused = bPaused;
+	if (RadioComponent) RadioComponent->SetPaused(bPaused);
+}
+
+bool USimCopterAudioSubsystem::SeekRadio(float Seconds)
+{
+	if (!FMath::IsFinite(Seconds) || RadioDurationSeconds <= 0 || RadioPath.IsEmpty()) return false;
+	const bool bPaused = bRadioPaused;
+	const float Duration = RadioDurationSeconds;
+	const FString Path = RadioPath;
+	// Leave one playable frame at the end so a seek never fails by trimming the whole clip.
+	if (!PlayRadioFile(Path, RadioVolumeMultiplier, FMath::Clamp(Seconds, 0.f, FMath::Max(0.f, Duration-.05f)))) return false;
+	RadioDurationSeconds = Duration;
+	SetRadioPaused(bPaused);
+	return true;
 }
 
 bool USimCopterAudioSubsystem::EnsureSlotLoaded(int32 Id)

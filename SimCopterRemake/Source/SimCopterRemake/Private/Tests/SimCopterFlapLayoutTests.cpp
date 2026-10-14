@@ -41,10 +41,18 @@ bool FSimCopterFlapLayoutTest::RunTest(const FString& Parameters)
 			UnionMask |= Flaps[Index].EquipmentMask;
 		}
 
-		// Every purchasable tool reaches the cockpit: nothing can be bought that has no flap.
+		// FUN_004127d0 only knows the five original tools. The remake's capture cage
+		// has its own panel, exercised by CaptureCage.ControlsMountsAndMissionWeights.
 		TestEqual(
-			TEXT("The four flaps between them cover every career equipment bit"),
+			TEXT("The four original flaps cover the five original equipment bits"),
 			UnionMask,
+			0x1f);
+		const int32 CageMask = SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::CaptureCage);
+		TestEqual(TEXT("The separate cage panel uses its own equipment bit"), CageMask, 0x40);
+		TestEqual(TEXT("The cage is not gated by an original flap"), UnionMask & CageMask, 0);
+		TestEqual(
+			TEXT("Original flaps plus the cage panel cover every current career equipment bit"),
+			UnionMask | CageMask,
 			SimCopterHelicopterRegistry::AllCareerEquipmentBits);
 	}
 

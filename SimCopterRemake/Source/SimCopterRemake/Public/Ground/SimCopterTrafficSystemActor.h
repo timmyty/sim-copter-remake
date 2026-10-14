@@ -830,6 +830,7 @@ private:
 	friend class FSimCopterMedicRouteTest;
 	friend class FSimCopterAmbientDispatchTest;
 	friend class FSimCopterDeployedMedicRiotTest;
+	friend class FSimCopterMedicDeploymentTest;
 	friend class FSimCopterResponderRepathTest;
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterPatientMarkerTest;
@@ -843,6 +844,7 @@ private:
 	friend class FSimCopterPoliceRecoveryTest;
 	friend class FSimCopterCheckupCrewTest;
 	friend class FSimCopterPoliceDestinationTest;
+	friend class FSimCopterMedevacMapGuideTest;
 	friend class FSimCopterCageRecoveryTest;
 	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterCarAccidentTest;

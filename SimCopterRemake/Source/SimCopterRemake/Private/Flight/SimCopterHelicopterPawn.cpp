@@ -130,7 +130,7 @@ constexpr TCHAR CockpitViewConfigSection[] = TEXT("SimCopter.CockpitView");
 constexpr TCHAR FlightModelConfigSection[] = TEXT("SimCopter.FlightModel");
 constexpr TCHAR CameraGroundLiftConfigSection[] = TEXT("SimCopter.CameraGroundLift");
 constexpr uint32 AircraftRuntimeSaveMagic = 0x48454c49; // 'HELI'
-constexpr int32 AircraftRuntimeSaveVersion = 3;
+constexpr int32 AircraftRuntimeSaveVersion = 4;
 
 void SerializeArchiveBool(FArchive& Archive, bool& Value)
 {
@@ -1106,7 +1106,7 @@ void ASimCopterHelicopterPawn::SetupPlayerInputComponent(UInputComponent* Player
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Right, IE_Released, this, &ASimCopterHelicopterPawn::ControllerCancelReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Top, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerEnterExitPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_Special_Left, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerBackPressed);
-	// L3 is owned by the player controller: Sprint Mode, or R3+L3 for help.
+	// L3 is owned by the player controller: Turbo Mode, or R3+L3 for help.
 
 	PlayerInputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerDPadUpPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_DPad_Up, IE_Released, this, &ASimCopterHelicopterPawn::ControllerDPadUpReleased);
@@ -2314,6 +2314,8 @@ bool ASimCopterHelicopterPawn::CaptureRuntimeSaveState(TArray<uint8>& OutData)
 	AirOperations->SerializeState(Writer);
 	Writer << PlaneThrottle;
 	SerializeArchiveBool(Writer, bPlaneLandingGearDown);
+	bool bAutopilotEnabled = AirOperations->IsAutopilotEnabled();
+	SerializeArchiveBool(Writer, bAutopilotEnabled);
 	if (Writer.IsError())
 	{
 		OutData.Reset();
@@ -2431,16 +2433,22 @@ bool ASimCopterHelicopterPawn::RestoreRuntimeSaveState(const TArray<uint8>& Data
 		SerializeArchiveBool(Reader, bPlaneLandingGearDown);
 		if (!FMath::IsFinite(PlaneThrottle) || PlaneThrottle < 0 || PlaneThrottle > 1) return false;
 	}
+	bool bAutopilotEnabled = true; // Pre-switch saves retain their original automatic behavior.
+	if (Version >= 4) SerializeArchiveBool(Reader, bAutopilotEnabled);
 	if (Reader.IsError() || Reader.Tell() != Reader.TotalSize())
 	{
 		return false;
 	}
 
+	AirOperations->SetAutopilotEnabled(bAutopilotEnabled);
 	CameraMode = static_cast<ESimCopterCameraMode>(SavedCameraMode);
 	SelectedTool = static_cast<ESimCopterHelicopterTool>(Tool);
 	if (SelectedTool==ESimCopterHelicopterTool::TowClamp) SelectedTool=ESimCopterHelicopterTool::CaptureCage;
 	SelectedMegaphoneMessage = static_cast<ESimCopterMegaphoneMessage>(Megaphone);
 	WinchState.RopeEnd = static_cast<SimCopterWinch::ERopeEnd>(RopeEnd);
+	// Older automatic-recovery saves reset the winch to Bucket without clearing the
+	// cached Harness presentation. Restore the actual attachment, even before it swaps.
+	bHarnessRopeEndSelected = WinchState.RopeEnd == SimCopterWinch::ERopeEnd::Harness;
 	SpotlightTarget.HitActor.Reset();
 	if (SearchLightComponent != nullptr)
 	{
@@ -2789,7 +2797,7 @@ void ASimCopterHelicopterPawn::RestoreGameViewportFocus()
 
 void ASimCopterHelicopterPawn::ResetTransientInputState()
 {
-	if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->ResetControllerSprint();
+	if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->ResetControllerTurbo();
 	bBumperLeftHeld = bBumperRightHeld = false;
 	CargoKeyboardCableInput=0;
 	AirOperations->SetCableInput(0);
@@ -3123,6 +3131,9 @@ bool ASimCopterHelicopterPawn::DropPassengerAtSlot(int32 SlotIndex)
 		FVector DropLocation = GetPassengerAirDropWorldLocation(SlotIndex);
 		if (CanTransferMissionPassengers() && !FindClearPassengerExit(Aboard, DropLocation)) return false;
 		// Manual drops also need room at ground level. Airborne releases have no walking queue.
+		// Take the patient while the medic is still at the cabin; a clear exit may place
+		// them farther from the fuselage than the ordinary walking handoff can reach.
+		Aboard->PrepareMedicDeployment(this, CanTransferMissionPassengers());
 		Aboard->AlightFromCarrier(true, false);
 		Aboard->SetActorLocation(DropLocation, false);
 		Aboard->SetMissionPickupCounted(false);
@@ -4740,6 +4751,11 @@ void ASimCopterHelicopterPawn::ControllerEnterExitPressed()
 
 void ASimCopterHelicopterPawn::ControllerBackPressed()
 {
+	if (bControllerCameraAdjustHeld)
+	{
+		if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->SimRadioMenu();
+		return;
+	}
 	if (ControllerMode == ESimCopterControllerMode::None)
 	{
 		CycleCameraMode();
@@ -7508,9 +7524,9 @@ FSimCopterFlightInputs ASimCopterHelicopterPawn::BuildFlightInputs() const
 	const auto* PC = Cast<APlayerController>(GetController());
 	const auto* Cheats = SimCopterCheats::Get(this);
 	const auto* SimPC = Cast<ASimCopterPlayerController>(PC);
-	const bool bSprintRequested = SimPC && SimPC->IsControllerSprintEnabled() && !IsFixedWingAircraft();
-	Inputs.bTurbo = bSprintRequested && Cheats && Cheats->bSuperpower;
-	Inputs.bTravelBoost = bSprintRequested && !Inputs.bTurbo;
+	const bool bTurboRequested = SimPC && SimPC->IsControllerTurboEnabled() && !IsFixedWingAircraft();
+	Inputs.bTurbo = bTurboRequested && Cheats && Cheats->bSuperpower;
+	Inputs.bTravelBoost = bTurboRequested && !Inputs.bTurbo;
 	Inputs.bPitchForwardKey = PitchInput > KeyThreshold;
 	Inputs.bPitchBackKey = PitchInput < -KeyThreshold;
 	Inputs.bTurnRightKey = RollInput > KeyThreshold || (bBumperRightHeld && !bBumperLeftHeld);

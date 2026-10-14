@@ -7,6 +7,7 @@
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Game/SimCopterPlayerController.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterPopulationSprite.h"
@@ -535,12 +536,14 @@ public:
 	SLATE_BEGIN_ARGS(SSimCopterRadioTuner) {}
 		SLATE_ARGUMENT(TWeakObjectPtr<USimCopterRadioSubsystem>, Radio)
 		SLATE_ARGUMENT(TWeakObjectPtr<USimCopterSettings>, Settings)
+		SLATE_EVENT(FSimpleDelegate, OnOpenMenu)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs)
 	{
 		Radio = InArgs._Radio;
 		Settings = InArgs._Settings;
+		OnOpenMenu = InArgs._OnOpenMenu;
 		SetCanTick(false);
 
 		SetToolTipText(TAttribute<FText>::CreateSPLambda(this, [this]()
@@ -548,9 +551,9 @@ public:
 			const USimCopterRadioSubsystem* RadioPtr = Radio.Get();
 			if (RadioPtr != nullptr && !RadioPtr->IsPowered())
 			{
-				return NSLOCTEXT("SimCopterDashboard", "RadioToolTipOff", "Radio (Right-click to turn on)");
+				return NSLOCTEXT("SimCopterDashboard", "RadioToolTipOff", "Radio: double-click / Ctrl+R for menu; right-click to turn on");
 			}
-			return NSLOCTEXT("SimCopterDashboard", "RadioToolTipOn", "Radio (Right-click to turn off)");
+			return NSLOCTEXT("SimCopterDashboard", "RadioToolTipOn", "Radio: double-click / Ctrl+R for menu; right-click to turn off");
 		}));
 	}
 
@@ -644,6 +647,13 @@ public:
 		return FReply::Handled();
 	}
 
+	virtual FReply OnMouseButtonDoubleClick(const FGeometry&, const FPointerEvent& Event) override
+	{
+		if (Event.GetEffectingButton() != EKeys::LeftMouseButton) return FReply::Unhandled();
+		OnOpenMenu.ExecuteIfBound();
+		return FReply::Handled();
+	}
+
 	virtual FCursorReply OnCursorQuery(const FGeometry&, const FPointerEvent&) const override
 	{
 		return FCursorReply::Cursor(EMouseCursor::Hand);
@@ -652,6 +662,7 @@ public:
 private:
 	TWeakObjectPtr<USimCopterRadioSubsystem> Radio;
 	TWeakObjectPtr<USimCopterSettings> Settings;
+	FSimpleDelegate OnOpenMenu;
 };
 
 /**
@@ -1477,6 +1488,23 @@ TSharedRef<SWidget> SSimCopterDashboard::BuildDash4()
 			]
 		]);
 
+	const FSimpleDelegate OpenRadioMenu = FSimpleDelegate::CreateSPLambda(this, [this]
+	{
+		if (auto* Helicopter = GetPawn())
+			if (auto* Controller = Cast<ASimCopterPlayerController>(Helicopter->GetController())) Controller->SimRadioMenu();
+	});
+	// The housing and printed frequencies also open the browser, not just the thin dial groove.
+	AddAtPage(*Canvas, RadioScaleX, RadioBodyY, RadioScaleWidth, RadioBodyHeight + 4,
+		SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("NoBrush"))).Padding(0)
+		.ToolTipText(NSLOCTEXT("SimCopterDashboard", "RadioMenuTip", "Double-click radio / Ctrl+R: choose station and track"))
+		.OnMouseButtonDown_Lambda([](const FGeometry&, const FPointerEvent& Event)
+		{ return Event.GetEffectingButton() == EKeys::LeftMouseButton ? FReply::Handled() : FReply::Unhandled(); })
+		.OnMouseDoubleClick_Lambda([OpenRadioMenu](const FGeometry&, const FPointerEvent& Event)
+		{
+			if (Event.GetEffectingButton() != EKeys::LeftMouseButton) return FReply::Unhandled();
+			OpenRadioMenu.ExecuteIfBound(); return FReply::Handled();
+		}));
+
 	// The radio needle. Sized to the lit band so the tuner widget's own local space is the dial;
 	// the replacement panel moves that band down to meet its reconstructed bottom track.
 	AddAtPage(
@@ -1487,6 +1515,7 @@ TSharedRef<SWidget> SSimCopterDashboard::BuildDash4()
 		RadioScaleHeight,
 		SNew(SSimCopterRadioTuner)
 		.Radio(GetRadio())
+		.OnOpenMenu(OpenRadioMenu)
 		.Settings(GetPawn() != nullptr ? USimCopterSettings::Get(GetPawn()) : nullptr));
 
 	// The missing line beside 11 / 5 / 0. The slot includes FUN_00451e30's six-pixel grab

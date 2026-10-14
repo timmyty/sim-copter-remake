@@ -51,6 +51,7 @@ public:
 private:
 	friend class FSimCopterEquipmentPageTest;
 	friend class FSimCopterEquipmentInteractionTest;
+	friend class FSimCopterCatalogNavigationTest;
 	enum class EPage : uint8
 	{
 		Hangar,
@@ -91,6 +92,7 @@ private:
 	// created them.
 	TArray<TSharedPtr<FButtonStyle>> ButtonStyles;
 	TArray<TSharedPtr<SWidget>> ControllerFocusableWidgets;
+	TArray<TSharedPtr<SWidget>> CatalogTabWidgets;
 
 	TSharedPtr<SConstraintCanvas> PageCanvas;
 	TSharedPtr<class SOverlay> Backdrop;

@@ -31,6 +31,7 @@ enum class ESimCopterSettingsScreen : uint8
 	CheatEntry,
 	CheatEnding,
 	CheatGuide,
+	Radio,
 };
 
 /**
@@ -51,6 +52,7 @@ public:
 	friend class USimCopterCityIntro;
 	friend class FSimCopterCityIntroTest;
 	friend class FSimCopterPhotoModeTest;
+	friend class FSimCopterRadioMenuLifecycleTest;
 	friend class FSimCopterGortReturnTest;
 	bool IsUsingGamepadInput() const { return bLastInputWasGamepad; }
 	void NoteInputDevice(bool bGamepad) { bLastInputWasGamepad = bGamepad; }
@@ -58,9 +60,10 @@ public:
 	SimCopterControllerHelp::EStyle GetControllerIconStyle() const { return ControllerIconStyle; }
 	bool IsControllerHelpExpanded() const { return bControllerHelpExpanded; }
 	bool HandleControllerLeftStickPressed(bool bRepeat);
-	bool IsControllerSprintEnabled() const { return bControllerSprintEnabled; }
-	void HandleKeyboardSprintKey(FKey Key, bool bPressed, bool bRepeat = false);
-	void ResetControllerSprint() { bControllerSprintEnabled = false; ResetControllerChords(); }
+	bool HandleControllerRightStickPressed(bool bRepeat);
+	bool IsControllerTurboEnabled() const { return bControllerTurboEnabled; }
+	void HandleKeyboardTurboKey(FKey Key, bool bPressed, bool bRepeat = false);
+	void ResetControllerTurbo() { bControllerTurboEnabled = false; ResetControllerChords(); }
 	bool HandleControllerLeftStickReleased();
 	bool HandleControllerMapKeyPressed(FKey Key, bool bRepeat);
 	bool HandleControllerMapKeyReleased(FKey Key);
@@ -70,6 +73,9 @@ public:
 	bool IsPhotoModeActive() const { return PhotoCamera.IsValid(); }
 	UFUNCTION(Exec)
 	void SimPhotoMode();
+	/** Ctrl+R or double-clicking the cockpit radio. */
+	UFUNCTION(Exec)
+	void SimRadioMenu();
 	void CapturePhoto();
 	void ClosePhotoMode();
 	void UpdatePhotoMode();
@@ -292,13 +298,13 @@ private:
 	/** Registered for the life of the controller so a stray focus grab cannot outlive one frame. */
 	TSharedPtr<IInputProcessor> KeyboardFocusGuard;
 	bool bLastInputWasGamepad = false;
-	bool bControllerSprintEnabled = false;
+	bool bControllerTurboEnabled = false;
 	bool bControllerLeftStickHeld = false;
 	bool bControllerLeftStickUsed = false;
 	TSet<FKey> ControllerMapKeys;
-	uint8 KeyboardSprintKeys = 0;
-	bool bKeyboardSprintUsed = false;
-	void ResetControllerChords() { KeyboardSprintKeys = 0; bKeyboardSprintUsed = false; bControllerLeftStickHeld = bControllerLeftStickUsed = false; ControllerMapKeys.Reset(); }
+	uint8 KeyboardTurboKeys = 0;
+	bool bKeyboardTurboUsed = false;
+	void ResetControllerChords() { KeyboardTurboKeys = 0; bKeyboardTurboUsed = false; bControllerLeftStickHeld = bControllerLeftStickUsed = false; ControllerMapKeys.Reset(); }
 	bool bControllerHelpExpanded = false;
 	SimCopterControllerHelp::EStyle ControllerIconStyle = SimCopterControllerHelp::EStyle::Xbox;
 	/** Last thief reported, so a widget that re-takes focus every frame logs once, not per frame. */

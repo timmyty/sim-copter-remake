@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-13",
+  "feature": "Cockpit radio menu and explicit sequential station playlists",
+  "builds": {
+    "editor": true,
+    "Shipping": true,
+    "Development": true
+  },
+  "tests": {
+    "final-render": {
+      "succeeded": 49,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0
+    },
+    "final-input": {
+      "succeeded": 3,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0
+    }
+  },
+  "uniqueRelatedTestsPassed": 49,
+  "changedSourceFiles": [
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Audio/SimCopterRadio.cpp",
+      "sha256": "2d7bccc7d775253dcf833d359be4d297f39ae17ab1f4a5e6113d52a0bf39937f"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterPlayerController.cpp",
+      "sha256": "8c0cb964a6a65ed2f01ebf3078e96733746b45665b712847fd700b14c793b2d6"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRadioMenuTests.cpp",
+      "sha256": "ea5976a14ec19763b07df6f9933c655857d9a51e89c04a1412041014dc8ec588"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterControllerHelp.cpp",
+      "sha256": "b35aa32edfa5ac23ff55abf768e59657c7d0b2e42d78afc740af70c1b5651b82"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterDashboard.cpp",
+      "sha256": "1b8035fd8c21b09fac99febdd52697a703e9752add5274b53182a9d5857d7f49"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterRadioMenu.cpp",
+      "sha256": "2d116ea543b12e3d7f78c33e06fd2f21084ccbc8617281633043b00fea9d9a3d"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterRadioMenu.h",
+      "sha256": "bb3bbb106cc8d1acb6085e0d81bddfb0cd891fe169977e4583bb4fa4aa2bb09f"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterAudioSubsystem.h",
+      "sha256": "6199f47e180f4a5adf2c06d80c5d710cba998ebc3f7dc55918d914c599eb9eb6"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterRadio.h",
+      "sha256": "1e74ae6d5525d4450d7ee4a031ec16cd338bad439fd47569100d43c6d4dc155f"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterPlayerController.h",
+      "sha256": "20464b37a72463e007101be9897e6b01d7eb1eb7a52b14c9c6434c5184a39eb2"
+    }
+  ],
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T04:05:04.3863751Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "91D9C2F44B5F2D2ED8D05F15C39DE49E8BE0ADD50F503390B9A34B0C6E31B06C",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\radio-menu/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "0456B86E3FB5376E9E667F944C10978E17E142F1675662036D1A5EB4DB586228"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "423553750EAA6CD9F8433390961816EEFC199F40B5F74847CD07A64A0D37CFD2",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\radio-menu/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "0C957F049792C2A5699E59779D1A643856C417E10AFB8FDCE15A8E6A12CDCD0D"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "6ACBAF222F4080ADCEBF402F6732E526883330CA502B32F121F3F200DFDE8EC0",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\radio-menu/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "7F003E01A73710B67A27F92A11BA5D424F9BCCC82140CEBF5FDE9A9D754B6911"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "A03531569E3EAE89F19685F334517265C0115C2FAF66C1F5F02F38862730A025",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\radio-menu/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "436B6DC310943A5D2D6FB797ABEC60D26A9441353BB1CB21264AEB038B6CD9D8"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "visualReview": [
+    "radio-menu.png: 1280x960, all six stations visible",
+    "radio-menu-kinv.png: 1280x720, long title ellipsis and scrolling"
+  ],
+  "coverage": [
+    "exact commercial selection and subsequent order",
+    "playlist wrap",
+    "mute and power",
+    "KINV restart, continuation, and existing resume regression",
+    "invalid selection and intro/on-foot guards",
+    "radio housing and tuner double-click handlers",
+    "Ctrl+R binding and rope key consumption",
+    "pause, input restoration, menu and Photo Mode exclusion",
+    "existing FLAC decode/mapping/playback",
+    "settings persistence and controller/menu regressions"
+  ],
+  "limitations": [
+    "No interactive flight or manual listening session",
+    "No public release or publication checkout update"
+  ],
+  "validationNotes": [
+    "Initial sandbox test launch stalled on external Zen cache access; rerun with normal Unreal cache permissions.",
+    "Enabled MultiprocessSaveConfig within the isolated test profile for persistence tests.",
+    "Refreshed Unreal source discovery for new test file; corrected test fixture to supply cockpit artwork.",
+    "Final 49-test offscreen suite and subsequent 3 menu tests all pass without test warnings."
+  ]
+}

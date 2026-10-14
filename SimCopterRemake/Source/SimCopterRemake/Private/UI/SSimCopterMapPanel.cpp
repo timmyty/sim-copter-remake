@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterMapPanel.h"
+#include "SSimCopterControllerHelp.h"
+#include "SSimCopterStatusPlate.h"
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Kismet/GameplayStatics.h"
@@ -22,6 +24,7 @@
 #include "Widgets/Layout/SConstraintCanvas.h"
 #include "Widgets/SNullWidget.h"
 #include "Widgets/SOverlay.h"
+#include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
 
 using namespace SimCopterMap;
@@ -39,6 +42,7 @@ constexpr double RasterIntervalSeconds = 0.1;
 // Slate's font ascender leaves the visible capitals low in the reconstructed display well.
 // Lift the label without changing FUN_00460e30's decoded 145x13 text rectangle.
 constexpr float MissionLabelYOffset = -2.0f;
+constexpr float HelpPlateHeight = 22.0f;
 
 }
 
@@ -51,6 +55,10 @@ void SSimCopterMapPanel::Construct(const FArguments& InArgs)
 	LoadArt();
 
 	TSharedRef<SConstraintCanvas> Canvas = SNew(SConstraintCanvas);
+	const auto HudState = [this] { return SSimCopterControllerHelp::ReadState(Pawn.Get(), false); };
+	Canvas->AddSlot().Offset(FMargin(27 * Scale, 1 * Scale, 23 * Scale, 49 * Scale))
+		.Alignment(FVector2D::ZeroVector)
+		[SNew(SSimCopterStatusPlate).State_Lambda(HudState).Scale(Scale).Indicator(true)];
 
 	// The rasterised buffer, drawn over the panel art's window at (54,13).
 	RasterBrush = MakeShared<FSlateBrush>();
@@ -61,6 +69,7 @@ void SSimCopterMapPanel::Construct(const FArguments& InArgs)
 		.Alignment(FVector2D::ZeroVector)
 		[
 			SAssignNew(RasterImage, SImage).Image(RasterBrush.Get())
+			.Visibility_Lambda([this] { return RasterBrush->GetResourceObject() ? EVisibility::HitTestInvisible : EVisibility::Hidden; })
 		];
 
 	for (int32 ButtonIndex = 0; ButtonIndex < ButtonCount; ++ButtonIndex)
@@ -118,6 +127,11 @@ void SSimCopterMapPanel::Construct(const FArguments& InArgs)
 	// The viewport slot anchors this panel directly to the bottom-left corner.
 	ChildSlot
 	[
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot().AutoHeight()
+		[SNew(SSimCopterStatusPlate).State_Lambda(HudState).Scale(Scale)]
+		+ SVerticalBox::Slot().AutoHeight()
+		[
 		SNew(SBox)
 		.WidthOverride(PanelWidth * Scale)
 		.HeightOverride(PanelHeight * Scale)
@@ -133,6 +147,7 @@ void SSimCopterMapPanel::Construct(const FArguments& InArgs)
 			[
 				Canvas
 			]
+		]
 		]
 	];
 
@@ -327,6 +342,33 @@ bool SSimCopterMapPanel::BuildFrame(FSimCopterMapFrame& OutFrame)
 		// mission array is the record table in slot order, so the slot is the index.
 		const int32 FocusIndex = MissionSystem->GetMapFocusRecordIndex();
 		OutFrame.CurrentMission = OutFrame.Missions.IsValidIndex(FocusIndex) ? FocusIndex : INDEX_NONE;
+
+		if (OutFrame.Missions.IsValidIndex(OutFrame.CurrentMission))
+		{
+			FSimCopterMapMission& Selected = OutFrame.Missions[OutFrame.CurrentMission];
+			if (Selected.IsSelectable() && (Selected.TypeMask & SimCopterMissions::TYPE_Medevac) != 0)
+			{
+				// Remake navigation aid: FUN_004a7a10 gives medevacs no destination because any
+				// hospital accepts them. Adapt only this frame's selected record for FUN_004a3820:
+				// white line to the nearest hospital, red line to patients still awaiting pickup.
+				// Re-evaluate from the map's player position each pass, ignoring flight altitude.
+				TArray<ASimCopterTrafficSystemActor::FHospitalSite> Hospitals;
+				TrafficSystem->GetHospitalSites(Hospitals);
+				double NearestDistanceSquared = TNumericLimits<double>::Max();
+				for (const auto& Hospital : Hospitals)
+				{
+					FIntPoint HospitalTile;
+					const double DistanceSquared = FVector::DistSquared2D(MapPawn->GetActorLocation(), Hospital.Center);
+					if (DistanceSquared < NearestDistanceSquared &&
+						TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Hospital.Center, HospitalTile.X, HospitalTile.Y))
+					{
+						NearestDistanceSquared = DistanceSquared;
+						Selected.Secondary = HospitalTile;
+						Selected.Tertiary = Selected.Tile;
+					}
+				}
+			}
+		}
 	}
 
 	if (const auto* Recovery=Helicopter->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
@@ -452,7 +494,7 @@ bool SSimCopterMapPanel::TryGetPanelPoint(
 	const FVector2D Local = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
 	const FIntPoint Point(
 		FMath::FloorToInt(static_cast<float>(Local.X) / Scale),
-		FMath::FloorToInt(static_cast<float>(Local.Y) / Scale));
+		FMath::FloorToInt(static_cast<float>(Local.Y) / Scale - HelpPlateHeight));
 	OutPoint = Point;
 	return Point.X >= 0 && Point.Y >= 0 && Point.X < PanelWidth && Point.Y < PanelHeight;
 }

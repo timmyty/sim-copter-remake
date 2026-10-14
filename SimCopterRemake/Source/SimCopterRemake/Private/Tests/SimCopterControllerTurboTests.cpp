@@ -12,9 +12,9 @@
 #include "../UI/SSimCopterMapPanel.h"
 #include "Missions/SimCopterMissionSystemActor.h"
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterControllerSprintTest,"SimCopter.Controller.SprintMode",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterControllerTurboTest,"SimCopter.Controller.TurboMode",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
-bool FSimCopterControllerSprintTest::RunTest(const FString&)
+bool FSimCopterControllerTurboTest::RunTest(const FString&)
 {
 	auto* Instance=NewObject<UGameInstance>(GEngine); Instance->InitializeStandalone();
 	auto* World=Instance->GetWorld(); World->InitializeActorsForPlay(FURL());
@@ -23,46 +23,54 @@ bool FSimCopterControllerSprintTest::RunTest(const FString&)
 	PC->PlayerInput=NewObject<UPlayerInput>(PC);
 	auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>();
 	PC->Possess(Heli); Heli->bEngineRunning=true;
-	TestFalse(TEXT("Flight starts without sprint"),Heli->BuildFlightInputs().bTravelBoost);
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, true);
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, true, true);
-	PC->HandleKeyboardSprintKey(EKeys::Up, true, true);
+	TestFalse(TEXT("Flight starts without turbo"),Heli->BuildFlightInputs().bTravelBoost);
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, true);
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, true, true);
+	PC->HandleKeyboardTurboKey(EKeys::Up, true, true);
 	TestFalse(TEXT("Shift waits for release to distinguish recall chords"), Heli->BuildFlightInputs().bTravelBoost);
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, false);
-	TestTrue(TEXT("Shift release keeps flight sprint enabled"), Heli->BuildFlightInputs().bTravelBoost);
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, false);
-	TestTrue(TEXT("Duplicate release does not toggle twice"), PC->IsControllerSprintEnabled());
-	PC->HandleKeyboardSprintKey(EKeys::RightShift, true);
-	PC->HandleKeyboardSprintKey(EKeys::F2, true);
-	PC->HandleKeyboardSprintKey(EKeys::RightShift, false);
-	TestTrue(TEXT("Responder recall leaves sprint unchanged"), PC->IsControllerSprintEnabled());
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, false);
+	TestTrue(TEXT("Shift release keeps flight turbo enabled"), Heli->BuildFlightInputs().bTravelBoost);
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, false);
+	TestTrue(TEXT("Duplicate release does not toggle twice"), PC->IsControllerTurboEnabled());
+	PC->HandleKeyboardTurboKey(EKeys::RightShift, true);
+	PC->HandleKeyboardTurboKey(EKeys::F2, true);
+	PC->HandleKeyboardTurboKey(EKeys::RightShift, false);
+	TestTrue(TEXT("Responder recall leaves turbo unchanged"), PC->IsControllerTurboEnabled());
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
-	TestFalse(TEXT("Controller can turn off keyboard sprint"), PC->IsControllerSprintEnabled());
-	PC->HandleKeyboardSprintKey(EKeys::RightShift, true);
-	PC->HandleKeyboardSprintKey(EKeys::RightShift, false);
-	TestTrue(TEXT("Right Shift toggles sprint on"), PC->IsControllerSprintEnabled());
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, true);
-	PC->HandleKeyboardSprintKey(EKeys::RightShift, true);
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, false);
-	PC->HandleKeyboardSprintKey(EKeys::RightShift, false);
-	TestFalse(TEXT("Two Shift keys form one toggle gesture"), PC->IsControllerSprintEnabled());
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, true);
+	TestFalse(TEXT("Controller can turn off keyboard turbo"), PC->IsControllerTurboEnabled());
+	PC->HandleKeyboardTurboKey(EKeys::RightShift, true);
+	PC->HandleKeyboardTurboKey(EKeys::RightShift, false);
+	TestTrue(TEXT("Right Shift toggles turbo on"), PC->IsControllerTurboEnabled());
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, true);
+	PC->HandleKeyboardTurboKey(EKeys::RightShift, true);
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, false);
+	PC->HandleKeyboardTurboKey(EKeys::RightShift, false);
+	TestFalse(TEXT("Two Shift keys form one toggle gesture"), PC->IsControllerTurboEnabled());
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, true);
 	PC->PushPause(); PC->PopPause();
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, false);
-	TestFalse(TEXT("Pause cancels pending keyboard sprint"), PC->IsControllerSprintEnabled());
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, false);
+	TestFalse(TEXT("Pause cancels pending keyboard turbo"), PC->IsControllerTurboEnabled());
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	TestTrue(TEXT("L3 reaches the real flight boost input"),Heli->BuildFlightInputs().bTravelBoost);
 	TestFalse(TEXT("Ordinary L3 does not toggle help"),PC->IsControllerHelpExpanded());
 	PC->HandleControllerLeftStickPressed(true);
-	TestTrue(TEXT("Repeat events leave Sprint Mode on"),Heli->BuildFlightInputs().bTravelBoost);
+	TestTrue(TEXT("Repeat events leave Turbo Mode on"),Heli->BuildFlightInputs().bTravelBoost);
 	Heli->bControllerCameraAdjustHeld=true;
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	TestTrue(TEXT("R3+L3 toggles helicopter help"),PC->IsControllerHelpExpanded());
-	TestTrue(TEXT("Help chord leaves Sprint Mode unchanged"),PC->IsControllerSprintEnabled());
+	TestTrue(TEXT("Help chord leaves Turbo Mode unchanged"),PC->IsControllerTurboEnabled());
 	Heli->bControllerCameraAdjustHeld=false;
+	PC->HandleControllerLeftStickPressed(false);
+	TestTrue(TEXT("L3 then R3 consumes the help chord"), PC->HandleControllerRightStickPressed(false));
+	TestFalse(TEXT("L3 then R3 also toggles help"), PC->IsControllerHelpExpanded());
+	PC->HandleControllerRightStickPressed(true);
+	TestFalse(TEXT("Holding the help chord does not repeat"), PC->IsControllerHelpExpanded());
+	PC->HandleControllerLeftStickReleased();
+	TestTrue(TEXT("L3-first help leaves Turbo enabled"), PC->IsControllerTurboEnabled());
+	PC->ToggleControllerHelp();
 	Heli->ControllerMode=ESimCopterControllerMode::ToolWheel;
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
-	TestTrue(TEXT("L3 does not change sprint while selecting a tool"),PC->IsControllerSprintEnabled());
+	TestTrue(TEXT("L3 does not change turbo while selecting a tool"),PC->IsControllerTurboEnabled());
 	Heli->ControllerMode=ESimCopterControllerMode::None;
 	if (auto* Cheats=SimCopterCheats::Get(Heli))
 	{
@@ -77,29 +85,29 @@ bool FSimCopterControllerSprintTest::RunTest(const FString&)
 	TestFalse(TEXT("Second L3 click restores normal flight"),Heli->BuildFlightInputs().bTravelBoost);
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	Heli->bEngineRunning=false;
-	TestFalse(TEXT("Sprint cannot operate a stopped helicopter"),Heli->BuildFlightInputs().bTravelBoost);
+	TestFalse(TEXT("Turbo cannot operate a stopped helicopter"),Heli->BuildFlightInputs().bTravelBoost);
 	Heli->bEngineRunning=true;
 	Heli->ResetTransientInputState();
-	TestFalse(TEXT("Save restore input reset clears sprint"),PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("Save restore input reset clears turbo"),PC->IsControllerTurboEnabled());
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	auto* Pilot=World->SpawnActor<ASimCopterOnFootPawn>();
 	Pilot->bFindOrSpawnParkedHelicopterOnBeginPlay=false;
 	PC->Possess(Pilot);
-	TestFalse(TEXT("Exiting the helicopter clears sprint"),PC->IsControllerSprintEnabled());
-	PC->HandleKeyboardSprintKey(EKeys::LeftShift, true); PC->HandleKeyboardSprintKey(EKeys::LeftShift, false);
-	TestTrue(TEXT("Shift also toggles sprint on foot"), PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("Exiting the helicopter clears turbo"),PC->IsControllerTurboEnabled());
+	PC->HandleKeyboardTurboKey(EKeys::LeftShift, true); PC->HandleKeyboardTurboKey(EKeys::LeftShift, false);
+	TestTrue(TEXT("Shift also toggles turbo on foot"), PC->IsControllerTurboEnabled());
 	PC->Possess(Heli);
-	TestFalse(TEXT("Boarding clears on-foot sprint"),PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("Boarding clears on-foot turbo"),PC->IsControllerTurboEnabled());
 	Heli->MapPanel = SNew(SSimCopterMapPanel).Pawn(Heli);
 	auto Map = Heli->MapPanel;
 	PC->HandleControllerLeftStickPressed(false);
-	TestFalse(TEXT("Holding L3 does not toggle sprint before a chord"),PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("Holding L3 does not toggle turbo before a chord"),PC->IsControllerTurboEnabled());
 	TestTrue(TEXT("L3 up is consumed before tool controls"),PC->HandleControllerMapKeyPressed(EKeys::Gamepad_DPad_Up,false));
 	TestFalse(TEXT("L3 up hides mission markers"),Map->Settings.bShowMissionBlips);
 	PC->HandleControllerMapKeyPressed(EKeys::Gamepad_DPad_Up,true);
 	TestFalse(TEXT("Held D-pad cannot repeatedly toggle markers"),Map->Settings.bShowMissionBlips);
 	PC->HandleControllerLeftStickReleased();
-	TestFalse(TEXT("L3 map chord leaves sprint off"),PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("L3 map chord leaves turbo off"),PC->IsControllerTurboEnabled());
 	TestTrue(TEXT("Chord release is consumed even after L3 release"),PC->HandleControllerMapKeyReleased(EKeys::Gamepad_DPad_Up));
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	PC->HandleControllerLeftStickPressed(false);
@@ -107,8 +115,8 @@ bool FSimCopterControllerSprintTest::RunTest(const FString&)
 	PC->HandleControllerMapKeyReleased(EKeys::Gamepad_DPad_Down);
 	PC->HandleControllerLeftStickReleased();
 	TestFalse(TEXT("L3 down hides service markers"),Map->Settings.bShowServiceBlips);
-	TestTrue(TEXT("L3 map chord leaves enabled sprint on"),PC->IsControllerSprintEnabled());
-	PC->ResetControllerSprint();
+	TestTrue(TEXT("L3 map chord leaves enabled turbo on"),PC->IsControllerTurboEnabled());
+	PC->ResetControllerTurbo();
 	Heli->bControllerCameraAdjustHeld=true;
 	const auto Dpad = [&](FKey Key) { TestTrue(TEXT("Map chord consumes D-pad"),PC->HandleControllerMapKeyPressed(Key,false)); PC->HandleControllerMapKeyReleased(Key); };
 	for (int32 I=0;I<8;++I) Dpad(EKeys::Gamepad_DPad_Up);
@@ -138,10 +146,10 @@ bool FSimCopterControllerSprintTest::RunTest(const FString&)
 	TestFalse(TEXT("Original tool release still reaches pawn"),PC->HandleControllerMapKeyReleased(EKeys::Gamepad_DPad_Up));
 	Heli->bControllerCameraAdjustHeld=false;
 	PC->HandleControllerLeftStickPressed(false); PC->PushPause(); PC->PopPause(); PC->HandleControllerLeftStickReleased();
-	TestFalse(TEXT("Pausing cancels a pending sprint click"),PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("Pausing cancels a pending turbo click"),PC->IsControllerTurboEnabled());
 	Heli->ActiveHelicopterTypeIndex=SimCopterHelicopterRegistry::PlaneTypeIndex;
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
-	TestFalse(TEXT("Airplanes do not acquire helicopter Sprint Mode"),PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("Airplanes do not acquire helicopter Turbo Mode"),PC->IsControllerTurboEnabled());
 	TestFalse(TEXT("Airplane L3 still toggles help"),PC->IsControllerHelpExpanded());
 	return true;
 }

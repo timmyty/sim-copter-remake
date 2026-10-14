@@ -153,6 +153,7 @@ void SSimCopterHangarMenu::RebuildPage()
 
 	int32 PreviousFocusIndex = INDEX_NONE;
 	const int32 PreviousControllerIndex = ControllerFocusableWidgets.IndexOfByKey(GetControllerSelection());
+	const int32 PreviousCatalogTab = CatalogTabWidgets.IndexOfByKey(GetControllerSelection());
 	if (FSlateApplication::IsInitialized())
 	{
 		const TSharedPtr<SWidget> FocusedWidget = FSlateApplication::Get().GetKeyboardFocusedWidget();
@@ -163,6 +164,7 @@ void SSimCopterHangarMenu::RebuildPage()
 	Backdrop->ClearChildren();
 	ButtonStyles.Reset();
 	ControllerFocusableWidgets.Reset();
+	CatalogTabWidgets.Reset();
 
 	switch (Page)
 	{
@@ -196,6 +198,17 @@ void SSimCopterHangarMenu::RebuildPage()
 		{
 			if (PreviousControllerIndex>=8 && PreviousControllerIndex<=10) SelectEquipmentAction();
 			else SetControllerSelection(ControllerFocusableWidgets[2+UpgradeRow]);
+		}
+		else if (CatalogTabWidgets.IsValidIndex(PreviousCatalogTab))
+		{
+			// Rebuilding creates new buttons. Preserve the tab's identity even when Buy/Sell
+			// availability changes the transaction controls preceding the aircraft list.
+			SetControllerSelection(CatalogTabWidgets[PreviousCatalogTab]);
+		}
+		else
+		{
+			SetControllerSelection(ControllerFocusableWidgets.IsValidIndex(PreviousControllerIndex)
+				? ControllerFocusableWidgets[PreviousControllerIndex] : InitialFocusWidget);
 		}
 		if (FSlateApplication::IsInitialized())
 		{
@@ -313,6 +326,7 @@ TSharedRef<SWidget> SSimCopterHangarMenu::MakeHotspot(FOnClicked OnClicked, cons
 		.ContentPadding(FMargin(0.0f))
 		.ToolTipText(FText::FromString(ToolTip))
 		.OnClicked(OnClicked);
+	CatalogTabWidgets.Add(Button);
 	return Button;
 }
 
@@ -797,6 +811,7 @@ FReply SSimCopterHangarMenu::HandleSelectCatalogRow(const int32 NewRow)
 	CatalogRow = NewRow;
 	StatusText.Reset();
 	RebuildPage();
+	if (CatalogTabWidgets.IsValidIndex(CatalogRow)) SetControllerSelection(CatalogTabWidgets[CatalogRow]);
 	return FReply::Handled();
 }
 
