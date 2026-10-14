@@ -1,4 +1,6 @@
 #include "Audio/SimCopterAudioSubsystem.h"
+#include "Audio/SimCopterHighQualityMusic.h"
+#include "Async/Async.h"
 
 #include "Audio.h"
 #include "Components/AudioComponent.h"
@@ -96,6 +98,7 @@ void USimCopterAudioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void USimCopterAudioSubsystem::Deinitialize()
 {
+	StopRadio();
 	StopOneShots();
 	for (int32 Id = 0; Id < SimCopterSound::NumSlots; ++Id)
 	{
@@ -146,6 +149,13 @@ TStatId USimCopterAudioSubsystem::GetStatId() const
 void USimCopterAudioSubsystem::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (PendingRadioClip.IsValid() && PendingRadioClip.IsReady())
+	{
+		FSimCopterPcmClip Clip = PendingRadioClip.Get();
+		PendingRadioClip = TFuture<FSimCopterPcmClip>();
+		RadioDecodeCancelled.Reset();
+		if (Clip.IsValid()) StartRadioClip(MoveTemp(Clip), PendingRadioStartSeconds);
+	}
 
 	const double Now = FPlatformTime::Seconds();
 	for (int32 Index = OneShots.Num() - 1; Index >= 0; --Index)
@@ -310,7 +320,12 @@ FString USimCopterAudioSubsystem::ResolveSoundRoot() const
 
 FString USimCopterAudioSubsystem::ResolveWavPath(const FString& WavName, SimCopterSound::ESoundDir Dir) const
 {
-	if (!FPaths::IsRelative(WavName) && FPaths::FileExists(WavName)) return WavName;
+	if (!FPaths::IsRelative(WavName))
+	{
+		const FString Replacement = SimCopterHighQualityMusic::Resolve(SoundRoot, WavName);
+		if (!Replacement.IsEmpty()) return Replacement;
+		if (FPaths::FileExists(WavName)) return WavName;
+	}
 	if (SoundRoot.IsEmpty() || WavName.IsEmpty())
 	{
 		return FString();
@@ -350,6 +365,8 @@ FString USimCopterAudioSubsystem::ResolveWavPath(const FString& WavName, SimCopt
 		for (const TCHAR* Extension : Extensions)
 		{
 			const FString Path = FPaths::Combine(Folder, Base + Extension);
+			const FString Replacement = SimCopterHighQualityMusic::Resolve(SoundRoot, Path);
+			if (!Replacement.IsEmpty()) return Replacement;
 			if (FPaths::FileExists(Path))
 			{
 				return Path;
@@ -412,6 +429,12 @@ bool USimCopterAudioSubsystem::DecodeWav(const FString& AbsolutePath, FSimCopter
 	return true;
 }
 
+bool USimCopterAudioSubsystem::DecodeAudio(const FString& AbsolutePath, FSimCopterPcmClip& OutClip)
+{
+	return FPaths::GetExtension(AbsolutePath).Equals(TEXT("flac"), ESearchCase::IgnoreCase)
+		? SimCopterHighQualityMusic::DecodeFlac(AbsolutePath, OutClip) : DecodeWav(AbsolutePath, OutClip);
+}
+
 const FSimCopterPcmClip* USimCopterAudioSubsystem::LoadClip(const FString& WavName, SimCopterSound::ESoundDir Dir)
 {
 	const FString Key = WavName.ToLower();
@@ -431,7 +454,7 @@ const FSimCopterPcmClip* USimCopterAudioSubsystem::LoadClip(const FString& WavNa
 		return nullptr;
 	}
 
-	return DecodeWav(Path, Clip) ? &Clip : nullptr;
+	return DecodeAudio(Path, Clip) ? &Clip : nullptr;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -446,13 +469,39 @@ bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float 
 		return false;
 	}
 
-	// Deliberately uncached: a five-minute music track is about 7 MB of 16-bit PCM and the mix
-	// station alone has 25 of them. The samples live only as long as the wave that plays them.
+	// Deliberately uncached: a stereo FLAC master decodes to roughly 60 MB. Keep only the
+	// current radio track's samples, including when genre and mix refer to the same file.
+	if (FPaths::GetExtension(AbsolutePath).Equals(TEXT("flac"), ESearchCase::IgnoreCase))
+	{
+		if (!FPaths::FileExists(AbsolutePath)) return false;
+		StopRadio();
+		SetRadioVolumeMultiplier(VolumeMultiplier);
+		PendingRadioStartSeconds = StartSeconds;
+		RadioDecodeCancelled = MakeShared<TAtomic<bool>, ESPMode::ThreadSafe>(false);
+		// Only plain samples cross threads. Stop/tuning/world teardown cancel the worker;
+		// a finished old request can never restart audio after the user has left the radio.
+		PendingRadioClip = Async(EAsyncExecution::ThreadPool, [AbsolutePath, Cancelled = RadioDecodeCancelled]
+		{
+			FSimCopterPcmClip Clip;
+			SimCopterHighQualityMusic::DecodeFlac(AbsolutePath, Clip, Cancelled.Get());
+			return Clip;
+		});
+		return true;
+	}
 	FSimCopterPcmClip Clip;
-	if (!DecodeWav(AbsolutePath, Clip))
+	if (!DecodeAudio(AbsolutePath, Clip))
 	{
 		return false;
 	}
+	StopRadio();
+	SetRadioVolumeMultiplier(VolumeMultiplier);
+	return StartRadioClip(MoveTemp(Clip), StartSeconds);
+}
+
+bool USimCopterAudioSubsystem::StartRadioClip(FSimCopterPcmClip&& Clip, float StartSeconds)
+{
+	UWorld* World = GetWorld();
+	if (!World || !bSoundsAvailable || !Clip.IsValid()) return false;
 
 	// Procedural waves cannot seek; discard complete interleaved PCM frames before queueing.
 	const int32 Frames = Clip.Pcm16.Num() / (2 * Clip.Channels);
@@ -482,7 +531,7 @@ bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float 
 
 	RadioComponent->Stop();
 	RadioComponent->SetSound(Wave);
-	SetRadioVolumeMultiplier(VolumeMultiplier);
+	ApplyRadioVolume();
 	RadioEndTime = FPlatformTime::Seconds() + static_cast<double>(Clip.Duration);
 	RadioComponent->Play();
 	return true;
@@ -505,6 +554,9 @@ void USimCopterAudioSubsystem::ApplyRadioVolume()
 
 void USimCopterAudioSubsystem::StopRadio()
 {
+	if (RadioDecodeCancelled) RadioDecodeCancelled->Store(true);
+	RadioDecodeCancelled.Reset();
+	PendingRadioClip = TFuture<FSimCopterPcmClip>();
 	RadioEndTime = 0.0;
 	if (RadioComponent != nullptr)
 	{
@@ -514,11 +566,12 @@ void USimCopterAudioSubsystem::StopRadio()
 
 bool USimCopterAudioSubsystem::IsRadioPlaying() const
 {
-	return RadioEndTime > 0.0 && FPlatformTime::Seconds() < RadioEndTime;
+	return PendingRadioClip.IsValid() || (RadioEndTime > 0.0 && FPlatformTime::Seconds() < RadioEndTime);
 }
 
 float USimCopterAudioSubsystem::GetRadioRemainingSeconds() const
 {
+	if (PendingRadioClip.IsValid()) return 0.0f;
 	if (!IsRadioPlaying())
 	{
 		return 0.0f;

@@ -3553,7 +3553,8 @@ void ASimCopterHelicopterPawn::EnsureWaterControlsWidget()
 		.ColorAndOpacity(FLinearColor(0.91f, 0.96f, 1.0f, 0.96f))
 		.ShadowOffset(FVector2D(1.0f, 1.0f))
 		.ShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.9f))
-		.Font(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 14));
+		.Font(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 14))
+		.Visibility(EVisibility::Collapsed);
 	TSharedRef<STextBlock> CapacityText =
 		SNew(STextBlock)
 		.Justification(ETextJustify::Left)
@@ -4027,6 +4028,12 @@ void ASimCopterHelicopterPawn::RefreshWaterControlsWidget()
 		CapacityPounds,
 		FMath::RoundToInt(CapacityFraction * 100.0f))));
 
+	WaterControlsText->SetText(FText::FromString(GetToolInstructions()));
+}
+
+FString ASimCopterHelicopterPawn::GetToolInstructions() const
+{
+	const int32 CapacityPounds = FMath::Max(0, HelicopterTuning.MaxLoadPounds);
 	FString BucketState;
 	if (!bRopeDeployed)
 	{
@@ -4102,7 +4109,7 @@ void ASimCopterHelicopterPawn::RefreshWaterControlsWidget()
 		Controls += TEXT("\n");
 		Controls += LastToolStatus;
 	}
-	WaterControlsText->SetText(FText::FromString(Controls));
+	return Controls;
 }
 
 bool ASimCopterHelicopterPawn::IsTypingDebugMoney() const
@@ -7499,10 +7506,9 @@ FSimCopterFlightInputs ASimCopterHelicopterPawn::BuildFlightInputs() const
 
 	constexpr float KeyThreshold = KeyAxisThreshold;
 	const auto* PC = Cast<APlayerController>(GetController());
-	const bool bShiftHeld = PC && (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift));
 	const auto* Cheats = SimCopterCheats::Get(this);
 	const auto* SimPC = Cast<ASimCopterPlayerController>(PC);
-	const bool bSprintRequested = bShiftHeld || (SimPC && SimPC->IsControllerSprintEnabled() && !IsFixedWingAircraft());
+	const bool bSprintRequested = SimPC && SimPC->IsControllerSprintEnabled() && !IsFixedWingAircraft();
 	Inputs.bTurbo = bSprintRequested && Cheats && Cheats->bSuperpower;
 	Inputs.bTravelBoost = bSprintRequested && !Inputs.bTurbo;
 	Inputs.bPitchForwardKey = PitchInput > KeyThreshold;

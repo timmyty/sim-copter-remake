@@ -180,8 +180,12 @@ weapon. Individual buttons do not receive selection borders.
 Controller help sits at the bottom left immediately above the map, with 16 HUD-scaled
 pixels of padding below it. It starts collapsed. `R3+L3` toggles the contextual rows;
 the Sprint Mode status and Show help / Hide help row always remain. `L3` toggles
-sprint in helicopters and on foot. Airplanes retain `L3` for help.
-The setting lasts across helicopter and on-foot possession for the current session.
+sprint in helicopters and on foot. Either `Shift` key toggles the same state on release;
+Shift+F2–F5 recall chords do not toggle it. Airplanes retain `L3` for help.
+Changing possession or restoring transient input clears Sprint Mode.
+Keyboard users press `F1` to expand the same help panel, which also contains the
+contextual tool instructions. `Ctrl+P` or Esc → Photo Mode opens the paused screenshot
+camera; `F12` captures an image and Esc returns to play.
 
 Expanded help uses imported Kenney Input Prompts icons. Flight help includes both
 sticks, both triggers, and the R3 camera modifier alongside the current tool.

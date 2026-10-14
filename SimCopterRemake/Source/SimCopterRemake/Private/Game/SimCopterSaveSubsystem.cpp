@@ -15,6 +15,7 @@
 #include "HAL/FileManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/Crc.h"
+#include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Missions/SimCopterMissionSystemActor.h"
 
@@ -330,6 +331,8 @@ USimCopterSaveGame* USimCopterSaveSubsystem::CaptureCurrentGame(
 	Save->UserCityFileName = Save->Kind == ESimCopterSessionKind::User
 		? FPaths::GetCleanFilename(Session->GetCityFilePath())
 		: FString();
+	Save->UserCitySourcePath = Save->Kind == ESimCopterSessionKind::User
+		? FPaths::ConvertRelativePathToFull(Session->GetCityFilePath()) : FString();
 	Save->Cash = Missions->GetSessionCash();
 	Save->Score = Missions->GetSessionScore();
 	if(auto* Ops=WorldContextObject->GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
@@ -522,7 +525,20 @@ bool USimCopterSaveSubsystem::LoadGame(
 	FString& OutError)
 {
 	OutError.Reset();
-	USimCopterSaveGame* Save = ReadSaveSlot(SlotName);
+	const bool bExternalFile = !FPaths::IsRelative(SlotName);
+	USimCopterSaveGame* Save = nullptr;
+	if (bExternalFile)
+	{
+		TArray<uint8> Bytes;
+		if (!FPaths::GetExtension(SlotName).Equals(TEXT("sav"), ESearchCase::IgnoreCase) ||
+			!FFileHelper::LoadFileToArray(Bytes, *SlotName) || Bytes.Num() < 4 || FMemory::Memcmp(Bytes.GetData(), "GVAS", 4) != 0)
+		{
+			OutError = TEXT("Please select a SimCopter Remake saved game (.sav). The file could not be read as a remake save.");
+			return false;
+		}
+		Save = Cast<USimCopterSaveGame>(UGameplayStatics::LoadGameFromMemory(Bytes));
+	}
+	else Save = ReadSaveSlot(SlotName);
 	if (Save == nullptr)
 	{
 		OutError = TEXT("The saved-game file could not be read.");
@@ -542,30 +558,37 @@ bool USimCopterSaveSubsystem::LoadGame(
 		return false;
 	}
 
+	FString CityPath;
 	if (Save->Kind == ESimCopterSessionKind::Career)
-	{
-		Session->RequestCareerCity(Save->CareerCityIndex);
-	}
+		CityPath = USimCopterSessionSubsystem::ResolveCareerCityFilePath(Save->CareerCityIndex);
 	else
 	{
+		// Keep a browsed city's original location, then support a portable save + SC2 pair,
+		// followed by the original cities folder for legacy and relocated installations.
+		const FString FileName = FPaths::GetCleanFilename(Save->UserCityFileName);
 		const FString CitiesDir = USimCopterSessionSubsystem::ResolveCitiesDir();
-		const FString CityPath = FPaths::Combine(CitiesDir, FPaths::GetCleanFilename(Save->UserCityFileName));
-		if (CitiesDir.IsEmpty() || !FPaths::FileExists(CityPath))
+		const FString SaveDir = bExternalFile ? FPaths::GetPath(SlotName) : FPaths::ProjectSavedDir() / TEXT("SaveGames");
+		if (!Save->UserCitySourcePath.IsEmpty() && !FPaths::IsRelative(Save->UserCitySourcePath) && FPaths::FileExists(Save->UserCitySourcePath))
+			CityPath = Save->UserCitySourcePath;
+		else if (FPaths::FileExists(SaveDir / FileName)) CityPath = SaveDir / FileName;
+		else if (!CitiesDir.IsEmpty() && FPaths::FileExists(CitiesDir / FileName)) CityPath = CitiesDir / FileName;
+		if (CityPath.IsEmpty())
 		{
 			OutError = FString::Printf(
-				TEXT("Cannot find the saved SimCity file '%s' in the original game's cities folder."),
+				TEXT("Cannot find the saved city '%s'. Keep its .sc2 file at its original location, beside this saved game, or in the game's cities folder."),
 				*Save->UserCityFileName);
 			return false;
 		}
-		Session->RequestUserCity(CityPath);
 	}
 
-	if (Session->GetCityFilePath().IsEmpty() || !FPaths::FileExists(Session->GetCityFilePath()))
+	if (CityPath.IsEmpty() || !FPaths::FileExists(CityPath))
 	{
-		Session->ClearPendingSession();
 		OutError = TEXT("The saved city file is not available in the configured original-game folder.");
 		return false;
 	}
+	// Only replace session state after all validation succeeds; a failed Browse leaves it intact.
+	if (Save->Kind == ESimCopterSessionKind::Career) Session->RequestCareerCity(Save->CareerCityIndex);
+	else Session->RequestUserCity(FPaths::ConvertRelativePathToFull(CityPath));
 
 	// A save carries its own career block, so an unconsumed advancement must not also apply.
 	ClearPendingCareerCityTransfer();

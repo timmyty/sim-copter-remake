@@ -106,6 +106,12 @@ class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public S
 	
 public:	
 	ASimCopterMissionSystemActor();
+	friend class FSimCopterCustomCitySitesTest;
+private:
+	int32 CustomCityBestScore = 0;
+	bool bCustomCitySitesScanned = false;
+	TArray<FIntPoint> CustomBuildingSites, CustomFireSites, CustomRoadSites, CustomRoofSites, CustomWaterSites;
+public:
 
 protected:
 	virtual void BeginPlay() override;
@@ -130,6 +136,14 @@ public:
 	virtual bool IsCrimeInCustody(int32 EventId) const override;
 	friend class FSimCopterControllerSprintTest;
 	virtual bool IsModalUiActive() const override;
+	virtual int32 GetMissionPassengerLimit(bool bMedical) const override;
+	virtual bool IsMissionTypeAvailable(int32 TypeMask) const override;
+	virtual bool UsesCitywideMissionPlacement() const override;
+	virtual bool TryPickCityMissionTile(int32 TypeMask, int32 Random, int32& X, int32& Y) override;
+	void ScanCustomCityMissionSites();
+	int32 GetCustomCityProgressionTier() const;
+	FString GetCustomCityProgressionText() const;
+
 
 	virtual void OnBuildingFireIgnited(int32 TileX, int32 TileY, int32 EventId) override;
 	virtual void OnBuildingBurnedDown(int32 TileX, int32 TileY, int32 FootprintSize) override;

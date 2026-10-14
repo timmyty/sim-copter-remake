@@ -1,0 +1,315 @@
+{
+  "version": 1,
+  "tracks": [
+    {
+      "file": "music-hq/cptr_jazz1.flac",
+      "sha256": "9590786ddc82b10b5fedf394ba8a59171a9ef67b8a1d5e7d7eec94180006dddd",
+      "bytes": 39609877,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 14489472,
+      "pcm_md5": "5e0e258aa1b82e35c5609775de18d643",
+      "originals": [
+        {
+          "path": "radio/stations/jazz/music/jzz1m2eq.wav",
+          "sha256": "4f4cf32f823341b8d2f681f3686dad4c4b0b7716ece8d88d37a097ad2898f04b",
+          "md5": "eb65bc3ff589e09366818068be47ecda"
+        },
+        {
+          "path": "radio/stations/mix/music/jzz1m2eq.wav",
+          "sha256": "4f4cf32f823341b8d2f681f3686dad4c4b0b7716ece8d88d37a097ad2898f04b",
+          "md5": "eb65bc3ff589e09366818068be47ecda"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_jazz2.flac",
+      "sha256": "bd01a39ad5f07b4a1bfd7c1039e9946dd655bcedda3047140919aba06ae91cc9",
+      "bytes": 43394829,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 15308032,
+      "pcm_md5": "a4bf584657e2ac430c7e6592a6f5c64c",
+      "originals": [
+        {
+          "path": "radio/stations/jazz/music/j2mx2eq1.wav",
+          "sha256": "0fea22da9d813ba58f291b918107f7b48ebfd8950dce06d210a1973bccaee916",
+          "md5": "115dd8b6715fcd5742dc3fd3f1e311a9"
+        },
+        {
+          "path": "radio/stations/mix/music/j2mx2eq1.wav",
+          "sha256": "0fea22da9d813ba58f291b918107f7b48ebfd8950dce06d210a1973bccaee916",
+          "md5": "115dd8b6715fcd5742dc3fd3f1e311a9"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_misc1_long (hanger).flac",
+      "sha256": "cacb70cfb73d91e238ded126d096be32ae0fa90aa0be4013475b6178ee011d80",
+      "bytes": 30935540,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 14143812,
+      "pcm_md5": "89c23ed44492504522ad62aab94ca641",
+      "originals": [
+        {
+          "path": "hangar.wav",
+          "sha256": "bb479792775120139e427e8290cf70ab86f38a9fe265f0cf9b96620bfcf22d3c",
+          "md5": "77c39c46ad1dcda0a59a757130d8a51b"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_rock1.flac",
+      "sha256": "184a68c8f22c7d7398c586d0152656ec348b72f59c8c7a92ca2e1d7ba2b22677",
+      "bytes": 32720782,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 13797902,
+      "pcm_md5": "bab01f8aefd2560f7638089cc58fc74b",
+      "originals": [
+        {
+          "path": "radio/stations/rock/music/rock1mx2.wav",
+          "sha256": "cfa0aa1cc1fbf542cad366ea99d912b38c95c56ac2831c8fb7ed43821c93337b",
+          "md5": "52a4cf9dc5ed86a053a40f012069e971"
+        },
+        {
+          "path": "radio/stations/mix/music/rock1mx2.wav",
+          "sha256": "cfa0aa1cc1fbf542cad366ea99d912b38c95c56ac2831c8fb7ed43821c93337b",
+          "md5": "52a4cf9dc5ed86a053a40f012069e971"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_rock2.flac",
+      "sha256": "bd67b6d2e544ff41e2d0bb61789ee3236009379fdb5dde97f8c43d2ad175e843",
+      "bytes": 28308021,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 12150008,
+      "pcm_md5": "942676b9e2fe123f30616487aa433a95",
+      "originals": [
+        {
+          "path": "radio/stations/rock/music/rock2mx2.wav",
+          "sha256": "699bfcd5ba7568d27e79134a69e7860f3a820b75f8360f80b8ce5723342a4cce",
+          "md5": "d1a26dc55baac64292db0e636e491633"
+        },
+        {
+          "path": "radio/stations/mix/music/rock2mx2.wav",
+          "sha256": "699bfcd5ba7568d27e79134a69e7860f3a820b75f8360f80b8ce5723342a4cce",
+          "md5": "d1a26dc55baac64292db0e636e491633"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_rock3.flac",
+      "sha256": "3636ff01bcc13a3edcfda8dec07e4a68c5cecb1e934df108ba2ac7210fb1ae48",
+      "bytes": 28882411,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 13554990,
+      "pcm_md5": "fba48a0ba8b01d027fab16523f87b211",
+      "originals": [
+        {
+          "path": "radio/stations/rock/music/rock3mx2.wav",
+          "sha256": "af3d85c1ac6fced72ab563c51619ea073bc9ccea6bd775967580c0eb9b729396",
+          "md5": "35d736ab73326c0f1bd898b819b1f86d"
+        },
+        {
+          "path": "radio/stations/mix/music/rock3mx2.wav",
+          "sha256": "af3d85c1ac6fced72ab563c51619ea073bc9ccea6bd775967580c0eb9b729396",
+          "md5": "35d736ab73326c0f1bd898b819b1f86d"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_rock4.flac",
+      "sha256": "9669ac8ca66f56db1d9a1b74f24ea35b944ea7c6ed7814d519a6ca3ddb630c60",
+      "bytes": 34201328,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 14922025,
+      "pcm_md5": "cfc95973f7690b10a1837194e80fb8d2",
+      "originals": [
+        {
+          "path": "radio/stations/rock/music/rock4mx2.wav",
+          "sha256": "0c45a66d021023a47f93f8885576e884f93dfa9ff11d631d314f59aca3c887fb",
+          "md5": "1e3f7514eb1cea48ec2d21111b93d4be"
+        },
+        {
+          "path": "radio/stations/mix/music/rock4mx2.wav",
+          "sha256": "0c45a66d021023a47f93f8885576e884f93dfa9ff11d631d314f59aca3c887fb",
+          "md5": "1e3f7514eb1cea48ec2d21111b93d4be"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_rock5.flac",
+      "sha256": "a333e2f90e1d5124e0e08a5d70fc7dc56116ffc8873b61c3151ced1d5fe196d8",
+      "bytes": 36839592,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 14532535,
+      "pcm_md5": "f3425693b3994d30a57101ed58eee269",
+      "originals": [
+        {
+          "path": "radio/stations/rock/music/rock5mx1.wav",
+          "sha256": "480b87434cd5c6189601c961bb894a6bfd0862406713b9533049fc6714ec95a9",
+          "md5": "af0b8ea46bc56d50d248389194491f36"
+        },
+        {
+          "path": "radio/stations/mix/music/rock5mx1.wav",
+          "sha256": "480b87434cd5c6189601c961bb894a6bfd0862406713b9533049fc6714ec95a9",
+          "md5": "af0b8ea46bc56d50d248389194491f36"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_rock6.flac",
+      "sha256": "2dfba51458f8c3f7281d06a2ccdcf566f31d9c48c4a505d5759e77fc01aa929e",
+      "bytes": 35069404,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 15620480,
+      "pcm_md5": "84d099478c009af4750728b661479793",
+      "originals": [
+        {
+          "path": "radio/stations/rock/music/rock6mx1.wav",
+          "sha256": "e1076f4d2fe8342d4cd7a409363b441639ba2e37716c4ba9e8e21d7c5abcf0ee",
+          "md5": "58f363e04153667638e219283155d547"
+        },
+        {
+          "path": "radio/stations/mix/music/rock6mx1.wav",
+          "sha256": "e1076f4d2fe8342d4cd7a409363b441639ba2e37716c4ba9e8e21d7c5abcf0ee",
+          "md5": "58f363e04153667638e219283155d547"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_tkno1.flac",
+      "sha256": "618012d39cf175622a41e78d5a27427488b558ac8c73834fe35c7e1674df7724",
+      "bytes": 38894953,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 17700544,
+      "pcm_md5": "0004c7326ad436d435cc5d22409029ec",
+      "originals": [
+        {
+          "path": "radio/stations/techno/music/tkno1mx2.wav",
+          "sha256": "4518688f5b1591e7997d3ad73003b82cbf5eb84acd3f766c25975a76720ef80a",
+          "md5": "442cc3719ded373a1bf07d351ccea5d6"
+        },
+        {
+          "path": "radio/stations/mix/music/tkno1mx2.wav",
+          "sha256": "4518688f5b1591e7997d3ad73003b82cbf5eb84acd3f766c25975a76720ef80a",
+          "md5": "442cc3719ded373a1bf07d351ccea5d6"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_tkno2.flac",
+      "sha256": "f0ad1efd91d53b3ef9d512a0e9fcbcd924a965272c05bc093b5f4ff452a560ed",
+      "bytes": 34024486,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 12529836,
+      "pcm_md5": "dff59f99054bb87edd1313b9cc502811",
+      "originals": [
+        {
+          "path": "radio/stations/techno/music/tkno2mx2.wav",
+          "sha256": "ebc7e5f97cbeb582405b32d6e56af683e91e752f422d962e4cee865a20e80552",
+          "md5": "4ddca529952678ad1d5821b99e11de56"
+        },
+        {
+          "path": "radio/stations/mix/music/tkno2mx2.wav",
+          "sha256": "ebc7e5f97cbeb582405b32d6e56af683e91e752f422d962e4cee865a20e80552",
+          "md5": "4ddca529952678ad1d5821b99e11de56"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_tkno3.flac",
+      "sha256": "aeaa10552d7611a77d37ad83c01ffb8d75937df335a7867c8e743f32278a62cc",
+      "bytes": 32936902,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 12253638,
+      "pcm_md5": "e4289cf76285da7b733daed91a1090c6",
+      "originals": [
+        {
+          "path": "radio/stations/techno/music/tkno3mx2.wav",
+          "sha256": "80f68d480903c78d09d7b0cfad05bfe1361e7cf1f25bf10c317c3565d24b0a80",
+          "md5": "305c72eb6171ed3b82839058fb24533a"
+        },
+        {
+          "path": "radio/stations/mix/music/tkno3mx2.wav",
+          "sha256": "80f68d480903c78d09d7b0cfad05bfe1361e7cf1f25bf10c317c3565d24b0a80",
+          "md5": "305c72eb6171ed3b82839058fb24533a"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_tkno4.flac",
+      "sha256": "44a91c75c0e454ccaa3ba91751c04730d72570afb1436b8faebfdbad72da43af",
+      "bytes": 30622903,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 12247405,
+      "pcm_md5": "d910ec0b32635728b6004cf8f1ef4412",
+      "originals": [
+        {
+          "path": "radio/stations/techno/music/tkno4mx2.wav",
+          "sha256": "7fb7cea7ae516098eea10bc23fbcd191a3dc6294f36b69ec84bf71c833c8c686",
+          "md5": "db69598135b1629c4323026b7afb4234"
+        },
+        {
+          "path": "radio/stations/mix/music/tkno4mx2.wav",
+          "sha256": "7fb7cea7ae516098eea10bc23fbcd191a3dc6294f36b69ec84bf71c833c8c686",
+          "md5": "db69598135b1629c4323026b7afb4234"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_tkno5.flac",
+      "sha256": "577ca048680d5078acb779e4c87f71e9ce3f38bb7809927add730d05c3dcaaf1",
+      "bytes": 36836305,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 14904166,
+      "pcm_md5": "c239c19a2b1c26a9b99f452acd52a08a",
+      "originals": [
+        {
+          "path": "radio/stations/techno/music/tkno5mx2.wav",
+          "sha256": "769368f481781a896695eccfa82acf565687d4739b3e1cb9b1e54f2290c7cb4b",
+          "md5": "ce0f7998c14c98481c3dceee29c4cf4a"
+        },
+        {
+          "path": "radio/stations/mix/music/tkno5mx2.wav",
+          "sha256": "769368f481781a896695eccfa82acf565687d4739b3e1cb9b1e54f2290c7cb4b",
+          "md5": "ce0f7998c14c98481c3dceee29c4cf4a"
+        }
+      ]
+    },
+    {
+      "file": "music-hq/cptr_tkno6.flac",
+      "sha256": "756e7ead5c823ceacf75a4d2a7e9f549d53d38f569b99b8a7436b98bcdedec76",
+      "bytes": 35374423,
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 13279905,
+      "pcm_md5": "7d63f7512e84a48b3fb6653e34fa6928",
+      "originals": [
+        {
+          "path": "radio/stations/techno/music/tkno6mx2.wav",
+          "sha256": "fd0b9de286e607a5601f77f2121677a41c84bde198dab43b8fbf9d2c6920d5bd",
+          "md5": "c2e543cdcf1ceb26e77754c6e32ab5de"
+        },
+        {
+          "path": "radio/stations/mix/music/tkno6mx2.wav",
+          "sha256": "fd0b9de286e607a5601f77f2121677a41c84bde198dab43b8fbf9d2c6920d5bd",
+          "md5": "c2e543cdcf1ceb26e77754c6e32ab5de"
+        }
+      ]
+    }
+  ]
+}

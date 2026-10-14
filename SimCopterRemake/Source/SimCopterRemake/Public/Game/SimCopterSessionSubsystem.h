@@ -93,6 +93,7 @@ public:
 	static const TCHAR* GetCityLevelName() { return TEXT("/Game/CityRender"); }
 
 private:
+	TSharedPtr<class IInputProcessor> CursorIdleGuard;
 	ESimCopterSessionKind Kind = ESimCopterSessionKind::None;
 	int32 CareerCityIndex = 0;
 	FString CityFilePath;

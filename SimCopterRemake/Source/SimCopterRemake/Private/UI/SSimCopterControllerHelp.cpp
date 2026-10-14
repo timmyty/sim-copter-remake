@@ -6,6 +6,8 @@
 #include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterRegistry.h"
 #include "Game/SimCopterPlayerController.h"
+#include "Missions/SimCopterMissionSystemActor.h"
+#include "Kismet/GameplayStatics.h"
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Misc/Paths.h"
 #include "Styling/CoreStyle.h"
@@ -25,12 +27,14 @@ FState ReadState(APawn* Pawn)
 	if (!Pawn) return State;
 	const auto* PC = Cast<ASimCopterPlayerController>(Pawn->GetController());
 	State.bExpanded = PC && PC->IsControllerHelpExpanded();
+	State.bKeyboard = !PC || !PC->IsUsingGamepadInput();
 	State.bSprintEnabled = PC && PC->IsControllerSprintEnabled();
 	const auto* Aircraft = Cast<ASimCopterHelicopterPawn>(Pawn);
 	State.bSprintAvailable = (Aircraft && !Aircraft->IsFixedWingAircraft()) || Pawn->IsA<ASimCopterOnFootPawn>();
 	if (!State.bExpanded) return State;
 	if (const auto* Helicopter = Cast<ASimCopterHelicopterPawn>(Pawn))
 	{
+		State.Instructions = Helicopter->GetToolInstructions();
 		State.bHasPassengers = !Helicopter->GetMissionPassengerSlots().IsEmpty();
 		State.bCanExit = Helicopter->CanExitHelicopter();
 		const ESimCopterHelicopterTool Tool = Helicopter->GetActiveTool();
@@ -60,10 +64,14 @@ FState ReadState(APawn* Pawn)
 	}
 	else if (const auto* OnFoot = Cast<ASimCopterOnFootPawn>(Pawn))
 	{
+		State.Instructions = TEXT("Walk up to carry downed people. Return patients to a hospital with room for one medic.");
 		State.Context = EContext::OnFoot;
 		State.bCarryingPerson = OnFoot->IsCarryingMissionPerson();
 		State.bCanBoard = OnFoot->CanBoardNearbyHelicopter();
 	}
+	if (const auto* Missions = Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(Pawn, ASimCopterMissionSystemActor::StaticClass()));
+		Missions && Missions->UsesCitywideMissionPlacement())
+		State.Instructions += TEXT("\n") + Missions->GetCustomCityProgressionText();
 	return State;
 }
 }
@@ -80,7 +88,7 @@ TSharedRef<SWidget> SSimCopterControllerHelp::ForPawn(TWeakObjectPtr<APawn> Pawn
 		.Visibility_Lambda([Pawn]
 		{
 			const auto* PC = Pawn.IsValid() ? Cast<ASimCopterPlayerController>(Pawn->GetController()) : nullptr;
-			return PC && PC->IsUsingGamepadInput() && !PC->IsPaused() && GEngine && GEngine->GameViewport &&
+			return PC && !PC->IsPhotoModeActive() && !PC->IsPaused() && GEngine && GEngine->GameViewport &&
 				!GEngine->GameViewport->IgnoreInput() ? EVisibility::HitTestInvisible : EVisibility::Collapsed;
 		});
 }
@@ -115,9 +123,11 @@ const FSlateBrush* SSimCopterControllerHelp::GetIcon(const FString& Name)
 
 void SSimCopterControllerHelp::Refresh()
 {
-	const TArray<FPrompt> Prompts = BuildPrompts(State.Get());
+	const auto Current = State.Get();
+	const TArray<FPrompt> Prompts = BuildPrompts(Current);
 	FString Layout = FString::FromInt(static_cast<int32>(IconStyle.Get()));
 	for (const FPrompt& Prompt : Prompts) Layout += TEXT("|") + Prompt.Icon + TEXT(":") + Prompt.Label;
+	if (Current.bExpanded) Layout += Current.Instructions;
 	if (Layout == PreviousLayout) return;
 	PreviousLayout = MoveTemp(Layout);
 	Rows->ClearChildren();
@@ -129,8 +139,8 @@ void SSimCopterControllerHelp::Refresh()
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 			[
-				SNew(SBox).WidthOverride(32 * Scale).HeightOverride(32 * Scale)
-				[SNew(SImage).Image(GetIcon(Prompt.Icon))]
+				SNew(SBox).Visibility(Prompt.Icon.IsEmpty() ? EVisibility::Collapsed : EVisibility::HitTestInvisible).WidthOverride(32 * Scale).HeightOverride(32 * Scale)
+				[SNew(SImage).Image(Prompt.Icon.IsEmpty() ? nullptr : GetIcon(Prompt.Icon))]
 			]
 			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(8 * Scale, 0)
 			[
@@ -156,6 +166,10 @@ void SSimCopterControllerHelp::Refresh()
 		];
 	}
 	else for (const FPrompt& Prompt : Prompts) Rows->AddSlot().AutoHeight()[MakeRow(Prompt)];
+	if (Current.bExpanded && !Current.Instructions.IsEmpty())
+		Rows->AddSlot().AutoHeight().Padding(0, 8 * Scale)
+		[SNew(STextBlock).Text(FText::FromString(Current.Instructions)).WrapTextAt(650 * Scale)
+		.Font(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), FMath::RoundToInt(12 * Scale)))];
 }
 
 void SSimCopterControllerHelp::Tick(const FGeometry& Geometry, double Time, float Delta)

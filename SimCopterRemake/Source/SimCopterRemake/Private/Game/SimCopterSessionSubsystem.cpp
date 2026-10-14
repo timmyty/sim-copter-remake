@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Game/SimCopterSessionSubsystem.h"
+#include "Game/SimCopterCursorIdle.h"
 
 #include "Game/SimCopterInputDebug.h"
 #include "Game/SimCopterMacWindowFix.h"
@@ -19,6 +20,7 @@
 void USimCopterSessionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+	CursorIdleGuard = SimCopterCursorIdle::Register(GetGameInstance());
 	SimCopterInputDebug::RegisterIfRequested();
 	SimCopterMacWindowFix::Register();
 
@@ -68,6 +70,7 @@ void USimCopterSessionSubsystem::Initialize(FSubsystemCollectionBase& Collection
 void USimCopterSessionSubsystem::Deinitialize()
 {
 	SimCopterMacWindowFix::Unregister();
+	SimCopterCursorIdle::Unregister(CursorIdleGuard);
 	Super::Deinitialize();
 }
 

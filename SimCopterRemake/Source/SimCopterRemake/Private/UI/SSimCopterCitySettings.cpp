@@ -120,6 +120,11 @@ void SSimCopterCitySettings::Construct(const FArguments& InArgs)
 			});
 
 		Sliders[Index] = Slider;
+		if (Index == 0 && InArgs._bProgressive)
+		{
+			Slider->SetEnabled(false);
+			Slider->SetToolTipText(FText::FromString(InArgs._ProgressionText));
+		}
 		Slider->SetValue(static_cast<float>(GetValueForSlider(Values, Index))
 			/ static_cast<float>(GetSliderMax(Index)));
 
@@ -131,7 +136,7 @@ void SSimCopterCitySettings::Construct(const FArguments& InArgs)
 		AddAtPage(
 			FRect{ LabelRect.Left, LabelRect.Top, LabelRect.Right, LabelRect.Bottom },
 			SNew(STextBlock)
-			.Text(GetLabel(Index))
+			.Text(Index == 0 && InArgs._bProgressive ? LOCTEXT("Progress", "Progress") : GetLabel(Index))
 			.Justification(ETextJustify::Center)
 			.Visibility(EVisibility::HitTestInvisible)
 			.Font(PageFont(LabelFontHeight, /*bBold=*/true))
@@ -158,6 +163,10 @@ void SSimCopterCitySettings::Construct(const FArguments& InArgs)
 			}),
 			ButtonStyles));
 
+	if (InArgs._bProgressive)
+		AddAtPage(FRect{42, 351, 556, 373}, SNew(STextBlock)
+			.Text(LOCTEXT("ProgressStages", "Stages: 0 / 500 / 1500 / 3000 points. Jobs also require suitable equipment."))
+			.Font(PageFont(12)).ColorAndOpacity(FSlateColor(LabelColor)));
 	ChildSlot
 	[
 		MakeScaledScreen(Canvas)

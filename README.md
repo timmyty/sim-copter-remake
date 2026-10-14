@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.10 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.10.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.11 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.11.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -15,15 +15,25 @@ recovery systems are deliberate additions to the remake.
 
 ## Start playing
 
-1. Download **`SimCopterRemake-v1.0.10-Windows-x64.zip`** from the latest release.
-2. Extract the **entire ZIP** and run **`SimCopterRemake.exe`** in the extracted folder.
+1. Download **`SimCopterRemake-v1.0.11-Windows-x64.7z`** from the latest release.
+2. Extract the **entire archive** and run **`SimCopterRemake.exe`** in the extracted folder.
 3. Choose **New Career Game** or **New User Game**, then select a city.
 
 Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the launcher.
 Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 `Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
 
-## New in v1.0.10: emergency response and flight stability
+## New in v1.0.11: lossless music, Photo Mode and custom cities
+
+Fifteen verified original songs now play from shared stereo FLAC masters. Custom
+cities progress through four score-based stages, with equipment and passenger
+limits that fit the current helicopter. Photo Mode adds a free camera, clean
+screenshots and temporary lighting controls. Browse for cities or saved games in
+any folder; use F1 for expanded help and Shift/L3 to toggle Sprint or boost.
+[Release notes](Docs/Releases/v1.0.11.md) | [Music details](Docs/HighQualityMusic.md) |
+[Photo Mode and progression](Docs/CustomCityProgressionAndPhotoMode.md)
+
+## Also included from v1.0.10: emergency response and flight stability
 
 Medical alerts are limited to one per minute, medics unload the most wounded
 first, and dropped medics can retrieve previously ignored injured rioters.

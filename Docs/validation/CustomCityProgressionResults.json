@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-13",
+  "verifiedAtUtc": "2026-10-14T00:15:33.078017+00:00",
+  "scope": "Custom city progression, whole-map rescue sites, global passenger caps, Photo Mode, day/night slider, unified help, idle cursor, native city browser, Shift toggle and hidden custom-city cheats",
+  "builds": [
+    {
+      "target": "Editor",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/custom-city-progression/approved-build-Editor.log",
+      "sha256": "a332b5c3e9e39ad6f6a5330b5c5550b72f5ac298c9fe427d44beead7ad580c15"
+    },
+    {
+      "target": "Shipping",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/custom-city-progression/approved-build-Shipping.log",
+      "sha256": "1b5cfc0d1b2fd2fecc63f5aee0198b75eba098b49b95cbc03d02aae4d62c589d"
+    },
+    {
+      "target": "Development",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/custom-city-progression/approved-build-Development.log",
+      "sha256": "363eaa0f633799555b9daf474bc5883c1f5c26611787df3025ec9697a5023cda"
+    }
+  ],
+  "tests": [
+    {
+      "report": "Docs/scratchpad/custom-city-progression/tests-all/index.json",
+      "passed": 501,
+      "failed": 4,
+      "notRun": 0,
+      "durationSeconds": 249.72781372070312
+    },
+    {
+      "report": "Docs/scratchpad/custom-city-progression/tests-final/index.json",
+      "passed": 28,
+      "failed": 0,
+      "notRun": 0,
+      "durationSeconds": 3.411574363708496
+    },
+    {
+      "report": "Docs/scratchpad/custom-city-progression/tests-release-check/index.json",
+      "passed": 4,
+      "failed": 0,
+      "notRun": 0,
+      "durationSeconds": 0.6124144196510315
+    }
+  ],
+  "distinctPassed": 503,
+  "distinctFailed": 2,
+  "knownBaselineFailures": [
+    {
+      "test": "SimCopter.Formats.SimCity2000.ReferenceCity",
+      "messages": [
+        "Expected 'Finds flat land ALTM sample' to be not null.",
+        "Expected 'Finds water ALTM sample' to be not null.",
+        "Expected 'Finds sloped ALTM sample' to be not null."
+      ]
+    },
+    {
+      "test": "SimCopter.UI.FlapLayout",
+      "messages": [
+        "Expected 'The four flaps between them cover every career equipment bit' to be 95, but it was 31."
+      ]
+    }
+  ],
+  "baselineEvidence": "Docs/validation/WindowsRelease110Results.json",
+  "expectationUpdates": [
+    "ShiftRun now taps Shift and verifies persistent speed, animation and shared controller state.",
+    "VehicleBoatRecoveryAndWaypoints now expects two survivors for its two-seat helicopter."
+  ],
+  "offscreenVisuals": [
+    "Docs/scratchpad/custom-city-progression/custom-menu-blank.png",
+    "Docs/scratchpad/custom-city-progression/custom-menu-hover.png",
+    "Docs/scratchpad/custom-city-progression/menu-blank.png",
+    "Docs/scratchpad/custom-city-progression/menu-hover.png"
+  ],
+  "limits": [
+    "No interactive gameplay or native file dialog check.",
+    "Cursor timeout rules and native cursor implementation were checked; no live ten-second cursor timing observation.",
+    "Photo screenshot request, UI exclusion and lifecycle tested; a live city screenshot was not captured.",
+    "Visual-only tests in the broad NullRHI run may return without exercising rendering."
+  ],
+  "sourceManifest": "Docs/scratchpad/custom-city-progression/source-manifest.json",
+  "sourceDiff": "Docs/scratchpad/custom-city-progression/source.diff",
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T00:15:31.6650186Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "6E7D67D01D04EA9B8783B0B9BCD7EC9C6217AE0CF0ED197D4801ECA54B7DDAA0",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\custom-city-progression/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "5B7FBDFB9002A839B2AE60763FF8215080C0A9505F1C90A224713696F658A999"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "556A8EFA72AEA0B1B247AB2A1833495AD5AF12797727AB78F5BC7F0DB1056D26",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\custom-city-progression/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "C64D2C97A07CAB44607910B79DC571523C743534BC2315ED5019C3A6F3678C01"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "33B460170065E96E678F53307B9EC5F33DDCF7CDBD69F91DDBC66F72B083382E",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\custom-city-progression/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "B4449CFD37A41EE283387C18AEAFF9721163B4DD81B1293A9274E0D9990050D9"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "520C7DBEDE55A04ABE1C603CBD1FA405100536AD30FA4F2E32A1AADC710603E2",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\custom-city-progression/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "4AFE229F0743977A4ED2F9114E050AE82DE65B9CB1A65D9564152AA668634F65"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "publicationUpdated": false
+}

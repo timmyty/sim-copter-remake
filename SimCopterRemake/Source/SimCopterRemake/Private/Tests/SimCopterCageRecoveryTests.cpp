@@ -319,7 +319,7 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 	Traffic->PeopleTileClasses.Init(0,128*128); Traffic->WaterTileFlags.Init(1,128*128);
 	Missions->MissionSystem.Initialize(Missions,1); Missions->MissionSystem.BeginSession();
 	const int32 Sos=Missions->CreateMissionAt(64,64,TYPE_BoatRescue);
-	TestTrue(TEXT("Original SOS creates a real boat and survivors"),Sos!=INDEX_NONE && Ambient->BoatRiders.Num()>=3);
+	TestTrue(TEXT("SOS creates a real boat with survivors fitting the two-seat aircraft"),Sos!=INDEX_NONE && Ambient->BoatRiders.Num()==2);
 	const float RescueTimer=Boat.MissionTimerSeconds;
 	Ambient->UpdateBoat(Boat,1);
 	TestEqual(TEXT("Occupied SOS hull has no competing recovery job"),Boat.TowEventId,INDEX_NONE);
@@ -351,7 +351,7 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 	Missions->MissionSystem.Tick(0);
 	TestFalse(TEXT("Superseded hull recovery is retired"),Missions->IsMissionEventActive(HullRecovery));
 	TestEqual(TEXT("Superseding optional recovery awards no points or penalty"),Missions->MissionSystem.GetScore(),BeforeSuperseding);
-	TestTrue(TEXT("Replacement SOS has actual survivors"),Ambient->BoatRiders.Num()>=3);
+	TestEqual(TEXT("Replacement SOS also respects the two-seat aircraft"),Ambient->BoatRiders.Num(),2);
 
 	using namespace SimCopterMap;
 	FSimCopterMapCity MapCity; MapCity.Xbld.Init(0,128*128); MapCity.TerrainClass.Init(0x30,128*128);

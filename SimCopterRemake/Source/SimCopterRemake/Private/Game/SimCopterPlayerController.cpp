@@ -106,7 +106,11 @@ public:
 
 	virtual bool HandleKeyDownEvent(FSlateApplication& SlateApp, const FKeyEvent& InKeyEvent) override
 	{
-		if (auto* PC = Controller.Get(); PC && PC->HandleCheatKey(InKeyEvent)) return true;
+		if (auto* PC = Controller.Get())
+		{
+			PC->HandleKeyboardSprintKey(InKeyEvent.GetKey(), true, InKeyEvent.IsRepeat());
+			if (PC->HandleCheatKey(InKeyEvent)) return true;
+		}
 		if (!InKeyEvent.IsRepeat())
 		{
 			if (auto* PC = Controller.Get())
@@ -137,6 +141,7 @@ public:
 		Repair();
 		if (auto* PC = Controller.Get())
 		{
+			PC->HandleKeyboardSprintKey(InKeyEvent.GetKey(), false);
 			if (InKeyEvent.GetKey() == EKeys::Gamepad_LeftThumbstick) return PC->HandleControllerLeftStickReleased();
 			if (PC->HandleControllerMapKeyReleased(InKeyEvent.GetKey())) return true;
 		}
@@ -239,6 +244,37 @@ void ASimCopterPlayerController::OnUnPossess()
 {
 	ResetControllerSprint();
 	Super::OnUnPossess();
+}
+
+// Remake: tap either Shift to share the controller's persistent Sprint Mode. Commit on
+// release so Shift+F2..F5 can still recall responders without changing the flight speed.
+void ASimCopterPlayerController::HandleKeyboardSprintKey(FKey Key, bool bPressed, bool bRepeat)
+{
+	const uint8 Bit = Key == EKeys::LeftShift ? 1 : Key == EKeys::RightShift ? 2 : 0;
+	if (!Bit)
+	{
+		if (bPressed && KeyboardSprintKeys && (Key == EKeys::F2 || Key == EKeys::F3 || Key == EKeys::F4 || Key == EKeys::F5 ||
+			Key == EKeys::LeftControl || Key == EKeys::RightControl || Key == EKeys::LeftAlt || Key == EKeys::RightAlt))
+			bKeyboardSprintUsed = true;
+		return;
+	}
+	const auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
+	const bool bCanSprint = GetPawn() && !IsPaused() && !IsMoveInputIgnored() && !IsPhotoModeActive() &&
+		!IsSettingsOpen() && !(GEngine && GEngine->GameViewport && GEngine->GameViewport->IgnoreInput()) &&
+		((Helicopter && !Helicopter->IsFixedWingAircraft() && Helicopter->GetControllerMode() == ESimCopterControllerMode::None) ||
+		GetPawn()->IsA<ASimCopterOnFootPawn>());
+	if (bPressed)
+	{
+		if (bRepeat || (KeyboardSprintKeys & Bit) || !bCanSprint) return;
+		if (!KeyboardSprintKeys) bKeyboardSprintUsed = IsInputKeyDown(EKeys::LeftControl) || IsInputKeyDown(EKeys::RightControl) ||
+			IsInputKeyDown(EKeys::LeftAlt) || IsInputKeyDown(EKeys::RightAlt);
+		KeyboardSprintKeys |= Bit;
+	}
+	else if (KeyboardSprintKeys & Bit)
+	{
+		KeyboardSprintKeys &= ~Bit;
+		if (!KeyboardSprintKeys && !bKeyboardSprintUsed && bCanSprint) bControllerSprintEnabled = !bControllerSprintEnabled;
+	}
 }
 
 bool ASimCopterPlayerController::HandleControllerLeftStickPressed(const bool bRepeat)
@@ -349,6 +385,7 @@ void ASimCopterPlayerController::BeginPlay()
 
 void ASimCopterPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	ClosePhotoMode();
 	RemoveCheatViews();
 	if (USimCopterReplaySubsystem* Replay = ResolveReplay())
 	{
@@ -392,6 +429,9 @@ void ASimCopterPlayerController::SetupInputComponent()
 	Binding.bExecuteWhenPaused = true;
 
 	BindReplayInput(*InputComponent, *this);
+	InputComponent->BindKey(EKeys::F1, IE_Pressed, this, &ASimCopterPlayerController::ToggleControllerHelp).bExecuteWhenPaused = true;
+	InputComponent->BindKey(FInputChord(EKeys::P, false, true, false, false), IE_Pressed, this, &ASimCopterPlayerController::SimPhotoMode).bExecuteWhenPaused = true;
+	InputComponent->BindKey(EKeys::F12, IE_Pressed, this, &ASimCopterPlayerController::CapturePhoto).bExecuteWhenPaused = true;
 }
 
 bool ASimCopterPlayerController::IsReplayExclusiveAction(const FName ActionName)
@@ -565,6 +605,7 @@ void ASimCopterPlayerController::UpdateReplayKeyboardFocus()
 
 void ASimCopterPlayerController::ToggleReplayPanel()
 {
+	if (IsPhotoModeActive()) return;
 	UE_LOG(
 		LogSimCopterReplay,
 		Log,
@@ -758,6 +799,11 @@ void ASimCopterPlayerController::RemoveRecordingIndicator()
 
 void ASimCopterPlayerController::ToggleReplayHud()
 {
+	if (IsPhotoModeActive() && PhotoPanel)
+	{
+		PhotoPanel->SetVisibility(PhotoPanel->GetVisibility() == EVisibility::Collapsed ? EVisibility::SelfHitTestInvisible : EVisibility::Collapsed);
+		return;
+	}
 	// H only means anything while the panel is up; outside it the key is unbound, so the HUD can
 	// never be left hidden with no way to get it back.
 	USimCopterReplaySubsystem* Replay = ResolveReplay();
@@ -841,7 +887,7 @@ void ASimCopterPlayerController::ReplayAddBookmark()
 void ASimCopterPlayerController::UpdateFreeCameraInputSuppression()
 {
 	const USimCopterReplaySubsystem* Replay = ResolveReplay();
-	const bool bShouldSuppress = Replay != nullptr && Replay->IsFreeCameraActive();
+	const bool bShouldSuppress = IsPhotoModeActive() || (Replay != nullptr && Replay->IsFreeCameraActive());
 	APawn* CurrentlySuppressed = PawnWithSuppressedInput.Get();
 
 	// Restore first, and restore the pawn that was actually blocked - which may no longer be the
@@ -872,6 +918,7 @@ void ASimCopterPlayerController::UpdateFreeCameraInputSuppression()
 
 ASimCopterReplayFreeCamera* ASimCopterPlayerController::ResolveActiveFreeCamera() const
 {
+	if (PhotoCamera.IsValid()) return PhotoCamera.Get();
 	const USimCopterReplaySubsystem* Replay = ResolveReplay();
 	return (Replay != nullptr && Replay->IsFreeCameraActive()) ? Replay->GetFreeCamera() : nullptr;
 }
@@ -945,7 +992,7 @@ void ASimCopterPlayerController::FreeCameraFov(const float Value)
 void ASimCopterPlayerController::FreeCameraLookPressed()
 {
 	const USimCopterReplaySubsystem* Replay = ResolveReplay();
-	bFreeCameraLookHeld = Replay != nullptr && Replay->IsFreeCameraActive();
+	bFreeCameraLookHeld = IsPhotoModeActive() || (Replay != nullptr && Replay->IsFreeCameraActive());
 	if (bFreeCameraLookHeld)
 	{
 		// The pointer is a distraction the moment it stops being a pointer: while the button is
@@ -960,7 +1007,7 @@ void ASimCopterPlayerController::FreeCameraLookReleased()
 	if (bFreeCameraLookHeld)
 	{
 		// Only restored by whoever hid it, and only while the panel still needs a pointer.
-		bShowMouseCursor = IsReplayPanelOpen() || IsSettingsOpen();
+		bShowMouseCursor = IsPhotoModeActive() || IsReplayPanelOpen() || IsSettingsOpen();
 	}
 	bFreeCameraLookHeld = false;
 }
@@ -972,6 +1019,7 @@ FString ASimCopterPlayerController::ResolveOriginalGameRoot()
 
 void ASimCopterPlayerController::SimSettings()
 {
+	if (IsPhotoModeActive()) { ClosePhotoMode(); return; }
 	// The original raises the page from command 0x3f and answers Escape on the page itself with
 	// 0x3ea, so the key does not toggle - but a second press with the screen already up should
 	// still close it rather than doing nothing.
@@ -1081,6 +1129,8 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 		return SNew(SSimCopterCitySettings)
 			.Art(Art)
 			.Values(Values)
+			.bProgressive(ResolveMissionSystem() && ResolveMissionSystem()->UsesCitywideMissionPlacement())
+			.ProgressionText(ResolveMissionSystem() ? ResolveMissionSystem()->GetCustomCityProgressionText() : FString())
 			.OnAccepted(FOnSimCopterCitySettingsAccepted::CreateLambda(
 				[this](const FSimCopterCitySettingsValues& Accepted)
 				{
@@ -1462,6 +1512,11 @@ void ASimCopterPlayerController::HandleSettingsItem(const ESimCopterSettingsItem
 {
 	switch (Item)
 	{
+	case ESimCopterSettingsItem::PhotoMode:
+		CloseScreen();
+		SimPhotoMode();
+		return;
+
 	case ESimCopterSettingsItem::CheatCodes:
 		EnterScreen(ESimCopterSettingsScreen::CheatGuide);
 		return;

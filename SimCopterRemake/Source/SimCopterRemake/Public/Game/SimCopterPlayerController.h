@@ -50,6 +50,7 @@ class SIMCOPTERREMAKE_API ASimCopterPlayerController : public APlayerController
 public:
 	friend class USimCopterCityIntro;
 	friend class FSimCopterCityIntroTest;
+	friend class FSimCopterPhotoModeTest;
 	friend class FSimCopterGortReturnTest;
 	bool IsUsingGamepadInput() const { return bLastInputWasGamepad; }
 	void NoteInputDevice(bool bGamepad) { bLastInputWasGamepad = bGamepad; }
@@ -58,6 +59,7 @@ public:
 	bool IsControllerHelpExpanded() const { return bControllerHelpExpanded; }
 	bool HandleControllerLeftStickPressed(bool bRepeat);
 	bool IsControllerSprintEnabled() const { return bControllerSprintEnabled; }
+	void HandleKeyboardSprintKey(FKey Key, bool bPressed, bool bRepeat = false);
 	void ResetControllerSprint() { bControllerSprintEnabled = false; ResetControllerChords(); }
 	bool HandleControllerLeftStickReleased();
 	bool HandleControllerMapKeyPressed(FKey Key, bool bRepeat);
@@ -65,6 +67,13 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 	void ToggleControllerHelp() { bControllerHelpExpanded = !bControllerHelpExpanded; }
+	bool IsPhotoModeActive() const { return PhotoCamera.IsValid(); }
+	UFUNCTION(Exec)
+	void SimPhotoMode();
+	void CapturePhoto();
+	void ClosePhotoMode();
+	void UpdatePhotoMode();
+
 
 	ASimCopterPlayerController();
 
@@ -133,6 +142,17 @@ public:
 	void PopPause();
 
 private:
+	TWeakObjectPtr<class ASimCopterReplayFreeCamera> PhotoCamera;
+	TWeakObjectPtr<AActor> PhotoPreviousView;
+	TSharedPtr<SWidget> PhotoPanel;
+	bool bPhotoPreviousHudHidden = false;
+	bool bPhotoPreviousCursor = false;
+	bool bPhotoPreviousPaused = false;
+	bool bPhotoPreviousFullTick = false;
+	uint8 PhotoPreviousTimeMode = 0;
+	float PhotoPreviousStaticHour = 12;
+	float PhotoPreviousLiveHour = 12;
+	FString PhotoStatus;
 	TSharedPtr<SWidget> OnFootCheatMap;
 	TWeakObjectPtr<class ACameraActor> CheatCarCamera;
 	TWeakObjectPtr<class ASimCopterGroundAgent> CheatCar;
@@ -276,7 +296,9 @@ private:
 	bool bControllerLeftStickHeld = false;
 	bool bControllerLeftStickUsed = false;
 	TSet<FKey> ControllerMapKeys;
-	void ResetControllerChords() { bControllerLeftStickHeld = bControllerLeftStickUsed = false; ControllerMapKeys.Reset(); }
+	uint8 KeyboardSprintKeys = 0;
+	bool bKeyboardSprintUsed = false;
+	void ResetControllerChords() { KeyboardSprintKeys = 0; bKeyboardSprintUsed = false; bControllerLeftStickHeld = bControllerLeftStickUsed = false; ControllerMapKeys.Reset(); }
 	bool bControllerHelpExpanded = false;
 	SimCopterControllerHelp::EStyle ControllerIconStyle = SimCopterControllerHelp::EStyle::Xbox;
 	/** Last thief reported, so a widget that re-takes focus every frame logs once, not per frame. */

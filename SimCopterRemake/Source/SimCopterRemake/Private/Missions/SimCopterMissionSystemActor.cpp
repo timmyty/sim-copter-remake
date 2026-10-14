@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Missions/SimCopterMissionSystemActor.h"
+#include "Missions/SimCopterCustomCityProgression.h"
+#include "Flight/SimCopterHelicopterParking.h"
 #include "Flight/SimCopterAirOperations.h"
 #include "Ground/SimCopterBandNavigation.h"
 #include "Missions/SimCopterWitnessBriefing.h"
@@ -57,7 +59,7 @@
 namespace
 {
 constexpr uint32 MissionRuntimeSaveMagic = 0x4d534352; // 'MSCR'
-constexpr int32 MissionRuntimeSaveVersion = 1;
+constexpr int32 MissionRuntimeSaveVersion = 2;
 FString FormatSignedAmount(int32 Value, const TCHAR* Unit)
 {
 	return FString::Printf(TEXT("%+d %s"), Value, Unit);
@@ -338,6 +340,8 @@ bool ASimCopterMissionSystemActor::CaptureRuntimeSaveState(TArray<uint8>& OutDat
 		Writer << Handoff.EventId << HelicopterName << EmtName;
 		Writer << Handoff.LastOnboardCount << Handoff.SecondsWithoutProgress;
 	}
+	CustomCityBestScore = FMath::Max(CustomCityBestScore, MissionSystem.GetScore());
+	Writer << CustomCityBestScore;
 	if (Writer.IsError())
 	{
 		OutData.Reset();
@@ -362,7 +366,7 @@ bool ASimCopterMissionSystemActor::RestoreRuntimeSaveState(const TArray<uint8>& 
 	uint32 Magic = 0;
 	int32 Version = 0;
 	Reader << Magic << Version;
-	if (Magic != MissionRuntimeSaveMagic || Version != MissionRuntimeSaveVersion ||
+	if (Magic != MissionRuntimeSaveMagic || (Version < 1 || Version > MissionRuntimeSaveVersion) ||
 		!MissionSystem.SerializeRuntimeState(Reader))
 	{
 		return false;
@@ -453,6 +457,11 @@ bool ASimCopterMissionSystemActor::RestoreRuntimeSaveState(const TArray<uint8>& 
 			return false;
 		}
 	}
+	CustomCityBestScore = FMath::Max(0, MissionSystem.GetScore());
+	if (Version >= 2) Reader << CustomCityBestScore;
+	CustomCityBestScore = FMath::Max(CustomCityBestScore, MissionSystem.GetScore());
+	bCustomCitySitesScanned = false;
+	ScanCustomCityMissionSites();
 	if (Reader.IsError() || Reader.Tell() != Reader.TotalSize())
 	{
 		return false;
@@ -525,6 +534,16 @@ void ASimCopterMissionSystemActor::Tick(float DeltaTime)
 			bOwnsCaptureCage = true;
 			break;
 		}
+	}
+	if (UsesCitywideMissionPlacement())
+	{
+		ScanCustomCityMissionSites();
+		const int32 PreviousTier = GetCustomCityProgressionTier();
+		CustomCityBestScore = FMath::Max(CustomCityBestScore, MissionSystem.GetScore());
+		SimCopterMissions::FSimCopterCareerCity City = MissionSystem.GetCareerCity();
+		City.Difficulty = GetCustomCityProgressionTier() - 1;
+		MissionSystem.SetCareerCity(City);
+		if (PreviousTier != GetCustomCityProgressionTier()) ShowAirOperationsMessage(GetCustomCityProgressionText());
 	}
 	MissionSystem.SetCaptureCageOwned(bOwnsCaptureCage);
 	MissionSystem.Tick(DeltaTime);
@@ -989,6 +1008,10 @@ void ASimCopterMissionSystemActor::BeginSession(
 	}
 
 	SessionMode = Mode;
+	CustomCityBestScore = 0;
+	bCustomCitySitesScanned = false;
+	ScanCustomCityMissionSites();
+	if (UsesCitywideMissionPlacement()) ShowAirOperationsMessage(GetCustomCityProgressionText());
 	bSessionSelectionHeld = false;
 	SessionElapsedSeconds = 0.0f;
 

@@ -9,6 +9,8 @@ struct FState
 {
 	EContext Context = EContext::Flight;
 	bool bExpanded = false;
+	bool bKeyboard = false;
+	FString Instructions;
 	bool bSprintAvailable = true;
 	bool bSprintEnabled = false;
 	bool bHasTool = false;

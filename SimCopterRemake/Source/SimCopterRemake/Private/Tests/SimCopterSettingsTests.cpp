@@ -37,12 +37,17 @@ bool FSimCopterSettingsMenuItemsTest::RunTest(const FString& Parameters)
 		SSimCopterSettingsMenu::GetItemForRow(0, true), ESimCopterSettingsItem::Continue);
 	TestEqual(TEXT("Career resumes first"),
 		SSimCopterSettingsMenu::GetItemForRow(0, false), ESimCopterSettingsItem::Continue);
-	TestEqual(TEXT("City Settings follows Continue"),
-		SSimCopterSettingsMenu::GetItemForRow(1, true), ESimCopterSettingsItem::CitySettings);
+	TestEqual(TEXT("City Settings follows Photo Mode"),
+		SSimCopterSettingsMenu::GetItemForRow(2, true), ESimCopterSettingsItem::CitySettings);
+	for (bool bCustom : {false, true})
+	{
+		TestEqual(TEXT("Photo Mode directly follows Continue"), SSimCopterSettingsMenu::GetItemForRow(1, bCustom), ESimCopterSettingsItem::PhotoMode);
+		TestEqual(TEXT("Hidden Cheats above Continue in both menus"), SSimCopterSettingsMenu::GetItemForRow(-1, bCustom), ESimCopterSettingsItem::CheatCodes);
+	}
 	TestEqual(TEXT("The old Graphics menu text is now Options"),
 		SSimCopterSettingsMenu::GetItemLabel(ESimCopterSettingsItem::Graphics).ToString(), FString(TEXT("Options")));
 
-	for (int32 Row = 1; Row < FullItemCount - 1; ++Row)
+	for (int32 Row = 2; Row < GetVisibleCount(false); ++Row)
 	{
 		TestEqual(
 			*FString::Printf(TEXT("Career row %d matches user-game row %d"), Row, Row + 1),
@@ -52,12 +57,12 @@ bool FSimCopterSettingsMenuItemsTest::RunTest(const FString& Parameters)
 
 	// Resume moved to the first row; Leave City is now last in both modes.
 	TestEqual(TEXT("User game last row"),
-		SSimCopterSettingsMenu::GetItemForRow(FullItemCount - 1, true), ESimCopterSettingsItem::LeaveCity);
+		SSimCopterSettingsMenu::GetItemForRow(GetVisibleCount(true) - 1, true), ESimCopterSettingsItem::LeaveCity);
 	TestEqual(TEXT("Career last row"),
-		SSimCopterSettingsMenu::GetItemForRow(FullItemCount - 2, false), ESimCopterSettingsItem::LeaveCity);
+		SSimCopterSettingsMenu::GetItemForRow(GetVisibleCount(false) - 1, false), ESimCopterSettingsItem::LeaveCity);
 
 	// Every item has a label; a gap would show as an empty plate.
-	for (int32 Index = 0; Index < FullItemCount; ++Index)
+	for (int32 Index = 0; Index <= static_cast<int32>(ESimCopterSettingsItem::PhotoMode); ++Index)
 	{
 		TestFalse(
 			*FString::Printf(TEXT("Item %d has a label"), Index),
@@ -76,21 +81,20 @@ bool FSimCopterSettingsMenuLayoutTest::RunTest(const FString& Parameters)
 {
 	using namespace SimCopterSettingsMenuLayout;
 
-	// Descriptor +0x34: 64 with eight items, 104 with seven. Both end on the same plate, which is
-	// the whole point of the two variants - the page prints eight and the shorter list starts on
-	// the second.
-	TestEqual(TEXT("User game first row"), GetRowTop(0, true), FirstItemYWithCitySettings);
-	TestEqual(TEXT("Career first row"), GetRowTop(0, false), FirstItemYWithoutCitySettings);
-	TestEqual(TEXT("Career row 0 sits on user-game plate 1"), GetRowTop(0, false), GetRowTop(1, true));
-	TestEqual(TEXT("Last plate is shared"),
-		GetRowTop(FullItemCount - 1, true), GetRowTop(FullItemCount - 2, false));
-
-	// Descriptor +0x3c: the stride.
-	TestEqual(TEXT("Stride"), GetRowTop(1, true) - GetRowTop(0, true), ItemStride);
-
-	// The eight plates have to fit on playmenu.bmp with the font's own band inside the page.
-	TestTrue(TEXT("Last row fits the page"),
-		GetRowTop(FullItemCount - 1, true) + static_cast<float>(ItemFontHeight) < PageHeight);
+	// Both lists fit the same original 320px plate strip, including the hidden top row.
+	for (bool bCustom : {false, true})
+	{
+		TestEqual(TEXT("Hidden row retains top plate"), GetRowTop(-1, bCustom), FirstItemYWithCitySettings);
+		for (int32 Row = -1; Row < GetVisibleCount(bCustom); ++Row)
+		{
+			const FRect Text = GetRowTextRect(Row, bCustom);
+			const FRect Focus = GetRowFocusRect(Row, bCustom);
+			TestTrue(TEXT("Text fits inside its plate"), Text.Top >= Focus.Top && Text.Bottom <= Focus.Bottom);
+			TestTrue(TEXT("Plate remains within original menu strip"), Focus.Top >= 60 && Focus.Bottom <= 380);
+			if (Row + 1 < GetVisibleCount(bCustom))
+				TestTrue(TEXT("Rows cannot overlap"), Focus.Bottom < GetRowFocusRect(Row + 1, bCustom).Top);
+		}
+	}
 
 	// FUN_0045fc60's band: as tall as the font, not as tall as the 40 px plate.
 	const FRect Hit = GetRowHitRect(0, true);

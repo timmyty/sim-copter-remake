@@ -130,7 +130,7 @@ bool FSimCopterCheatGuideTest::RunTest(const FString&)
 		for (int32 Index = 0; Index < Children->Num(); ++Index) Visit(Children->GetChildAt(Index));
 	};
 	Visit(Menu);
-	if (!TestTrue(TEXT("Hidden label and hit plate exist"), Label.IsValid() && Buttons.Num() == 8)) return false;
+	if (!TestTrue(TEXT("Hidden label and hit plate exist"), Label.IsValid() && Buttons.Num() == 9)) return false;
 	// A headless input test has no Slate frame to refresh cached visibility attributes.
 	Label->UpdateAllAttributes();
 	TestEqual(TEXT("Continue remains selected by default"), Menu->GetSelectedRow(), 0);
@@ -169,6 +169,23 @@ bool FSimCopterCheatGuideTest::RunTest(const FString&)
 	TestTrue(TEXT("Keyboard navigation reveals Cheat Codes"), Label->GetVisibility().IsVisible());
 	Menu->OnKeyDown(FGeometry(), Key(EKeys::Escape));
 	TestEqual(TEXT("Escape still resumes from hidden plate"), Chosen, ESimCopterSettingsItem::Continue);
+	auto CustomMenu = SNew(SSimCopterSettingsMenu).Art(Art.Get()).AllowCitySettings(true)
+		.OnItemChosen(FOnSimCopterSettingsItemChosen::CreateLambda([&](ESimCopterSettingsItem Item) { Chosen = Item; }));
+	Label.Reset(); Buttons.Reset(); Visit(CustomMenu);
+	if (!TestTrue(TEXT("Custom menu has hidden cheats plus all normal rows"), Label.IsValid() && Buttons.Num() == 10)) return false;
+	Label->UpdateAllAttributes();
+	TestFalse(TEXT("Custom cheats initially hidden"), Label->GetVisibility().IsVisible());
+	Capture(CustomMenu, TEXT("custom-menu-blank"));
+	Buttons.Last()->OnMouseEnter(FGeometry(), FPointerEvent()); Label->UpdateAllAttributes();
+	TestTrue(TEXT("Custom cheats reveal on hover"), Label->GetVisibility().IsVisible());
+	Capture(CustomMenu, TEXT("custom-menu-hover"));
+	CustomMenu->OnKeyDown(FGeometry(), Key(EKeys::Enter));
+	TestEqual(TEXT("Custom hidden plate opens same guide"), Chosen, ESimCopterSettingsItem::CheatCodes);
+	CustomMenu->OnKeyDown(FGeometry(), Key(EKeys::Down));
+	TestEqual(TEXT("Custom Down from cheats reaches Continue"), CustomMenu->GetSelectedRow(), 0);
+	CustomMenu->OnKeyDown(FGeometry(), Key(EKeys::Down));
+	CustomMenu->OnKeyDown(FGeometry(), Key(EKeys::Enter));
+	TestEqual(TEXT("Custom Photo Mode activates directly from Esc menu"), Chosen, ESimCopterSettingsItem::PhotoMode);
 
 	int32 Closed = 0;
 	auto Guide = SNew(SSimCopterCheatGuide).Art(Art.Get()).OnClosed(FSimpleDelegate::CreateLambda([&]() { ++Closed; }));

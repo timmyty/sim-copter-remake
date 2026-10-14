@@ -1000,33 +1000,40 @@ void SSimCopterGraphicsSettings::PopulateRows(const TSharedRef<SVerticalBox>& Ro
 		AddRow(BuildDropdownRow(LOCTEXT("TimeOfDayMode", "Time of Day"), TimeOfDay));
 	}
 
-	// Greyed in Dynamic, where the clock is the day sequence's to move and this would do nothing.
-	AddRow(BuildSliderRow(
-		LOCTEXT("StaticTimeOfDay", "Static Time"),
-		[this]()
+	// Remake: show the live clock; dragging selects a fixed moment immediately, including at night.
+	const auto ReadTimeOfDay = [this]()
+	{
+		const USimCopterSettings* Settings = GetSettings(this);
+		if (Settings && Settings->GetTimeOfDayMode() != ESimCopterTimeOfDayMode::Static)
 		{
-			const USimCopterSettings* Settings = GetSettings(this);
-			const float Hours = Settings != nullptr ? Settings->GetStaticTimeOfDayHours() : 12.0f;
-			return Hours / USimCopterSettings::StaticTimeOfDayMaxHours;
+			const auto* World = GEngine && GEngine->GameViewport ? GEngine->GameViewport->GetWorld() : nullptr;
+			if (const auto* Day = World ? World->GetSubsystem<USimCopterDayNightSubsystem>() : nullptr) return Day->GetTimeOfDayHours();
+		}
+		return Settings ? Settings->GetStaticTimeOfDayHours() : 12.0f;
+	};
+	AddRow(BuildSliderRow(
+		LOCTEXT("StaticTimeOfDay", "Day / Night"),
+		[ReadTimeOfDay]()
+		{
+			return ReadTimeOfDay() / USimCopterSettings::StaticTimeOfDayMaxHours;
 		},
 		[this](const float Alpha)
 		{
 			if (USimCopterSettings* Settings = GetSettings(this))
 			{
+				Settings->SetTimeOfDayMode(ESimCopterTimeOfDayMode::Static);
 				Settings->SetStaticTimeOfDayHours(Alpha * USimCopterSettings::StaticTimeOfDayMaxHours);
 				ApplyTimeOfDay();
 			}
 		},
-		[this]()
+		[ReadTimeOfDay]()
 		{
-			const USimCopterSettings* Settings = GetSettings(this);
-			return USimCopterSettings::FormatTimeOfDay(
-				Settings != nullptr ? Settings->GetStaticTimeOfDayHours() : 12.0f);
+			return USimCopterSettings::FormatTimeOfDay(ReadTimeOfDay());
 		},
 		[this]()
 		{
 			const USimCopterSettings* Settings = GetSettings(this);
-			return Settings != nullptr && Settings->GetTimeOfDayMode() == ESimCopterTimeOfDayMode::Static;
+			return Settings != nullptr;
 		}));
 
 	// The two halves of the cycle get their own real-world durations, which is the whole point of

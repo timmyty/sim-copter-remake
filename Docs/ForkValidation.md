@@ -1,5 +1,9 @@
 # Fork validation
 
+## October 13 release v1.0.11
+
+Editor, Shipping and Development builds succeeded. The complete headless suite passed 508/510 cases; the two pre-existing ReferenceCity terrain-fixture and FlapLayout equipment-mask failures are unchanged. All three FLAC tests passed, including exact PCM checksums for all 15 masters, shared-file mapping, custom-WAV preservation, hangar playback, asynchronous radio decode, seeking, mute and cancellation. Unreal staging verified 891 NonUFS dependencies; the 904-file runtime contains 15 shared FLACs and none of the 29 replaced WAV copies. The staged launcher and Shipping child survived a hidden 30-second startup. All 458 source/configuration/project/build/launcher files match the publication checkout. No interactive gameplay, native dialog, physical-controller or manual listening check was performed. NullRHI visual-only tests may be no-ops. [Detailed results](validation/WindowsRelease111Results.json).
+
 ## October 13 release v1.0.10
 
 Editor, Shipping and Development builds succeeded. Headless validation passed 497/499 distinct cases after correcting and rerunning an outdated landed-exit fixture that had no ground. The broad run initially passed 496/499; the same two pre-existing ReferenceCity fixture and FlapLayout mask-expectation failures remain. The staged launcher and its Shipping child survived a hidden 31-second startup with an isolated profile. All 443 source/configuration/project/build/launcher files match the publication checkout. All cooked and loose runtime assets match v1.0.9; only the two game executables changed. No interactive gameplay, controller-feel, listening or live FPS check was performed. NullRHI visual-only tests may be no-ops.

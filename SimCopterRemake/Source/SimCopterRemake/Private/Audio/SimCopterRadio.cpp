@@ -1,6 +1,7 @@
 #include "Audio/SimCopterRadio.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
+#include "Audio/SimCopterHighQualityMusic.h"
 #include "Game/SimCopterSettings.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -160,6 +161,9 @@ void USimCopterRadioSubsystem::ScanStations(const FString& SoundRoot)
 			}
 		};
 		Glob(FPaths::Combine(Dir, TEXT("music")), Station.Music);
+		// One verified recording serves its genre station and KMIX. The omitted WAVs must
+		// still contribute playlist entries, preserving the original station repertoire.
+		SimCopterHighQualityMusic::UpgradePlaylist(SoundRoot, Dir / TEXT("music"), Station.Music);
 		Glob(FPaths::Combine(Dir, TEXT("dj"), GLanguageDir), Station.Dj);
 		Glob(FPaths::Combine(Dir, TEXT("jingle")), Station.Jingle);
 
