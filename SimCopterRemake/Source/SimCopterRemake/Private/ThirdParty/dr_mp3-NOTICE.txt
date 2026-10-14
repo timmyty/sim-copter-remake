@@ -1,0 +1,4 @@
+dr_mp3 by David Reid (dr_libs), based on minimp3.
+Source: https://raw.githubusercontent.com/mackron/dr_libs/51e61d308dde6b437fce0c5fabb32cd86b40f4d7/dr_mp3.h
+License: MIT No Attribution (full text at end of dr_mp3.h).
+No modifications to upstream header.

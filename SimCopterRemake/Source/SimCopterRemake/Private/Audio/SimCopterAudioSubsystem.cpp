@@ -426,6 +426,8 @@ bool USimCopterAudioSubsystem::DecodeWav(const FString& AbsolutePath, FSimCopter
 
 bool USimCopterAudioSubsystem::DecodeAudio(const FString& AbsolutePath, FSimCopterPcmClip& OutClip)
 {
+	if (FPaths::GetExtension(AbsolutePath).Equals(TEXT("mp3"), ESearchCase::IgnoreCase))
+		return SimCopterCompressedMusic::DecodeMp3(AbsolutePath, OutClip);
 	if (FPaths::GetExtension(AbsolutePath).Equals(TEXT("ogg"), ESearchCase::IgnoreCase))
 		return SimCopterCompressedMusic::DecodeOgg(AbsolutePath, OutClip);
 	return FPaths::GetExtension(AbsolutePath).Equals(TEXT("flac"), ESearchCase::IgnoreCase)
@@ -469,7 +471,8 @@ bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float 
 	// Deliberately uncached: a stereo recording decodes to roughly 60 MB. Keep only the
 	// current radio track's samples, including when genre and mix refer to the same file.
 	const bool bOgg = FPaths::GetExtension(AbsolutePath).Equals(TEXT("ogg"), ESearchCase::IgnoreCase);
-	if (bOgg || FPaths::GetExtension(AbsolutePath).Equals(TEXT("flac"), ESearchCase::IgnoreCase))
+	const bool bMp3 = FPaths::GetExtension(AbsolutePath).Equals(TEXT("mp3"), ESearchCase::IgnoreCase);
+	if (bOgg || bMp3 || FPaths::GetExtension(AbsolutePath).Equals(TEXT("flac"), ESearchCase::IgnoreCase))
 	{
 		if (!FPaths::FileExists(AbsolutePath)) return false;
 		StopRadio();
@@ -479,10 +482,11 @@ bool USimCopterAudioSubsystem::PlayRadioFile(const FString& AbsolutePath, float 
 		RadioDecodeCancelled = MakeShared<TAtomic<bool>, ESPMode::ThreadSafe>(false);
 		// Only plain samples cross threads. Stop/tuning/world teardown cancel the worker;
 		// a finished old request can never restart audio after the user has left the radio.
-		PendingRadioClip = Async(EAsyncExecution::ThreadPool, [AbsolutePath, bOgg, Cancelled = RadioDecodeCancelled]
+		PendingRadioClip = Async(EAsyncExecution::ThreadPool, [AbsolutePath, bOgg, bMp3, Cancelled = RadioDecodeCancelled]
 		{
 			FSimCopterPcmClip Clip;
 			if (bOgg) SimCopterCompressedMusic::DecodeOgg(AbsolutePath, Clip, Cancelled.Get());
+			else if (bMp3) SimCopterCompressedMusic::DecodeMp3(AbsolutePath, Clip, Cancelled.Get());
 			else SimCopterHighQualityMusic::DecodeFlac(AbsolutePath, Clip, Cancelled.Get());
 			return Clip;
 		});

@@ -80,6 +80,7 @@ void USimCopterRadioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			{ SequentialTrack = I; break; }
 		}
 	}
+	ScanMusicCollections(FPaths::ProjectContentDir() / TEXT("Radio/OptionalMusic"));
 	if (Stations.Num() == 0)
 	{
 		UE_LOG(LogSimCopterRadio, Warning, TEXT("[Radio] No stations found under %s/radio."), *Audio->GetSoundRoot());
@@ -186,6 +187,26 @@ void USimCopterRadioSubsystem::ScanStations(const FString& SoundRoot)
 	});
 }
 
+void USimCopterRadioSubsystem::ScanMusicCollections(const FString& Root)
+{
+	// Remake extension: optional downloads stay outside the required original-game media.
+	// Append after retail/KINV so adding a pack preserves legacy dial indices.
+	TArray<FString> Directories;
+	IFileManager::Get().FindFiles(Directories, *(Root / TEXT("*")), false, true);
+	Directories.Sort();
+	for (const FString& Name : Directories)
+	{
+		if (Stations.ContainsByPredicate([&](const auto& Station)
+			{ return Station.CallSign.Equals(Name, ESearchCase::IgnoreCase); })) continue;
+		FSimCopterRadioStation Station;
+		Station.CallSign = Name;
+		Station.Directory = Root / Name;
+		Station.Music = SimCopterCompressedMusic::FindTracks(Station.Directory);
+		Station.bMusicCollection = true;
+		if (!Station.Music.IsEmpty()) Stations.Add(MoveTemp(Station));
+	}
+}
+
 const TArray<FString>& USimCopterRadioSubsystem::GetList(ESimCopterRadioSlot Slot) const
 {
 	return GetStationList(StationIndex, Slot);
@@ -201,9 +222,9 @@ const TArray<FString>& USimCopterRadioSubsystem::GetStationList(int32 Index, ESi
 	switch (Slot)
 	{
 	case ESimCopterRadioSlot::Music:      return Stations[Index].Music;
-	case ESimCopterRadioSlot::Dj:         return Stations[Index].bSequential ? Empty : Stations[Index].Dj;
-	case ESimCopterRadioSlot::Commercial: return Stations[Index].bSequential ? Empty : Commercials;
-	case ESimCopterRadioSlot::Jingle:     return Stations[Index].bSequential ? Empty : Stations[Index].Jingle;
+	case ESimCopterRadioSlot::Dj:         return Stations[Index].bSequential || Stations[Index].bMusicCollection ? Empty : Stations[Index].Dj;
+	case ESimCopterRadioSlot::Commercial: return Stations[Index].bSequential || Stations[Index].bMusicCollection ? Empty : Commercials;
+	case ESimCopterRadioSlot::Jingle:     return Stations[Index].bSequential || Stations[Index].bMusicCollection ? Empty : Stations[Index].Jingle;
 	default:                              return Empty;
 	}
 }
@@ -562,6 +583,14 @@ void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 			SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
 			SequentialOffset = 0.0f;
 		}
+		return;
+	}
+
+	if (Stations.IsValidIndex(StationIndex) && Stations[StationIndex].bMusicCollection && ManualPlaylist.IsEmpty())
+	{
+		ManualPlaylist = GetStationPlaylist(StationIndex);
+		ManualPlaylistIndex = 0;
+		PlayManualTrack(Audio);
 		return;
 	}
 

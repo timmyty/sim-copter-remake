@@ -327,6 +327,7 @@ private:
 	friend class FSimCopterDriveInPlaybackCommand;
 	friend class FSimCopterGortReturnTest;
 	friend class FSimCopterRadioSequentialTest;
+	friend class FSimCopterOptionalMusicTest;
 	friend class FSimCopterRadioMenuPlaybackTest;
 	friend class FSimCopterRadioMenuWidgetTest;
 	friend class FSimCopterFlacPlaybackTest;
