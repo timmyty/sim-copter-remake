@@ -203,7 +203,12 @@ void SSimCopterRadioMenu::Construct(const FArguments& Args)
 		+ SHorizontalBox::Slot().FillWidth(1)
 		[SNew(STextBlock).Text(LOCTEXT("Title", "RADIO / STATION SELECT")).Font(PageFont(24, true)).ColorAndOpacity(Lettering)]
 		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
-		[SNew(STextBlock).Text(LOCTEXT("Sequential", "SEQUENTIAL")).Font(PageFont(13, true)).ColorAndOpacity(Amber)]]
+		[SNew(SButton).Tag(TEXT("RadioPlaybackOrder")).ButtonStyle(&ButtonStyle)
+			.OnClicked(this, &SSimCopterRadioMenu::ToggleShuffle)
+			.ToolTipText(LOCTEXT("OrderTip", "Toggle this station between sequential playback and shuffle"))
+			[SNew(STextBlock).Text_Lambda([this]
+			{ return Radio.IsValid() && Radio->IsShuffleEnabled(SelectedStation) ? LOCTEXT("Shuffle", "SHUFFLE") : LOCTEXT("Sequential", "SEQUENTIAL"); })
+			.Font(PageFont(13, true)).ColorAndOpacity(Amber)]]]
 	+ SVerticalBox::Slot().AutoHeight().Padding(0, 10, 0, 10)
 	[Inset(SNew(SVerticalBox)
 		+SVerticalBox::Slot().AutoHeight()[SNew(STextBlock).Text_Lambda([this]
@@ -223,7 +228,8 @@ void SSimCopterRadioMenu::Construct(const FArguments& Args)
 			{
 				const auto* R = Radio.Get();
 				const FString Sign = R && R->GetStations().IsValidIndex(SelectedStation) ? R->GetStations()[SelectedStation].CallSign.ToUpper() : TEXT("PLAYLIST");
-				return FText::FromString(FString::Printf(TEXT("%s / %d TRACKS / PLAYS IN ORDER"), *Sign, Tracks.Num()));
+				return FText::FromString(FString::Printf(TEXT("%s / %d TRACKS / %s"), *Sign, Tracks.Num(),
+					R && R->IsShuffleEnabled(SelectedStation) ? TEXT("SHUFFLE") : TEXT("PLAYS IN ORDER")));
 			}).Font(PageFont(13, true)).ColorAndOpacity(Lettering).AutoWrapText(true)]]
 	+ SVerticalBox::Slot().FillHeight(1)
 	[SNew(SHorizontalBox)
@@ -238,7 +244,7 @@ void SSimCopterRadioMenu::Construct(const FArguments& Args)
 				.ColorAndOpacity(Lettering)])]]
 	+ SVerticalBox::Slot().AutoHeight().Padding(0, 8)
 	[SNew(STextBlock).Text_Lambda([this]
-		{ return FText::FromString(Status.IsEmpty() ? TEXT("Select a track to start at the beginning. Playlist loops at the end.") : Status); })
+		{ return FText::FromString(Status.IsEmpty() ? TEXT("Select a track to start at the beginning. Use the order button to toggle shuffle.") : Status); })
 		.Font(PageFont(13)).ColorAndOpacity(Amber).WrapTextAt(550)]
 	+ SVerticalBox::Slot().AutoHeight()
 	[SNew(SHorizontalBox)
@@ -297,8 +303,18 @@ FReply SSimCopterRadioMenu::PlaySelection()
 
 FReply SSimCopterRadioMenu::TuneStation()
 {
-	// Tuning starts at the first displayed item; choosing a row gives an exact starting point.
-	if (Tracks.Num() > 0) { TrackList->SetSelection(Tracks[0]); return PlaySelection(); }
+	if (auto* R = Radio.Get(); R && Tracks.Num() > 0)
+	{
+		R->SetStationIndex(SelectedStation);
+		R->SetPowered(true);
+		Status.Reset();
+	}
+	return FReply::Handled();
+}
+
+FReply SSimCopterRadioMenu::ToggleShuffle()
+{
+	if (auto* R = Radio.Get()) R->SetShuffleEnabled(SelectedStation, !R->IsShuffleEnabled(SelectedStation));
 	return FReply::Handled();
 }
 

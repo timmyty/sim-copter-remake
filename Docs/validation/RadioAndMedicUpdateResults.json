@@ -1,0 +1,68 @@
+{
+  "Date": "2026-10-14",
+  "Change": "Original radio scheduling, shuffle toggle, on-foot radio, medical capacity and deployed-medic reboarding",
+  "Builds": [
+    {
+      "Target": "editor",
+      "Succeeded": true,
+      "Log": "Docs/scratchpad/radio-medic-update/build-editor-final.log"
+    },
+    {
+      "Target": "Shipping",
+      "Succeeded": true,
+      "Log": "Docs/scratchpad/radio-medic-update/build-Shipping-final.log"
+    },
+    {
+      "Target": "Development",
+      "Succeeded": true,
+      "Log": "Docs/scratchpad/radio-medic-update/build-Development-final.log"
+    }
+  ],
+  "Tests": [
+    {
+      "Report": "Docs/scratchpad/radio-medic-update/final/index.json",
+      "Passed": 96,
+      "PassedWithWarnings": 3,
+      "Failed": 0,
+      "NotRun": 0
+    },
+    {
+      "Report": "Docs/scratchpad/radio-medic-update/radio-final-verified/index.json",
+      "Passed": 13,
+      "PassedWithWarnings": 0,
+      "Failed": 0,
+      "NotRun": 0
+    }
+  ],
+  "DistinctTestsWithPassingFinalResults": 99,
+  "Warnings": "Two existing synthetic rescue-world attachment cases and one background HTTP timeout during sound decode.",
+  "OriginalEvidence": [
+    ".ghidra-exports/0042e570.json",
+    ".ghidra-exports/0042fa20.json",
+    ".ghidra-exports/0042f3d0.json",
+    ".ghidra-exports/00430070.json",
+    ".ghidra-exports/0042f160.json",
+    "Docs/scratchpad/apache-aftermath/medic-programs.txt"
+  ],
+  "SourceManifest": "Docs/scratchpad/radio-medic-update/source-manifest.json",
+  "SourceDiff": "Docs/scratchpad/radio-medic-update/source.patch",
+  "InspectedPreviews": [
+    "Docs/scratchpad/radio-medic-update/previews/radio-menu.png",
+    "Docs/scratchpad/radio-medic-update/previews/radio-menu-kinv.png"
+  ],
+  "InteractiveGameplayChecked": false,
+  "PhysicalControllerChecked": false,
+  "ListeningChecked": false,
+  "PublicationCheckoutChanged": false,
+  "Installation": {
+    "Status": "Installed",
+    "Receipt": "Docs/scratchpad/radio-medic-update/installation.json"
+  },
+  "Notes": [
+    "Playback order is retained per station for the current world; KINV progress remains persistent.",
+    "The 15-second medic deployment timer is transient and uses simulation time.",
+    "Existing injured people and restored missions are not resized.",
+    "First sandboxed test launch failed before tests because the Unreal cache service could not launch; the approved runner completed.",
+    "New test fixtures were corrected to advance normal simulation frames, await decoded media for seek assertions, and process controller input before querying held keys."
+  ]
+}

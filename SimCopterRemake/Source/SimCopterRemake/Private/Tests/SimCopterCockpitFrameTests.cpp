@@ -5,6 +5,8 @@
 #include "UI/SSimCopterToolFlaps.h"
 #include "UI/SimCopterHangarArt.h"
 #include "Engine/World.h"
+#include "Engine/GameInstance.h"
+#include "Game/SimCopterSettings.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/CommandLine.h"
@@ -49,7 +51,8 @@ bool FSimCopterCockpitFrameTest::RunTest(const FString&)
 	for (const FVector2D Size : {FVector2D(1920,1080),FVector2D(1280,720),FVector2D(2560,1080)})
 	{
 		const float Scale=1.768292f;
-		auto Wiring=SNew(SSimCopterCockpitFrame).Art(Art.Get()).Scale(Scale);
+		TStrongObjectPtr<USimCopterSettings> Settings(NewObject<USimCopterSettings>(NewObject<UGameInstance>()));
+		auto Wiring=SNew(SSimCopterCockpitFrame).Art(Art.Get()).Settings(Settings.Get()).Scale(Scale);
 		auto Dash=SNew(SSimCopterDashboard).Art(Art.Get()).Pawn(Heli).Scale(Scale);
 		auto Map=SNew(SSimCopterMapPanel).Art(Art.Get()).Pawn(Heli).Scale(Scale);
 		auto Canvas=SNew(SOverlay)
@@ -61,9 +64,10 @@ bool FSimCopterCockpitFrameTest::RunTest(const FString&)
 			+ SOverlay::Slot().HAlign(HAlign_Right).VAlign(VAlign_Bottom)[Dash];
 		FWidgetRenderer Renderer(true);
 		FVector2f DashboardPosition, MapPosition;
-		for (int32 Variant=0;Variant<2;++Variant)
+		for (int32 Variant=0;Variant<3;++Variant)
 		{
-			if (Variant) Wiring->ToggleWiring();
+			if (Variant==1) Wiring->ToggleWiring();
+			Settings->SetCockpitDecorationsVisible(Variant!=2);
 			auto* Target=Renderer.DrawWidget(Canvas,Size);
 			if (!TestNotNull(TEXT("Cockpit rendered offscreen"),Target)) return false;
 			if (!Variant) { DashboardPosition=Dash->GetCachedGeometry().GetAbsolutePosition(); MapPosition=Map->GetCachedGeometry().GetAbsolutePosition(); }
@@ -76,7 +80,7 @@ bool FSimCopterCockpitFrameTest::RunTest(const FString&)
 			Target->GameThread_GetRenderTargetResource()->ReadPixels(Pixels,Flags);
 			TArray64<uint8> Png; FImageUtils::PNGCompressImageArray(int32(Size.X),int32(Size.Y),Pixels,Png);
 			TestTrue(TEXT("Cockpit preview saved"),FFileHelper::SaveArrayToFile(Png,*(FPaths::ProjectDir()/TEXT("../Docs/scratchpad/cockpit-support")/
-				FString::Printf(TEXT("cockpit-%dx%d-%s.png"),int32(Size.X),int32(Size.Y),Variant?TEXT("collapsed"):TEXT("expanded")))));
+				FString::Printf(TEXT("cockpit-%dx%d-%s.png"),int32(Size.X),int32(Size.Y),Variant==2?TEXT("hidden"):Variant==1?TEXT("collapsed"):TEXT("expanded")))));
 		}
 	}
 	return true;

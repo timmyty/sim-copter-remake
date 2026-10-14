@@ -248,10 +248,10 @@ TArray<FSimCopterRadioTrack> USimCopterRadioSubsystem::GetStationPlaylist(int32 
 
 bool USimCopterRadioSubsystem::PlayStationTrack(int32 Index, int32 PlaylistIndex)
 {
-	// Remake extension. Explicit choices bypass the retail shuffle/probability gates without
-	// changing Sound's DJ/commercial preferences; subsequent items follow the visible queue.
+	// An explicit choice plays once, then rejoins the selected station mode. It must not
+	// silently replace FUN_0042f160's music/commercial/DJ schedule with a sorted queue.
 	auto Playlist = GetStationPlaylist(Index);
-	if (!Playlist.IsValidIndex(PlaylistIndex) || !bPlayerInHelicopter || bCityIntroSuspended) return false;
+	if (!Playlist.IsValidIndex(PlaylistIndex) || !bLevelPlaybackStarted || bCityIntroSuspended) return false;
 	auto* Audio = USimCopterAudioSubsystem::Get(this);
 	const auto& Entry = Playlist[PlaylistIndex];
 	const FString Path = GetStationList(Index, Entry.Slot)[Entry.TrackIndex];
@@ -263,6 +263,7 @@ bool USimCopterRadioSubsystem::PlayStationTrack(int32 Index, int32 PlaylistIndex
 	bWaiting = false;
 	CurrentSlot = Entry.Slot;
 	CurrentTitle = Entry.Title;
+	MarkTrackPlayed(Entry.Slot, Entry.TrackIndex);
 	if (IsSequentialStation())
 	{
 		SequentialTrack = Entry.TrackIndex;
@@ -271,12 +272,55 @@ bool USimCopterRadioSubsystem::PlayStationTrack(int32 Index, int32 PlaylistIndex
 		bSequentialPlaying = true;
 		SaveSequentialProgress();
 	}
-	else
+	else if (!IsShuffleEnabled(StationIndex))
 	{
 		ManualPlaylist = MoveTemp(Playlist);
 		ManualPlaylistIndex = PlaylistIndex;
 	}
 	return true;
+}
+
+bool USimCopterRadioSubsystem::IsShuffleEnabled(int32 Index) const
+{
+	if (!Stations.IsValidIndex(Index)) return false;
+	if (const bool* Override = ShuffleOverrides.Find(Index)) return *Override;
+	return !Stations[Index].bSequential;
+}
+
+void USimCopterRadioSubsystem::MarkTrackPlayed(ESimCopterRadioSlot Slot, int32 TrackIndex)
+{
+	const int32 Category = static_cast<int32>(Slot);
+	const int32 Position = Order[Category].Find(TrackIndex);
+	if (Position == INDEX_NONE) return;
+	// A manual choice starts a new bag with that item already consumed.
+	Order[Category].Swap(0, Position);
+	OrderCursor[Category] = 1;
+}
+
+void USimCopterRadioSubsystem::SetShuffleEnabled(int32 Index, bool bEnabled)
+{
+	if (!Stations.IsValidIndex(Index) || IsShuffleEnabled(Index) == bEnabled) return;
+	ShuffleOverrides.Add(Index, bEnabled);
+	if (Index != StationIndex) return;
+	ManualPlaylist.Reset();
+	ManualPlaylistIndex = INDEX_NONE;
+	RebuildPlaylists();
+	const auto Playlist = GetStationPlaylist(Index);
+	const int32 Current = Playlist.IndexOfByPredicate([this](const auto& Track)
+		{ return Track.Slot == CurrentSlot && Track.Title == CurrentTitle; });
+	if (Playlist.IsValidIndex(Current)) MarkTrackPlayed(Playlist[Current].Slot, Playlist[Current].TrackIndex);
+	if (!bEnabled && !IsSequentialStation())
+	{
+		ManualPlaylist = Playlist;
+		ManualPlaylistIndex = Current;
+	}
+	// Keep the live audio and playhead (including pause). Only the next selection changes.
+}
+
+int32 USimCopterRadioSubsystem::NextArtistTrack()
+{
+	return IsShuffleEnabled(StationIndex) ? TakeNext(ESimCopterRadioSlot::Music) :
+		(SequentialTrack + 1) % Stations[StationIndex].Music.Num();
 }
 
 bool USimCopterRadioSubsystem::PlayManualTrack(USimCopterAudioSubsystem* Audio)
@@ -295,6 +339,30 @@ bool USimCopterRadioSubsystem::StepTrack(int32 Delta)
 {
 	const auto Playlist = GetStationPlaylist(StationIndex);
 	if (Playlist.IsEmpty()) return false;
+	if (IsShuffleEnabled(StationIndex))
+	{
+		if (Order[0].IsEmpty()) return false;
+		int32 Next;
+		if (Delta < 0)
+		{
+			// Walk backwards through the same shuffled music order; Previous must not
+			// behave like another Next. From an interruption, return to the last song.
+			const int32 Back = CurrentSlot == ESimCopterRadioSlot::Music ? 2 : 1;
+			const int32 Previous = (OrderCursor[0] - Back + Order[0].Num()) % Order[0].Num();
+			Next = Order[0][Previous];
+			OrderCursor[0] = Previous + 1;
+		}
+		else Next = TakeNext(ESimCopterRadioSlot::Music);
+		const int32 Entry = Playlist.IndexOfByPredicate([Next](const auto& Track)
+			{ return Track.Slot == ESimCopterRadioSlot::Music && Track.TrackIndex == Next; });
+		// Preserve the bag cursor: explicit row selection alone starts a new bag.
+		const auto SavedOrder = Order[0];
+		const int32 SavedCursor = OrderCursor[0];
+		const bool bPlayed = PlayStationTrack(StationIndex, Entry);
+		Order[0] = SavedOrder;
+		OrderCursor[0] = SavedCursor;
+		return bPlayed;
+	}
 	int32 Current = Playlist.IndexOfByPredicate([this](const auto& Track)
 	{ return Track.Slot == CurrentSlot && Track.Title == CurrentTitle; });
 	if (Current == INDEX_NONE) Current = Delta < 0 ? 0 : -1;
@@ -303,7 +371,7 @@ bool USimCopterRadioSubsystem::StepTrack(int32 Delta)
 
 void USimCopterRadioSubsystem::TogglePlaybackPaused()
 {
-	if (!bPlayerInHelicopter || bCityIntroSuspended) return;
+	if (!bLevelPlaybackStarted || bCityIntroSuspended) return;
 	if (auto* Audio = USimCopterAudioSubsystem::Get(this))
 	{
 		if (!bPowered) SetPowered(true);
@@ -321,7 +389,7 @@ bool USimCopterRadioSubsystem::IsPlaybackPaused() const
 
 bool USimCopterRadioSubsystem::SeekPlayback(float Seconds)
 {
-	if (!bPowered || !bPlayerInHelicopter || bCityIntroSuspended) return false;
+	if (!bPowered || !bLevelPlaybackStarted || bCityIntroSuspended) return false;
 	auto* Audio = USimCopterAudioSubsystem::Get(this);
 	if (!Audio || !Audio->SeekRadio(Seconds)) return false;
 	SaveSequentialProgress();
@@ -454,27 +522,19 @@ void USimCopterRadioSubsystem::RebuildPlaylists()
 		OrderCursor[SlotIndex] = 0;
 	}
 
-	// The pattern the scheduler walks. The original loads its own; the composition here - music
-	// carrying the cycle with one of each interruption woven in - is the port's, and the
-	// probability gates then thin the interruptions out exactly as FUN_0042f160 does.
-	Pattern.Reset();
-	const int32 MusicBeats = 4;
-	for (int32 Beat = 0; Beat < MusicBeats; ++Beat)
-	{
-		Pattern.Add(static_cast<int32>(ESimCopterRadioSlot::Music));
-	}
-	Pattern.Add(static_cast<int32>(ESimCopterRadioSlot::Dj));
-	Pattern.Add(static_cast<int32>(ESimCopterRadioSlot::Commercial));
-	Pattern.Add(static_cast<int32>(ESimCopterRadioSlot::Jingle));
-
+	// SCHOOK: RadioConstruct 0x0042e570 appends 0, 1, 2, 3 exactly once, then shuffles.
+	// Four music entries were a remake approximation and made advertisements too infrequent.
+	Pattern = { 0, 1, 2, 3 };
 	PatternPreviousLast = INDEX_NONE;
-	ReshufflePattern();
+	ShuffleWithAntiRepeat(Pattern, Rng, INDEX_NONE);
+	PatternCursor = 0;
 }
 
 void USimCopterRadioSubsystem::ReshufflePattern()
 {
 	const int32 OldLast = Pattern.Num() > 0 ? Pattern.Last() : INDEX_NONE;
-	ShuffleWithAntiRepeat(Pattern, Rng, PatternPreviousLast);
+	// FUN_00430070 guards only repeated interruptions; music may cross the cycle seam.
+	ShuffleWithAntiRepeat(Pattern, Rng, OldLast == 0 ? INDEX_NONE : OldLast);
 	PatternPreviousLast = OldLast;
 	PatternCursor = 0;
 }
@@ -490,9 +550,10 @@ int32 USimCopterRadioSubsystem::TakeNext(ESimCopterRadioSlot Slot)
 
 	if (OrderCursor[SlotIndex] >= Order[SlotIndex].Num())
 	{
-		// End of the bag: reshuffle and start again, which is where the cursor wrap in
-		// FUN_0042f3d0 lands after resetting to the list head.
-		ShuffleWithAntiRepeat(Order[SlotIndex], Rng, Order[SlotIndex].Last());
+		// FUN_0042f3d0 wraps the retail list without reshuffling; FUN_0042fa20 shuffled it
+		// when the station loaded. Music-only additions use a fresh shuffle on each cycle.
+		if (Stations[StationIndex].bSequential || Stations[StationIndex].bMusicCollection)
+			ShuffleWithAntiRepeat(Order[SlotIndex], Rng, Order[SlotIndex].Last());
 		OrderCursor[SlotIndex] = 0;
 	}
 
@@ -534,10 +595,8 @@ void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 	// Radio is UI audio: complete decoding and advance tracks while its panel pauses flight.
 	Audio->UpdateRadioPlayback();
 
-	// This subsystem exists in every game world, including the front end and the city while the
-	// player is walking. The radio belongs to the possessed helicopter, so power alone must not
-	// make it audible in either of those states.
-	if (!bPlayerInHelicopter)
+	// The front end also owns a subsystem; only a started city may play the radio.
+	if (!bLevelPlaybackStarted)
 	{
 		if (Audio->IsRadioPlaying())
 		{
@@ -564,13 +623,14 @@ void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 		}
 		if (bSequentialPlaying)
 		{
-			SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
+			SequentialTrack = NextArtistTrack();
 			SequentialOffset = 0.0f;
 			bSequentialPlaying = false;
 		}
 		const FString& Path = Stations[StationIndex].Music[SequentialTrack];
 		if (Audio->PlayRadioFile(Path, Volume, SequentialOffset))
 		{
+			if (OrderCursor[0] == 0) MarkTrackPlayed(ESimCopterRadioSlot::Music, SequentialTrack);
 			bSequentialPlaying = true;
 			SequentialStartTime = FPlatformTime::Seconds();
 			CurrentTitle = FPaths::GetBaseFilename(Path).Mid(3);
@@ -580,17 +640,23 @@ void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 		else
 		{
 			// Bad/missing media or a saved offset past EOF must not strand the station.
-			SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
+			SequentialTrack = NextArtistTrack();
 			SequentialOffset = 0.0f;
 		}
 		return;
 	}
 
-	if (Stations.IsValidIndex(StationIndex) && Stations[StationIndex].bMusicCollection && ManualPlaylist.IsEmpty())
+	if (Stations.IsValidIndex(StationIndex) && !IsShuffleEnabled(StationIndex) && !ManualPlaylist.IsValidIndex(ManualPlaylistIndex))
 	{
 		ManualPlaylist = GetStationPlaylist(StationIndex);
 		ManualPlaylistIndex = 0;
 		PlayManualTrack(Audio);
+		return;
+	}
+
+	if (Stations.IsValidIndex(StationIndex) && Stations[StationIndex].bMusicCollection && IsShuffleEnabled(StationIndex))
+	{
+		if (!Audio->IsRadioPlaying()) PlaySlot(ESimCopterRadioSlot::Music, Audio);
 		return;
 	}
 
@@ -701,6 +767,7 @@ void USimCopterRadioSubsystem::SetCityIntroSuspended(bool bSuspended)
 
 void USimCopterRadioSubsystem::StartLevelPlayback()
 {
+	bLevelPlaybackStarted = true;
 	if (auto* Settings = USimCopterSettings::Get(this))
 	{
 		// The volume slider's zero position is also its OFF switch. A level start must
@@ -732,17 +799,8 @@ void USimCopterRadioSubsystem::SetPowered(bool bInPowered)
 
 void USimCopterRadioSubsystem::SetPlayerInHelicopter(const bool bInPlayerHelicopter)
 {
-	if (bPlayerInHelicopter == bInPlayerHelicopter)
-	{
-		return;
-	}
-
-	if (!bInPlayerHelicopter) { SuspendSequentialPlayback(); }
 	bPlayerInHelicopter = bInPlayerHelicopter;
-	// Stop the abandoned item on exit and back-date the normal four-second gap on both edges.
-	// Re-entering therefore starts the next item immediately while preserving the station and
-	// the player's explicit radio power choice.
-	RearmSchedule(/*bStopCurrent=*/true);
+	if (bInPlayerHelicopter) bLevelPlaybackStarted = true;
 }
 
 FString USimCopterRadioSubsystem::GetStationCallSign() const
@@ -853,7 +911,7 @@ void USimCopterRadioSubsystem::SuspendSequentialPlayback()
 	USimCopterAudioSubsystem* Audio = USimCopterAudioSubsystem::Get(this);
 	if (Audio != nullptr && !Audio->IsRadioPlaying())
 	{
-		SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
+		SequentialTrack = NextArtistTrack();
 		SequentialOffset = 0.0f;
 	}
 	else if (Audio) { SequentialOffset = Audio->GetRadioPositionSeconds(); }

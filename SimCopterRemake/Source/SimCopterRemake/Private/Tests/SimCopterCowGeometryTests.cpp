@@ -32,6 +32,8 @@ bool FSimCopterCowGeometryTest::RunTest(const FString& Parameters)
   {
    const auto* Section = Mesh->GetProcMeshSection(Frame*2);
    if (!TestNotNull(TEXT("Body section"),Section)) return false;
+   TestTrue(TEXT("Shared coat vertices keep each pose below 9,000 vertices"),Section->ProcVertexBuffer.Num()<9000);
+   TestEqual(TEXT("All authored surface triangles are retained"),Section->ProcIndexBuffer.Num()/3,11160);
    FBox Bounds(ForceInit);
    bool Valid = true, Winding = true;
    FString Ply = FString::Printf(TEXT("ply\nformat ascii 1.0\nelement vertex %d\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nelement face %d\nproperty list uchar int vertex_indices\nend_header\n"),Section->ProcVertexBuffer.Num(),Section->ProcIndexBuffer.Num()/3);
@@ -61,6 +63,23 @@ bool FSimCopterCowGeometryTest::RunTest(const FString& Parameters)
   FSimCopterPopulationFigure::ShowFrame(Mesh,Clip->FrameCount,Clip->FrameCount-1,HasHead);
   TestTrue(TEXT("Last frame visible"),Mesh->GetProcMeshSection((Clip->FrameCount-1)*2)->bSectionVisible);
   TestFalse(TEXT("First frame hidden"),Mesh->GetProcMeshSection(0)->bSectionVisible);
+  auto* Smaller = NewObject<UProceduralMeshComponent>();
+  auto SmallerParams = Params; SmallerParams.HeightCm = 44;
+  SmallerParams.ClothesOffset = 7;
+  bool SmallerHead = true;
+  TestTrue(TEXT("Cached cow poses can be built at another height"),FSimCopterPopulationFigure::BuildClipSections(Smaller,Figure,*Clip,Shared->Palette,SmallerParams,{},SmallerHead));
+  bool ScaledCorrectly = !SmallerHead;
+  for (int32 Frame=0; Frame<Clip->FrameCount; ++Frame)
+  {
+   const auto* Full=Mesh->GetProcMeshSection(Frame*2); const auto* Small=Smaller->GetProcMeshSection(Frame*2);
+   ScaledCorrectly &= Full && Small && Full->ProcIndexBuffer==Small->ProcIndexBuffer && Full->ProcVertexBuffer.Num()==Small->ProcVertexBuffer.Num();
+   if (!ScaledCorrectly) break;
+   for (int32 V=0; V<Full->ProcVertexBuffer.Num(); ++V)
+    ScaledCorrectly &= Small->ProcVertexBuffer[V].Position.Equals(Full->ProcVertexBuffer[V].Position*(44.f/65.f),1.e-5)
+     && Small->ProcVertexBuffer[V].Normal.Equals(Full->ProcVertexBuffer[V].Normal,1.e-5)
+     && Small->ProcVertexBuffer[V].Color==Full->ProcVertexBuffer[V].Color;
+  }
+  TestTrue(TEXT("Pose cache preserves scale, normals and markings across actor appearances"),ScaledCorrectly);
  }
  return true;
 }

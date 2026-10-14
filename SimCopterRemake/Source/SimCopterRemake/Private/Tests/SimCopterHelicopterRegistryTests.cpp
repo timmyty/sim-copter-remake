@@ -187,9 +187,10 @@ bool FSimCopterEquipmentTableTest::RunTest(const FString& Parameters)
 		{ ESimCopterHelicopterTool::TearGas,       0x08, 2500, 1875, 0x2ac },
 		{ ESimCopterHelicopterTool::WaterCannon,   0x10, 1500, 1125, 0x2a9 },
 		{ ESimCopterHelicopterTool::CaptureCage, 0x40, 1800, 1350, 0 },
+		{ ESimCopterHelicopterTool::RemoteTaser, 0x80, 2500, 1875, 0 },
 	};
 
-	TestEqual(TEXT("six purchasable tools"), SimCopterHelicopterRegistry::GetEquipment().Num(), 6);
+	TestEqual(TEXT("seven purchasable tools"), SimCopterHelicopterRegistry::GetEquipment().Num(), 7);
 	TestNull(TEXT("Retired clamp is absent from the catalog"),SimCopterHelicopterRegistry::FindEquipment(ESimCopterHelicopterTool::TowClamp));
 	TestEqual(TEXT("Legacy clamp upgrades to cage, retaining all other purchases"),SimCopterHelicopterRegistry::NormalizeEquipmentMask(0x3f),0x5f);
 
@@ -211,7 +212,7 @@ bool FSimCopterEquipmentTableTest::RunTest(const FString& Parameters)
 		UnionMask |= Definition->CareerBit;
 	}
 
-	TestEqual(TEXT("career equipment mask covers 0x1f"), UnionMask, SimCopterHelicopterRegistry::AllCareerEquipmentBits);
+	TestEqual(TEXT("career equipment mask covers every purchasable tool"), UnionMask, SimCopterHelicopterRegistry::AllCareerEquipmentBits);
 	TestEqual(
 		TEXT("new games start with bucket and megaphone"),
 		SimCopterHelicopterRegistry::StartingCareerEquipmentBits,

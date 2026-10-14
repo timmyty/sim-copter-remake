@@ -34,6 +34,7 @@ class SIMCOPTERREMAKE_API ASimCopterBaseballGame : public AActor
 {
 	GENERATED_BODY()
 	friend class FSimCopterBaseballGameTest;
+	friend class ASimCopterTrafficSystemActor;
 public:
 	ASimCopterBaseballGame();
 	void Initialize(ASimCopterTrafficSystemActor* InTraffic, int32 InNode);
@@ -56,6 +57,8 @@ private:
 	int32 RunNext[18] = {}, RunEnd[18] = {};
 	FVector BallStart = FVector::ZeroVector, BallEnd = FVector::ZeroVector;
 	bool bBallCaught = false;
+	// Ambient arrival assembles the initial roster through the population refill budget.
+	bool bPopulationRosterPending = false;
 	FString Announcement;
 	UPROPERTY() TObjectPtr<UProceduralMeshComponent> Ball;
 	UPROPERTY() TObjectPtr<UProceduralMeshComponent> Bat;

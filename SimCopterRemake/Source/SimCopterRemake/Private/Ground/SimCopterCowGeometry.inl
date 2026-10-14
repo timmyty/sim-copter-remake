@@ -11,27 +11,61 @@ void AppendCowEllipsoid(FMeshArrays& M, const FVector& Center, const FVector& Ra
 		return Center + FVector(FMath::Sin(P) * FMath::Cos(A), FMath::Sin(P) * FMath::Sin(A), FMath::Cos(P)) * Radii;
 	};
 	auto Normal = [&](const FVector& P) { return ((P - Center) / (Radii * Radii)).GetSafeNormal(); };
-	for (int32 R = 0; R < Rings; ++R)
+	// The coat is untextured: adjacent faces can share their position/normal/color.
+	// Keep separate vertices at patch boundaries, and retain every original triangle.
+	// Previously each ellipsoid duplicated four corners for every face (238,400
+	// vertices across one cow's clips), which made fast-flight spawning expensive.
+	FVector Points[Rings + 1][Sides + 1];
+	FVector Normals[Rings + 1][Sides + 1];
+	int32 Indices[Rings + 1][Sides + 1][2];
+	for (int32 R = 0; R <= Rings; ++R)
+	for (int32 S = 0; S <= Sides; ++S)
 	{
-		for (int32 S = 0; S < Sides; ++S)
+		Points[R][S] = Point(R, S);
+		Normals[R][S] = Normal(Points[R][S]);
+		Indices[R][S][0] = Indices[R][S][1] = INDEX_NONE;
+	}
+	auto Vertex = [&](int32 R, int32 S, bool bDark)
+	{
+		int32& Index = Indices[R][S][bDark ? 1 : 0];
+		if (Index == INDEX_NONE)
 		{
-			const FVector Q[4] = {Point(R,S), Point(R,S+1), Point(R+1,S+1), Point(R+1,S)};
-			const FVector N[4] = {Normal(Q[0]), Normal(Q[1]), Normal(Q[2]), Normal(Q[3])};
-			const FVector Mid = ((Q[0]+Q[1]+Q[2]+Q[3]) * 0.25 - Center) / Radii;
-			// Patches are face colours on the actual body surface, never overlapping shells.
-			const bool bDark = bPatches && (
-				FMath::Square((Mid.X + 0.48) / 0.42) + FMath::Square((Mid.Z - 0.15) / 0.76) < 1.0
-				|| FMath::Square((Mid.X - 0.48) / 0.35) + FMath::Square((Mid.Z - 0.48) / 0.68) < 1.0
-				|| (Mid.Z > 0.75 && Mid.X < -0.2));
-			const FLinearColor C = bDark ? FLinearColor(0.025f,0.03f,0.032f) : Color;
-			if (R == 0 || R == Rings - 1)
-			{
-				const bool Top = R == 0;
-				const FVector T[3] = {Top ? Q[0] : Q[3], Top ? Q[3] : Q[0], Top ? Q[2] : Q[1]};
-				const FVector TN[3] = {Normal(T[0]),Normal(T[1]),Normal(T[2])};
-				AppendTriangle(M,T,(TN[0]+TN[1]+TN[2]).GetSafeNormal(),C,nullptr,TN);
-			}
-			else AppendQuad(M,Q,(N[0]+N[1]+N[2]+N[3]).GetSafeNormal(),C,false,nullptr,N);
+			Index = M.Vertices.Add(Points[R][S]);
+			M.Normals.Add(Normals[R][S]);
+			M.VertexColors.Add(bDark ? FLinearColor(0.025f,0.03f,0.032f) : Color);
+			M.UVs.Add(FVector2D::ZeroVector);
+			const double A = UE_TWO_PI * S / Sides;
+			M.Tangents.Add(FProcMeshTangent(FVector(-FMath::Sin(A), FMath::Cos(A), 0), false));
+		}
+		return Index;
+	};
+	for (int32 R = 0; R < Rings; ++R)
+	for (int32 S = 0; S < Sides; ++S)
+	{
+		const FVector Q[4] = {Points[R][S], Points[R][S+1], Points[R+1][S+1], Points[R+1][S]};
+		const FVector Mid = ((Q[0]+Q[1]+Q[2]+Q[3]) * 0.25 - Center) / Radii;
+		const bool bDark = bPatches && (
+			FMath::Square((Mid.X + 0.48) / 0.42) + FMath::Square((Mid.Z - 0.15) / 0.76) < 1.0
+			|| FMath::Square((Mid.X - 0.48) / 0.35) + FMath::Square((Mid.Z - 0.48) / 0.68) < 1.0
+			|| (Mid.Z > 0.75 && Mid.X < -0.2));
+		if (R == 0 || R == Rings - 1)
+		{
+			const bool Top = R == 0;
+			const int32 A = Vertex(Top ? R : R+1, S, bDark);
+			const int32 B = Vertex(Top ? R+1 : R, S, bDark);
+			const int32 C = Vertex(Top ? R+1 : R, S+1, bDark);
+			const FVector FaceNormal = (M.Normals[A]+M.Normals[B]+M.Normals[C]).GetSafeNormal();
+			const bool Flip = FVector::DotProduct(FVector::CrossProduct(M.Vertices[B]-M.Vertices[A], M.Vertices[C]-M.Vertices[A]), FaceNormal) > 0;
+			AppendTriangleIndices(M, 0, A, B, C, Flip);
+		}
+		else
+		{
+			const int32 A = Vertex(R,S,bDark), B = Vertex(R,S+1,bDark);
+			const int32 C = Vertex(R+1,S+1,bDark), D = Vertex(R+1,S,bDark);
+			const FVector FaceNormal = (M.Normals[A]+M.Normals[B]+M.Normals[C]+M.Normals[D]).GetSafeNormal();
+			const bool Flip = FVector::DotProduct(FVector::CrossProduct(Q[1]-Q[0], Q[3]-Q[0]), FaceNormal) > 0;
+			AppendTriangleIndices(M, 0, A, B, C, Flip);
+			AppendTriangleIndices(M, 0, A, C, D, Flip);
 		}
 	}
 }
@@ -56,7 +90,7 @@ void AppendCowLimb(FMeshArrays& M, const FVector& A, const FVector& B,
 	}
 }
 
-void BuildCowFrame(FMeshArrays& M, int32 Frame, int32 FrameCount, float HeightCm)
+void BuildCowFrameUncached(FMeshArrays& M, int32 Frame, int32 FrameCount, float HeightCm)
 {
 	const FLinearColor White(0.72f,0.70f,0.64f), Black(0.025f,0.03f,0.032f);
 	const FLinearColor Pink(0.48f,0.23f,0.20f), Horn(0.55f,0.46f,0.30f);
@@ -104,4 +138,34 @@ void BuildCowFrame(FMeshArrays& M, int32 Frame, int32 FrameCount, float HeightCm
 	AppendCowLimb(M,TailMid,TailEnd,0.8,0.6,White);
 	AppendCowEllipsoid(M,TailEnd-FVector(0,0,1),FVector(1.8,1.7,3.5),Black);
 	for (FVector& P : M.Vertices) P *= FMath::Max(HeightCm,1.0f)/65.0f;
+}
+
+// Cow geometry depends only on clip phase and height, not clothing or head identity.
+// Cache model-space poses across respawns, then scale a private copy for each actor.
+// No actor/UObject references are retained. The small FIFO is bounded to 16 MiB.
+void BuildCowFrame(FMeshArrays& M, int32 Frame, int32 FrameCount, float HeightCm)
+{
+	struct FCowPose { int32 Frame; int32 Count; FMeshArrays Mesh; SIZE_T Bytes; };
+	static TArray<FCowPose> Poses;
+	static SIZE_T CachedBytes = 0;
+	constexpr SIZE_T MaxBytes = 16 * 1024 * 1024;
+	const FCowPose* Found = Poses.FindByPredicate([&](const FCowPose& P) { return P.Frame == Frame && P.Count == FrameCount; });
+	if (Found) M = Found->Mesh;
+	else
+	{
+		BuildCowFrameUncached(M, Frame, FrameCount, 65.f);
+		const SIZE_T Bytes = M.Vertices.GetAllocatedSize() + M.Triangles.GetAllocatedSize() + M.Normals.GetAllocatedSize()
+			+ M.UVs.GetAllocatedSize() + M.VertexColors.GetAllocatedSize() + M.Tangents.GetAllocatedSize();
+		if (Bytes <= MaxBytes)
+		{
+			while (CachedBytes + Bytes > MaxBytes && !Poses.IsEmpty())
+			{
+				CachedBytes -= Poses[0].Bytes;
+				Poses.RemoveAt(0);
+			}
+			Poses.Add({Frame, FrameCount, M, Bytes});
+			CachedBytes += Bytes;
+		}
+	}
+	for (FVector& P : M.Vertices) P *= FMath::Max(HeightCm, 1.f) / 65.f;
 }

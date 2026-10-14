@@ -335,6 +335,8 @@ public:
 	/** Multiplies the cockpit/dashboard/map overlays. 0.5 .. 2.0. */
 	float GetHudScale() const { return HudScale; }
 	void SetHudScale(float Scale);
+	bool AreCockpitDecorationsVisible() const { return bCockpitDecorationsVisible; }
+	void SetCockpitDecorationsVisible(bool Value) { bCockpitDecorationsVisible = Value; }
 	bool IsCockpitWiringCollapsed() const { return bCockpitWiringCollapsed; }
 	void SetCockpitWiringCollapsed(bool Value) { bCockpitWiringCollapsed = Value; SaveConfig(); }
 
@@ -451,6 +453,9 @@ private:
 
 	UPROPERTY(Config)
 	bool bCockpitWiringCollapsed = false;
+
+	UPROPERTY(Config)
+	bool bCockpitDecorationsVisible = true;
 
 	UPROPERTY(Config)
 	int32 RadioVolume = VolumeMax;

@@ -1663,6 +1663,8 @@ void FSimCopterMissionSystem::ReleaseInjuredMissionPerson(int32 EventId, int32 P
 
 int32 FSimCopterMissionSystem::CreateExistingVictimMedevacAt(int32 TileX, int32 TileY, bool bPlayerCaused)
 {
+	// Incident-created callouts obey the same patient-plus-medic capacity rule as scheduled ones.
+	if (World && World->GetMissionPassengerLimit(true) <= 0) return INDEX_NONE;
 	const int32 RecIndex = AllocateRecord();
 	if (RecIndex == INDEX_NONE)
 	{

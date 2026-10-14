@@ -29,7 +29,8 @@ void SSimCopterCockpitFrame::Construct(const FArguments& InArgs)
 	{
 		Wiring = InArgs._Art->GetBitmap(TEXT("DASH2.BMP"));
 	}
-	SetVisibility(EVisibility::SelfHitTestInvisible);
+	SetVisibility(TAttribute<EVisibility>::CreateLambda([this] { return Settings.IsValid() && !Settings->AreCockpitDecorationsVisible()
+		? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible; }));
 	SetClipping(EWidgetClipping::ClipToBounds);
 	ChildSlot
 	[

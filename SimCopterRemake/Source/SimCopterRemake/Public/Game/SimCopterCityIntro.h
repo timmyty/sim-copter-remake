@@ -62,6 +62,8 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
 	friend class FSimCopterCityIntroTest;
+	friend class FSimCopterLoadingEffectsTest;
+	friend class FSimCopterCityIntroLightingTest;
 	friend class FSimCopterCityTourRenderTest;
 	friend class FSimCopterCityIntroAudioTest;
 	friend class FSimCopterCityIntroMixerCommand;
@@ -69,6 +71,12 @@ private:
 	void UpdateMusic(bool bActive);
 	void StopMusic();
 	void UpdateCamera();
+	void BeginTourLighting();
+	void RestoreLighting();
+	bool bLightingOverride = false;
+	uint8 PreviousTimeMode = 0;
+	float PreviousStaticHour = 12;
+	float PreviousLiveHour = -1;
 	UPROPERTY(Transient) TObjectPtr<UAudioComponent> Music;
 	bool bRadioSuspended = false;
 	UPROPERTY(Transient) TObjectPtr<ACameraActor> Camera;

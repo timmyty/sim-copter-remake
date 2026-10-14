@@ -82,8 +82,10 @@ class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 	friend class FSimCopterMegaphoneEffectsTest;
 	friend class FSimCopterCarAccidentTest;
 	friend class FSimCopterCityIntroTest;
+	friend class FSimCopterLoadingEffectsTest;
 	friend class FSimCopterCityTourRenderTest;
 	friend class FSimCopterHospitalCityTest;
+	friend class FSimCopterSceneryCityTest;
 
 public:
 	ASimCity2000CityActor();
@@ -91,6 +93,8 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	// Camera-facing geometry must also refresh when a presentation camera moves in a paused world.
+	void RefreshCameraFacingEffects(float PresentationTimeSeconds);
 
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SimCopter|City")
 	void RebuildCity();

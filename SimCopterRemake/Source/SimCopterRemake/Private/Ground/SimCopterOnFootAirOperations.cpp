@@ -9,6 +9,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Ground/SimCopterPilotEquipment.h"
 #include "ProceduralMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -199,10 +200,11 @@ void ASimCopterOnFootPawn::Landed(const FHitResult& Hit)
 	if(!bSoftParachuteLanding && SimCopterAirOperations::FallCausesInjury(Distance,Water))
 	{
 		if (PilotHealth>0) if (auto* Audio=USimCopterAudioSubsystem::Get(this)) Audio->PlayPilotFallInjury(Distance>=1800.f,GetActorLocation());
-		PilotHealth=FMath::Max(0.0f,PilotHealth-FMath::Clamp((Distance-SimCopterAirOperations::SafeFallCm)*0.08f+15.0f,15.0f,100.0f));
+		// Falls have a per-impact outcome; minor falls never accumulate hidden health damage.
+		PilotHealth = Distance >= 1800.f ? 0.0f : 100.0f;
 		InjurySeconds=PilotHealth<=0?5.0f:2.0f;
 		if(auto* Missions=Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(GetWorld(),ASimCopterMissionSystemActor::StaticClass())))
-			Missions->ShowAirOperationsMessage(FString::Printf(TEXT("Fall injury - pilot health %.0f%%"),PilotHealth));
+			Missions->ShowAirOperationsMessage(PilotHealth <= 0 ? TEXT("Fatal fall. Recovering at your helicopter.") : TEXT("Hard landing!"));
 	}
 	FallPeakZ=GetActorLocation().Z;
 	SetParachuteDeployed(false);
@@ -210,6 +212,35 @@ void ASimCopterOnFootPawn::Landed(const FHitResult& Hit)
 }
 void ASimCopterOnFootPawn::UpdateAirOperations(float DeltaSeconds)
 {
+	if (PilotHealth <= 0)
+	{
+		// Fatal accidents respawn the player in the cockpit. Keep this independent of
+		// contact boarding and autopilot pickup, including a saved/expired countdown.
+		SetParachuteDeployed(false);
+		StopTaserAim(); StopJumping();
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->MaxWalkSpeed = 0;
+		InjurySeconds = FMath::Max(0.0f, InjurySeconds - DeltaSeconds);
+		if (InjurySeconds > 0) return;
+		auto* PlayerController = Cast<APlayerController>(GetController());
+		if (!PlayerController || !IsValid(ParkedHelicopter)) return;
+
+		if (CarriedMissionPerson.IsValid()) DropCarriedMissionPerson();
+		ParkedHelicopter->GetAirOperations()->EndPilotRecovery();
+		const auto& Flight = ParkedHelicopter->GetFlightModel();
+		if (Flight.HitPoints <= 0 || Flight.State == ESimCopterFlightState::Dying || Flight.State == ESimCopterFlightState::Dead)
+		{
+			// Reuse the existing crash/airport path (FUN_0048a8b0). A surviving
+			// helicopter keeps its location, fuel, damage and running engine.
+			ParkedHelicopter->WriteOffPassengersInDestroyedHelicopter();
+			ParkedHelicopter->ResetAircraft();
+			ParkedHelicopter->ReturnToAirportAfterCrash();
+		}
+		PilotHealth = 100;
+		RemoveControllerOverlayWidget();
+		ParkedHelicopter->EnterHelicopter(PlayerController, /*bBlendView=*/false);
+		return;
+	}
 	if (bAutoRescueAttached) { FallPeakZ=GetActorLocation().Z; return; }
 	TaserCooldown=FMath::Max(0.0f,TaserCooldown-DeltaSeconds);
 	if (bParachuteDeployed)
@@ -230,16 +261,9 @@ void ASimCopterOnFootPawn::UpdateAirOperations(float DeltaSeconds)
 	if(InjurySeconds>0)
 	{
 		InjurySeconds=FMath::Max(0.0f,InjurySeconds-DeltaSeconds);
-		GetCharacterMovement()->MaxWalkSpeed=PilotHealth<=0?0:WalkSpeedCmPerSec*0.4f;
+		GetCharacterMovement()->MaxWalkSpeed=WalkSpeedCmPerSec*0.4f;
 		if(InjurySeconds==0)
 		{
-			if(PilotHealth<=0 && ParkedHelicopter)
-			{
-				if(CarriedMissionPerson.IsValid()) DropCarriedMissionPerson();
-				ParkedHelicopter->ResetAircraft();
-				SetActorLocation(ParkedHelicopter->GetPassengerDropWorldLocation()+FVector(100,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
-				PilotHealth=100;
-			}
 			GetCharacterMovement()->MaxWalkSpeed=WalkSpeedCmPerSec;
 		}
 	}

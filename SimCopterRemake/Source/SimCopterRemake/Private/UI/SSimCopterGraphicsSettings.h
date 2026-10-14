@@ -115,6 +115,7 @@ private:
 		float DayRealMinutes = 7.0f;
 		float NightRealMinutes = 3.0f;
 		float HudScale = 1.0f;
+		bool bCockpitDecorationsVisible = true;
 		bool bMissionMarkersOnScreen = true;
 		bool bMuffleOutsideSounds = true;
 		float OnFootFov = 78.0f;

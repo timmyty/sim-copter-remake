@@ -1086,6 +1086,11 @@ bool ASimCopterTrafficSystemActor::RestoreRuntimeSaveState(
 	WholeMapVehicleRecordCount = WholeMapVehicleRecords.Num();
 	ActivePedestrianCount = PedestrianAgents.Num();
 	ActiveVehicleCount = VehicleAgents.Num();
+	// The pending leading edge is transient work, not saved gameplay state. Re-scan
+	// after restoring rather than treating the saved focus tile as already drained.
+	PendingAmbientSpawnTiles.Reset();
+	PendingSpawnPasses = 0;
+	LastAmbientScanTileX = LastAmbientScanTileY = INDEX_NONE;
 	return true;
 }
 
@@ -3602,6 +3607,8 @@ bool ASimCopterTrafficSystemActor::RebuildSpawnData()
 	VehicleAgents.Reset();
 	PedestrianAgents.Reset();
 	VehicleTrafficStates.Reset();
+	PendingAmbientSpawnTiles.Reset();
+	PendingSpawnPasses = 0;
 	LastAmbientScanTileX = INDEX_NONE;
 	LastAmbientScanTileY = INDEX_NONE;
 
@@ -6812,14 +6819,22 @@ void ASimCopterTrafficSystemActor::UpdateAgentPool(float DeltaSeconds)
 		return IsInTunnelTransit(Agent.Get());
 	});
 	SpawnThinkAccumulatorSeconds += DeltaSeconds;
-	if (SpawnThinkAccumulatorSeconds < SpawnThinkIntervalSeconds)
+	if (SpawnThinkAccumulatorSeconds >= SpawnThinkIntervalSeconds)
+	{
+		SpawnThinkAccumulatorSeconds = 0.0f;
+		PendingSpawnPasses = FMath::Max(0, MaxSpawnAttemptsPerThink);
+		PruneBaseballGames();
+	}
+	if (PendingSpawnPasses <= 0)
 	{
 		ActiveVehicleCount = VehicleAgents.Num();
 		ActivePedestrianCount = PedestrianAgents.Num();
 		return;
 	}
-	SpawnThinkAccumulatorSeconds = 0.0f;
-	PruneBaseballGames();
+	--PendingSpawnPasses;
+	TGuardValue<bool> SpawnBudgetScope(bBudgetPopulationSpawns, true);
+	PopulationPedestriansSpawnedThisPass = PopulationVehiclesSpawnedThisPass = 0;
+	TRACE_CPUPROFILER_EVENT_SCOPE(SimCopterPopulationSpawnPass);
 
 	int32 SpawnAttemptsRemaining = MaxSpawnAttemptsPerThink;
 	while (VehicleAgents.Num() + TunnelTransits.Num() < MaxVehicleAgents && SpawnAttemptsRemaining-- > 0)
@@ -6849,6 +6864,14 @@ void ASimCopterTrafficSystemActor::UpdateAgentPool(float DeltaSeconds)
 	if (PedestrianAgents.Num() < MaxPedestrianAgents && CountAmbientPedestrians() < OriginalAmbientRandomCap)
 	{
 		TryRunOriginalAmbientPedestrianScan(FocusLocation, SpawnAttemptsRemaining);
+		// The original leading-edge scan does not run while stationary. Refill gradually
+		// after a new city, warp or despawn, using the same civilian classes and clear-ground
+		// checks. Keep both population caps and the distance gate around the player.
+		for (int32 Attempt = 0; Attempt < FMath::Min(2, MaxSpawnAttemptsPerThink) && PedestrianAgents.Num() < MaxPedestrianAgents &&
+			CountAmbientPedestrians() < OriginalAmbientRandomCap; ++Attempt)
+		{
+			if (!TrySpawnAgent(false, FocusLocation)) break;
+		}
 	}
 
 	ActiveVehicleCount = VehicleAgents.Num();
@@ -9300,7 +9323,10 @@ int32 ASimCopterTrafficSystemActor::CountAmbientPedestrians() const
 	for (const TWeakObjectPtr<ASimCopterGroundAgent>& AgentPtr : PedestrianAgents)
 	{
 		const ASimCopterGroundAgent* Agent = AgentPtr.Get();
-		if (Agent != nullptr && Agent->MissionEventId == INDEX_NONE)
+		// Posted service crews and scripted performers have their own spawn rules. Counting
+		// them as street civilians can leave a user city with only police near the player.
+		if (Agent != nullptr && Agent->MissionEventId == INDEX_NONE &&
+			Agent->InitialPersonState == 0 && Agent->InitialBehaviorProgramId == INDEX_NONE)
 		{
 			++Count;
 		}
@@ -9408,10 +9434,6 @@ bool ASimCopterTrafficSystemActor::TryRunOriginalAmbientPedestrianScan(const FVe
 	{
 		return false;
 	}
-	if (FocusTileX == LastAmbientScanTileX && FocusTileY == LastAmbientScanTileY)
-	{
-		return false;
-	}
 
 	const int32 PreviousTileX = LastAmbientScanTileX;
 	const int32 PreviousTileY = LastAmbientScanTileY;
@@ -9424,15 +9446,11 @@ bool ASimCopterTrafficSystemActor::TryRunOriginalAmbientPedestrianScan(const FVe
 	const int32 DeltaY = bHasPreviousTile ? FocusTileY - PreviousTileY : 0;
 	bool bTouchedTile = false;
 
-	auto TryTile = [this, &MaxSpawnAttempts, &bTouchedTile](int32 TileX, int32 TileY)
+	PendingAmbientSpawnTiles.RemoveAll([&](const FIntPoint& Tile)
 	{
-		if (MaxSpawnAttempts <= 0 || CountAmbientPedestrians() > OriginalAmbientPeriodCap)
-		{
-			return;
-		}
-		bTouchedTile |= TryRunAmbientTileSpawn(TileX, TileY, 1, MaxSpawnAttempts);
-	};
-
+		return FMath::Abs(Tile.X - FocusTileX) > Radius || FMath::Abs(Tile.Y - FocusTileY) > Radius;
+	});
+	if (!bHasPreviousTile || DeltaX != 0 || DeltaY != 0)
 	for (int32 Y = FocusTileY - Radius; Y <= FocusTileY + Radius; ++Y)
 	{
 		for (int32 X = FocusTileX - Radius; X <= FocusTileX + Radius; ++X)
@@ -9451,9 +9469,26 @@ bool ASimCopterTrafficSystemActor::TryRunOriginalAmbientPedestrianScan(const FVe
 
 			if (bIsNewlyExposed)
 			{
-				TryTile(X, Y);
+				if (X >= 0 && Y >= 0 && X < FSimCity2000City::MapSize && Y < FSimCity2000City::MapSize)
+					PendingAmbientSpawnTiles.AddUnique(FIntPoint(X, Y));
 			}
 		}
+	}
+
+	// Stop before removing the next tile when a previous spawn used this frame's budget.
+	// Keep the remaining leading edge for subsequent frames, including when stationary.
+	int32 TilesRemaining = 64;
+	while (!PendingAmbientSpawnTiles.IsEmpty() && MaxSpawnAttempts > 0 && TilesRemaining-- > 0 &&
+		CountAmbientPedestrians() <= OriginalAmbientPeriodCap &&
+		(!bBudgetPopulationSpawns || PopulationPedestriansSpawnedThisPass == 0))
+	{
+		const FIntPoint Tile = PendingAmbientSpawnTiles[0];
+		PendingAmbientSpawnTiles.RemoveAt(0, 1, EAllowShrinking::No);
+		const bool bSpawned = TryRunAmbientTileSpawn(Tile.X, Tile.Y, 1, MaxSpawnAttempts);
+		bTouchedTile |= bSpawned;
+		const uint8 Building = uint8(GetXbldTileId(Tile.X, Tile.Y));
+		if (bBudgetPopulationSpawns && bSpawned && (Building == 0xD1 || Building == 0xD2 || Building == 0xD7))
+			PendingAmbientSpawnTiles.AddUnique(Tile); // complete multi-person posts on a later frame
 	}
 
 	return bTouchedTile;
@@ -9784,10 +9819,13 @@ bool ASimCopterTrafficSystemActor::TrySpawnOriginalPersonAtTile(
 		}
 	}
 
+	if (bBudgetPopulationSpawns && PopulationPedestriansSpawnedThisPass >= 1) return false;
+	if (bBudgetPopulationSpawns) ++PopulationPedestriansSpawnedThisPass;
 	const FVector SpawnLocation = SpawnBaseLocation + FVector::UpVector * 92.0f;
 	const FRotator SpawnRotation(0.0f, RandomStream.FRandRange(0.0f, 360.0f), 0.0f);
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
+	SpawnParams.bDeferConstruction = true;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	ASimCopterGroundAgent* Agent = GetWorld()->SpawnActor<ASimCopterGroundAgent>(GroundAgentClass, SpawnLocation, SpawnRotation, SpawnParams);
 	if (Agent == nullptr)
@@ -9814,7 +9852,14 @@ bool ASimCopterTrafficSystemActor::TrySpawnOriginalPersonAtTile(
 		ESimCopterGroundAgentKind::Pedestrian,
 		MeshName,
 		ActiveOriginalGameRootPath.IsEmpty() ? ResolveOriginalGameRoot() : ActiveOriginalGameRootPath,
-		PedestrianSpeedCmPerSec);
+		PedestrianSpeedCmPerSec, true);
+
+	Agent->FinishSpawning(FTransform(SpawnRotation, SpawnLocation));
+	// Headless fixtures can populate a world before it starts play. Keep the same
+	// ready-to-use contract there; live worlds initialized the final figure in BeginPlay.
+	if (!Agent->HasActorBegunPlay())
+		Agent->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian, MeshName,
+			ActiveOriginalGameRootPath.IsEmpty() ? ResolveOriginalGameRoot() : ActiveOriginalGameRootPath, PedestrianSpeedCmPerSec);
 
 	if (bRequireOriginalPopulationMeshes && !Agent->IsUsingOriginalMesh())
 	{
@@ -9901,9 +9946,30 @@ bool ASimCopterTrafficSystemActor::TrySpawnAgent(bool bVehicle, const FVector& F
 	int32 InitialNextIndex = INDEX_NONE;
 	int32 InitialBehaviorClass = 0;
 	FVector SpawnBaseLocation = FVector::ZeroVector;
+	TArray<int32, TInlineAllocator<289>> LocalPedestrianNodes;
+	if (!bVehicle)
+	{
+		int32 FocusX, FocusY;
+		if (!TryGetPeopleTileCoordinateAtWorldLocation(FocusLocation, FocusX, FocusY)) return false;
+		// Civilian refill uses the original eight-tile neighborhood, not the much
+		// larger vehicle radius. Otherwise the next twelve-tile cull removes it.
+		const int32 Radius = FMath::Clamp(OriginalAmbientScanRadiusTiles, 1, FSimCity2000City::MapSize);
+		const float MaxDistance = FMath::Min(SpawnRadiusCm, Radius * ActiveTileSize);
+		for (int32 Y = FMath::Max(0, FocusY - Radius); Y <= FMath::Min(FSimCity2000City::MapSize - 1, FocusY + Radius); ++Y)
+		for (int32 X = FMath::Max(0, FocusX - Radius); X <= FMath::Min(FSimCity2000City::MapSize - 1, FocusX + Radius); ++X)
+		{
+			int32 Candidate;
+			if (!TryResolvePedestrianNodeForTile(X, Y, Candidate) || !IsOriginalAmbientTileGateOpen(X, Y)) continue;
+			const float DistanceSq = FVector::DistSquared2D(Nodes[Candidate].Location, FocusLocation);
+			if (DistanceSq >= FMath::Square(MinSpawnDistanceCm) && DistanceSq <= FMath::Square(MaxDistance))
+				LocalPedestrianNodes.Add(Candidate);
+		}
+		if (LocalPedestrianNodes.IsEmpty()) return false;
+	}
 	for (int32 Attempt = 0; Attempt < 18; ++Attempt)
 	{
-		const int32 CandidateNodeIndex = ChooseNodeNearFocus(Nodes, FocusLocation);
+		const int32 CandidateNodeIndex = bVehicle ? ChooseNodeNearFocus(Nodes, FocusLocation)
+			: LocalPedestrianNodes[RandomStream.RandRange(0, LocalPedestrianNodes.Num() - 1)];
 		if (CandidateNodeIndex == INDEX_NONE)
 		{
 			return false;
@@ -9970,9 +10036,13 @@ bool ASimCopterTrafficSystemActor::TrySpawnAgent(bool bVehicle, const FVector& F
 		SpawnRotation.Yaw = RandomStream.FRandRange(0.0f, 360.0f);
 	}
 
+	int32& SpawnedThisPass = bVehicle ? PopulationVehiclesSpawnedThisPass : PopulationPedestriansSpawnedThisPass;
+	if (bBudgetPopulationSpawns && SpawnedThisPass >= 1) return false;
+	if (bBudgetPopulationSpawns) ++SpawnedThisPass;
 	const FVector SpawnLocation = SpawnBaseLocation + FVector::UpVector * (bVehicle ? 100.0f : 92.0f);
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
+	SpawnParams.bDeferConstruction = true;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	ASimCopterGroundAgent* Agent = GetWorld()->SpawnActor<ASimCopterGroundAgent>(GroundAgentClass, SpawnLocation, SpawnRotation, SpawnParams);
 	if (Agent == nullptr)
@@ -9993,7 +10063,13 @@ bool ASimCopterTrafficSystemActor::TrySpawnAgent(bool bVehicle, const FVector& F
 		bVehicle ? ESimCopterGroundAgentKind::Vehicle : ESimCopterGroundAgentKind::Pedestrian,
 		MeshName,
 		ActiveOriginalGameRootPath.IsEmpty() ? ResolveOriginalGameRoot() : ActiveOriginalGameRootPath,
-		bVehicle ? DrawVehicleSpeedCmPerSec() : PedestrianSpeedCmPerSec);
+		bVehicle ? DrawVehicleSpeedCmPerSec() : PedestrianSpeedCmPerSec, true);
+
+	Agent->FinishSpawning(FTransform(SpawnRotation, SpawnLocation));
+	if (!Agent->HasActorBegunPlay())
+		Agent->ConfigureAgent(bVehicle ? ESimCopterGroundAgentKind::Vehicle : ESimCopterGroundAgentKind::Pedestrian,
+			MeshName, ActiveOriginalGameRootPath.IsEmpty() ? ResolveOriginalGameRoot() : ActiveOriginalGameRootPath,
+			Agent->MovementSpeedCmPerSec);
 
 	if (bRequireOriginalPopulationMeshes && !Agent->IsUsingOriginalMesh())
 	{

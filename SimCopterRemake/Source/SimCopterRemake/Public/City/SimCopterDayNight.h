@@ -203,6 +203,13 @@ constexpr float DefaultFadeDurationHours = 1.0f;
 // Past this the game calls it night, so the hangar and anything else swapping art rather than
 // blending it agree on when to swap.
 constexpr float NightThreshold = 0.5f;
+
+// Windows fade on through sunset twilight and off through sunrise, regardless of clock hour.
+inline float NightAlphaForSunElevation(float Degrees)
+{
+	const float Alpha = FMath::Clamp((5.0f - Degrees) / 8.0f, 0.0f, 1.0f);
+	return Alpha * Alpha * (3.0f - 2.0f * Alpha);
+}
 }
 
 /**
@@ -290,10 +297,13 @@ public:
 	virtual TStatId GetStatId() const override;
 	/** So scrubbing Time Of Day Preview in the editor moves the window lights with the sun. */
 	virtual bool IsTickableInEditor() const override { return true; }
+	virtual bool IsTickableWhenPaused() const override { return true; }
 
 private:
 	/** Recomputes the time of day and night alpha, and republishes NightBlend if it moved. */
 	void Refresh();
+	friend class FSimCopterGameplayOptionsTest;
+	friend class FSimCopterCityIntroLightingTest;
 
 	/** Finds the day sequence actor if the cached one has gone away. */
 	ADaySequenceActor* ResolveDaySequenceActor();

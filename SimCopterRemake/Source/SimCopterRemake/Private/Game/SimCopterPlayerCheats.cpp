@@ -93,6 +93,11 @@ FString ASimCopterPlayerController::ExecuteCheatCodes(const FString& Text)
 	{
 		switch (Command.Code)
 		{
+		case ECode::UnlockApache:
+			Career->SetApacheEncounterSpawned(true);
+			bApplied = true;
+			Results.Add(TEXT("Apache unlocked for purchase in the hangar."));
+			break;
 		case ECode::Superpower: Toggle(State->bSuperpower, TEXT("Superpower (hold Shift)")); break;
 		case ECode::Shields: Toggle(State->bShields, TEXT("Shields")); break;
 		case ECode::Fuel:

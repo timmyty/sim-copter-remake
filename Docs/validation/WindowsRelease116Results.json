@@ -1,0 +1,87 @@
+{
+  "version": "v1.0.16",
+  "date": "2026-10-14",
+  "baseline_commit": "57ae3d5239ddf080b8433ed3d60980c3207c33ec",
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log_sha256": "abcc51852433d3f27b5ba094aa0d8e625ede6a101bb375103f8fb8bcce33458a"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "927668a01b162c2a710e1748d8722914fd2a00baf3e97be46c0f4ea4066dee19"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "e151a3fc9ca1ee63b6c1fcbe9cc064580573e957bf6572440e99706343e78cdf"
+    }
+  },
+  "cook": {
+    "result": "Succeeded",
+    "log_sha256": "10422a8010dfcd68db1d97dc6acef0bd8ef39f8c88eead08ae77a80837dd301a",
+    "new_materials": {
+      "MI_SimCopterMoon": "ec8ec3c7d14a156d80f511ba457617bf4e2dd3e0bb9aa87d8ea6ece53318fb68",
+      "M_ParkPath": "1f2a198de0db0654585af0ccb19a2130bae6e8a551718728a2abe19fd805f224",
+      "M_SceneryPaving": "ee0ff750dce35fa76cdc60c96e1db52da8386342d301acd1b815f76997b9766d"
+    },
+    "generator_sha256": "a2593e759687bbd3b2e220f2f063a72e460f90b2247dcafca1262dfc345e2f30"
+  },
+  "automation": {
+    "tests": {
+      "succeeded": 522,
+      "succeededWithWarnings": 37,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 418.7343444824219
+    },
+    "render-tests": {
+      "succeeded": 41,
+      "succeededWithWarnings": 30,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 179.03897094726562
+    }
+  },
+  "final_distinct_cases": {
+    "total": 590,
+    "passed": 590,
+    "failed": 0,
+    "notRun": 0
+  },
+  "startup": [
+    {
+      "seconds": 31.1018712,
+      "launcher_pid": 48040,
+      "survived": true,
+      "child_pids": [
+        56992
+      ],
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.16\\smoke-shipping",
+      "mode": "shipping"
+    },
+    {
+      "seconds": 30.9431629,
+      "launcher_pid": 4800,
+      "survived": true,
+      "child_pids": [
+        null
+      ],
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.16\\smoke-development",
+      "mode": "development"
+    }
+  ],
+  "source_manifest_sha256": "61a21bbf945657d4ae3350d828d5f4b5f075fde48db52ea44eb1f8da64a0992a",
+  "binary_sha256": {
+    "SimCopterRemake-Win64-Shipping.exe": "0df3b36a26e7b801bdba46ca9593517c07b9b3553dfe7156d14547a73cf771e9",
+    "SimCopterRemake.exe": "d8eb6c728bcef0e1519424896fca39d891e5f0c34c3e7d281f10294e06435fe6"
+  },
+  "scope": "All completed source changes in the validated development snapshot since v1.0.15; fresh publication builds and cooked content.",
+  "initial_validation_issue": "The first build reused six stale translation units because copied source retained older modification times. Refreshed all changed source timestamps, rebuilt every changed translation unit in Editor/Shipping/Development and reran validation without changing source contents. Initial evidence retained under initial-* in release scratch.",
+  "limitations": [
+    "No interactive playthrough, physical-controller or manual listening test.",
+    "Headless broad-suite rendering checks can be no-ops; focused D3D12 offscreen tests cover the changed rendering and population paths.",
+    "Performance benchmarks in task receipts are controlled workloads, not whole-flight FPS measurements."
+  ]
+}

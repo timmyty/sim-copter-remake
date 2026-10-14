@@ -7,12 +7,12 @@ Implemented 2026-10-05. These are user-requested additions to the original SimCo
 | Action | Controller | Keyboard / mouse |
 | --- | --- | --- |
 | Rotate helicopter left / right | LB / RB individually | Existing flight controls |
-| Open Tools | Press **X** | Existing tool panel |
-| Switch Tools / Dispatch | Press **X**, no bumper hold required | Click the corresponding panel |
-| Select and confirm | Right stick, then **A** | Click selection |
+| Open Tools | Hold **R3** | Existing tool panel |
+| Switch Tools / Dispatch | Press **X** while holding R3 | Click the corresponding panel |
+| Select and confirm | Right stick, then release **R3** | Click selection |
 | Cancel wheel | B | Existing panel controls |
-| Passenger menu | Select Passengers in Tools, then A | Click a seat portrait |
-| Recall ground services and helper | Select Recall All in Dispatch, then A | Recall from Dispatch |
+| Passenger menu | Select Passengers in Tools, then release R3 | Click a seat portrait |
+| Recall ground services and helper | Select Recall All in Dispatch, then release R3 | Recall from Dispatch |
 | Select capture cage | Tools wheel | V |
 | Use selected tool / dump bucket / deploy cage | A | R or left click |
 | Raise / lower sling | D-pad up / down | Page Up / Page Down |
@@ -49,7 +49,7 @@ The purchased cage has its own cockpit panel immediately below the megaphone, us
 
 Owning a cage on any player aircraft increases the scheduler's crime-family weight by three times, with a minimum based on the city's average category weight so early cities also offer criminal jobs. This affects the existing robber, mugger, arsonist and speeder mix; mission limits and other jobs still apply. The helper's free cage does not qualify. Selling the final owned cage restores the original weights, and all-zero/free-roam settings remain quiet. See [capture cage follow-up](CaptureCage.md).
 
-Released NPCs use the existing falling and medical systems. Water landings create a MedEvac incident without impact damage. Dry falls of 9 meters or more inflict health damage and can create a medical incident. The pilot can also leave an airborne helicopter and suffers fall damage; an incapacitating pilot injury triggers recovery at the aircraft after five seconds.
+Released NPCs use the existing falling and medical systems. Water landings create a MedEvac incident without impact damage. Dry falls of 9 meters or more inflict health damage and can create a medical incident. The pilot has no health UI or cumulative damage. Unprotected dry falls from 9 meters cause an audible injury response; falls from 18 meters are fatal and trigger recovery at the aircraft after five seconds. A fully slowed parachute landing or water landing avoids impact injury.
 
 ## AI helicopter and remote taser mode
 
@@ -59,7 +59,7 @@ Each new city, including a career cheat warp, requires graduation again before t
 
 Click **L3** to toggle Turbo Mode, or tap either **Shift** key, for 30% faster horizontal helicopter travel with a steeper flight tilt. On foot, L3 toggles the existing doubled running speed and animation. **R3+L3** shows or hides controller help; the minimap Turbo indicator remains visible while flying. Boarding, exiting and loading clear the toggle. With `superpowermultiply` active, either input retains its existing turbo/dog behavior without stacking multipliers. See [Turbo Mode and GPU diagnostics](GpuCrashAndSprint.md) and [traffic and flight pacing](TrafficFlowAndFlightPacing.md).
 
-Every helicopter has a visible nose-mounted remote taser. Once airborne, click **AIM TASER** on its cockpit panel press **N**, or open Tools with **X**, select **Remote Taser**, and press **A**. No officer or purchase is required. Autopilot holds a steady hover while the suspect is in range with a clear shot, following again when range or sustained cover requires it. Move the mouse or right stick to aim; roll the mouse wheel for 1x–4x zoom, or hold LT for the 4x scope. Aiming sensitivity reduces with magnification. Left click, A or RT fires. Hold right mouse for the cockpit cursor. Click **FLY HELICOPTER**, press N, or select **Fly Helicopter** through X then A to return. Successful 60-meter taser shots preserve health and immobilize living suspects for retrieval, handcuffing and police delivery. Recharge takes 1.25 seconds. The former police passenger view has been removed.
+The Remote Taser is a $2,500 hangar equipment purchase. Its nose mount, cockpit panel and wheel option appear only after purchase. Once airborne, click **AIM TASER** on its cockpit panel press **N**, or hold **R3**, select **Remote Taser**, and release **R3**. No officer is required. Autopilot holds a steady hover while the suspect is in range with a clear shot, following again when range or sustained cover requires it. Move the mouse or right stick to aim; roll the mouse wheel for 1x–4x zoom, or hold LT for the 4x scope. Aiming sensitivity reduces with magnification. Left click, A or RT fires. Hold right mouse for the cockpit cursor. Click **FLY HELICOPTER**, press N, or select **Fly Helicopter** through R3 selection and release to return. Successful 60-meter taser shots preserve health and immobilize living suspects for retrieval, handcuffing and police delivery. Recharge takes 1.25 seconds. The former police passenger view has been removed.
 
 Each helicopter discharge leaves two continuous white electrical trails for 0.3 seconds and plays the original laser cue. Successful disables add a separate impact cue; blocked shots and misses do not. Vehicle hits also animate electricity around the car's oriented body for 0.7 seconds. The car remains disabled for 16 seconds.
 

@@ -55,11 +55,11 @@ bool FSimCopterControllerTurboTest::RunTest(const FString&)
 	TestFalse(TEXT("Ordinary L3 does not toggle help"),PC->IsControllerHelpExpanded());
 	PC->HandleControllerLeftStickPressed(true);
 	TestTrue(TEXT("Repeat events leave Turbo Mode on"),Heli->BuildFlightInputs().bTravelBoost);
-	Heli->bControllerCameraAdjustHeld=true;
+	Heli->bControllerRadialHeld=true;
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	TestTrue(TEXT("R3+L3 toggles helicopter help"),PC->IsControllerHelpExpanded());
 	TestTrue(TEXT("Help chord leaves Turbo Mode unchanged"),PC->IsControllerTurboEnabled());
-	Heli->bControllerCameraAdjustHeld=false;
+	Heli->bControllerRadialHeld=false;
 	PC->HandleControllerLeftStickPressed(false);
 	TestTrue(TEXT("L3 then R3 consumes the help chord"), PC->HandleControllerRightStickPressed(false));
 	TestFalse(TEXT("L3 then R3 also toggles help"), PC->IsControllerHelpExpanded());
@@ -117,7 +117,7 @@ bool FSimCopterControllerTurboTest::RunTest(const FString&)
 	TestFalse(TEXT("L3 down hides service markers"),Map->Settings.bShowServiceBlips);
 	TestTrue(TEXT("L3 map chord leaves enabled turbo on"),PC->IsControllerTurboEnabled());
 	PC->ResetControllerTurbo();
-	Heli->bControllerCameraAdjustHeld=true;
+	Heli->bControllerRadialHeld=true;
 	const auto Dpad = [&](FKey Key) { TestTrue(TEXT("Map chord consumes D-pad"),PC->HandleControllerMapKeyPressed(Key,false)); PC->HandleControllerMapKeyReleased(Key); };
 	for (int32 I=0;I<8;++I) Dpad(EKeys::Gamepad_DPad_Up);
 	TestEqual(TEXT("R3 up zooms to maximum"),Map->Settings.Zoom,SimCopterMap::MaxZoom);
@@ -139,12 +139,12 @@ bool FSimCopterControllerTurboTest::RunTest(const FString&)
 	TestEqual(TEXT("R3 right selects next map mission"),Missions->GetMapFocusRecordIndex(),1);
 	Dpad(EKeys::Gamepad_DPad_Left);
 	TestEqual(TEXT("R3 left selects previous map mission"),Missions->GetMapFocusRecordIndex(),0);
-	Heli->bControllerCameraAdjustHeld=false;
+	Heli->bControllerRadialHeld=false;
 	TestFalse(TEXT("Unmodified D-pad reaches normal tool controls"),PC->HandleControllerMapKeyPressed(EKeys::Gamepad_DPad_Up,false));
-	Heli->bControllerCameraAdjustHeld=true;
+	Heli->bControllerRadialHeld=true;
 	TestFalse(TEXT("Adding a modifier during a tool hold cannot swallow its release"),PC->HandleControllerMapKeyPressed(EKeys::Gamepad_DPad_Up,true));
 	TestFalse(TEXT("Original tool release still reaches pawn"),PC->HandleControllerMapKeyReleased(EKeys::Gamepad_DPad_Up));
-	Heli->bControllerCameraAdjustHeld=false;
+	Heli->bControllerRadialHeld=false;
 	PC->HandleControllerLeftStickPressed(false); PC->PushPause(); PC->PopPause(); PC->HandleControllerLeftStickReleased();
 	TestFalse(TEXT("Pausing cancels a pending turbo click"),PC->IsControllerTurboEnabled());
 	Heli->ActiveHelicopterTypeIndex=SimCopterHelicopterRegistry::PlaneTypeIndex;

@@ -194,7 +194,8 @@ public:
 		ESimCopterGroundAgentKind NewAgentKind,
 		const FString& NewMeshTableName,
 		const FString& NewOriginalGameRoot,
-		float NewMovementSpeedCmPerSec);
+		float NewMovementSpeedCmPerSec,
+		bool bDeferInitialization = false);
 
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Ground Agent")
 	void SetInitialBehaviorClass(int32 NewInitialBehaviorClass);
@@ -1316,8 +1317,11 @@ private:
 	friend class FSimCopterMedicRouteTest;
 	friend class FSimCopterDeployedMedicRiotTest;
 	friend class FSimCopterMedicDeploymentTest;
+	friend class FSimCopterMedicReboardingTest;
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterNpcAppearanceTest;
+	friend class FSimCopterFigureClipReuseTest;
+	friend class FSimCopterPopulationSpawnTest;
 	friend class FSimCopterBandCelebrationTest;
 	friend class FSimCopterAircraftRoadUpdateTest;
 	friend class FSimCopterServicePostsTest;
@@ -1403,6 +1407,20 @@ private:
 	// Original privanim figure state.
 	TSharedPtr<FSimCopterPrivAnimShared> FigureShared;
 	FSimCopterPopulationFigure::FCalibration FigureCalibration;
+	struct FCachedFigureClip
+	{
+		int32 FirstSection = 0;
+		int32 FrameCount = 0;
+		float GroundLiftCm = 0.0f;
+		bool bHasHead = false;
+	};
+	TMap<FString, FCachedFigureClip> FigureClipCache;
+	int32 FigureFirstSection = 0;
+	float FigureClipCacheHeightCm = 0.0f;
+	// At most 32 prepared poses per actor, or one larger authored clip on its own.
+	static constexpr int32 MaxCachedFigureSections = 64;
+	void ResetFigureClipCache();
+	void ShowFigureFrame(int32 Frame);
 	FString FigureMnemonic;
 	int32 FigureIndex = INDEX_NONE;
 	int32 FigureFrameCount = 0;
@@ -1424,6 +1442,9 @@ private:
 	TWeakObjectPtr<AActor> BehaviorCarrier;
 	// person+0x170: the emergency vehicle that deployed this crew member.
 	TWeakObjectPtr<AActor> BehaviorStartingVehicle;
+	/** Manual crew deployment holds boarding for 15 simulation seconds, except a final patient handoff. */
+	double MedicReboardAfterTime = 0.0;
+	TWeakObjectPtr<ASimCopterGroundAgent> MedicReboardPatient;
 	bool bBehaviorStartingVehicleMessaged = false;
 	// person+0x1a4, written by FUN_004c1050 when an interaction is delivered, and by the move core
 	// when this person walks into somebody.

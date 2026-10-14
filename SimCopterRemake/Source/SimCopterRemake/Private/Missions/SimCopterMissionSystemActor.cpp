@@ -1169,6 +1169,16 @@ int32 ASimCopterMissionSystemActor::ApplyWaterParticleImpact(
 			Strength1616);
 	}
 
+	// Road/crash debris lives outside the flame pool. It must accept the same water impacts
+	// and retire its owning mission counter exactly once, before it can ignite another fire.
+	for (int32 Index = BurningDebris.Num() - 1; Index >= 0; --Index)
+	{
+		if (FVector::DistSquared(ImpactWorldLocation, BurningDebris[Index].World) > FMath::Square(CarDouseRadiusCm)) continue;
+		MissionSystem.PostEvent(SimCopterMissions::EVT_DebrisDoused, BurningDebris[Index].OwnerEventId, 1, true);
+		BurningDebris.RemoveAtSwap(Index);
+		++FlamesHit;
+	}
+
 	// Car fires are likewise resolved where the trajectory landed.
 	TArray<int32> ExtinguishedCarEvents;
 	TrafficSystem->DouseBurningVehiclesNear(ImpactWorldLocation, CarDouseRadiusCm, ExtinguishedCarEvents);
@@ -3978,7 +3988,7 @@ void ASimCopterMissionSystemActor::EnsureMissionMarkerWidget()
 	MissionMarkerCanvas = MarkerCanvas;
 	MissionMarkerWidget =
 		SNew(SOverlay)
-		.Visibility(EVisibility::SelfHitTestInvisible)
+		.Visibility(bHudHiddenForReplay ? EVisibility::Collapsed : EVisibility::SelfHitTestInvisible)
 		+ SOverlay::Slot()
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Fill)
@@ -4003,6 +4013,13 @@ void ASimCopterMissionSystemActor::RemoveMissionMarkerWidget()
 void ASimCopterMissionSystemActor::RefreshMissionMarkerWidget()
 {
 	EnsureMissionMarkerWidget();
+	// The intro, Photo Mode and replay retain this layer. A later refresh must
+	// not make mission, helicopter, hangar or service waypoints visible again.
+	if (bHudHiddenForReplay)
+	{
+		if (MissionMarkerWidget.IsValid()) MissionMarkerWidget->SetVisibility(EVisibility::Collapsed);
+		return;
+	}
 	if (!bShowMissionWorldMarkers || !MissionMarkerCanvas.IsValid() || !MissionMarkerWidget.IsValid())
 	{
 		return;
@@ -4566,6 +4583,36 @@ void ASimCopterMissionSystemActor::BuildMissionWorldMarkers(TArray<FSimCopterMis
 		if ((Record.TypeMask & SimCopterMissions::TYPE_Mugger) != 0)
 		{
 			AddTileMarker(Record.TileX, Record.TileY, TEXT("MUGGER"), Record.Name, FLinearColor(0.86f, 0.18f, 0.18f, 1.0f));
+			continue;
+		}
+
+		// Fire tags belong to a live water target, never an old record tile. The last flame may
+		// have spread away from that tile, or crews/burnout may already have cleared the scene.
+		if ((Record.TypeMask & (SimCopterMissions::TYPE_BuildingFire | SimCopterMissions::TYPE_CarFire | SimCopterMissions::TYPE_Debris)) != 0)
+		{
+			FVector Target;
+			bool bFound = false;
+			for (const auto& Flame : MissionSystem.GetFlames())
+				if (Flame.bActive && Flame.EventId == Record.EventId && TryGetFlameWorldLocation(Flame, Target)) { bFound = true; break; }
+			if (!bFound && TrafficSystem)
+			{
+				TArray<FSimCopterBurningVehicle> Vehicles;
+				TrafficSystem->GetBurningVehicles(Vehicles);
+				if (auto* Ambient = const_cast<ASimCopterMissionSystemActor*>(this)->ResolveAmbientVehicles()) Ambient->GetBurningWrecks(Vehicles);
+				for (const auto& Vehicle : Vehicles)
+					if (Vehicle.EventId == Record.EventId) { Target = Vehicle.World; bFound = true; break; }
+			}
+			if (!bFound) for (const auto& Debris : BurningDebris)
+				if (Debris.OwnerEventId == Record.EventId && Debris.BurnSecondsRemaining > 0) { Target = Debris.World; bFound = true; break; }
+			if (bFound)
+			{
+				FSimCopterMissionWorldMarkerEntry Marker;
+				Marker.WorldLocation = Target;
+				Marker.Label = SimCopterMissions::FSimCopterMissionSystem::GetTypeDisplayName(Record.TypeMask);
+				Marker.Detail = Record.Name;
+				Marker.Color = FLinearColor(1.0f, 0.35f, 0.08f);
+				OutMarkers.Add(Marker);
+			}
 			continue;
 		}
 

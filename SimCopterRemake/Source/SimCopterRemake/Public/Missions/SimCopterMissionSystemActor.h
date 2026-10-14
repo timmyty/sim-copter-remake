@@ -97,6 +97,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public SimCopterMissions::ISimCopterMissionWorld
 {
 	GENERATED_BODY()
+	friend class FSimCopterGameplayOptionsTest;
 	friend class FSimCopterPlaneControlsTest;
 	friend class FSimCopterWeaponDamageTest;
 	friend class FSimCopterCityWeaponTest;

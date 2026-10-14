@@ -277,6 +277,9 @@ class SIMCOPTERREMAKE_API ASimCopterHelicopterPawn
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class FSimCopterGameplayOptionsTest;
+	friend class FSimCopterFatalRespawnTest;
+	friend class FSimCopterMouseFrameRateTest;
 	friend class USimCopterAirOperationsComponent;
 	friend class FSimCopterRemoteRecoveryTest;
 	friend class FSimCopterRemoteAutopilotTest;
@@ -615,11 +618,13 @@ public:
 	void HandleControllerMapShortcut(FKey Key, bool bMarkerVisibility);
 	ESimCopterControllerMode GetControllerMode() const { return ControllerMode; }
 	bool IsControllerCameraAdjustHeld() const { return bControllerCameraAdjustHeld; }
+	bool IsControllerRadialHeld() const { return bControllerRadialHeld; }
+	void CancelControllerRadialForShortcut() { CloseControllerMode(); }
 	int32 GetControllerRadialIndex() const { return ControllerRadialIndex; }
 	const TArray<ESimCopterHelicopterTool>& GetControllerToolWheelTools() const { return ControllerToolWheelTools; }
-	int32 GetControllerRemoteTaserSlot() const { return IsFixedWingAircraft() ? INDEX_NONE : ControllerToolWheelTools.Num(); }
-	int32 GetControllerPassengersSlot() const { return MissionPassengerSlots.IsEmpty() ? INDEX_NONE : ControllerToolWheelTools.Num() + (IsFixedWingAircraft() ? 0 : 1); }
-	int32 GetControllerToolWheelSlotCount() const { return ControllerToolWheelTools.Num() + (IsFixedWingAircraft() ? 0 : 1) + (MissionPassengerSlots.IsEmpty() ? 0 : 1); }
+	int32 GetControllerRemoteTaserSlot() const { return IsToolAvailable(ESimCopterHelicopterTool::RemoteTaser) ? ControllerToolWheelTools.Num() : INDEX_NONE; }
+	int32 GetControllerPassengersSlot() const { return MissionPassengerSlots.IsEmpty() ? INDEX_NONE : ControllerToolWheelTools.Num() + (GetControllerRemoteTaserSlot() == INDEX_NONE ? 0 : 1); }
+	int32 GetControllerToolWheelSlotCount() const { return ControllerToolWheelTools.Num() + (GetControllerRemoteTaserSlot() == INDEX_NONE ? 0 : 1) + (MissionPassengerSlots.IsEmpty() ? 0 : 1); }
 	int32 GetControllerPassengerSlot() const { return ControllerPassengerSlot; }
 	int32 GetControllerPassengerConfirmChoice() const { return ControllerPassengerConfirmChoice; }
 	bool IsPassengerSlotControllerSelected(int32 SlotIndex) const;
@@ -1483,7 +1488,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Camera", meta = (ClampMin = "0.0"))
 	float CameraPanMaxOffsetCm = 900.0f;
 
-	// R3 + right-stick Y reaches either end of the current view's zoom range in roughly this
+	// X + right-stick Y reaches either end of the current view's zoom range in roughly this
 	// many seconds at full deflection.
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Controller", meta = (ClampMin = "0.05"))
 	float ControllerCameraZoomAlphaPerSecond = 0.65f;
@@ -1497,7 +1502,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Camera", meta = (ClampMin = "0.1"))
 	float RopeAutoZoomLerpSpeed = 3.0f;
 
-	// R3 + RB/RT moves the helicopter up/down in the frame through the same per-view offset as
+	// X + RB/RT moves the helicopter up/down in the frame through the same per-view offset as
 	// middle-mouse drag.
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Controller", meta = (ClampMin = "1.0"))
 	float ControllerCameraPanCmPerSecond = 520.0f;
@@ -1718,6 +1723,7 @@ private:
 	FRotator SmoothedCameraViewWorldRotation = FRotator::ZeroRotator;
 	bool bCameraViewSmoothingInitialized = false;
 	friend class FSimCopterSpotlightCameraRuntimeTest;
+	friend class FSimCopterCameraObstructionStabilityTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterRooftopSafetyTest;
 	static constexpr int32 CameraModeCount = 4;
@@ -1749,6 +1755,7 @@ private:
 	float ControllerRightYInput = 0.0f;
 	float ControllerRightTriggerInput = 0.0f;
 	bool bControllerCameraAdjustHeld = false;
+	bool bControllerRadialHeld = false;
 	float ControllerLeftTriggerInput = 0.0f;
 	bool bControllerClimbHeld = false;
 	bool bControllerDescendHeld = false;
@@ -1946,6 +1953,8 @@ private:
 	void ControllerPrimaryPressed();
 	void ControllerPrimaryReleased();
 	void ControllerOptionsPressed();
+	void ControllerRadialPressed();
+	void ControllerRadialReleased();
 	void ControllerCancelPressed();
 	void ControllerCancelReleased();
 	void ControllerEnterExitPressed();
@@ -2136,7 +2145,7 @@ private:
 
 	// Latches for the level-triggered transitions the original reads off state instead.
 	bool bAudioWasFuelStarved = false;
-	bool bLowFuelWarningPlayed = false;
+	float LowFuelWarningSeconds = 0.0f;
 	float CrashSirenSecondsRemaining = 0.0f;
 	// Retain the last deliberate horizontal input when the stick returns to centre.
 	float PreferredExitSide = 1.0f;

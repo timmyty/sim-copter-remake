@@ -6,12 +6,14 @@
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "City/SimCity2000CityActor.h"
+#include "City/SimCopterDayNight.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Game/SimCopterPlayerController.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Ground/SimCopterAmbientVehicles.h"
 #include "Missions/SimCopterMissionSystemActor.h"
@@ -123,6 +125,7 @@ bool USimCopterCityIntro::Start()
 	PC->bShouldPerformFullTickWhenPaused=true;
 	PC->FlushPressedKeys();
 	PC->PushPause();
+	BeginTourLighting();
 	PC->SetIgnoreMoveInput(true); PC->SetIgnoreLookInput(true);
 	PresentationClock=FSceneViewExtensions::NewExtension<FSimCopterTourViewExtension>(World);
 	for (TActorIterator<ASimCopterAmbientVehiclesActor> It(World); It; ++It)
@@ -142,6 +145,40 @@ bool USimCopterCityIntro::Start()
 	LastTickSeconds=FPlatformTime::Seconds();
 	SetComponentTickEnabled(true);
 	return true;
+}
+
+void USimCopterCityIntro::BeginTourLighting()
+{
+	if (bLightingOverride) return;
+	auto* Settings=USimCopterSettings::Get(this);
+	if (!Settings) return;
+	PreviousTimeMode=static_cast<uint8>(Settings->GetTimeOfDayMode());
+	PreviousStaticHour=Settings->GetStaticTimeOfDayHours();
+	PreviousLiveHour=-1;
+	auto* Day=USimCopterDayNightSubsystem::Get(this);
+	float LiveHour=0;
+	if (Day && Day->TryGetLiveTimeOfDayHours(LiveHour)) PreviousLiveHour=LiveHour;
+	// Presentation only: do not save these temporary settings to the player's profile.
+	bLightingOverride=true;
+	Settings->SetTimeOfDayMode(ESimCopterTimeOfDayMode::Static);
+	Settings->SetStaticTimeOfDayHours(13);
+	if (Day) Day->ApplyTimeOfDaySettings();
+}
+
+void USimCopterCityIntro::RestoreLighting()
+{
+	if (!bLightingOverride) return;
+	bLightingOverride=false;
+	if (auto* Settings=USimCopterSettings::Get(this))
+	{
+		Settings->SetTimeOfDayMode(static_cast<ESimCopterTimeOfDayMode>(PreviousTimeMode));
+		Settings->SetStaticTimeOfDayHours(PreviousStaticHour);
+		if (auto* Day=USimCopterDayNightSubsystem::Get(this))
+		{
+			Day->ApplyTimeOfDaySettings();
+			if (PreviousLiveHour>=0) Day->RestoreSavedTimeOfDay(PreviousLiveHour);
+		}
+	}
 }
 
 void USimCopterCityIntro::StartMusic()
@@ -189,6 +226,10 @@ void USimCopterCityIntro::UpdateCamera()
 	if (Ambient.IsValid()) Ambient->UpdateCityTour(Elapsed);
 	if (Controller.IsValid() && Controller->PlayerCameraManager)
 		Controller->PlayerCameraManager->UpdateCamera(0);
+	// The tour pauses city ticks. Refresh the billboard geometry AFTER publishing the
+	// new camera, or old smoke/beacon cards can become large sheets across the flyover.
+	for (TActorIterator<ASimCity2000CityActor> It(GetWorld()); It; ++It)
+		It->RefreshCameraFacingEffects(GetWorld()->GetTimeSeconds()+Elapsed);
 	if (Overlay.IsValid())
 	{
 		auto Widget=StaticCastSharedPtr<SSimCopterCityTour>(Overlay);
@@ -217,6 +258,7 @@ void USimCopterCityIntro::TickComponent(float DeltaTime,ELevelTick TickType,FAct
 void USimCopterCityIntro::Finish()
 {
 	StopMusic();
+	RestoreLighting();
 	if (!bPlaying) return;
 	bPlaying=false;
 	SetComponentTickEnabled(false);
@@ -232,6 +274,8 @@ void USimCopterCityIntro::Finish()
 		// Restore the possessed pawn, including a helicopter restored from a saved game.
 		if (PC->GetPawn()) PC->SetViewTarget(PC->GetPawn());
 		if (PC->PlayerCameraManager) { PC->PlayerCameraManager->SetGameCameraCutThisFrame(); PC->PlayerCameraManager->UpdateCamera(0); }
+		for (TActorIterator<ASimCity2000CityActor> It(World); It; ++It)
+			It->RefreshCameraFacingEffects(World->GetTimeSeconds());
 		PC->SetIgnoreMoveInput(false); PC->SetIgnoreLookInput(false);
 		PC->bShouldPerformFullTickWhenPaused=bPreviousFullCameraUpdate;
 		PC->SetInputMode(FInputModeGameOnly()); PC->bShowMouseCursor=bPreviousCursor;

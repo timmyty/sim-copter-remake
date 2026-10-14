@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.15 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.15.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.16 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.16.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [Quick summary](#quick-summary-added-or-expanded) · [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -55,7 +55,7 @@ such as custom MP4 playback.
 
 ## Start playing
 
-1. Download **`SimCopterRemake-v1.0.15-Windows-x64.7z`** from the latest release.
+1. Download **`SimCopterRemake-v1.0.16-Windows-x64.7z`** from the latest release.
 2. Extract the **entire archive** and run **`SimCopterRemake.exe`** in the extracted folder.
 3. Choose **New Career Game** or **New User Game**, then select a city.
 
@@ -63,7 +63,15 @@ Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the lau
 Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 `Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
 
-## New in v1.0.15: live lighting and clean city tours
+## New in v1.0.16: smoother flight and gameplay updates
+
+Fast travel spreads population creation across frames, NPC animations reuse geometry,
+and mouse look stays consistent as frame time changes. Radio gains restored ads,
+station shuffle controls and on-foot playback. Medic boarding, fatal-accident recovery,
+loading cameras, parks, paving and the sun/moon presentation are also updated.
+[Release notes and validation](Docs/Releases/v1.0.16.md).
+
+## Also included from v1.0.15: live lighting and clean city tours
 
 Warehouse/hangar materials, smoke and other effects now update their brightness
 when the time changes in Photo Mode or during gameplay. Paused exposure also
@@ -91,11 +99,11 @@ from 849 MiB to 72.65 MiB. The original-game lossless FLAC soundtrack is preserv
 Saved KINV positions, song order, pause and seeking remain supported.
 
 The normal game download contains Shipping only. For GPU/performance diagnostics,
-download **`SimCopterRemake-v1.0.15-Optional-Development-Windows-x64.7z`** from the same
+download **`SimCopterRemake-v1.0.16-Optional-Development-Windows-x64.7z`** from the same
 release and extract its contents **inside the extracted game folder**, beside the
 root `SimCopterRemake.exe`. This adds the matching Development executable and both
 diagnostic launchers. It requires the full game download and is optional for play.
-[Release notes](Docs/Releases/v1.0.15.md) · [Music details](Docs/InvokeRadio.md)
+[Release notes](Docs/Releases/v1.0.16.md) · [Music details](Docs/InvokeRadio.md)
 
 ## Also included from v1.0.12: controller navigation, medical crew and cockpit improvements
 

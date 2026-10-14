@@ -38,7 +38,7 @@ namespace SimCopterHangarShop
 {
 // --- upgrades page rows (the page's own column-major order) ---
 
-constexpr int32 UpgradeRowCount = 6;
+constexpr int32 UpgradeRowCount = 7;
 
 // FUN_0042d840's literal {0, 1, 3, 4, 2}: upgrades page row -> equipment bit index.
 SIMCOPTERREMAKE_API int32 GetEquipmentIndexForUpgradeRow(int32 UpgradeRow);

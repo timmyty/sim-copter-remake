@@ -11,7 +11,7 @@ enum class ECode : uint8
 {
 	Superpower, Shields, Fuel, CEO, Home, Helicopter, Complete, Map,
 	Warp, Money, Radioactivity, Pam, Megaphone, SundayDrive, Directions, Gort, Movies,
-	HSI, PlayVideo, StopVideo,
+	HSI, PlayVideo, StopVideo, UnlockApache,
 };
 
 struct FCommand

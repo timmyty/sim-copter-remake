@@ -1,14 +1,14 @@
 # Cockpit radio menu
 
-Double-click the radio housing or its tuning strip, or press **Ctrl+R**, while
-seated in the helicopter, or hold **R3** and press **View / Touchpad** on the controller.
-The menu pauses flight while the radio continues playing, and uses a metal faceplate,
+Double-click the cockpit radio housing or its tuning strip, or press **Ctrl+R**.
+The keyboard shortcut and **R3 + View / Touchpad** also work while on foot.
+The menu pauses gameplay while the radio continues playing, and uses a metal faceplate,
 beveled frame, screw heads, dark inset displays and amber lettering to match the
 cockpit instruments.
 
 - Choose a station on the left and a numbered item on the right.
 - **Play Track**, Enter, or double-clicking a track starts that exact item at its
-  beginning and keeps the menu open. **Tune Station** starts its first item.
+  beginning and keeps the menu open. **Tune Station** tunes normally in that station's selected mode.
 - The open panel has **Play/Pause**, **Previous/Next**, **-10s/+10s**, a draggable
   seek bar, elapsed/total time and volume. The closed cockpit radio keeps its existing controls.
   Seeking retains pause, clamps to the track, and works with WAV and asynchronous FLAC playback.
@@ -16,31 +16,42 @@ cockpit instruments.
 - Controller **A** plays the selected row, **Y** pauses/resumes, **LB/RB** selects
   the previous/next track, **LT/RT** rewinds/advances ten seconds, and **B / View** closes.
   D-pad navigates the panel. Keyboard **Space** pauses/resumes.
-- Playback continues in the displayed order and loops back to the first item.
-  Original stations list songs, shared commercials, DJ clips, then jingles.
-  Each group is sorted by its media filename. KINV retains its 21-song album order.
-- Esc, **Close**, or Ctrl+R closes browsing and returns control to the helicopter.
+- Press **SHUFFLE / SEQUENTIAL** to toggle the browsed station's playback mode.
+  Original stations default to the original shuffled music/DJ/commercial/jingle
+  schedule, with commercials enabled by default. Optional music collections also
+  default to shuffle; KINV defaults to its 21-song album order. Each station retains
+  its selected mode for the current city session. Toggling preserves the current track,
+  playhead, volume and pause state.
+- Sequential mode follows the displayed list and wraps. The browser groups songs,
+  shared commercials, DJ clips, then jingles, sorted by filename; it is a catalog,
+  not the play order in Shuffle mode. Selecting a track does not change the mode.
+- Esc, **Close**, or Ctrl+R closes browsing and returns control to the pilot.
   Use Tab and arrow keys or the mouse to navigate; lists scroll and full track
   titles are available in tooltips.
 
 Choosing an item powers the radio on while retaining its volume, including mute.
-An explicit playlist includes its commercials/DJ clips even if the automatic
-radio's Sound settings disable those categories; the stored settings are not
-changed. Dial tuning to a different station returns to the existing automatic
-scheduler. KINV still saves its song and playback position when leaving the
-aircraft or switching away; an explicit song selection resets that song to zero.
-The new original-station manual queue lasts for the current station/world.
+An explicit track selection can play a commercial/DJ clip even if Sound settings
+disable that category. Automatic shuffle playback honors those settings; sequential
+mode traverses the whole catalog. KINV saves its song and position periodically,
+when powered off and when switching away. An explicit song selection starts at zero.
+Leaving or entering the helicopter no longer interrupts audio, decoding, seeking or pause.
 
 The existing single-click tuner, right-click power control and volume rocker
-remain available. The new menu is cockpit-only, cannot cover another menu,
+remain available. The menu cannot cover another menu,
 Photo Mode or replay, and cannot interrupt a city introduction. No new assets,
 plugins, cooked maps or save-format changes are required.
 
-Implementation: `SimCopterRadio` owns discovered playlist entries and sequential
-playback; `SSimCopterRadioMenu` displays that same ordering; the player controller
+Implementation: `SimCopterRadio` owns discovered playlists and playback modes;
+`SSimCopterRadioMenu` displays the catalog; the player controller
 uses the existing settings screen's pause and input lifecycle. This is an explicit
-remake extension; the cited retail shuffle and probability scheduler remains the
-default until a manual playlist is chosen.
+remake extension. The retail cycle comes from `FUN_0042e570` (one each of slots
+0/1/2/3), `FUN_00430070` (category shuffle), `FUN_0042fa20`/`FUN_0042f3d0`
+(initial file shuffle and wrap), and `FUN_0042f160` (four-second gap, 20% DJ,
+90% commercial, 20% jingle and 10% extra music). The initial shuffle seed is the
+remake's, so it reproduces the scheduling rules rather than a fixed song sequence.
+
+Current radio/medic change and validation: [RadioAndMedicUpdate.md](RadioAndMedicUpdate.md).
+The older validation records below describe their respective revisions.
 
 Validation results: [RadioMenuResults.json](validation/RadioMenuResults.json).
 Editor, Shipping and Development builds succeeded. All 49 related automation

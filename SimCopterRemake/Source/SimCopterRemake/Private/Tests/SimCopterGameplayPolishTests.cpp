@@ -103,17 +103,25 @@ bool FSimCopterGameplayPolishTest::RunTest(const FString& Parameters)
 	Controller->Possess(Heli);
 	Heli->CurrentFuelGallons = Heli->HelicopterTuning.FuelGallons * 0.11f;
 	Heli->UpdateHelicopterAudio(0.016f);
-	TestFalse(TEXT("No premature low-fuel warning"), Heli->bLowFuelWarningPlayed);
+	TestFalse(TEXT("No premature low-fuel warning"), Heli->LowFuelWarningSeconds > 0);
 	Heli->CurrentFuelGallons = Heli->HelicopterTuning.FuelGallons * 0.10f;
 	Heli->UpdateHelicopterAudio(0.016f);
-	TestTrue(TEXT("Warn at ten percent"), Heli->bLowFuelWarningPlayed);
+	TestTrue(TEXT("Warn at ten percent"), Heli->LowFuelWarningSeconds > 0);
 	const int32 CueCount = Audio->LooseComponents.Num();
 	TestTrue(TEXT("Fuel warning creates an audible PCM cue"), CueCount > 0);
 	Heli->UpdateHelicopterAudio(0.016f);
 	TestEqual(TEXT("Low fuel does not restart every frame"), Audio->LooseComponents.Num(), CueCount);
+	Heli->UpdateHelicopterAudio(19.0f);
+	TestEqual(TEXT("Warning stays quiet before twenty seconds"), Audio->LooseComponents.Num(), CueCount);
+	for (auto& End : Audio->LooseEndTimes) End.Value = 0; // Simulated 20 seconds also finish PCM playback.
+	Heli->UpdateHelicopterAudio(1.0f);
+	TestEqual(TEXT("Warning repeats at twenty seconds"), Audio->LooseComponents.Num(), CueCount + 1);
+	for (auto& End : Audio->LooseEndTimes) End.Value = 0;
+	Heli->UpdateHelicopterAudio(20.0f);
+	TestEqual(TEXT("Warning repeats through the same low-fuel episode"), Audio->LooseComponents.Num(), CueCount + 2);
 	Heli->CurrentFuelGallons = Heli->HelicopterTuning.FuelGallons * 0.5f;
 	Heli->UpdateHelicopterAudio(0.016f);
-	TestFalse(TEXT("Refuelling rearms fuel warning"), Heli->bLowFuelWarningPlayed);
+	TestFalse(TEXT("Refuelling rearms fuel warning"), Heli->LowFuelWarningSeconds > 0);
 
 	Controller->Screen = ESimCopterSettingsScreen::Menu;
 	Controller->PushPause();

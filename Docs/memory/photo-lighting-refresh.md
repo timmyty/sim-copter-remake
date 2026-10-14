@@ -1,41 +1,19 @@
-# Live lighting and city-tour overlay — October 14, 2026
+# Live material brightness during paused time changes — October 14, 2026
 
-Photo Mode froze the actor ticks that updated smoke, warehouse/hangar emissive
-materials and interior fill lights. The exposure calculation could be correct
-while those consumers retained an old daylight value. The shared exposure
-subsystem now ticks presentation while paused, using weak material/light bindings
-that retain each owner's multiplier, minimum and light-source/surface type.
-Explicit time-of-day seeks invalidate the current-frame sample and refresh the
-bindings immediately. Gameplay and animation remain paused.
+The user's midnight Photo Mode screenshot showed smoke and the warehouse retaining daylight emissive values. The brightness calculation itself was sampled by the owners' gameplay ticks or geometry rebuilds, which pause during Photo Mode. The hangar also updated only every 0.15 simulation seconds. This affected other effects sharing the same pattern.
 
-All runtime writers of the shared `EmissiveNits` parameter were audited and routed
-through this binding path: smoke, fire, pedestrian cards, particles, beacons,
-dispatch/recovery markers, scoreboards, drive-in screens and taser effects.
-The hangar's physical fill lights use equivalent weak bindings. Expired objects
-are discarded; authored off states and multipliers survive a paused refresh.
+`USimCopterEffectExposureSubsystem` now owns a presentation tick that runs while paused. Applying an emissive value registers a weak material binding with the owner's current multiplier, minimum and light-source/surface classification. The tick refreshes changed values, removes expired bindings, and retains a frozen effect's authored state, including zero intensity. The hangar's two physical fill lights use equivalent weak bindings. This changes lighting without running gameplay ticks or advancing mission time. Explicit settings/saved-time seeks also invalidate the current-frame sample and refresh bindings immediately.
 
-Directional-light discovery is throttled, but the current key is selected from
-the cached set by ground illuminance on every sample. This respects visibility
-and `bAffectsWorld` and allows the moon to replace a sun below the horizon.
+All runtime writers of the shared `EmissiveNits` parameter were audited. Smoke, fire, legacy pedestrian cards, particle kernels, beacons, dispatch/recovery markers, scoreboards, drive-in screens and helicopter/on-foot taser effects now use the same binding path. The source scan found no remaining direct runtime writes outside the shared subsystem. The dispatch marker still reads the computed brightness for its existing diagnostics.
 
-UE 5.8 eye adaptation reads the render family's world delta. The per-world view
-extension supplies real delta when the paused family has zero world delta,
-without changing its absolute game time or paused flag. It leaves an existing
-nonzero presentation delta alone.
+The old directional-light cache retained whichever light was strongest when first discovered. Cache the set instead and select the strongest *current ground illuminance*, respecting visibility and `bAffectsWorld`, so an intense sun below the horizon cannot exclude moonlight. Component discovery remains throttled; the light values are evaluated each presentation refresh.
 
-`SimCopter.City.ExposureRefreshWhilePaused` uses actual hangar and smoke materials
-to cover paused and unpaused transitions, moon selection, authored scales and
-off state, frozen game time, and the exposure view extension. Its D3D12 branch
-waits across render frames before capturing a synthetic night scene. The capture
-uses fixed exposure; it does not reproduce the user's exact city.
+The renderer has a separate pause issue: UE 5.8's `PostProcessEyeAdaptation.cpp` fills `DeltaWorldTime` from the view family, and `PostProcessEyeAdaptation.usf` uses it to interpolate exposure. The existing per-world view extension supplies real frame delta when a paused render family has zero world delta. Absolute shader time and the paused flag stay unchanged, so this does not move the frozen scene or advance gameplay. The city's tour extension already supplies its own nonzero presentation delta and is left alone.
 
-`SSimCopterControllerOverlay::GetPauseVisibility` excludes an active city tour
-through `ASimCopterGameMode::IsCityIntroPlaying()`. Normal gameplay pause behavior
-is unchanged. This small UI condition was reviewed in source.
+The new integration case `SimCopter.City.ExposureRefreshWhilePaused` reproduced five failing assertions before the fix using the actual smoke material, warehouse shell and fill lights. It now checks paused day/night/day changes, ordinary play without owner ticks, moon selection, hidden-sun rejection, authored multipliers/off state, frozen simulation time, and the view-family exposure delta. The existing Photo Mode lifecycle and tour restoration tests also pass.
 
-The v1.0.15 publication checkout applies these scoped fixes to `daf151d`, retaining
-the v1.0.14 cooked runtime content byte for byte. Other local development changes
-are outside this release. Build, automation and packaged-startup evidence is in
-[WindowsRelease115Results.json](../validation/WindowsRelease115Results.json).
-Local release scripts, logs, source hashes and cleanup receipts are under
-`Docs/scratchpad/release-v1.0.15/` in the development workspace.
+Validation and source baselines are under `Docs/scratchpad/photo-lighting-refresh/`. The related headless run passed all 42 cases (40 clean, two synthetic-fixture warning cases). The offscreen branch renders the warehouse at night; unlike the headless branch it exercises GPU materials. The first capture was taken before render state settled, so the fixture now waits across engine frames. No interactive playthrough or complete user-city screenshot reproduction is claimed. Final installation details are recorded in `installation.json` after backup and SHA-256 verification.
+
+The final D3D12 offscreen case passed without test warnings, and the capture was inspected: the warehouse's structure is visible and the smoke is dim, with no full-building white bloom. It uses a synthetic moonlit scene with fixed camera exposure, not the user's city or automatic-exposure view; the paused exposure delta is separately checked through the registered view extension. Editor, Shipping and Development all built successfully. After the user closed the game, both installed executables and their PDBs were replaced with verified backups and SHA-256 hashes. The sandbox denied replacing the Shipping executable; the same guarded installer then completed with tool-approved elevation. No publication checkout or release was changed.
+
+Publication follow-up: [v1.0.15 and release cleanup](github-release-v1.0.15.md).

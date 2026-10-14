@@ -104,12 +104,10 @@ public:
 	void StartLevelPlayback();
 	bool IsPowered() const { return bPowered; }
 
-	/**
-	 * The radio is fitted to the player helicopter, not to the world. Possession turns this on;
-	 * leaving the aircraft turns it off without changing the player's power setting or station.
-	 */
+	/** Possession records the cockpit state; city playback continues while walking. */
 	void SetPlayerInHelicopter(bool bInPlayerHelicopter);
 	bool IsPlayerInHelicopter() const { return bPlayerInHelicopter; }
+	bool IsLevelPlaybackStarted() const { return bLevelPlaybackStarted; }
 
 	/** Hold the station behind a cityride without changing power, tuning or saved progress. */
 	void SetCityIntroSuspended(bool bSuspended);
@@ -129,8 +127,11 @@ public:
 
 	/** Songs, commercials, DJ clips, then jingles; KINV contains only its ordered songs. */
 	TArray<FSimCopterRadioTrack> GetStationPlaylist(int32 Index) const;
-	/** Start at zero, then follow the displayed playlist in order, wrapping at the end. */
+	/** Start at zero, then continue in the station's selected playback mode. */
 	bool PlayStationTrack(int32 Index, int32 PlaylistIndex);
+	/** Retail stations/optional collections default to shuffle; KINV defaults to album order. */
+	bool IsShuffleEnabled(int32 Index) const;
+	void SetShuffleEnabled(int32 Index, bool bEnabled);
 	int32 GetSelectedPlaylistIndex() const { return ManualPlaylistIndex; }
 	bool StepTrack(int32 Delta);
 	void TogglePlaybackPaused();
@@ -221,6 +222,9 @@ private:
 	bool bSequentialPlaying = false;
 	int32 ManualPlaylistIndex = INDEX_NONE;
 	TArray<FSimCopterRadioTrack> ManualPlaylist;
+	TMap<int32, bool> ShuffleOverrides;
+	void MarkTrackPlayed(ESimCopterRadioSlot Slot, int32 TrackIndex);
+	int32 NextArtistTrack();
 	bool PlayManualTrack(USimCopterAudioSubsystem* Audio);
 	const TArray<FString>& GetStationList(int32 Index, ESimCopterRadioSlot Slot) const;
 
@@ -233,6 +237,7 @@ private:
 	int32 StationIndex = 0;
 	bool bPowered = true;
 	bool bPlayerInHelicopter = false;
+	bool bLevelPlaybackStarted = false;
 	float Volume = 1.0f;
 
 	/** Indexed by ESimCopterRadioSlot; music can never be switched off. */
@@ -262,7 +267,7 @@ private:
 	void ReshufflePattern();
 	const TArray<FString>& GetList(ESimCopterRadioSlot Slot) const;
 
-	/** Advances the cursor for a category, reshuffling and wrapping at the end. */
+	/** Advances a category's bag, wrapping at the end (retail keeps its initial shuffled order). */
 	int32 TakeNext(ESimCopterRadioSlot Slot);
 
 	/** Resolves a list entry to an absolute path and starts it. */

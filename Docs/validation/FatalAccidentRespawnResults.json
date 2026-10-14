@@ -1,0 +1,164 @@
+{
+  "Date": "2026-10-14",
+  "Behavior": "Fatal accidents return directly to the surviving helicopter, or use crash recovery to a free airport pad for a destroyed helicopter.",
+  "Baseline": {
+    "Failed": 6,
+    "Note": "Six fatal scenarios failed before the runtime fix. Camera-manager fixture corrected before final validation.",
+    "Passed": 1
+  },
+  "Builds": {
+    "Shipping": "Succeeded",
+    "Editor": "Succeeded",
+    "Development": "Succeeded"
+  },
+  "Tests": {
+    "ReportedSuccess": 19,
+    "HeadlessNoOp": [
+      "SimCopter.AirOperations.TaserVisuals"
+    ],
+    "Cases": [
+      {
+        "fullTestPath": "SimCopter.AirOperations.HelperCruisePacing",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.AirOperations.TaserVisuals",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.PilotRespawn.Airborne",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.PilotRespawn.AutopilotOff",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.PilotRespawn.Destroyed",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.PilotRespawn.ExpiredWithoutController",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.PilotRespawn.Grounded",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.PilotRespawn.Nonfatal",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.PilotRespawn.SavedFatalFall",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RemoteRecovery.AutopilotSwitch",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RemoteRecovery.SaveAndObstruction",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RescuePilot.PassengerIdentity",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RescuePilot.RuntimeRegression",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RescuePilot.ShiftRun",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RescuePilot.ShoulderAim",
+        "state": "Success"
+      },
+      {
+        "fullTestPath": "SimCopter.RooftopSafety.ExitAndContainment",
+        "state": "Success"
+      }
+    ],
+    "ExercisedGameplayCases": 18,
+    "NotRun": 0,
+    "Failed": 0
+  },
+  "SourceFiles": [
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootAirOperations.cpp",
+      "SHA256": "F0CDE6B50A6209060DFE93987AC260123A42ECF041218C1C829D94EA295E4F1F"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootPawn.cpp",
+      "SHA256": "C0BE6210E0472D1D2AA4B76F95B1EBE128F4136D9D2B1D413E6FFB4E3CE0A804"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPilotRecovery.cpp",
+      "SHA256": "811B996FA9B1EB03832D4690BB8B2E80CF39298AFA5992B36CD5274F51DDB8A8"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterOnFootPawn.h",
+      "SHA256": "BB27B155DA02FE26973E4A404F79DB07C9113E40AFA5F8603953E75D6B2AF64C"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h",
+      "SHA256": "50CEE392D7543B3454C5F5AD1D15D5150CC329E61F1BFAB881BA79EF9BB71DB6"
+    },
+    {
+      "Path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterFatalRespawnTests.cpp",
+      "SHA256": "116368C6CB85258D9E0F1C65DE5B55193984CB1A76CBC6EB866E321ADCBE1393"
+    }
+  ],
+  "Installation": {
+    "InstalledAtUtc": "2026-10-14T20:07:01.87576Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "516311B33488B9B47CFFF3DE1A0960307880B14B371792B00D6951F6E71E590F",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fatal-respawn/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "7EB75398C8AC649BD9D34E75A983DA0915D2C12E250DBEA61C9149753493A79A"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "8DA5616E0B1AFAABDC54C3C48FD6708EF4899C4E490F730BBEEC44BB93E02F61",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fatal-respawn/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "4093E4304C7C9728B3135CB3FABC5953926D965F0A43D41EF6E434B6849B0467"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "A8219348FC45F5A13F2B18F7BD422FB2BEAB34C518AE72EA467B45F12A1D0454",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fatal-respawn/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "F9F1408005CD995CF5318901DDC2445C8A415A45F8CC7556422CC3BBA5B05E28"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "74135B4A37639A8E33E5FF29DB78DB3410DD49815460D1384576F1C2DFDE30BC",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fatal-respawn/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "B7876E32B504A26544C4171554FB59BF312896A217B9C421A364586B972DFD6B"
+      }
+    ],
+    "InteractiveGameplayChecked": false
+  },
+  "InteractiveGameplayChecked": false,
+  "PublicationChanged": false,
+  "EvidenceDirectory": "Docs/scratchpad/fatal-respawn"
+}

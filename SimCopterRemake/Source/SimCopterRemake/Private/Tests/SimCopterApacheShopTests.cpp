@@ -67,7 +67,7 @@ bool FSimCopterApacheShopTest::RunTest(const FString& Parameters)
 		if (!Def.bApacheArmament) Highest = FMath::Max(Highest, Career->GetHelicopterPrice(Def.InternalTypeIndex));
 	const int32 Price = Career->GetHelicopterPrice(2);
 	TestTrue(TEXT("Reference prices loaded"), Highest > 0);
-	TestEqual(TEXT("Apache price tracks most expensive civilian"), Price, Highest * 3);
+	TestEqual(TEXT("Apache price tracks most expensive civilian"), Price, (Highest * 3) / 2);
 	auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
 	Missions->MissionSystem.Initialize(nullptr, 1);
 	Missions->MissionSystem.LoadCareerData(SimCopterOriginalGame::ResolveRoot() / TEXT("tweak/career.twk"));
@@ -111,7 +111,7 @@ bool FSimCopterApacheShopTest::RunTest(const FString& Parameters)
 	Missions->AddSessionCash(1);
 	const FTransform Before = Current->GetActorTransform();
 	TestTrue(TEXT("Exact funds buy armed delivery"), SimCopterHangarShop::BuyHelicopter(Shop, Row, Message));
-	TestEqual(TEXT("Exactly three times civilian cost charged"), Missions->GetSessionCash(), 0);
+	TestEqual(TEXT("Exact Apache price charged"), Missions->GetSessionCash(), 0);
 	TestEqual(TEXT("Delivery replaces unclaimed aircraft without duplicate"), Count(), 2);
 	TestTrue(TEXT("Current helicopter preserved"), Before.Equals(Current->GetActorTransform()));
 	TestTrue(TEXT("Ownership recorded"), Career->OwnsHelicopter(2));

@@ -600,16 +600,16 @@ void SSimCopterHangarMenu::BuildCatalogUpgradesPage(SConstraintCanvas& Canvas)
 	}),10,PaperInk,true);
 	Text(310,359,295,34,TAttribute<FText>::CreateLambda([this](){return FText::FromString(SimCopterEquipmentPreview::GetFittingDescription(UpgradeRow));}),9,PaperInkDim);
 
-	const TCHAR* Help[]={TEXT("Drop water on fires."),TEXT("Direct traffic and crowds."),TEXT("Includes ten canisters."),TEXT("Aim water from the bucket."),TEXT("Winch people into the cabin."),TEXT("Recover cars, boats and people.")};
+	const TCHAR* Help[]={TEXT("Drop water on fires."),TEXT("Direct traffic and crowds."),TEXT("Includes ten canisters."),TEXT("Aim water from the bucket."),TEXT("Winch people into the cabin."),TEXT("Recover cars, boats and people."),TEXT("Scope and nonlethal remote fire.")};
 	for (int32 Row=0; Row<SimCopterHangarShop::UpgradeRowCount; ++Row)
 	{
-		const float Y=96+Row*42;
+		const float Y=96+Row*36;
 		auto B=SNew(SButton).ButtonStyle(&EquipmentButtonStyle.Get()).IsFocusable(true).ContentPadding(3)
 			.ButtonColorAndOpacity_Lambda([this,Row](){return Row==UpgradeRow ? FLinearColor(.98f,.75f,.35f) : FLinearColor(.96f,.94f,.85f);})
 			.OnClicked(FOnClicked::CreateSP(this,&SSimCopterHangarMenu::HandleActivateUpgradeRow,Row))
 			[
 				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(34).HeightOverride(34)
+				+SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(30).HeightOverride(30)
 					[SNew(SSimCopterEquipmentIcon).Row(Row)
 					.Owned_Lambda([this,Row](){return SimCopterHangarShop::GetUpgradeRowState(Shop,Row).bOwned;})
 					.Highlighted_Lambda([this,Row](){return UpgradeRow==Row;})]]
@@ -621,7 +621,7 @@ void SSimCopterHangarMenu::BuildCatalogUpgradesPage(SConstraintCanvas& Canvas)
 			];
 		ControllerFocusableWidgets.Add(B);
 		B->AddMetadata(MakeShared<FSimCopterMenuFocusOutline>(FSlateRect(0,0,1,1),FSlateRect(0,0,1,1),.08f));
-		AddAt(Canvas,22,Y,271,40,B);
+		AddAt(Canvas,22,Y,271,34,B);
 	}
 	Text(24,354,270,16,TAttribute<FText>::CreateLambda([this]()
 	{
@@ -828,7 +828,8 @@ void SSimCopterHangarMenu::SelectEquipmentAction()
 	// Read the new row directly; Slate may still have the previous row's enabled
 	// attributes cached until the next prepass.
 	const auto State=SimCopterHangarShop::GetUpgradeRowState(Shop,UpgradeRow);
-	const int32 Index=State.bCanBuy ? 8 : State.bCanSell ? 9 : 10;
+	const int32 ActionStart=2+SimCopterHangarShop::UpgradeRowCount;
+	const int32 Index=ActionStart+(State.bCanBuy ? 0 : State.bCanSell ? 1 : 2);
 	if (ControllerFocusableWidgets.IsValidIndex(Index)) SetControllerSelection(ControllerFocusableWidgets[Index]);
 }
 
@@ -871,7 +872,7 @@ FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const F
 		if (Key==EKeys::Gamepad_FaceButton_Right)
 		{
 			const int32 Index=ControllerFocusableWidgets.IndexOfByKey(GetControllerSelection());
-			if (Index>=8 && Index<=10)
+			if (Index>=2+SimCopterHangarShop::UpgradeRowCount && Index<=4+SimCopterHangarShop::UpgradeRowCount)
 			{
 				if (!Event.IsRepeat()) SetControllerSelection(ControllerFocusableWidgets[2+UpgradeRow]);
 				return FReply::Handled();
@@ -887,7 +888,7 @@ FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const F
 
 void SSimCopterHangarMenu::OnControllerSelectionChanged(int32 Index)
 {
-	// The equipment page's two arrow buttons precede its six always-enabled item buttons.
+	// The equipment page's two arrow buttons precede its always-enabled item buttons.
 	if (Page==EPage::Catalog && CatalogRow==INDEX_NONE && Index>=2 && Index<2+SimCopterHangarShop::UpgradeRowCount)
 		HandleSelectUpgradeRow(Index-2);
 }

@@ -29,7 +29,10 @@ float FSimCopterFlashingLightSchedule::GetWorldSizeForScreenPixels(
 	const float HorizontalFovDegrees,
 	const float ScreenPixels)
 {
-	const float Width = FMath::Max(ViewportWidthPixels, 1.0f);
+	// A missing/minimized viewport has no physical pixel footprint to preserve.
+	// Dividing by one here turns a distant beacon into a screen-sized opaque sheet.
+	if (!FMath::IsFinite(ViewportWidthPixels) || ViewportWidthPixels <= 1.0f) return 0;
+	const float Width = ViewportWidthPixels;
 	const float HalfFovRadians = FMath::DegreesToRadians(
 		FMath::Clamp(HorizontalFovDegrees, 1.0f, 179.0f) * 0.5f);
 	return 2.0f * FMath::Max(CameraDepthCm, 0.0f) * FMath::Tan(HalfFovRadians) *
@@ -182,8 +185,14 @@ void USimCopterFlashingLightsComponent::SyncLightsFromPlayerCamera(double GameTi
 	int32 ViewportWidth = 0;
 	int32 ViewportHeight = 0;
 	PC->GetViewportSize(ViewportWidth, ViewportHeight);
-	ActiveViewportWidthPixels = FMath::Max(float(ViewportWidth), 1.0f);
-	ActiveHorizontalFovDegrees = CameraManager->GetFOVAngle();
+	// Retain the last usable projection (or the original 560-pixel default) during
+	// startup/minimization. Camera-facing geometry must still follow a paused tour.
+	const float Width = ViewportWidth > 1 && ViewportHeight > 1 ? float(ViewportWidth) : ActiveViewportWidthPixels;
+	const float Fov = CameraManager->GetFOVAngle();
+	if (!FMath::IsNearlyEqual(Width, ActiveViewportWidthPixels) || !FMath::IsNearlyEqual(Fov, ActiveHorizontalFovDegrees))
+		bHasDrawnOnce = false; // Resizing or changing FOV also changes the one-pixel floor.
+	ActiveViewportWidthPixels = Width;
+	ActiveHorizontalFovDegrees = Fov;
 
 	SyncLights(GameTimeSeconds, CameraManager->GetCameraLocation(), CameraManager->GetCameraRotation());
 }
