@@ -31,7 +31,8 @@ Manual extraction also works: merge the package's `SimCopterRemake` folder besid
 the root executable. To uninstall a collection, remove its folder under
 `Radio/OptionalMusic`. The game discovers nonempty collections at startup. Existing
 radio controls support track selection, previous/next, pause, seeking and volume.
-Collections do not insert original radio commercials or DJs.
+Collections do not insert original radio commercials or DJs. Long game titles wrap
+in a wider station column, with full titles available as tooltips.
 
 ## Downloads by game
 
@@ -135,7 +136,8 @@ downloads, successful copy hashes, repeated installation and custom-file protect
 Editor, Shipping and Development builds succeeded. A complete installation verified
 all 1,005 installed file hashes. Both packaged executables survived hidden 30-second
 startups, and the Development log confirmed 38 radio stations (6 existing + 32 new).
-These are automated checks;
+Three radio-menu cases also passed with all collections loaded; offscreen 4:3 and
+widescreen renders were inspected for long game names. These are automated checks;
 interactive playback and manual listening were not performed.
 
 See [catalog](OptionalMusicCatalog.json), [validation receipt](validation/OptionalMusicResults.json)

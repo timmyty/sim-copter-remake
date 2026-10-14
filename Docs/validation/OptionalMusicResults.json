@@ -5,15 +5,15 @@
   "builds": {
     "Editor": {
       "result": "Succeeded",
-      "log_sha256": "12ec08a03d6bfdbafd0efe3eafa7cba4ddc8e1e0f7848a1b6435788f15a35761"
+      "log_sha256": "69e95b6604d309fbbe4e45b8dbaf07d0fc76d32db2475bd10249b2a7b63a83c6"
     },
     "Shipping": {
       "result": "Succeeded",
-      "log_sha256": "c266cd8292c94f1e7304c612743a6f85cad8933f66e64f1ad992f788ef41d480"
+      "log_sha256": "68d3029aaf739d9b7465052692a4ad62e3fca4518139fd0bd0827b490aaa2b99"
     },
     "Development": {
       "result": "Succeeded",
-      "log_sha256": "17b4c1f576b4bed0d680cba8caf484246aa60a272a079b833e74a689fdad12c7"
+      "log_sha256": "cffeb6e852e21bb6ef56d8dd5ea0868e7209784079d971d5c320812979bc0547"
     }
   },
   "automation": {
@@ -101,21 +101,21 @@
   "startup": [
     {
       "total_radio_stations": 38,
-      "installed_recordings": 959,
-      "limitation": "Headless startup only; no interactive gameplay or manual listening.",
       "installed_collections": 32,
-      "survived": true,
-      "seconds": 30.4162796,
-      "mode": "shipping"
+      "limitation": "Headless startup only; no interactive gameplay or manual listening.",
+      "installed_recordings": 959,
+      "seconds": 30.3930985,
+      "mode": "shipping",
+      "survived": true
     },
     {
       "total_radio_stations": 38,
-      "installed_recordings": 959,
-      "limitation": "Headless startup only; no interactive gameplay or manual listening.",
       "installed_collections": 32,
-      "survived": true,
-      "seconds": 30.592336,
-      "mode": "development"
+      "limitation": "Headless startup only; no interactive gameplay or manual listening.",
+      "installed_recordings": 959,
+      "seconds": 30.7184835,
+      "mode": "development",
+      "survived": true
     }
   ],
   "installed_collection_discovery": {
@@ -127,5 +127,19 @@
     "No interactive gameplay or manual listening check.",
     "Existing source damage cannot be reconstructed by container repair.",
     "Conservative matching retains labelled alternate arrangements/cuts and uncertain matches."
-  ]
+  ],
+  "radio_menu_validation": {
+    "offscreen_cases_passed": 3,
+    "failed": 0,
+    "collections_loaded": 32,
+    "resolutions": [
+      "1280x960",
+      "1280x720"
+    ],
+    "long_collection_names": "wrapped and visually inspected",
+    "screenshots": {
+      "radio-menu-optional-4x3.png": "bc1adceee4a62b39e468ed1ddbe83e62db79acb4d71d421e6bbbd5023b0c7777",
+      "radio-menu-optional-wide.png": "d44ae53f32e7a8a0387fb11322e4552e0f12e68f9cde98b8fdb6a81470cf2b43"
+    }
+  }
 }
