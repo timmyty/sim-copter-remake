@@ -446,8 +446,15 @@ bool FSimCopterResponderRepathTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Failed searches finish and retry within the fixed interval"),Restarts>1 && Restarts<=360);
 	Wall->SetActorEnableCollision(false);
 	Wall->Destroy();
-	World->Tick(LEVELTICK_TimeOnly, 1.1f);
-	TestTrue(TEXT("Retry finds a route to the reachable replacement target"), Responder->GetMedicWaypoint(OtherTarget->GetActorLocation(), OtherTarget, Waypoint));
+	// The production search is sliced and rate-limited. Advance ordinary frames through
+	// its retry deadline instead of requiring completion in a single (possibly clamped) tick.
+	bool bFoundReplacement = false;
+	for (int32 Frame=0; Frame<60 && !bFoundReplacement; ++Frame)
+	{
+		World->Tick(LEVELTICK_TimeOnly,1.f/15);
+		bFoundReplacement = Responder->GetMedicWaypoint(OtherTarget->GetActorLocation(),OtherTarget,Waypoint);
+	}
+	TestTrue(TEXT("Retry finds a route to the reachable replacement target"),bFoundReplacement);
 	TestTrue(TEXT("Retry routes to the current target position"), FVector::Dist2D(Waypoint,OtherTarget->GetActorLocation())<1);
 	return true;
 }
@@ -489,6 +496,119 @@ bool FSimCopterSlicedPathTest::RunTest(const FString& Parameters)
 		Search.Begin(FVector::ZeroVector,Goal);
 		Search.Reset();
 		TestFalse(TEXT("Target cancellation discards pending work"),Search.IsPending());
+	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMedicDeploymentTest,"SimCopter.MedicalNavigation.MedicDeploymentPriorities",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterMedicDeploymentTest::RunTest(const FString&)
+{
+	const FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Reference/SimCopterOriginalGame"));
+	auto Model = MakeShared<FPeopleBehaviorModel>(); FString Error;
+	if (!TestTrue(TEXT("Original medical programs load"),FSimCopterPeopleReader::LoadFromFile(FSimCopterPeopleReader::ResolvePeoplePath(Root),*Model,Error))) return false;
+	for (int32 Scenario=0; Scenario<7; ++Scenario)
+	{
+		auto* World = CreateMedicalWorld();
+		ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+		MedicalBox(World,FVector(0,0,-10),FVector(10000,10000,10));
+		auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+		Traffic->ActiveTileSize = 400;
+		Traffic->PeopleTileClasses.Init(7,FSimCity2000City::TileCount);
+		Traffic->TileCenterWorldZ.Init(0,FSimCity2000City::TileCount);
+		Traffic->WaterTileFlags.Init(0,FSimCity2000City::TileCount);
+		Traffic->XbldTileIds.Init(0x1d,FSimCity2000City::TileCount);
+		auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+		Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
+		auto Person = [&](int32 State,const FVector& At)
+		{
+			auto* Agent = World->SpawnActor<ASimCopterGroundAgent>(); Agent->SetOwner(Traffic);
+			Agent->InitialPersonState = State; Agent->SetInitialBehaviorClass(State==5 ? 12 : 0);
+			Agent->ConfigureAgent(ESimCopterGroundAgentKind::Pedestrian,TEXT(""),Root,85);
+			Agent->BehaviorModel = Model; Agent->bBehaviorActive = true; Agent->BehaviorContext.ResetToState(State);
+			Agent->BehaviorContext.Attributes[EBhavAttr::Visible] = 1;
+			Agent->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 100;
+			Agent->SetActorLocation(At+FVector(0,0,Agent->GetCapsuleHalfHeightCm()+1));
+			Traffic->PedestrianAgents.Add(Agent); return Agent;
+		};
+		auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
+		TestTrue(TEXT("Actual aircraft loads with its real seat capacity"),Heli->SwitchHelicopterModel(Scenario==5 ? 5 : 4));
+		Heli->SetActorLocation(FVector(0,0,Heli->GetSimpleCollisionHalfHeight()+1));
+		auto* Controller = World->SpawnActor<ASimCopterPlayerController>(); World->AddController(Controller);
+		Controller->Player = NewObject<ULocalPlayer>(GEngine); Controller->ChangeState(NAME_Playing); Controller->Possess(Heli);
+		TArray<ASimCopterGroundAgent*> Medics, Patients;
+		const int32 CrewCount = Scenario==4 || Scenario==6 ? 1 : 2;
+		const int32 PatientCount = 1+Scenario%2;
+		for (int32 I=0; I<CrewCount; ++I)
+		{
+			auto* Medic = Person(5,FVector(-200,I*100,0)); Medic->SetPersistentHospitalRoofCrew(true);
+			TestTrue(TEXT("Crew boards before deployment"),Medic->BoardCarrier(Heli,false)); Medics.Add(Medic);
+		}
+		for (int32 I=0; I<PatientCount; ++I)
+		{
+			auto* Patient = Person(6,FVector(I==1 ? 2500 : 650,I*150,0)); Patients.Add(Patient);
+			TestTrue(TEXT("Patient has a real medical mission"),Missions->CreatePlayerCausedMedevacForVictim(Patient,true));
+			if (Scenario>=4) TestTrue(TEXT("Patient initially shares cabin with medic"),Patient->BoardCarrier(Heli,false));
+		}
+		if (Scenario==6)
+		{
+			Heli->SetActorLocation(Heli->GetActorLocation()+FVector(0,0,5000));
+			Heli->GroundClearanceCm = 5000; // Time-only fixture does not run the flight/altimeter tick.
+		}
+		for (auto* Medic : Medics)
+		{
+			const int32 Slot = Heli->GetMissionPassengerSlots().IndexOfByPredicate([&](const FSimCopterMissionPassengerSlot& S){return S.Person.Get()==Medic;});
+			TestTrue(TEXT("Actual passenger action deploys medic"),Heli->DropPassengerAtSlot(Slot));
+			if (Scenario>=2 && Scenario<=5)
+			{
+				int32 X,Y;
+				if (Medic->TryGetTileCoordinate(X,Y)) Traffic->XbldTileIds[Y*FSimCity2000City::MapSize+X] = 0xd1;
+			}
+		}
+		if (Scenario==6)
+		{
+			TestTrue(TEXT("An airborne crew drop does not pull the patient out of the cabin"),Patients[0]->GetBehaviorCarrier()==Heli);
+			continue;
+		}
+		if (Scenario>=4)
+		{
+			TSet<AActor*> Carriers;
+			for (auto* Patient : Patients)
+			{
+				TestTrue(TEXT("Disembarking medic takes the onboard patient along"),Medics.Contains(Cast<ASimCopterGroundAgent>(Patient->GetBehaviorCarrier())));
+				Carriers.Add(Patient->GetBehaviorCarrier());
+			}
+			TestEqual(TEXT("Each deployed medic takes a different patient"),Carriers.Num(),PatientCount);
+		}
+		TSet<ASimCopterGroundAgent*> Retrieved, Loaded;
+		for (int32 Frame=0; Frame<5400; ++Frame)
+		{
+			World->Tick(LEVELTICK_TimeOnly,1.f/60);
+			for (auto* Medic : Medics) Medic->Tick(1.f/60);
+			for (auto* Patient : Patients)
+			{
+				if (Medics.Contains(Cast<ASimCopterGroundAgent>(Patient->GetBehaviorCarrier()))) Retrieved.Add(Patient);
+				if (Patient->GetBehaviorCarrier()==Heli) Loaded.Add(Patient);
+				Patient->Tick(1.f/60);
+			}
+			if (Scenario<4 && Loaded.Num()==PatientCount) break;
+			if (Scenario>=4 && Frame>1200) break;
+		}
+		if (Scenario<4)
+		{
+			TestEqual(FString::Printf(TEXT("Scenario %d: both crew prioritize physical rescue"),Scenario),Retrieved.Num(),PatientCount);
+			TestEqual(FString::Printf(TEXT("Scenario %d: patients reach cabin before idle crew fill it"),Scenario),Loaded.Num(),PatientCount);
+		}
+		else
+			for (auto* Patient : Patients)
+			{
+				TestNull(TEXT("Medic finishes carrying the patient away and sets them down"),Patient->GetBehaviorCarrier());
+				TestTrue(TEXT("Manual handoff records delivery for the same patient"),Patient->HasMissionResolutionReported());
+				TestFalse(TEXT("Delivery cannot score twice"),Missions->NotifyMissionPersonDelivered(Patient));
+			}
+		for (auto* Medic : Medics) AddInfo(FString::Printf(TEXT("Scenario %d medic carrier=%s stack=%d/%d"),Scenario,
+			*GetNameSafe(Medic->GetBehaviorCarrier()),Medic->BehaviorContext.Stack.IsEmpty()?-1:Medic->BehaviorContext.Stack.Last().ProgramId,
+			Medic->BehaviorContext.Stack.IsEmpty()?-1:Medic->BehaviorContext.Stack.Last().RecordIndex));
 	}
 	return true;
 }

@@ -645,6 +645,21 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 		// DAT_00506448, incremented once per behaviour tick by FUN_004c5fb0. Opcode 79 reads it.
 		++BehaviorTickCounter;
 		if (bCuriosityOwnsBehavior || UpdatePoliceRecovery()) continue;
+		if (BehaviorContext.GetStateIndex() == 5 && !BehaviorCarrier.IsValid() &&
+			!bHasHospitalRoofPost && Cast<ASimCopterHelicopterPawn>(BehaviorStartingVehicle.Get()) &&
+			!IsCarryingPerson() && BehaviorContext.Stack.ContainsByPredicate(
+				[](const FSimCopterPersonContext::FFrame& Frame) { return Frame.ProgramId == 269; }))
+		{
+			// BHAV 269 never searches again once the no-patient arm starts returning. A newly
+			// available casualty takes priority for deployed crew; switch outside the VM tick.
+			if (const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+				Traffic && Traffic->FindAndClaimGroundPatient(*this))
+			{
+				BehaviorContext.ClearSelection();
+				BehaviorContext.ResetToState(5);
+				BehaviorContext.Stack.Last().RecordIndex = 9; // BHAV 801 -> 262, ground rescue.
+			}
+		}
 		// The support crew stabilizes its own patients until a safe hospital handoff.
 		const auto* Support = GetWorld() ? GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>() : nullptr;
 		if ((bAirSupportPassenger || (Support && Support->IsRescuingPerson(this))) &&
@@ -4097,6 +4112,26 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	}
 	if (Helicopter != nullptr && !bAsHarnessRider)
 	{
+		if (BehaviorContext.GetStateIndex() == 5 && BehaviorStartingVehicle.Get() == Helicopter)
+		{
+			// Deployed crew must leave room for teammates' patients. BHAV 269 only tests its
+			// own seat, so the first returning medic could strand a slower second rescue.
+			int32 ReservedPatientSeats = 0;
+			for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+			{
+				auto* Patient = *It;
+				if (Patient->GetOwner() != GetOwner() || Patient->IsActorBeingDestroyed() ||
+					!Patient->IsMedevacVictim() || Patient->HasMissionResolutionReported() ||
+					Patient->GetBehaviorCarrier() == Helicopter) continue;
+				auto* Medic = Cast<ASimCopterGroundAgent>(Patient->GetBehaviorCarrier());
+				if (!Medic && GetWorld()->GetTimeSeconds() < Patient->HospitalPatientClaimUntil)
+					Medic = Patient->HospitalPatientClaim.Get();
+				if (Medic && Medic != this && !Medic->IsActorBeingDestroyed() && !Medic->IsMissionPatientDead() &&
+					Medic->BehaviorContext.GetStateIndex() == 5 && Medic->BehaviorStartingVehicle.Get() == Helicopter)
+					++ReservedPatientSeats;
+			}
+			if (Helicopter->GetAvailablePassengerSeats() <= ReservedPatientSeats) return false;
+		}
 		if (bHasHospitalRoofPost && bPersistentHospitalRoofCrew &&
 			int32(BehaviorContext.Attributes[EBhavAttr::State]) == 5 &&
 			MissionEventId == INDEX_NONE)
@@ -4705,6 +4740,7 @@ bool ASimCopterGroundAgent::SelectCarriedPerson(FSimCopterPersonContext& Context
 	const bool bAtStartingAmbulance =
 		bAlsoDropThem &&
 		StartingVehicle != nullptr &&
+		StartingVehicle->IsA<ASimCopterGroundAgent>() &&
 		PreviousSelection == StartingVehicle &&
 		int32(BehaviorContext.Attributes[EBhavAttr::State]) == 5 &&
 		int32(Carried->BehaviorContext.Attributes[EBhavAttr::State]) == 6;
@@ -7578,6 +7614,23 @@ void ASimCopterGroundAgent::SetDroppedInjuredOnGround(const FVector& WorldLocati
 	VerticalVelocityCmPerSec = 0.0f;
 }
 
+void ASimCopterGroundAgent::PrepareMedicDeployment(ASimCopterHelicopterPawn* Helicopter, bool bTakeCabinPatient)
+{
+	if (!Helicopter || BehaviorContext.GetStateIndex() != 5 || bMissionPatientDead) return;
+	SetBehaviorStartingVehicle(Helicopter);
+	if (!bTakeCabinPatient) return;
+	const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+	auto* Patient = Traffic ? Traffic->FindMedevacPassengerAboard(Helicopter, this) : nullptr;
+	if (!Patient) return;
+	BehaviorContext.SelectedObject = Patient;
+	BehaviorContext.SelectedLocation = Patient->GetActorLocation();
+	BehaviorContext.bHasSelection = true;
+	BehaviorContext.bSelectionIsHarness = false;
+	// Requested manual equivalent of BHAV 263 rec[3]/[10]: remove and tote the same
+	// reserved patient. Use the existing handoff for seat accounting and delivery credit.
+	if (DropSelectedPerson(BehaviorContext)) PutSelectedPersonOnMe(BehaviorContext);
+}
+
 void ASimCopterGroundAgent::BeginPassengerFall(int32 SourceEventId, float InjuryDistanceCm)
 {
 	// Clearing the carried flag alone leaves the root attached to the pilot's capsule.
@@ -8503,6 +8556,23 @@ void ASimCopterGroundAgent::FinishPassengerFall(float FallDistanceCm)
 	else
 	{
 		ClearMissionPose();
+		if (BehaviorContext.GetStateIndex() == 5 && Cast<ASimCopterHelicopterPawn>(BehaviorStartingVehicle.Get()))
+		{
+			// Manual deployment is a work order. BHAV 801's hospital-tile arm otherwise skips
+			// ground casualties and immediately sends empty-handed crew back into the cabin.
+			const bool bUnloadingPatient = IsCarryingPerson();
+			BehaviorContext.ResetToState(5);
+			BehaviorContext.Stack.Last().RecordIndex = bUnloadingPatient ? 8 : 9;
+			if (bUnloadingPatient)
+			{
+				FSimCopterPersonContext::FFrame Handoff;
+				Handoff.ProgramId = 263;
+				Handoff.RecordIndex = 24; // Patient already toted; continue slump, carry away, set down.
+				BehaviorContext.Stack.Add(Handoff);
+			}
+			else BehaviorContext.ClearSelection();
+			return;
+		}
 		if (ASimCopterMissionSystemActor* Missions = Cast<ASimCopterMissionSystemActor>(
 			UGameplayStatics::GetActorOfClass(GetWorld(), ASimCopterMissionSystemActor::StaticClass())))
 		{

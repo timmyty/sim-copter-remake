@@ -1,0 +1,99 @@
+{
+  "Date": "2026-10-13",
+  "VerifiedAtUtc": "2026-10-14T03:43:25.1502545Z",
+  "Change": "An empty mission-message panel remains collapsed when the HUD is restored. Message updates respect hidden HUD state and populated panels remain input-transparent.",
+  "Baseline": {
+    "Report": "Docs/scratchpad/empty-mission-panel/baseline-registered/index.json",
+    "Failed": 1,
+    "Assertions": [
+      "Expected 'Restoring an empty HUD leaves no background square' to be true.",
+      "Expected 'Restoring an empty HUD leaves no background square' to be true.",
+      "Expected 'Restoring an empty HUD leaves no background square' to be true.",
+      "Expected 'New messages do not unhide the HUD' to be true.",
+      "Expected 'Restoring the HUD shows retained messages without intercepting input' to be true.",
+      "Expected 'A later HUD restore cannot resurrect an empty panel' to be true.",
+      "Expected 'Recreating the panel preserves hidden HUD state' to be true.",
+      "Expected 'Recreated panel shows its message when restored' to be true."
+    ]
+  },
+  "Validation": {
+    "Report": "Docs/scratchpad/empty-mission-panel/validated/index.json",
+    "Succeeded": 15,
+    "SucceededWithWarnings": 0,
+    "Failed": 0,
+    "NotRun": 0,
+    "Tests": [
+      "SimCopter.CityIntro.RouteAndControlRestoration",
+      "SimCopter.CustomCities.PhotoModeLifecycle",
+      "SimCopter.Missions.MarkerCoordinates",
+      "SimCopter.Missions.MarkerLabelFits",
+      "SimCopter.Missions.MarkerOverlap",
+      "SimCopter.Missions.MarkerUiAvoidance",
+      "SimCopter.Missions.MessageLogVisibility",
+      "SimCopter.Replay.Blend",
+      "SimCopter.Replay.ClipNames",
+      "SimCopter.Replay.ClipSerialization",
+      "SimCopter.Replay.InputDoesNotConsume",
+      "SimCopter.Replay.KeyThreshold",
+      "SimCopter.Replay.MnemonicTable",
+      "SimCopter.Replay.Sampling",
+      "SimCopter.Replay.Timebase"
+    ]
+  },
+  "Builds": [
+    {
+      "Target": "Editor",
+      "Result": "Succeeded",
+      "Log": "Docs/scratchpad/empty-mission-panel/build-Editor.log",
+      "SHA256": "A2600F1D2E4E50CA076AB09F45F8D93F1A1C919716EDA06BC5079D4ED67A59A9"
+    },
+    {
+      "Target": "Shipping",
+      "Result": "Succeeded",
+      "Log": "Docs/scratchpad/empty-mission-panel/build-Shipping.log",
+      "SHA256": "23BFE0F1D43ECCF7A97358D910B4867B2E79FB8AFE7DC1E850A583752F231108"
+    },
+    {
+      "Target": "Development",
+      "Result": "Succeeded",
+      "Log": "Docs/scratchpad/empty-mission-panel/build-Development.log",
+      "SHA256": "78E953482DB11A2866A2BA3420BD2BF26470C1175AD153D0CE6B6D8C1581C845"
+    }
+  ],
+  "SourceManifest": "Docs/scratchpad/empty-mission-panel/source-manifest.json",
+  "Installation": {
+    "InstalledAtUtc": "2026-10-14T03:43:25.0964468Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "0456B86E3FB5376E9E667F944C10978E17E142F1675662036D1A5EB4DB586228",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\empty-mission-panel/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "DE6A84245961C370796DF4263EBD46CEFB8E613B3C0F55B3BD9758F083579187"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "0C957F049792C2A5699E59779D1A643856C417E10AFB8FDCE15A8E6A12CDCD0D",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\empty-mission-panel/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "0797A61CE2370D8DE3F724F08201D4B78FF2737670371BBC0DCC8D43E36D36A2"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "7F003E01A73710B67A27F92A11BA5D424F9BCCC82140CEBF5FDE9A9D754B6911",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\empty-mission-panel/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "6C43FD2271BFE3150A0D33629C2CFE93386D143898F9C18663C1353A3D64F1E2"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "436B6DC310943A5D2D6FB797ABEC60D26A9441353BB1CB21264AEB038B6CD9D8",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\empty-mission-panel/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "D6000DD4B25FB3083813B149E03E14D7CEC5D37F0FD9DE89BCFC01E86A17BC87"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "Limitations": [
+    "No interactive gameplay or pixel-render comparison. Widget visibility was exercised using the real Slate widgets under NullRHI.",
+    "The initial new test file was omitted by the cached build source list; the regression was moved into the existing mission-marker test unit before baseline and corrected runs."
+  ]
+}

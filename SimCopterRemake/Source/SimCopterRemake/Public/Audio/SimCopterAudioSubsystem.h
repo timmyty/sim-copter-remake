@@ -255,6 +255,12 @@ public:
 	float GetRadioVolumeMultiplier() const { return RadioVolumeMultiplier; }
 	void StopRadio();
 	bool IsRadioPlaying() const;
+	void UpdateRadioPlayback();
+	void SetRadioPaused(bool bPaused);
+	bool IsRadioPaused() const { return bRadioPaused; }
+	bool SeekRadio(float Seconds);
+	float GetRadioDurationSeconds() const { return RadioDurationSeconds; }
+	float GetRadioPositionSeconds() const;
 
 	/** Seconds left of the current radio item, 0 when nothing is playing. */
 	float GetRadioRemainingSeconds() const;
@@ -321,6 +327,8 @@ private:
 	friend class FSimCopterDriveInPlaybackCommand;
 	friend class FSimCopterGortReturnTest;
 	friend class FSimCopterRadioSequentialTest;
+	friend class FSimCopterRadioMenuPlaybackTest;
+	friend class FSimCopterRadioMenuWidgetTest;
 	friend class FSimCopterFlacPlaybackTest;
 	friend class FSimCopterAudioOverlapTest;
 	friend class FSimCopterVehicleTaserTest;
@@ -414,6 +422,10 @@ private:
 	TObjectPtr<UAudioComponent> MusicComponent = nullptr;
 
 	double RadioEndTime = 0.0;
+	FString RadioPath;
+	float RadioDurationSeconds = 0.0f;
+	double RadioPauseTime = 0.0;
+	bool bRadioPaused = false;
 	TFuture<FSimCopterPcmClip> PendingRadioClip;
 	TSharedPtr<TAtomic<bool>, ESPMode::ThreadSafe> RadioDecodeCancelled;
 	float PendingRadioStartSeconds = 0.0f;

@@ -2,8 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
+#include "Misc/ScopeExit.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/World.h"
+#include "Missions/SimCopterMissionSystemActor.h"
 #include "UI/SimCopterMissionMarkerLayout.h"
 #include "Styling/CoreStyle.h"
+#include "Widgets/SOverlay.h"
 #include "Widgets/Text/STextBlock.h"
 
 namespace
@@ -150,3 +156,64 @@ bool FSimCopterMissionMarkerOverlapTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("The viewport edge remains padded"), Result, FVector2D(60.0f, 660.0f));
 	return true;
 }
+
+#if WITH_DEV_AUTOMATION_TESTS
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FSimCopterMissionMessageVisibilityTest,
+	"SimCopter.Missions.MessageLogVisibility",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterMissionMessageVisibilityTest::RunTest(const FString& Parameters)
+{
+	UWorld::InitializationValues Init;
+	Init.AllowAudioPlayback(false).CreatePhysicsScene(false).CreateNavigation(false).CreateAISystem(false);
+	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	UGameViewportClient* PreviousViewport = GEngine->GameViewport.Get();
+	UGameViewportClient* Viewport = NewObject<UGameViewportClient>(GEngine);
+	TSharedRef<SOverlay> Overlay = SNew(SOverlay);
+	Viewport->SetViewportOverlayWidget(nullptr, Overlay);
+	GEngine->GameViewport = Viewport;
+	ASimCopterMissionSystemActor* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+	ON_SCOPE_EXIT
+	{
+		Missions->RemoveMessageLogWidget();
+		World->DestroyWorld(false);
+		GEngine->GameViewport = PreviousViewport;
+	};
+
+	Missions->RefreshMessageLogWidget();
+	if (!TestTrue(TEXT("Real message widget is created"), Missions->MessageLogWidget.IsValid())) return false;
+	TestTrue(TEXT("Empty log starts collapsed"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
+	for (int32 Cycle = 0; Cycle < 3; ++Cycle)
+	{
+		// Photo Mode, replay and the city intro all restore through this shared entry point.
+		Missions->SetHudHiddenForReplay(true);
+		Missions->SetHudHiddenForReplay(false);
+		TestTrue(TEXT("Restoring an empty HUD leaves no background square"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
+	}
+
+	Missions->PushMissionLogMessage(TEXT("Visibility regression message"), FLinearColor::White);
+	TestTrue(TEXT("An active message is visible without intercepting input"), Missions->MessageLogWidget->GetVisibility() == EVisibility::SelfHitTestInvisible);
+	Missions->SetHudHiddenForReplay(true);
+	TestTrue(TEXT("Hide HUD suppresses an active message"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
+	Missions->PushMissionLogMessage(TEXT("Message received while HUD is hidden"), FLinearColor::White);
+	TestTrue(TEXT("New messages do not unhide the HUD"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
+	Missions->SetHudHiddenForReplay(false);
+	TestTrue(TEXT("Restoring the HUD shows retained messages without intercepting input"), Missions->MessageLogWidget->GetVisibility() == EVisibility::SelfHitTestInvisible);
+	Missions->ClearMissionLogMessage(TEXT("Visibility regression message"));
+	TestTrue(TEXT("One remaining message keeps the panel visible"), Missions->MessageLogWidget->GetVisibility().IsVisible());
+	Missions->ClearMissionLogMessage(TEXT("Message received while HUD is hidden"));
+	TestTrue(TEXT("Removing the final message collapses the panel"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
+	Missions->SetHudHiddenForReplay(false);
+	TestTrue(TEXT("A later HUD restore cannot resurrect an empty panel"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
+
+	Missions->SetHudHiddenForReplay(true);
+	Missions->RemoveMessageLogWidget();
+	Missions->PushMissionLogMessage(TEXT("Message after widget recreation"), FLinearColor::White);
+	TestTrue(TEXT("Recreating the panel preserves hidden HUD state"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
+	Missions->SetHudHiddenForReplay(false);
+	TestTrue(TEXT("Recreated panel shows its message when restored"), Missions->MessageLogWidget->GetVisibility() == EVisibility::SelfHitTestInvisible);
+	return true;
+}
+#endif

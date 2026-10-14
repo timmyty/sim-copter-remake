@@ -4,10 +4,10 @@ This historical inventory covers the initial October 8 publication snapshot rela
 `25d81802b065eac5fee1dbd74afb75d1e59004e8`. Original history is preserved.
 See [ForkChanges.md](ForkChanges.md) for the behavior and authenticity notes.
 
-For the current tree, use the [v1.0.11 source](https://github.com/timmyty/sim-copter-remake/tree/v1.0.11)
-and [changes since v1.0.10](https://github.com/timmyty/sim-copter-remake/compare/v1.0.10...v1.0.11).
+For the current tree, use the [v1.0.12 source](https://github.com/timmyty/sim-copter-remake/tree/v1.0.12)
+and [changes since v1.0.11](https://github.com/timmyty/sim-copter-remake/compare/v1.0.11...v1.0.12).
 The current release's source and package audit is recorded in
-[WindowsRelease111Results.json](validation/WindowsRelease111Results.json).
+[WindowsRelease112Results.json](validation/WindowsRelease112Results.json).
 
 ## Initial publication changes (167 files)
 

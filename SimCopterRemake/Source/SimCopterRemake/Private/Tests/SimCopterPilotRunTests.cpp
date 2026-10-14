@@ -34,7 +34,7 @@ bool FSimCopterPilotRunTest::RunTest(const FString&)
 	};
 	const auto KeyEvent=[&](FKey Key, bool bDown)
     {
-        PC->HandleKeyboardSprintKey(Key, bDown);
+        PC->HandleKeyboardTurboKey(Key, bDown);
         PC->PlayerInput->InputKey(FInputKeyParams(Key, bDown ? IE_Pressed : IE_Released, bDown ? 1.0 : 0.0, false));
         PC->PlayerInput->ProcessInputStack(TArray<UInputComponent*>(), 1.0f/60, false);
     };
@@ -69,40 +69,40 @@ bool FSimCopterPilotRunTest::RunTest(const FString&)
 	Step(Walk*2);
 	TestEqual(TEXT("Both Shift keys do not stack the multiplier"),Move->MaxWalkSpeed,Walk*2);
 	PC->PlayerInput->FlushPressedKeys(); Step(Walk*2);
-	TestEqual(TEXT("Key flush preserves deliberate sprint toggle"),Move->MaxWalkSpeed,Walk*2);
-	PC->ResetControllerSprint(); Step(Walk);
+	TestEqual(TEXT("Key flush preserves deliberate turbo toggle"),Move->MaxWalkSpeed,Walk*2);
+	PC->ResetControllerTurbo(); Step(Walk);
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased(); Step(Walk*2);
-	TestEqual(TEXT("L3 Sprint Mode doubles walking speed"),Move->MaxWalkSpeed,Walk*2);
-	TestEqual(TEXT("L3 Sprint Mode uses the original run animation"),Pilot->FigureAnim.Mnemonic,FString(TEXT("1Run")));
+	TestEqual(TEXT("L3 Turbo Mode doubles walking speed"),Move->MaxWalkSpeed,Walk*2);
+	TestEqual(TEXT("L3 Turbo Mode uses the original run animation"),Pilot->FigureAnim.Mnemonic,FString(TEXT("1Run")));
 	PC->HandleControllerLeftStickPressed(true); Step(Walk*2);
-	TestEqual(TEXT("Held-click repeat cannot cancel sprint"),Move->MaxWalkSpeed,Walk*2);
+	TestEqual(TEXT("Held-click repeat cannot cancel turbo"),Move->MaxWalkSpeed,Walk*2);
 	KeyEvent(EKeys::LeftShift,true); Step(Walk*2);
 	TestEqual(TEXT("Shift and L3 do not stack running speed"),Move->MaxWalkSpeed,Walk*2);
 	KeyEvent(EKeys::LeftShift,false);
 	Step(Walk);
-	TestEqual(TEXT("Shift turns off controller-enabled sprint"), Move->MaxWalkSpeed, Walk);
+	TestEqual(TEXT("Shift turns off controller-enabled turbo"), Move->MaxWalkSpeed, Walk);
 	KeyEvent(EKeys::LeftShift,true); KeyEvent(EKeys::LeftShift,false);
 	KeyEvent(EKeys::Gamepad_RightThumbstick,true);
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	TestTrue(TEXT("R3+L3 opens on-foot help"),PC->IsControllerHelpExpanded());
-	TestTrue(TEXT("Help chord does not change sprint"),PC->IsControllerSprintEnabled());
+	TestTrue(TEXT("Help chord does not change turbo"),PC->IsControllerTurboEnabled());
 	KeyEvent(EKeys::Gamepad_RightThumbstick,false);
 	Move->SetMovementMode(MOVE_Falling); Step(Walk);
-	TestEqual(TEXT("Controller sprint does not boost falling"),Move->MaxWalkSpeed,Walk);
+	TestEqual(TEXT("Controller turbo does not boost falling"),Move->MaxWalkSpeed,Walk);
 	Move->SetMovementMode(MOVE_Walking);
 	PC->SetIgnoreMoveInput(true); Step(Walk);
-	TestEqual(TEXT("Modal movement hold suppresses controller sprint"),Move->MaxWalkSpeed,Walk);
-	TestFalse(TEXT("A modal cannot accept a sprint click"),PC->HandleControllerLeftStickPressed(false));
+	TestEqual(TEXT("Modal movement hold suppresses controller turbo"),Move->MaxWalkSpeed,Walk);
+	TestFalse(TEXT("A modal cannot accept a turbo click"),PC->HandleControllerLeftStickPressed(false));
 	PC->SetIgnoreMoveInput(false);
 	Step(0);
-	TestEqual(TEXT("Sprint Mode alone leaves the pilot idle"),Pilot->FigureAnim.Mnemonic,FString(TEXT("NoMo")));
+	TestEqual(TEXT("Turbo Mode alone leaves the pilot idle"),Pilot->FigureAnim.Mnemonic,FString(TEXT("NoMo")));
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased(); Step(Walk);
 	TestEqual(TEXT("Second L3 click restores walking"),Move->MaxWalkSpeed,Walk);
 	PC->HandleControllerLeftStickPressed(false); PC->HandleControllerLeftStickReleased();
 	TArray<uint8> SavedPilot;
-	TestTrue(TEXT("Pilot state captured with sprint enabled"),Pilot->CaptureRuntimeSaveState(SavedPilot));
+	TestTrue(TEXT("Pilot state captured with turbo enabled"),Pilot->CaptureRuntimeSaveState(SavedPilot));
 	TestTrue(TEXT("Pilot state restores successfully"),Pilot->RestoreRuntimeSaveState(SavedPilot));
-	TestFalse(TEXT("Loading a save clears the transient sprint toggle"),PC->IsControllerSprintEnabled());
+	TestFalse(TEXT("Loading a save clears the transient turbo toggle"),PC->IsControllerTurboEnabled());
 	if (auto* Cheats=SimCopterCheats::Get(Pilot))
 	{
 		Cheats->bSuperpower=true;

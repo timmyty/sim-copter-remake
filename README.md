@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.11 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.11.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.12 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.12.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -15,7 +15,7 @@ recovery systems are deliberate additions to the remake.
 
 ## Start playing
 
-1. Download **`SimCopterRemake-v1.0.11-Windows-x64.7z`** from the latest release.
+1. Download **`SimCopterRemake-v1.0.12-Windows-x64.7z`** from the latest release.
 2. Extract the **entire archive** and run **`SimCopterRemake.exe`** in the extracted folder.
 3. Choose **New Career Game** or **New User Game**, then select a city.
 
@@ -23,13 +23,27 @@ Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the lau
 Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 `Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
 
-## New in v1.0.11: lossless music, Photo Mode and custom cities
+## New in v1.0.12: controller navigation, medical crew and cockpit improvements
+
+Browse consecutive hangar helicopters without losing the controller highlight.
+Deployed medics prioritize nearby patients and reserve seats for teammates' rescues;
+when leaving a landed helicopter they take an onboard patient with them.
+
+The full radio menu adds station/track selection, pause, seeking and volume with
+controller navigation. Remote taser autopilot has a saved ON/OFF switch. Medical
+missions guide you to the nearest hospital, while the minimap's Turbo lamp and
+help strip show clear shared status. Saved bucket/harness displays and empty
+mission-message panels are corrected, and the two longstanding automation fixture
+failures have been repaired. [Release notes](Docs/Releases/v1.0.12.md) |
+[Radio controls](Docs/RadioMenu.md) | [Medical crew details](Docs/memory/hangar-medic-deployment.md)
+
+## Also included from v1.0.11: lossless music, Photo Mode and custom cities
 
 Fifteen verified original songs now play from shared stereo FLAC masters. Custom
 cities progress through four score-based stages, with equipment and passenger
 limits that fit the current helicopter. Photo Mode adds a free camera, clean
 screenshots and temporary lighting controls. Browse for cities or saved games in
-any folder; use F1 for expanded help and Shift/L3 to toggle Sprint or boost.
+any folder; use F1 for expanded help and Shift/L3 to toggle Turbo or boost.
 [Release notes](Docs/Releases/v1.0.11.md) | [Music details](Docs/HighQualityMusic.md) |
 [Photo Mode and progression](Docs/CustomCityProgressionAndPhotoMode.md)
 
@@ -114,7 +128,7 @@ it shows an actual captured car and sealed cage state.
 | **Police and tasers** | Animated handheld energy taser, visible remote discharge, full-turn remote aiming and 16-second vehicle stuns. Officers retrieve stunned suspects; restrained suspects no longer accrue escape penalties. |
 | **Pilot recovery** | Automatic landing waits for the pilot to reach the ground and chooses a reachable nearby surface. A purchased harness can receive a carried patient on approach, then recover the pilot. |
 | **Medical response** | Medics route across steep terrain, reserve separate patients and report an empty search. Rooftop casualties fall with demolished buildings; service crews remain available. |
-| **Controllers** | X opens Tools/Dispatch, Y boards or exits, A confirms, and L3 toggles Sprint Mode. Minimap chords, contextual help and hangar menu focus are improved. |
+| **Controllers** | X opens Tools/Dispatch, Y boards or exits, A confirms, and L3 toggles Turbo Mode. Minimap chords, contextual help and hangar menu focus are improved. |
 | **Career and airport** | Fleet-wide equipment, restored parked purchases after graduation, clearer equipment selection, and a band that remains on the base. Recovery jobs no longer consume original mission slots. |
 | **Rendering and diagnostics** | Clearer taser effects, corrected construction-lot surfaces and a separate GPU diagnostic launcher. The reported GPU compute fault remains under investigation. |
 

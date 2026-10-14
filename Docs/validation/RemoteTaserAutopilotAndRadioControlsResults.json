@@ -1,0 +1,324 @@
+{
+  "completedAtUtc": "2026-10-14T05:15:18.125580+00:00",
+  "feature": "Remote taser panel / saved Autopilot switch and expanded radio playback controls",
+  "autopilotOff": [
+    "No taser pursuit or target-facing turn on exit",
+    "Steady remote camera hover; aim, zoom and firing remain available",
+    "No automatic pilot recovery, pickup, or update-time reconnection",
+    "Aircraft save payload v4 retains setting; v1-v3 remain readable and default ON"
+  ],
+  "radio": [
+    "Expanded panel only: play/pause, previous/next, +/-10 seconds, seek slider, elapsed/total time, volume",
+    "Playback selection keeps panel open; UI audio and asynchronous FLAC completion continue while flight is paused",
+    "Controller shortcut R3 + View/Touchpad; Y pause, LB/RB track, LT/RT seek, A selection, B/View close"
+  ],
+  "builds": {
+    "editor": true,
+    "Shipping": true,
+    "Development": true
+  },
+  "tests": {
+    "reportCreatedOn": "2026.10.14-05.12.52",
+    "succeeded": 36,
+    "succeededWithWarnings": 1,
+    "failed": 0,
+    "notRun": 0
+  },
+  "testCases": [
+    {
+      "path": "SimCopter.Controller.Contexts",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.ContextualHelp",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.FlightRouting",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.HelpDeviceStyle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.HelpPresentation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuConfirmCancel",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuOutlineArt",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuRoutedInput",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuSpatialNavigation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.RadialSelection",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.SprintMode",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.SteeringResponse",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.WheelPresentation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.DashboardVolume",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.Dial",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.MenuLifecycle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.MenuSequentialPlayback",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.MenuWidget",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.PossessionGate",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.Random",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.Schedule",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.SequentialResume",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.ShuffleBag",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.StationPreference",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RemoteRecovery.AutopilotSwitch",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RemoteRecovery.SaveAndObstruction",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.ArchiveRoundTrip",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.ExternalFiles",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.FleetEquipmentRepair",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.Names",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.QuickSavePersistence",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.RestoreState",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Sound.HighQualityMusic.Decode",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Sound.HighQualityMusic.Mapping",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Sound.HighQualityMusic.Playback",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.UI.FlapLayout",
+      "state": "Success"
+    }
+  ],
+  "offscreen": {
+    "reportCreatedOn": "2026.10.14-05.10.23",
+    "succeeded": 1,
+    "succeededWithWarnings": 1,
+    "failed": 0,
+    "notRun": 0
+  },
+  "reviewedImages": [
+    "radio-menu.png",
+    "radio-menu-kinv.png",
+    "radio-menu-paused.png",
+    "panel-0-1.0.png",
+    "panel-1-1.0.png",
+    "panel-0-1.5.png",
+    "panel-1-1.5.png"
+  ],
+  "validationNotes": [
+    "The initial runner omitted MultiprocessSaveConfig, so SequentialResume could not write its isolated progress file. Corrected runner passes all 37 cases.",
+    "One expected missing-save warning remains in SaveGame.ExternalFiles.",
+    "Final offscreen captures verified layout at 100% and 150% HUD scale and 4:3/16:9 radio panels; final nonvisual volume synchronization was then rebuilt and covered by the final focused run."
+  ],
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T05:14:44.0702500Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "9DB08C0B5A1270ECB1E4EB6ED384E5E89A85678D85FB4E834FC075455F840CAF",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-autopilot/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "16FF5B3214BE4DFCDA1978FF8FB87E6E37E59262F7B98CE8507A40642B4EEF37"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "0148FB421841E414D7C7A0128A07CE91D887233A69171EA26B150B93177D8435",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-autopilot/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "8020CC435BBF3398D42AB5E43BFC2102BEE203078569301C2F3DD835E8641A48"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "D60B746202AB4BBACFE02C3578C99DA5844565B6347EF35F561604FE3E169CA1",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-autopilot/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "A87C12868E0C0035F407CE80E69FD06F0D8D8B3E3CECE74B578D0047DCBC1EE9"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "4C3CB0CC4CA0CD953B91D4B168F9C6FB401F4F5D82CD165F4ADE9537E1280D8A",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remote-taser-autopilot/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "BDCE38F1C0CBB03BFE5EB75882C4612289211E8BADC028C26F3D99B62133E6C6"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "changedFiles": [
+    {
+      "path": "Docs/RadioMenu.md",
+      "sha256": "40e3a232fe3fe3a889ddb3af5931e3dd7940a71478c4ee73213b185b0a731ce5"
+    },
+    {
+      "path": "Docs/RemoteTaserAndPilotRecovery.md",
+      "sha256": "47e7aeb590d63f1a6d1d7ff4dae2606c8315bd165f0ef22850a4894cc1340c17"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Audio/SimCopterAudioSubsystem.cpp",
+      "sha256": "e152700da994c81a042827c6205b6bfa330e48107c7626b9b4ec07abc391d7ae"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Audio/SimCopterRadio.cpp",
+      "sha256": "4f5a08d0e643cda6c2fa87efefcd5ce55b459d918de7eac7716533a2fdebb4c3"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirOperations.cpp",
+      "sha256": "05149d67f224bd7d79b39a18fdb14d20dd718165fb058addc8677828a5d9a8f1"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp",
+      "sha256": "1237c126993a1bb364b4af4ca1a7e93aeeb3909abbdffaff9b1c42891ef6c92d"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterPilotRecovery.cpp",
+      "sha256": "c0597b201b3f1e55d0822285323e3965696d6fe522dda40bda26b1e0f7acdc09"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterHighQualityMusicTests.cpp",
+      "sha256": "f39b52c7dcc8675f8d7af6a7181c155c2163a744a654037832ff823060e58e4b"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRadioMenuTests.cpp",
+      "sha256": "f706dc729d288fb94e06f8a862fb404860a00fcadb57e01bb1085384008dbd55"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRadioTests.cpp",
+      "sha256": "c44f1829083cb9a22f056b07d2cb70345ebf6f82d07773c9c8c237344db5e6f2"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterControllerHelp.cpp",
+      "sha256": "fe69fc33df8247209812ab6ebf2ed02c21c48ba2fa9c80203fa694b0c2d5593b"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControllerOverlay.cpp",
+      "sha256": "7903477f3c88bd6cb4ab22c6c95fd0e716c1d27389067d8ce3be22e6bf60e56c"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterRadioMenu.cpp",
+      "sha256": "c47db674f204f7aa7227d30945aae915e89a347620c498fa56781ea759b5249a"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterRadioMenu.h",
+      "sha256": "420426f2b115c2e21f4e63944cb24b47def0d856bc6cb01e0194be97942e378e"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterToolFlaps.cpp",
+      "sha256": "b606049847e18d371548d44e998e0d75537c030f8a8275d1c4c1687c9caf944a"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterToolFlaps.h",
+      "sha256": "87a139484047b385b7551e20c1726f5b802bebf7178f0ebc1aceeaf646e25ee2"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterAudioSubsystem.h",
+      "sha256": "b986f52d62a54dd7adbd32ffca3b9f5db30994d4fbdac358812aaa5796a7c00e"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Audio/SimCopterRadio.h",
+      "sha256": "63cc8a2e840272a58f2078431e58bdf1b62b58ea16dbbc0c71c2d5b5b9d9cdf3"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterAirOperations.h",
+      "sha256": "4a4cceb0ed9bde376bd9fd0567622acc7b05190f4b5906e9e150f2318e7dea1c"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h",
+      "sha256": "0b022db96aaa887aeadb1063a2bd0053f13beca809dd91c2f4d8774233d8c18e"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteAutopilotTests.cpp",
+      "sha256": "42c83280228764d7ba573b2572decf985d45c962f29fc8eb6e590ea00ba68e37"
+    }
+  ],
+  "limitations": [
+    "No interactive gameplay, physical controller, or listening check.",
+    "No new cooked assets or packages required.",
+    "Publication checkout unchanged."
+  ]
+}

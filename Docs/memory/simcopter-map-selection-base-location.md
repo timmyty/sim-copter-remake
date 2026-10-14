@@ -86,8 +86,9 @@ Every write, exhaustively (xrefs to 0x0057f9d8):
   It completes the record on `delivered(+0x9c) + dead + lost == passengers`.
 - **Medevac (0x20) leaves `+0x30` at -1** and puts the patient at `+0x28`, which is cleared on
   pickup. Since 2026-09-23 the remake does the same: any hospital takes the patient (see
-  [paramedic handoffs](simcopter-paramedic-handoffs.md)). The map panel no longer needs to hide an
-  invented hospital.
+  [paramedic handoffs](simcopter-paramedic-handoffs.md)). Since 2026-10-13 the map panel adds a
+  nearest-hospital guide to its display copy of the selected record; the real record still has
+  no assigned hospital (see below).
 
 ## The four player-reported claims (verdicts)
 
@@ -130,3 +131,27 @@ their own `EMapFocusReason`, so they are easy to find or drop:
   that stale selection on the map until the player cycles.
 
 `SimCopter.Missions.MapFocusRules` asserts the remake behaviour for both.
+
+## Nearest-hospital guide for selected MedEvac missions (2026-10-13)
+
+User-requested remake addition: `SSimCopterMapPanel::BuildFrame` adapts the selected, active
+medical mission's display copy. Its white line points to the closest hospital's building center
+and its red line points to the waiting patients. After pickup clears the patient coordinates,
+only the hospital line remains. Selection and mission completion keep their existing rules.
+
+`GetHospitalSites` supplies actual hospital footprints. Each map refresh chooses by squared
+horizontal world distance from the map's current player pawn (helicopter or on-foot pilot),
+ignoring altitude, then converts the winning center through the traffic system's city transform.
+No hospital means the original patient guide remains; after pickup there is no invented target.
+The same raster provides fading, zoom, offscreen clipping, and visibility with blips disabled.
+Existing police-custody routing retains its priority.
+
+Only the selected frame copy gets Secondary/Tertiary coordinates. Unselected patient icons,
+mission records, save layout, and acceptance at any hospital are unchanged. This is deliberately
+different from `FUN_004a3820`'s unmodified retail record inputs, verified against
+`.ghidra-exports/004a3820.json` and the existing `FUN_004a7a10` record port.
+
+Regression: `SimCopter.Map.MedevacNearestHospitalGuide` builds actual panel frames and checks
+raster pixels at all four zooms, horizontal nearest selection and movement, pickup and completion,
+selection cycling, missing/removed hospitals, and preservation of the mission record layout.
+Validation receipt: [MedevacMapGuideResults.json](../validation/MedevacMapGuideResults.json).

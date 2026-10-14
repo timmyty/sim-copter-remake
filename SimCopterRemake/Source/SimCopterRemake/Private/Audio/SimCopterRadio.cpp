@@ -131,6 +131,7 @@ void USimCopterRadioSubsystem::ScanStations(const FString& SoundRoot)
 	{
 		Commercials.Add(FPaths::Combine(CommercialDir, File));
 	}
+	Commercials.Sort();
 
 	TArray<FString> StationDirs;
 	Files.FindFiles(StationDirs, *(StationsRoot / TEXT("*")), false, true);
@@ -166,6 +167,9 @@ void USimCopterRadioSubsystem::ScanStations(const FString& SoundRoot)
 		SimCopterHighQualityMusic::UpgradePlaylist(SoundRoot, Dir / TEXT("music"), Station.Music);
 		Glob(FPaths::Combine(Dir, TEXT("dj"), GLanguageDir), Station.Dj);
 		Glob(FPaths::Combine(Dir, TEXT("jingle")), Station.Jingle);
+		Station.Music.Sort();
+		Station.Dj.Sort();
+		Station.Jingle.Sort();
 
 		if (Station.HasContent())
 		{
@@ -184,19 +188,135 @@ void USimCopterRadioSubsystem::ScanStations(const FString& SoundRoot)
 
 const TArray<FString>& USimCopterRadioSubsystem::GetList(ESimCopterRadioSlot Slot) const
 {
+	return GetStationList(StationIndex, Slot);
+}
+
+const TArray<FString>& USimCopterRadioSubsystem::GetStationList(int32 Index, ESimCopterRadioSlot Slot) const
+{
 	static const TArray<FString> Empty;
-	if (!Stations.IsValidIndex(StationIndex))
+	if (!Stations.IsValidIndex(Index))
 	{
 		return Empty;
 	}
 	switch (Slot)
 	{
-	case ESimCopterRadioSlot::Music:      return Stations[StationIndex].Music;
-	case ESimCopterRadioSlot::Dj:         return Stations[StationIndex].Dj;
-	case ESimCopterRadioSlot::Commercial: return Commercials;
-	case ESimCopterRadioSlot::Jingle:     return Stations[StationIndex].Jingle;
+	case ESimCopterRadioSlot::Music:      return Stations[Index].Music;
+	case ESimCopterRadioSlot::Dj:         return Stations[Index].bSequential ? Empty : Stations[Index].Dj;
+	case ESimCopterRadioSlot::Commercial: return Stations[Index].bSequential ? Empty : Commercials;
+	case ESimCopterRadioSlot::Jingle:     return Stations[Index].bSequential ? Empty : Stations[Index].Jingle;
 	default:                              return Empty;
 	}
+}
+
+TArray<FSimCopterRadioTrack> USimCopterRadioSubsystem::GetStationPlaylist(int32 Index) const
+{
+	TArray<FSimCopterRadioTrack> Result;
+	for (const auto Slot : { ESimCopterRadioSlot::Music, ESimCopterRadioSlot::Commercial,
+		ESimCopterRadioSlot::Dj, ESimCopterRadioSlot::Jingle })
+	{
+		const auto& List = GetStationList(Index, Slot);
+		for (int32 Track = 0; Track < List.Num(); ++Track)
+		{
+			FString Title = FPaths::GetBaseFilename(List[Track]);
+			if (Stations[Index].bSequential) Title = Title.Mid(3);
+			Result.Add({ Slot, Track, MoveTemp(Title) });
+		}
+	}
+	return Result;
+}
+
+bool USimCopterRadioSubsystem::PlayStationTrack(int32 Index, int32 PlaylistIndex)
+{
+	// Remake extension. Explicit choices bypass the retail shuffle/probability gates without
+	// changing Sound's DJ/commercial preferences; subsequent items follow the visible queue.
+	auto Playlist = GetStationPlaylist(Index);
+	if (!Playlist.IsValidIndex(PlaylistIndex) || !bPlayerInHelicopter || bCityIntroSuspended) return false;
+	auto* Audio = USimCopterAudioSubsystem::Get(this);
+	const auto& Entry = Playlist[PlaylistIndex];
+	const FString Path = GetStationList(Index, Entry.Slot)[Entry.TrackIndex];
+	if (!Audio || !FPaths::FileExists(Path)) return false;
+	SuspendSequentialPlayback();
+	SetStationIndex(Index);
+	if (!Audio->PlayRadioFile(Path, Volume, 0.0f)) return false;
+	bPowered = true;
+	bWaiting = false;
+	CurrentSlot = Entry.Slot;
+	CurrentTitle = Entry.Title;
+	if (IsSequentialStation())
+	{
+		SequentialTrack = Entry.TrackIndex;
+		SequentialOffset = 0.0f;
+		SequentialStartTime = FPlatformTime::Seconds();
+		bSequentialPlaying = true;
+		SaveSequentialProgress();
+	}
+	else
+	{
+		ManualPlaylist = MoveTemp(Playlist);
+		ManualPlaylistIndex = PlaylistIndex;
+	}
+	return true;
+}
+
+bool USimCopterRadioSubsystem::PlayManualTrack(USimCopterAudioSubsystem* Audio)
+{
+	if (!Audio || !ManualPlaylist.IsValidIndex(ManualPlaylistIndex)) return false;
+	const auto& Entry = ManualPlaylist[ManualPlaylistIndex];
+	const auto& List = GetList(Entry.Slot);
+	if (!List.IsValidIndex(Entry.TrackIndex) || !Audio->PlayRadioFile(List[Entry.TrackIndex], Volume)) return false;
+	CurrentSlot = Entry.Slot;
+	CurrentTitle = Entry.Title;
+	bWaiting = false;
+	return true;
+}
+
+bool USimCopterRadioSubsystem::StepTrack(int32 Delta)
+{
+	const auto Playlist = GetStationPlaylist(StationIndex);
+	if (Playlist.IsEmpty()) return false;
+	int32 Current = Playlist.IndexOfByPredicate([this](const auto& Track)
+	{ return Track.Slot == CurrentSlot && Track.Title == CurrentTitle; });
+	if (Current == INDEX_NONE) Current = Delta < 0 ? 0 : -1;
+	return PlayStationTrack(StationIndex, (Current + (Delta < 0 ? -1 : 1) + Playlist.Num()) % Playlist.Num());
+}
+
+void USimCopterRadioSubsystem::TogglePlaybackPaused()
+{
+	if (!bPlayerInHelicopter || bCityIntroSuspended) return;
+	if (auto* Audio = USimCopterAudioSubsystem::Get(this))
+	{
+		if (!bPowered) SetPowered(true);
+		if (Audio->IsRadioPlaying()) Audio->SetRadioPaused(!Audio->IsRadioPaused());
+		else StepTrack(1);
+		SaveSequentialProgress();
+	}
+}
+
+bool USimCopterRadioSubsystem::IsPlaybackPaused() const
+{
+	const auto* Audio = USimCopterAudioSubsystem::Get(this);
+	return Audio && Audio->IsRadioPaused();
+}
+
+bool USimCopterRadioSubsystem::SeekPlayback(float Seconds)
+{
+	if (!bPowered || !bPlayerInHelicopter || bCityIntroSuspended) return false;
+	auto* Audio = USimCopterAudioSubsystem::Get(this);
+	if (!Audio || !Audio->SeekRadio(Seconds)) return false;
+	SaveSequentialProgress();
+	return true;
+}
+
+float USimCopterRadioSubsystem::GetPlaybackPosition() const
+{
+	const auto* Audio = USimCopterAudioSubsystem::Get(this);
+	return Audio ? Audio->GetRadioPositionSeconds() : 0.f;
+}
+
+float USimCopterRadioSubsystem::GetPlaybackDuration() const
+{
+	const auto* Audio = USimCopterAudioSubsystem::Get(this);
+	return Audio ? Audio->GetRadioDurationSeconds() : 0.f;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -390,6 +510,8 @@ void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 	{
 		return;
 	}
+	// Radio is UI audio: complete decoding and advance tracks while its panel pauses flight.
+	Audio->UpdateRadioPlayback();
 
 	// This subsystem exists in every game world, including the front end and the city while the
 	// player is walking. The radio belongs to the possessed helicopter, so power alone must not
@@ -440,6 +562,15 @@ void USimCopterRadioSubsystem::Tick(float DeltaSeconds)
 			SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
 			SequentialOffset = 0.0f;
 		}
+		return;
+	}
+
+	if (ManualPlaylist.IsValidIndex(ManualPlaylistIndex))
+	{
+		if (Audio->IsRadioPlaying()) return;
+		// A failed/missing item advances at most once per tick, so a broken list cannot spin.
+		ManualPlaylistIndex = (ManualPlaylistIndex + 1) % ManualPlaylist.Num();
+		PlayManualTrack(Audio);
 		return;
 	}
 
@@ -606,6 +737,8 @@ void USimCopterRadioSubsystem::SetStationIndex(int32 Index)
 	}
 	SuspendSequentialPlayback();
 	StationIndex = Clamped;
+	ManualPlaylist.Reset();
+	ManualPlaylistIndex = INDEX_NONE;
 	// Tuning preserves the user's selected volume, including mute.
 	// The playlists are per station, so switching rebuilds them - a fresh shuffle bag, which is
 	// also what the original does when it loads a station's lists.
@@ -674,7 +807,8 @@ void USimCopterRadioSubsystem::SaveSequentialProgress()
 	const auto& Music = Stations[StationIndex].Music;
 	if (!Music.IsValidIndex(SequentialTrack)) { return; }
 	const double Now = FPlatformTime::Seconds();
-	const float Offset = SequentialOffset + (bSequentialPlaying ? static_cast<float>(Now - SequentialStartTime) : 0.0f);
+	const auto* Audio = USimCopterAudioSubsystem::Get(this);
+	const float Offset = bSequentialPlaying && Audio && Audio->IsRadioPlaying() ? Audio->GetRadioPositionSeconds() : SequentialOffset;
 	const FString File = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("InvokeRadio.ini"));
 	FConfigFile Progress;
 	Progress.bCanSaveAllSections = true;
@@ -693,7 +827,7 @@ void USimCopterRadioSubsystem::SuspendSequentialPlayback()
 		SequentialTrack = (SequentialTrack + 1) % Stations[StationIndex].Music.Num();
 		SequentialOffset = 0.0f;
 	}
-	else { SequentialOffset += static_cast<float>(FPlatformTime::Seconds() - SequentialStartTime); }
+	else if (Audio) { SequentialOffset = Audio->GetRadioPositionSeconds(); }
 	bSequentialPlaying = false;
 	SaveSequentialProgress();
 }

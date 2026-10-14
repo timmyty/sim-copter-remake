@@ -1,0 +1,313 @@
+{
+  "completedAtUtc": "2026-10-14T05:57:25.028212+00:00",
+  "fixed": [
+    "Post-recovery saved Bucket/Harness presentation mismatch, including legacy saves",
+    "Radio controller station/track browsing, playback, focus outlines, seeking and volume"
+  ],
+  "baselineFailures": {
+    "bucketAssertions": 9,
+    "radioRoutedInputAssertions": 8
+  },
+  "builds": {
+    "editor-final": true,
+    "Shipping": true,
+    "Development": true
+  },
+  "tests": {
+    "reportCreatedOn": "2026.10.14-05.52.38",
+    "succeeded": 46,
+    "succeededWithWarnings": 1,
+    "failed": 0,
+    "notRun": 0
+  },
+  "testCases": [
+    {
+      "path": "SimCopter.Controller.Contexts",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.ContextualHelp",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.FlightRouting",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.HelpDeviceStyle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.HelpPresentation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuConfirmCancel",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuOutlineArt",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuRoutedInput",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuSpatialNavigation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.RadialSelection",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.SteeringResponse",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.TurboMode",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.WheelPresentation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Hangar.EquipmentInteraction",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.HospitalSites",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Missions.ParamedicCabinHandoff",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.NpcMedical.BandClusterAndSpacing",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.NpcMedical.BandObstacleRoutes",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.DashboardVolume",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.Dial",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.MenuLifecycle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.MenuSequentialPlayback",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.MenuWidget",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.PossessionGate",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.Random",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.Schedule",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.SequentialResume",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.ShuffleBag",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Radio.StationPreference",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RemoteRecovery.AutopilotSwitch",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RemoteRecovery.SaveAndObstruction",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RooftopSafety.ExitAndContainment",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.ArchiveRoundTrip",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.ExternalFiles",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.FleetEquipmentRepair",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.Names",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.QuickSavePersistence",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.SaveGame.RestoreState",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.ServicePosts.ActualHospitalGeometry",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.ServicePosts.SpacingEntrancesAndImpact",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Winch.CommandResolution",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Winch.Constants",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Winch.RopeEndExchange",
+      "state": "Success"
+    }
+  ],
+  "warning": "Existing SaveGame.ExternalFiles deliberately reads Missing.sav.",
+  "offscreen": {
+    "passed": 1,
+    "failed": 0,
+    "sizes": [
+      "1280x960",
+      "1280x720"
+    ],
+    "imagesInspected": true
+  },
+  "hospital": {
+    "status": "unresolved; not reproduced",
+    "save": "heven (new), Exit Save",
+    "saveSHA256": "9e64ddab10cbd6afd927657ed9ff971179c703fc2e26add4a16b70ec5f24e6c7",
+    "snapshot": "Model 4, one onboard medic, no onboard patient",
+    "userLanding": "Resting on rooftop pad",
+    "checks": [
+      "Restored aircraft/traffic/missions against actual city and authored transform",
+      "Rooftop handoff with full two-seat cabin and inactive onboard medic",
+      "Real saved living casualty (health 76) also unloaded successfully",
+      "Landing gate checked against actual hospital collision"
+    ],
+    "exactStuckStateAvailable": false,
+    "gameplayChanged": false,
+    "nextEvidence": "Quick Save while the patient remains stuck at the hospital pad"
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T05:56:48.5959655Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "36949BBBD78870C7A9574D4EE5A6EAB3E134A904B2BFE92B90A8152BA4315F1B",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\bucket-save-selection/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "9DB08C0B5A1270ECB1E4EB6ED384E5E89A85678D85FB4E834FC075455F840CAF",
+        "BeforeCopySHA256": "9DB08C0B5A1270ECB1E4EB6ED384E5E89A85678D85FB4E834FC075455F840CAF"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "E12B1053588E049EBE44DB9D22B4D4E677973EAFC573C1FADBA56B9D65174E31",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\bucket-save-selection/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "0148FB421841E414D7C7A0128A07CE91D887233A69171EA26B150B93177D8435",
+        "BeforeCopySHA256": "0148FB421841E414D7C7A0128A07CE91D887233A69171EA26B150B93177D8435"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "2D93EDE0E80F8E0CF389C69E4747A5465BA710EC0D5812B27921D8425F60D57D",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\bucket-save-selection/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "D60B746202AB4BBACFE02C3578C99DA5844565B6347EF35F561604FE3E169CA1",
+        "BeforeCopySHA256": "D60B746202AB4BBACFE02C3578C99DA5844565B6347EF35F561604FE3E169CA1"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "D9DC115B4DDA68FF82892962E2DF57E672FFF9B4367AAA0475161852ECD9F141",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\bucket-save-selection/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "4C3CB0CC4CA0CD953B91D4B168F9C6FB401F4F5D82CD165F4ADE9537E1280D8A",
+        "BeforeCopySHA256": "4C3CB0CC4CA0CD953B91D4B168F9C6FB401F4F5D82CD165F4ADE9537E1280D8A"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "sourceFiles": [
+    {
+      "path": "Private/Flight/SimCopterHelicopterPawn.cpp",
+      "sha256": "3245cfe2e8d364610e259feec4f5156b94250e4361ac879cbbe95581c02c0cf5"
+    },
+    {
+      "path": "Private/Flight/SimCopterPilotRecovery.cpp",
+      "sha256": "573015c7eeca8c1d099dadce78567d4fc044d421fac7e459baa25be439b93027"
+    },
+    {
+      "path": "Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "sha256": "78ed44aaccc68d692da0e15d684ff491e04c9c22944abccd16fa8ed2158a4578"
+    },
+    {
+      "path": "Private/Tests/SimCopterRadioMenuTests.cpp",
+      "sha256": "85e2a74db4ebda7f8804df3c8734f6075edd369328f4ee89b47eb471d51d45af"
+    },
+    {
+      "path": "Private/UI/SSimCopterRadioMenu.cpp",
+      "sha256": "90aec2964097ff7401c4f8ae337b7079cced6c51bd6d31f816622c6c61b3a5ee"
+    },
+    {
+      "path": "Private/UI/SSimCopterRadioMenu.h",
+      "sha256": "6ce27d23a50bdb18d81a5a211e861f1a58bfbfa2bc22f1366c30e8cb5c698a16"
+    },
+    {
+      "path": "Private/UI/SSimCopterNavigableMenu.cpp",
+      "sha256": "257e8f9a5fa2460ecbec94016c395e43d2d3c8440a5915ce6581db52c64c1cdc"
+    }
+  ],
+  "userSavesModifiedByAgent": false,
+  "interactiveGameplayChecked": false,
+  "physicalControllerChecked": false,
+  "publicationCheckoutChanged": false,
+  "concurrentWorkspaceWork": "Update Turbo Mode UI also modified shared source; its edits were preserved."
+}

@@ -1,4 +1,4 @@
-# GPU crash investigation and L3 Sprint Mode — October 11, 2026
+# GPU crash investigation and L3 Turbo Mode — October 11, 2026
 
 ## GPU evidence
 
@@ -55,19 +55,20 @@ and [NVIDIA's dump inspector reference](https://docs.nvidia.com/nsight-aftermath
 for the distinction between a CPU notification stack, GPU markers, and mapped
 shader evidence. Local evidence and decoder are in `Docs/scratchpad/gpu-crash-l3/`.
 
-## Sprint controls
+## Turbo controls
 
-- **Click L3** to toggle Sprint Mode in a helicopter or on foot. A second click
+- **Click L3** to toggle Turbo Mode in a helicopter or on foot. A second click
   switches it off; holding the button does not repeatedly toggle it.
 - Helicopters use the existing 30% horizontal boost and steeper tilt. Pilots use
   the existing doubled grounded run speed, run animation, and footsteps.
-- **Hold R3 and click L3** to show or hide controller help. The Sprint Mode state
-  and help shortcut remain visible when help is collapsed.
+- **Press L3 + R3 in either order** to show or hide controller help. The minimap
+  Turbo indicator and silver help strip remain visible with help collapsed while flying.
+  On foot, only the help shortcut remains; Turbo status is hidden.
 - Shift still works. Shift and L3 combine as one request and do not stack. The
   superpower cheat retains its existing turbo/dog behavior through either input.
-- Boarding, exiting and restoring a save clear the controller sprint toggle.
+- Boarding, exiting and restoring a save clear the controller turbo toggle.
   On-foot running respects modal input holds and does not boost normal falling.
-  Tool/passenger menus cannot toggle helicopter sprint accidentally.
+  Tool/passenger menus cannot toggle helicopter turbo accidentally.
 - Airplanes retain L3 help and their existing flight controls.
 
 This is an explicit controller extension of the fork's existing Shift behavior;
@@ -104,7 +105,7 @@ hashes: [validation results](validation/GpuCrashAndSprintResults.json).
 
 ## Controller follow-up — October 11, 2026
 
-Sprint Mode remains visible outside expanded help, as requested. Expanded help
+Turbo Mode now appears as the minimap lamp and switch outside expanded help while flying. It is hidden on foot. Expanded help
 now explains both sticks, triggers, camera adjustment, on-foot actions and remote
 taser controls. Longer lists use two columns and were checked at 1280x720.
 
@@ -118,7 +119,7 @@ while open so selecting an option does not also move remote aim or fire a shot.
 Wheel selection persists when the stick returns to center. R3 plus D-pad up/down
 zooms the minimap, and left/right cycles its mission. L3 plus D-pad up toggles
 mission markers; down toggles service vehicle markers. These map shortcuts appear
-in expanded help and do not also operate tools or toggle Sprint Mode.
+in expanded help and do not also operate tools or toggle Turbo Mode.
 
 Crime penalties now stop while suspects are in custody, including stunned or
 handcuffed people, carried prisoners and immobilized/caged burglar vehicles.
@@ -128,3 +129,13 @@ crime families before the lifecycle fix. Actual prisoner state, including save
 restore, is checked separately from the deterministic mission timer.
 See [current controller guide](ControllerSupport.md) and
 [follow-up evidence](validation/ExpandedControllerHelpResults.json).
+
+
+## Minimap Turbo display — October 14, 2026
+
+The former Sprint Mode is named **Turbo Mode** throughout current game code and
+player-facing documentation. The left minimap lamp and switch reflect the shared
+Shift/L3 state; the silver header presents yellow stencil help lettering for the
+active input device. On-foot Turbo and parachute status readouts are removed.
+See [the current HUD behavior](TurboHud.md). Historical receipt filenames and
+automation identifiers in old validation records are retained as evidence.

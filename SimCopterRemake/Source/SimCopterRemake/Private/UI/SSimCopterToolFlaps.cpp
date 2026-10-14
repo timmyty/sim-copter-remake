@@ -28,6 +28,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SConstraintCanvas.h"
 #include "Widgets/SBoxPanel.h"
+#include "Widgets/SOverlay.h"
 #include "Widgets/SNullWidget.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -1583,16 +1584,53 @@ TSharedRef<SWidget> SSimCopterToolFlaps::BuildRemoteTaserFlap()
 {
 	auto Canvas=SNew(SConstraintCanvas);
 	AddStripBackground(*Canvas, PageWidth, TaserFillBrush);
-	AddTextAtPage(*Canvas,65,8,195,16,MakeLabel(FText::FromString(TEXT("REMOTE TASER")),LabelFontSize));
-	AddAtPage(*Canvas,12,16,107,20,
+	AddTextAtPage(*Canvas,67,8,195,16,MakeLabel(FText::FromString(TEXT("REMOTE TASER")),LabelFontSize));
+	AddAtPage(*Canvas,10,20,76,18,
 		SNew(SButton).IsFocusable(false).ContentPadding(FMargin(2)).HAlign(HAlign_Center).VAlign(VAlign_Center)
 		.ButtonColorAndOpacity(FLinearColor(.22f,.29f,.34f)).ForegroundColor(FlapReadout)
-		.ToolTipText(FText::FromString(TEXT("Take off, then aim from a steady hover. Autopilot follows a criminal car or robber when range or cover requires it. Move the mouse or right stick to aim; wheel zooms 1x-4x, hold LT for 4x. Left click / A / RT fires. Hold right mouse for cockpit buttons. N switches modes; X opens Tools, then select Remote Taser / Fly Helicopter and press A.")))
+		.ToolTipText(FText::FromString(TEXT("Take off, then aim from a steady hover. With Autopilot ON, follow a criminal car or robber when needed; OFF holds position. Mouse / right stick aims; wheel zooms 1x-4x, hold LT for 4x. Left click / A / RT fires. Hold right mouse for cockpit buttons. N switches modes; X opens Tools.")))
 		.OnClicked_Lambda([this] { if (GetPawn()) GetPawn()->ToggleRemoteTaser(); return FReply::Handled(); })
-		[SNew(STextBlock).Font(FlapFont(GetScaledFontSize(12))).ColorAndOpacity(FlapReadout)
+		[SNew(STextBlock).Font(FlapFont(GetScaledFontSize(10))).ColorAndOpacity(FlapReadout)
 		.Text_Lambda([this] { return FText::FromString(GetPawn() && GetPawn()->GetAirOperations()->IsRemoteTaserActive()?TEXT("FLY HELICOPTER"):TEXT("AIM TASER")); })]);
-	AddTextAtPage(*Canvas,65,43,215,14,SNew(STextBlock)
-		.Text_Lambda([this] { return FText::FromString(GetPawn()?GetPawn()->GetAirOperations()->GetRemoteTaserReadout():TEXT("N / X: Tools")); })
+	const auto AutopilotOn=[this] { return GetPawn() && GetPawn()->GetAirOperations()->IsAutopilotEnabled(); };
+	AddTextAtPage(*Canvas,109,18,66,12,MakeLabel(FText::FromString(TEXT("AUTOPILOT")),8));
+	AddAtPage(*Canvas,93,24,32,15,
+		SNew(SButton).Tag(TEXT("RemoteAutopilotSwitch")).IsFocusable(false)
+		.ButtonStyle(FCoreStyle::Get(),TEXT("NoBorder")).ContentPadding(FMargin(1*HudScale))
+		.ToolTipText(FText::FromString(TEXT("ON: follow taser targets and automatically recover the pilot after an airborne exit. OFF: hold position while aiming and never pick you up automatically. Saved with this helicopter.")))
+		.OnClicked_Lambda([this,AutopilotOn]
+		{
+			if (GetPawn()) GetPawn()->GetAirOperations()->SetAutopilotEnabled(!AutopilotOn());
+			return FReply::Handled();
+		})
+		[
+			SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush")))
+			.BorderBackgroundColor_Lambda([AutopilotOn] { return AutopilotOn()?FLinearColor(.07f,.28f,.18f):FLinearColor(.12f,.14f,.16f); })
+			.Padding(FMargin(2*HudScale))
+			[
+				SNew(SOverlay)
+				+SOverlay::Slot().HAlign(HAlign_Left).VAlign(VAlign_Center)
+				.Padding(FMargin(3*HudScale,0))
+				[
+					SNew(STextBlock).Font(FlapFont(GetScaledFontSize(8))).ColorAndOpacity(FlapReadout)
+					.RenderTransform_Lambda([this,AutopilotOn] { return FSlateRenderTransform(FVector2D(AutopilotOn()?0:12*Scale,0)); })
+					.Text_Lambda([AutopilotOn] { return FText::FromString(AutopilotOn()?TEXT("ON"):TEXT("OFF")); })
+				]
+				+SOverlay::Slot().HAlign(HAlign_Left)
+				[
+					SNew(SBox).WidthOverride(11*Scale)
+					.RenderTransform_Lambda([this,AutopilotOn] { return FSlateRenderTransform(FVector2D(AutopilotOn()?17*Scale:0,0)); })
+					[
+						SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush")))
+						.BorderBackgroundColor(FLinearColor(.68f,.70f,.68f)).Padding(0)
+						.HAlign(HAlign_Center).VAlign(VAlign_Center)
+						[SNew(STextBlock).Text(FText::FromString(TEXT("II"))).Font(FlapFont(GetScaledFontSize(8))).ColorAndOpacity(FLinearColor(.2f,.23f,.24f))]
+					]
+				]
+			]
+		]);
+	AddTextAtPage(*Canvas,67,47,220,14,SNew(STextBlock)
+		.Text_Lambda([this] { return FText::FromString(GetPawn()?GetPawn()->GetAirOperations()->GetRemoteTaserReadout(true):TEXT("N / X: Tools")); })
 		.Visibility(EVisibility::HitTestInvisible).Justification(ETextJustify::Center)
 		.ColorAndOpacity(FlapReadout).Font(FlapFont(GetScaledFontSize(8))));
 	return SNew(SBox).Visibility_Lambda([this]

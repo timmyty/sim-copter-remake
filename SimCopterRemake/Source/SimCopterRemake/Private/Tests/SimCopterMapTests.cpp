@@ -5,6 +5,15 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "Flight/SimCopterHelicopterPawn.h"
+#include "Formats/SimCity2000Reader.h"
+#include "Ground/SimCopterTrafficSystemActor.h"
+#include "Missions/SimCopterMissionSystemActor.h"
+#include "Misc/ScopeExit.h"
+#include "../UI/SSimCopterMapPanel.h"
+
 using namespace SimCopterMap;
 
 namespace
@@ -469,6 +478,115 @@ bool FSimCopterMapHeadingOrientationTest::RunTest(const FString&)
 	// West (LocalDirection = (0, -1), TileDirection = (0, 1)): needle points LEFT (-X screen)
 	TestCardinalNeedle(FVector2D(0.0f, 1.0f), FIntPoint(-19, 0), TEXT("West"));
 
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMedevacMapGuideTest,
+	"SimCopter.Map.MedevacNearestHospitalGuide",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FSimCopterMedevacMapGuideTest::RunTest(const FString&)
+{
+	using namespace SimCopterMissions;
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
+		.CreateNavigation(false).CreateAISystem(false);
+	auto* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+	ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+	Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
+	Traffic->ActiveTileSize = 400;
+	auto* Helicopter = World->SpawnActor<ASimCopterHelicopterPawn>();
+	auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+	struct FMedicalMapWorld : ISimCopterMissionWorld
+	{
+		virtual int32 GetXbldTileId(int32, int32) const override { return 0; }
+		virtual int32 GetBuildingFootprintSize(int32, int32) const override { return 1; }
+		virtual bool GetCameraTile(int32& X, int32& Y) const override { X = Y = 64; return true; }
+		virtual bool GetPlayerTile(int32& X, int32& Y) const override { X = Y = 64; return true; }
+		virtual bool TrySpawnMissionPerson(int32, int32, int32, int32, int32) override { return true; }
+	} MissionWorld;
+	Missions->MissionSystem.Initialize(&MissionWorld, 1);
+	Missions->MissionSystem.BeginSession();
+	const int32 EventId = Missions->CreateMissionAt(44, 64, TYPE_Medevac);
+	if (!TestTrue(TEXT("Medical mission created"), EventId != INDEX_NONE)) return false;
+	auto Panel = SNew(SSimCopterMapPanel).Pawn(Helicopter);
+	Panel->CityData = MakeFlatCity();
+	auto BuildFrame = [&]()
+	{
+		FSimCopterMapFrame Frame;
+		TestTrue(TEXT("Actual map panel builds its frame"), Panel->BuildFrame(Frame));
+		return Frame;
+	};
+	auto AddHospital = [&](const FVector& Location)
+	{
+		auto& Node = Traffic->PedestrianNodes.AddDefaulted_GetRef();
+		Node.BuildingId = 0xD1;
+		Node.PeopleFootprintSize = 3;
+		Node.Location = Location;
+	};
+	auto Frame = BuildFrame();
+	if (!TestTrue(TEXT("Medical mission selected"), Frame.Missions.IsValidIndex(Frame.CurrentMission))) return false;
+	TestEqual(TEXT("No hospital retains original pickup guide"), Frame.Missions[Frame.CurrentMission].Tile, FIntPoint(44, 64));
+	TestEqual(TEXT("No hospital invents no destination"), Frame.Missions[Frame.CurrentMission].Secondary, FIntPoint(-1, -1));
+
+	// Far hospital first, plus a closer non-hospital. Altitude must not affect map distance.
+	AddHospital(FVector(0, -16000, 0));
+	AddHospital(FVector(0, 8000, 50000));
+	auto& PoliceNode = Traffic->PedestrianNodes.AddDefaulted_GetRef();
+	PoliceNode.BuildingId = 0xD2;
+	PoliceNode.Location = FVector(0, 400, 0);
+	Frame = BuildFrame();
+	TestEqual(TEXT("White guide chooses nearest hospital on the map"), Frame.Missions[Frame.CurrentMission].Secondary, FIntPoint(64, 44));
+	TestEqual(TEXT("Red guide retains waiting patients"), Frame.Missions[Frame.CurrentMission].Tertiary, FIntPoint(44, 64));
+	TestEqual(TEXT("Mission record still accepts any hospital"), Missions->MissionSystem.FindRecord(EventId)->SecondaryX, -1);
+	TestEqual(TEXT("Mission record pickup layout is unchanged"), Missions->MissionSystem.FindRecord(EventId)->TertiaryX, -1);
+
+	Frame.HeadingX1616 = Frame.HeadingZ1616 = 0;
+	FSimCopterMapSettings Settings;
+	Settings.bShowMissionBlips = Settings.bShowServiceBlips = false;
+	FSimCopterMapRaster Raster;
+	for (int32 Zoom = 0; Zoom <= MaxZoom; ++Zoom)
+	{
+		Settings.Zoom = Zoom;
+		Raster.Render(Frame, Settings);
+		TestEqual(FString::Printf(TEXT("Zoom %d hospital white ray, including offscreen and hidden blips"), Zoom),
+			Raster.GetPixel(CentreX + 8, CentreY), uint8(0x3e));
+		TestEqual(FString::Printf(TEXT("Zoom %d waiting patient red ray"), Zoom),
+			Raster.GetPixel(CentreX, CentreY + 8), uint8(0x6a));
+	}
+
+	Helicopter->SetActorLocation(FVector(0, -14000, 10000));
+	Frame = BuildFrame();
+	TestEqual(TEXT("Movement updates to the now-nearest hospital"), Frame.Missions[Frame.CurrentMission].Secondary, FIntPoint(64, 104));
+	Helicopter->SetActorLocation(FVector::ZeroVector);
+	Missions->PostMissionEvent(EVT_VictimPickedUp, EventId, 1, true);
+	Missions->MissionSystem.Tick(0.05f);
+	Frame = BuildFrame();
+	TestEqual(TEXT("Hospital guide survives actual pickup transition"), Frame.Missions[Frame.CurrentMission].Secondary, FIntPoint(64, 44));
+	TestEqual(TEXT("Pickup transition removes patient guide"), Frame.Missions[Frame.CurrentMission].Tertiary, FIntPoint(-1, -1));
+	Frame.HeadingX1616 = Frame.HeadingZ1616 = 0;
+	Settings.Zoom = 0;
+	Raster.Render(Frame, Settings);
+	TestEqual(TEXT("Hospital white ray still renders after pickup"), Raster.GetPixel(CentreX + 8, CentreY), uint8(0x3e));
+	TestEqual(TEXT("Old patient ray clears after pickup"), Raster.GetPixel(CentreX, CentreY + 8), uint8(Color::GroundRampFirst + 4));
+
+	Missions->MissionSystem.EnsureBaseLocationRecord(80, 80);
+	Missions->FocusNextMapMission();
+	Frame = BuildFrame();
+	TestEqual(TEXT("Cycling to base preserves its destination"), Frame.Missions[Frame.CurrentMission].Tile, FIntPoint(80, 80));
+	TestEqual(TEXT("Unselected medevac gains no hospital icon"), Frame.Missions[0].Secondary, FIntPoint(-1, -1));
+	Missions->FocusPreviousMapMission();
+	Traffic->PedestrianNodes.Reset();
+	Frame = BuildFrame();
+	TestEqual(TEXT("Removed hospitals leave no stale destination"), Frame.Missions[Frame.CurrentMission].Secondary, FIntPoint(-1, -1));
+	AddHospital(FVector(0, 8000, 0));
+	Missions->PostMissionEvent(EVT_MedevacDelivered, EventId, 1, true);
+	Missions->MissionSystem.Tick(0.05f);
+	Frame = BuildFrame();
+	TestFalse(TEXT("Delivery finishes the medical mission"), Missions->IsMissionEventActive(EventId));
+	TestEqual(TEXT("Completion restores base guide"), Frame.Missions[Frame.CurrentMission].Tile, FIntPoint(80, 80));
+	TestEqual(TEXT("Completed mission has no hospital guide"), Frame.Missions[0].Secondary, FIntPoint(-1, -1));
 	return true;
 }
 

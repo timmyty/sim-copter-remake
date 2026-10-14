@@ -124,10 +124,11 @@ bool FSimCopterFlacPlaybackTest::RunTest(const FString&)
 		TestTrue(TEXT("FLAC decode runs asynchronously"), Audio->PendingRadioClip.IsValid());
 		TestTrue(TEXT("Scheduler treats loading as active"), Audio->IsRadioPlaying());
 		Audio->SetRadioVolumeMultiplier(0);
+		Audio->SetRadioPaused(true);
 		const double Deadline = FPlatformTime::Seconds() + 10;
 		while (Audio->PendingRadioClip.IsValid() && FPlatformTime::Seconds() < Deadline)
 		{
-			Audio->Tick(0); FPlatformProcess::Sleep(.005f);
+			Audio->UpdateRadioPlayback(); FPlatformProcess::Sleep(.005f);
 		}
 		if (!TestNotNull(TEXT("Asynchronous decode creates radio component"), Audio->RadioComponent.Get())) return false;
 		TestEqual(TEXT("Changing volume while loading is respected"), Audio->RadioComponent->VolumeMultiplier, 0.0f);
@@ -138,6 +139,16 @@ bool FSimCopterFlacPlaybackTest::RunTest(const FString&)
 			TestTrue(TEXT("Only remaining frames queued"), Wave->GetAvailableAudioByteCount() > 50 * 1024 * 1024);
 		}
 		TestTrue(TEXT("Seek reduces duration"), Audio->GetRadioRemainingSeconds() > 299 && Audio->GetRadioRemainingSeconds() < 302);
+		TestTrue(TEXT("Pause while decoding is retained on completion"),Audio->IsRadioPaused());
+		TestTrue(TEXT("Decoded paused FLAC reports requested offset"),FMath::IsNearlyEqual(Audio->GetRadioPositionSeconds(),12.f,.02f));
+		TestTrue(TEXT("FLAC transport can seek while paused"),Audio->SeekRadio(60.f));
+		TestTrue(TEXT("Seek retains pause during a replacement decode"),Audio->IsRadioPaused() && Audio->PendingRadioClip.IsValid());
+		const double SeekDeadline=FPlatformTime::Seconds()+10;
+		while (Audio->PendingRadioClip.IsValid() && FPlatformTime::Seconds()<SeekDeadline)
+		{ Audio->UpdateRadioPlayback(); FPlatformProcess::Sleep(.005f); }
+		TestFalse(TEXT("Seek decode completes"),Audio->PendingRadioClip.IsValid());
+		TestTrue(TEXT("Paused seek resumes at correct offset"),Audio->IsRadioPaused() && FMath::IsNearlyEqual(Audio->GetRadioPositionSeconds(),60.f,.02f));
+		Audio->SetRadioPaused(false); TestFalse(TEXT("Decoded FLAC resumes"),Audio->IsRadioPaused());
 		Audio->SetRadioVolumeMultiplier(0);
 		TestEqual(TEXT("Mute still works"), Audio->RadioComponent->VolumeMultiplier, 0.0f);
 		Audio->StopRadio(); TestFalse(TEXT("Stop retires FLAC playback"), Audio->IsRadioPlaying());

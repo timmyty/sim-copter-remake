@@ -1,5 +1,9 @@
 # Invoke the Revoked radio — October 5, 2026
 
+The [cockpit radio menu](RadioMenu.md) now opens with **Ctrl+R** or a double-click
+on the radio. Pick an exact song or commercial; playback continues through the
+displayed playlist in sequential order and loops.
+
 Tune to **KINV**, the last station on the dial. It plays all eight Dancing to Our
 Doom tracks in album order, followed by screenshot songs 1–13, then loops. No DJ,
 commercials, shuffle, or deliberate four-second gaps interrupt this station.

@@ -35,6 +35,7 @@
 #include "UI/SSimCopterGortSequence.h"
 #include "UI/SSimCopterSettingsMenu.h"
 #include "UI/SSimCopterSoundSettings.h"
+#include "UI/SSimCopterRadioMenu.h"
 #include "UI/SimCopterHangarArt.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Layout/SBorder.h"
@@ -86,7 +87,7 @@ const TCHAR* const TransportBookmarkAction = TEXT("SimCopterReplayBookmark");
  * player nothing at all - not even the key they are pressing at that moment - as long as the
  * keyboard is handed back here first.
  *
- * Normal input continues after repair. L3 is consumed here for Sprint Mode; R3+L3
+ * Normal input continues after repair. L3 is consumed here for Turbo Mode; R3+L3
  * toggles contextual help before either click can reach a widget or pawn action.
  */
 class FSimCopterKeyboardFocusPreProcessor : public IInputProcessor
@@ -108,7 +109,7 @@ public:
 	{
 		if (auto* PC = Controller.Get())
 		{
-			PC->HandleKeyboardSprintKey(InKeyEvent.GetKey(), true, InKeyEvent.IsRepeat());
+			PC->HandleKeyboardTurboKey(InKeyEvent.GetKey(), true, InKeyEvent.IsRepeat());
 			if (PC->HandleCheatKey(InKeyEvent)) return true;
 		}
 		if (!InKeyEvent.IsRepeat())
@@ -127,6 +128,8 @@ public:
 			{
 				if (InKeyEvent.GetKey() == EKeys::Gamepad_LeftThumbstick)
 					return PC->HandleControllerLeftStickPressed(InKeyEvent.IsRepeat());
+				if (InKeyEvent.GetKey() == EKeys::Gamepad_RightThumbstick &&
+					PC->HandleControllerRightStickPressed(InKeyEvent.IsRepeat())) return true;
 				if (PC->HandleControllerMapKeyPressed(InKeyEvent.GetKey(), InKeyEvent.IsRepeat())) return true;
 			}
 		}
@@ -141,7 +144,7 @@ public:
 		Repair();
 		if (auto* PC = Controller.Get())
 		{
-			PC->HandleKeyboardSprintKey(InKeyEvent.GetKey(), false);
+			PC->HandleKeyboardTurboKey(InKeyEvent.GetKey(), false);
 			if (InKeyEvent.GetKey() == EKeys::Gamepad_LeftThumbstick) return PC->HandleControllerLeftStickReleased();
 			if (PC->HandleControllerMapKeyReleased(InKeyEvent.GetKey())) return true;
 		}
@@ -236,44 +239,44 @@ ASimCopterPlayerController::ASimCopterPlayerController()
 
 void ASimCopterPlayerController::OnPossess(APawn* InPawn)
 {
-	ResetControllerSprint();
+	ResetControllerTurbo();
 	Super::OnPossess(InPawn);
 }
 
 void ASimCopterPlayerController::OnUnPossess()
 {
-	ResetControllerSprint();
+	ResetControllerTurbo();
 	Super::OnUnPossess();
 }
 
-// Remake: tap either Shift to share the controller's persistent Sprint Mode. Commit on
+// Remake: tap either Shift to share the controller's persistent Turbo Mode. Commit on
 // release so Shift+F2..F5 can still recall responders without changing the flight speed.
-void ASimCopterPlayerController::HandleKeyboardSprintKey(FKey Key, bool bPressed, bool bRepeat)
+void ASimCopterPlayerController::HandleKeyboardTurboKey(FKey Key, bool bPressed, bool bRepeat)
 {
 	const uint8 Bit = Key == EKeys::LeftShift ? 1 : Key == EKeys::RightShift ? 2 : 0;
 	if (!Bit)
 	{
-		if (bPressed && KeyboardSprintKeys && (Key == EKeys::F2 || Key == EKeys::F3 || Key == EKeys::F4 || Key == EKeys::F5 ||
+		if (bPressed && KeyboardTurboKeys && (Key == EKeys::F2 || Key == EKeys::F3 || Key == EKeys::F4 || Key == EKeys::F5 ||
 			Key == EKeys::LeftControl || Key == EKeys::RightControl || Key == EKeys::LeftAlt || Key == EKeys::RightAlt))
-			bKeyboardSprintUsed = true;
+			bKeyboardTurboUsed = true;
 		return;
 	}
 	const auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
-	const bool bCanSprint = GetPawn() && !IsPaused() && !IsMoveInputIgnored() && !IsPhotoModeActive() &&
+	const bool bCanTurbo = GetPawn() && !IsPaused() && !IsMoveInputIgnored() && !IsPhotoModeActive() &&
 		!IsSettingsOpen() && !(GEngine && GEngine->GameViewport && GEngine->GameViewport->IgnoreInput()) &&
 		((Helicopter && !Helicopter->IsFixedWingAircraft() && Helicopter->GetControllerMode() == ESimCopterControllerMode::None) ||
 		GetPawn()->IsA<ASimCopterOnFootPawn>());
 	if (bPressed)
 	{
-		if (bRepeat || (KeyboardSprintKeys & Bit) || !bCanSprint) return;
-		if (!KeyboardSprintKeys) bKeyboardSprintUsed = IsInputKeyDown(EKeys::LeftControl) || IsInputKeyDown(EKeys::RightControl) ||
+		if (bRepeat || (KeyboardTurboKeys & Bit) || !bCanTurbo) return;
+		if (!KeyboardTurboKeys) bKeyboardTurboUsed = IsInputKeyDown(EKeys::LeftControl) || IsInputKeyDown(EKeys::RightControl) ||
 			IsInputKeyDown(EKeys::LeftAlt) || IsInputKeyDown(EKeys::RightAlt);
-		KeyboardSprintKeys |= Bit;
+		KeyboardTurboKeys |= Bit;
 	}
-	else if (KeyboardSprintKeys & Bit)
+	else if (KeyboardTurboKeys & Bit)
 	{
-		KeyboardSprintKeys &= ~Bit;
-		if (!KeyboardSprintKeys && !bKeyboardSprintUsed && bCanSprint) bControllerSprintEnabled = !bControllerSprintEnabled;
+		KeyboardTurboKeys &= ~Bit;
+		if (!KeyboardTurboKeys && !bKeyboardTurboUsed && bCanTurbo) bControllerTurboEnabled = !bControllerTurboEnabled;
 	}
 }
 
@@ -283,12 +286,21 @@ bool ASimCopterPlayerController::HandleControllerLeftStickPressed(const bool bRe
 	if (bRepeat || bControllerLeftStickHeld) return true;
 	bControllerLeftStickHeld = true;
 	auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
-	const bool bCanSprint = (Helicopter && !Helicopter->IsFixedWingAircraft()) || GetPawn()->IsA<ASimCopterOnFootPawn>();
+	const bool bCanTurbo = (Helicopter && !Helicopter->IsFixedWingAircraft()) || GetPawn()->IsA<ASimCopterOnFootPawn>();
 	const bool bHelpChord = IsInputKeyDown(EKeys::Gamepad_RightThumbstick) ||
 		(Helicopter && Helicopter->IsControllerCameraAdjustHeld());
-	bControllerLeftStickUsed = bHelpChord || !bCanSprint ||
+	bControllerLeftStickUsed = bHelpChord || !bCanTurbo ||
 		(Helicopter && Helicopter->GetControllerMode() != ESimCopterControllerMode::None);
-	if (bHelpChord || !bCanSprint) ToggleControllerHelp();
+	if (bHelpChord || !bCanTurbo) ToggleControllerHelp();
+	return true;
+}
+
+bool ASimCopterPlayerController::HandleControllerRightStickPressed(const bool bRepeat)
+{
+	// The displayed L3 + R3 chord works in either order, without committing L3's Turbo toggle.
+	if (!bControllerLeftStickHeld || !GetPawn() || IsPaused() || IsMoveInputIgnored()) return false;
+	if (!bRepeat && !bControllerLeftStickUsed) ToggleControllerHelp();
+	bControllerLeftStickUsed = true;
 	return true;
 }
 
@@ -301,8 +313,8 @@ bool ASimCopterPlayerController::HandleControllerLeftStickReleased()
 		!(GEngine && GEngine->GameViewport && GEngine->GameViewport->IgnoreInput()) &&
 		(!Helicopter || Helicopter->GetControllerMode() == ESimCopterControllerMode::None))
 	{
-		// Wait for release so using L3 as a map modifier never also toggles Sprint Mode.
-		bControllerSprintEnabled = !bControllerSprintEnabled;
+		// Wait for release so using L3 as a map modifier never also toggles Turbo Mode.
+		bControllerTurboEnabled = !bControllerTurboEnabled;
 	}
 	bControllerLeftStickUsed = false;
 	return true;
@@ -430,6 +442,7 @@ void ASimCopterPlayerController::SetupInputComponent()
 
 	BindReplayInput(*InputComponent, *this);
 	InputComponent->BindKey(EKeys::F1, IE_Pressed, this, &ASimCopterPlayerController::ToggleControllerHelp).bExecuteWhenPaused = true;
+	InputComponent->BindKey(FInputChord(EKeys::R, false, true, false, false), IE_Pressed, this, &ASimCopterPlayerController::SimRadioMenu).bExecuteWhenPaused = true;
 	InputComponent->BindKey(FInputChord(EKeys::P, false, true, false, false), IE_Pressed, this, &ASimCopterPlayerController::SimPhotoMode).bExecuteWhenPaused = true;
 	InputComponent->BindKey(EKeys::F12, IE_Pressed, this, &ASimCopterPlayerController::CapturePhoto).bExecuteWhenPaused = true;
 }
@@ -1032,6 +1045,18 @@ void ASimCopterPlayerController::SimSettings()
 	OpenSettings();
 }
 
+void ASimCopterPlayerController::SimRadioMenu()
+{
+	if (Screen == ESimCopterSettingsScreen::Radio) { CloseScreen(); return; }
+	if (!Cast<ASimCopterHelicopterPawn>(GetPawn()) || IsSettingsOpen() || IsPhotoModeActive() ||
+		IsReplayPanelOpen() || IsPaused() || !GEngine || !GEngine->GameViewport ||
+		GEngine->GameViewport->IgnoreInput()) return;
+	auto* Radio = USimCopterRadioSubsystem::Get(this);
+	if (!Radio || !Radio->IsPlayerInHelicopter()) return;
+	PushPause();
+	EnterScreen(ESimCopterSettingsScreen::Radio);
+}
+
 // ---------------------------------------------------------------------------------------------
 // The reference-counted pause, FUN_004346c0 / [vt+0x44]
 // ---------------------------------------------------------------------------------------------
@@ -1084,6 +1109,9 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 {
 	switch (NewScreen)
 	{
+	case ESimCopterSettingsScreen::Radio:
+		return SNew(SSimCopterRadioMenu).Radio(USimCopterRadioSubsystem::Get(this))
+			.OnClosed(FSimpleDelegate::CreateUObject(this, &ASimCopterPlayerController::CloseScreen));
 	case ESimCopterSettingsScreen::CheatGuide:
 		return SNew(SSimCopterCheatGuide).Art(Art)
 			.OnClosed(FSimpleDelegate::CreateWeakLambda(this, [this]()

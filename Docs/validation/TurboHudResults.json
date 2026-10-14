@@ -1,0 +1,331 @@
+{
+  "completedAtUtc": "2026-10-14T06:07:51.704142+00:00",
+  "feature": "Turbo minimap lamp, switch, stencil help strip and on-foot status cleanup",
+  "builds": {
+    "Editor": "Succeeded",
+    "Shipping": "Succeeded",
+    "Development": "Succeeded"
+  },
+  "focusedTests": {
+    "succeeded": 24,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0
+  },
+  "offscreenTests": {
+    "succeeded": 2,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0
+  },
+  "testCases": [
+    {
+      "path": "SimCopter.Controller.Contexts",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.ContextualHelp",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.FlightRouting",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.HelpDeviceStyle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.HelpPresentation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuConfirmCancel",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuOutlineArt",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuRoutedInput",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.MenuSpatialNavigation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.RadialSelection",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.SteeringResponse",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.TurboMode",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Controller.WheelPresentation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.CustomCities.PhotoModeLifecycle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.Buttons",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.HeadingOrientation",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.Layout",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.MedevacNearestHospitalGuide",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.MissionCycle",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.Overlays",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.TileColors",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.Map.Zoom",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.RescuePilot.ShiftRun",
+      "state": "Success"
+    },
+    {
+      "path": "SimCopter.UI.TurboHud",
+      "state": "Success"
+    }
+  ],
+  "visualChecks": [
+    "Red ON / dim OFF lamps and opposite switch positions at scales 1.5 and 2.5",
+    "Keyboard/controller hardware and map pixels identical; only header differs",
+    "Yellow stencil shortcuts fit silver header",
+    "Expanded controller and on-foot keyboard help inspected",
+    "Map click hit testing at scales 1, 1.768292 and 2.5"
+  ],
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T06:05:57.6824671Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "70480D055153B1043EB57E800CB4E2ACBD4AE5B0C78E6C8DD29CB625906899F2",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\turbo-hud/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "36949BBBD78870C7A9574D4EE5A6EAB3E134A904B2BFE92B90A8152BA4315F1B"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "B98F7C71FDB20C406BCB1197A702D06CB67A2D28258064C838FD02F666BDD5BD",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\turbo-hud/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "E12B1053588E049EBE44DB9D22B4D4E677973EAFC573C1FADBA56B9D65174E31"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "7DB395AC242F8DE56901F1FD345CE41DDDB84E554CEAAB8E2C5272FF15D946B4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\turbo-hud/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "2D93EDE0E80F8E0CF389C69E4747A5465BA710EC0D5812B27921D8425F60D57D"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "98E0BC2462C654D6279DA65070B6C9A5067AEA34EF225370CA4816DE78431933",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\turbo-hud/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "D9DC115B4DDA68FF82892962E2DF57E672FFF9B4367AAA0475161852ECD9F141"
+      }
+    ],
+    "InteractiveGameplayChecked": false,
+    "PublicationCheckoutChanged": false
+  },
+  "installedDocs": [
+    "README.md",
+    "Docs\\CustomCityProgressionAndPhotoMode.md",
+    "Docs\\Releases\\v1.0.11.md",
+    "Docs/ControllerSupport.md",
+    "Docs/CustomCityProgressionAndPhotoMode.md",
+    "Docs/GpuCrashAndSprint.md",
+    "Docs/AirOperations.md",
+    "Docs/TrafficFlowAndFlightPacing.md",
+    "Docs/TurboHud.md"
+  ],
+  "changedFiles": [
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterAirOperations.cpp",
+      "sha256": "ac3e7f602924ff8b1697e6681bea4282330e3f2c86c4f5909c6441da050d3b1e"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp",
+      "sha256": "3245cfe2e8d364610e259feec4f5156b94250e4361ac879cbbe95581c02c0cf5"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Game/SimCopterPlayerController.cpp",
+      "sha256": "b47c0450b4b9183b5855d9a57385ca69bc87cfe8d4f7a16daf25ca11f40fedaa"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterOnFootPawn.cpp",
+      "sha256": "b71fa7ce9363a58c43278bd26d9b0eefc5a7c8c6c2c7761da4a1ede52f393377"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerHelpTests.cpp",
+      "sha256": "0d2750dbc653da42215b6522960b098fd9bf58833ba2fdaa81095207a8402c75"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerSprintTests.cpp",
+      "status": "renamed to SimCopterControllerTurboTests.cpp"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterPilotRunTests.cpp",
+      "sha256": "2191618b6c0e192556b07f9f6673addbbcf05ccacb7dddbc6fc658ef65489c0d"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterRemoteRecoveryTests.cpp",
+      "sha256": "78ed44aaccc68d692da0e15d684ff491e04c9c22944abccd16fa8ed2158a4578"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SimCopterControllerHelp.cpp",
+      "sha256": "33dcbb94a15745f4b67435e948f0324191d926156238455d02526c35be87f3d7"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControllerHelp.cpp",
+      "sha256": "3a1d6c9c997028850fe3ed9cbb6c983f715b5d45059cacd2a312824869bdc384"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterControllerHelp.h",
+      "sha256": "077c79d5c9d3a20c027ad342f32d526413ab34ef74a4cbc1bd20e4e6463a2328"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMapPanel.cpp",
+      "sha256": "cf041dedbf23a0b9cfe6963c7a5be7ea7aee182d569484a6c2c9bf90d3e3c801"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterMapPanel.h",
+      "sha256": "4f2599b51cea82c4954338bc5212f65157489e99d50e254f7e0f0daa89e9c1df"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Flight/SimCopterHelicopterPawn.h",
+      "sha256": "575b5becff28edb11f230e50b61d080e8ddcec007dbe7641680b6bb5e11e24b3"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Game/SimCopterPlayerController.h",
+      "sha256": "0c1dd07ac07e320e0e039af2b9eb7b450701144cf46faa8fa54d55161a72e9c0"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterOnFootPawn.h",
+      "sha256": "2b99e1663eb877253b88944b2f1024f6f882be5318691335165830ab0e85c10a"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Missions/SimCopterMissionSystemActor.h",
+      "sha256": "631020a3c4ab4b5caed8c4181a7b0ff6c20a056dd33599ebd6d697b0aa8f378c"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/UI/SimCopterControllerHelp.h",
+      "sha256": "8e7138aed413560c1810e640c21347f1396288c0a0f716a0dd9c6e95392ac4b4"
+    },
+    {
+      "path": "README.md",
+      "sha256": "7ceadae694468a8a722e5fccd065e25f12e0c6c24c932bb49542889074347651"
+    },
+    {
+      "path": "Docs/AirOperations.md",
+      "sha256": "2e2e5ffb3ea9efebdd06fc853a0c1bf088042c1d860a8259a041461fbcd16b4b"
+    },
+    {
+      "path": "Docs/ControllerSupport.md",
+      "sha256": "685356aa5e8a6af6087fe283054264949eb39e8fc7fd4b1de67e70b99efa83f2"
+    },
+    {
+      "path": "Docs/CustomCityProgressionAndPhotoMode.md",
+      "sha256": "c76371d89c78918e50780ef6021800533987a67ab9887b389c52bcae330e0ed0"
+    },
+    {
+      "path": "Docs/EnergyTaserAndFreeAim.md",
+      "sha256": "7373f790e19e80e51a8e187ffa7ec5dcba0d37159de1e0d7d0914bcf3095f637"
+    },
+    {
+      "path": "Docs/ForkChanges.md",
+      "sha256": "04783d84404726e1e0f43e05fe6d03a5370178967df4f23cb036fd2069e617de"
+    },
+    {
+      "path": "Docs/GpuCrashAndSprint.md",
+      "sha256": "80d9c6338ed3913312c01f828913f92844ab6480b9dd9ef03881797dac929483"
+    },
+    {
+      "path": "Docs/RemoteTaserAndPilotRecovery.md",
+      "sha256": "de288e616e7a4f7cca403421b272e87a737ecdee318977768649d3ceed0f67c1"
+    },
+    {
+      "path": "Docs/TrafficFlowAndFlightPacing.md",
+      "sha256": "9bacb1289a7139133b95057991cf53763871a26a07d05cd57ec2885e15329987"
+    },
+    {
+      "path": "Docs/memory/MEMORY.md",
+      "sha256": "d928044a965cba106fcfd8488a28a0d99f138af727c5ec94ff8429315596b13c"
+    },
+    {
+      "path": "Docs/memory/remote-taser-pilot-recovery.md",
+      "sha256": "221e9018283736e453d33df4b5bf1d47e7167b3359ecdec765a415861dbfb8e7"
+    },
+    {
+      "path": "Docs/memory/simcopter-hangar-shell.md",
+      "sha256": "f0c9d4a3bbc369d12381bf48404e75a7f9f4082c8b9dcdfbae95272c3d040b97"
+    },
+    {
+      "path": "Docs/Releases/v1.0.11.md",
+      "sha256": "644ca7a655822e012ab0668bccbba496ee1caf0bc1c93b8c9a0f6e5e7bacce58"
+    },
+    {
+      "path": "Docs/Releases/v1.0.8.md",
+      "sha256": "fac3f67bcbdd002234594884407d6d30cbe6a843ab5ce93626552628e3c59a2c"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterStatusPlate.h",
+      "sha256": "ad6ec22f93e5d878815ee4e013d03a7036872f34ab8de3c43ec2eb83b4e4753a"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTurboHudTests.cpp",
+      "sha256": "27502ecfc8e4226348bb83447f69f57f53eb5fc11aafd2366bb364177faaf89e"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerTurboTests.cpp",
+      "sha256": "3f63da0d1b6da206b1c4f6a07bdf6290b388f21d96ddf3a5d282e74fd9948474"
+    },
+    {
+      "path": "Docs/TurboHud.md",
+      "sha256": "93df36708d020c23e346d43f21223457ada4e3a6c54239be68060a408646559e"
+    }
+  ],
+  "notes": [
+    "Initial screenshot helper API error fixed before successful build.",
+    "Initial approval timeout retried successfully; sandboxed test launch stopped after Zen cache initialization failure.",
+    "Offscreen test exposed fixed-radius brush hiding small lamp/switch; height-based rounding and stronger red contrast now pass unchanged pixel assertions.",
+    "Existing DLSS-G hardware-scheduling startup messages also occur in prior radio render logs.",
+    "Concurrent medical/radio changes preserved; publication checkout unchanged by this task.",
+    "Installed file writes required normal permissions; backups and installed hashes verified."
+  ],
+  "limitations": [
+    "No interactive gameplay or physical-controller test.",
+    "No new archive or published release.",
+    "Historical receipts and scratch backups keep original identifiers."
+  ]
+}

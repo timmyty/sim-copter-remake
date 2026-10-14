@@ -157,7 +157,7 @@ bool FSimCopterPhotoHelpIdleRulesTest::RunTest(const FString&)
 	TestTrue(TEXT("Cursor hides at ten real seconds"), SimCopterCursorIdle::HasTimedOut(110, 100));
 	TestFalse(TEXT("Mouse activity resets timeout"), SimCopterCursorIdle::HasTimedOut(110, 110));
 	SimCopterControllerHelp::FState State; State.bKeyboard = true;
-	TestEqual(TEXT("Collapsed keyboard panel is a single shortcut row"), SimCopterControllerHelp::BuildPrompts(State).Num(), 1);
+	TestEqual(TEXT("Collapsed help stays in the minimap header without a floating shortcut row"), SimCopterControllerHelp::BuildPrompts(State).Num(), 0);
 	State.bExpanded = true;
 	TestTrue(TEXT("Shortcut expands keyboard instructions"), SimCopterControllerHelp::BuildPrompts(State).Num() > 1);
 	return true;

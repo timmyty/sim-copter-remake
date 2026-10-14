@@ -1,11 +1,21 @@
 # Timmyty SimCopter gameplay fork
 
+## October 14 release v1.0.12
+
+Includes all completed changes since v1.0.11: persistent catalog controller
+selection; deployed-medic rescue priority, patient seat reservations and cabin
+handoffs; the full cockpit radio menu and controller transport/navigation;
+the saved remote-taser autopilot switch; nearest-hospital map guidance; the
+Turbo minimap lamp/switch and help cleanup; saved bucket/harness restoration;
+empty mission-message panel correction; and repaired automation fixtures.
+[Release notes](Releases/v1.0.12.md) and
+[combined validation](validation/WindowsRelease112Results.json).
 ## October 13 release v1.0.11
 
 Combines all completed work since v1.0.10: shared lossless original music,
 custom-city score/equipment progression and full-map rescue-site selection,
 aircraft-sized passenger parties, Photo Mode and day/night sliders, cleaner help
-and pause menus, Shift/L3 Sprint, idle-cursor hiding, and native browsing for cities
+and pause menus, Shift/L3 Turbo, idle-cursor hiding, and native browsing for cities
 and saved games. [Release notes](Releases/v1.0.11.md) and
 [combined validation](validation/WindowsRelease111Results.json).
 
@@ -40,7 +50,7 @@ This release collects the completed hangar reconstruction and equipment previews
 cage car/boat recovery and police-roof deliveries, animated energy taser and remote
 aiming, custody-aware crime timers, medical hill routing and destruction aftermath,
 automatic pilot landing and harness patient handoff, fleet-wide equipment and
-graduation restoration, controller sprint/map/help changes, and victory-band base
+graduation restoration, controller turbo/map/help changes, and victory-band base
 confinement. The revised README adds four actual Unreal screenshots showing the
 hangar, a car in the sealed cage, the pause-menu entry and the Cheat Codes guide.
 

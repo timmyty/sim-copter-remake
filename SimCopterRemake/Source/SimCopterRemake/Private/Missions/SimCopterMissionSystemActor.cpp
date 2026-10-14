@@ -3963,7 +3963,8 @@ void ASimCopterMissionSystemActor::RefreshMessageLogWidget()
 		];
 	}
 
-	MessageLogWidget->SetVisibility(MissionMessageLog.Num() > 0 ? EVisibility::SelfHitTestInvisible : EVisibility::Collapsed);
+	MessageLogWidget->SetVisibility(!bHudHiddenForReplay && bShowMissionMessageLog && !MissionMessageLog.IsEmpty()
+		? EVisibility::SelfHitTestInvisible : EVisibility::Collapsed);
 }
 
 void ASimCopterMissionSystemActor::EnsureMissionMarkerWidget()
@@ -4742,12 +4743,16 @@ bool ASimCopterMissionSystemActor::ProjectMissionMarkerToScreen(const FVector& W
 // `bHide`, not `bHidden`: AActor already has a bHidden bitfield and shadowing it here is an error.
 void ASimCopterMissionSystemActor::SetHudHiddenForReplay(const bool bHide)
 {
+	bHudHiddenForReplay = bHide;
 	// Collapsed rather than removed: the marker canvas is repopulated every frame from the live
 	// mission list, and tearing the layer down would make the next frame rebuild all of it.
 	const EVisibility HudVisibility = bHide ? EVisibility::Collapsed : EVisibility::Visible;
 	if (MessageLogWidget.IsValid())
 	{
-		MessageLogWidget->SetVisibility(HudVisibility);
+		// Restoring the HUD must not expose an empty border after Photo Mode, a replay or the city
+		// intro. Retain the hide state so a message arriving during those modes stays hidden too.
+		MessageLogWidget->SetVisibility(!bHudHiddenForReplay && bShowMissionMessageLog && !MissionMessageLog.IsEmpty()
+			? EVisibility::SelfHitTestInvisible : EVisibility::Collapsed);
 	}
 	if (MissionMarkerWidget.IsValid())
 	{

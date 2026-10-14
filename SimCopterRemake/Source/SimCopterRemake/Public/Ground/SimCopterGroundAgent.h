@@ -489,6 +489,8 @@ public:
 	// Starts a visible passenger fall from the current airborne position. When the landing impact
 	// is too large, the agent becomes an injured medevac victim owned by a new no-reward mission.
 	void BeginPassengerFall(int32 SourceEventId, float InjuryDistanceCm);
+	// A manual crew deployment may take an existing cabin patient through the normal handoff.
+	void PrepareMedicDeployment(class ASimCopterHelicopterPawn* Helicopter, bool bTakeCabinPatient);
 
 	// Turns the agent into a script-driven mover: no behavior VM, no ground snapping (its owner
 	// keeps it on a chosen plane), driven purely by SetMoveTarget.
@@ -1313,6 +1315,7 @@ private:
 	friend class FSimCopterBehaviorAircraftTest;
 	friend class FSimCopterMedicRouteTest;
 	friend class FSimCopterDeployedMedicRiotTest;
+	friend class FSimCopterMedicDeploymentTest;
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterBandCelebrationTest;

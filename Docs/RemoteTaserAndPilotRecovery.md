@@ -8,6 +8,23 @@ button. In flight, that button (or N, or X → Remote Taser → A) transfers fli
 opens the remote helmet sight. No police passenger or equipment purchase is required.
 The former officer/passenger camera has been removed.
 
+The panel now has a compact **AUTOPILOT ON/OFF** switch on its right. **OFF**
+holds the aircraft steady while using the taser camera, with free aim, zoom and
+firing still available. It stops criminal pursuit and target-facing on return to
+manual flight, and prevents all automatic pilot pickup or recovery after exiting.
+It also cancels any recovery already in progress and blocks the update-time
+reconnection that would otherwise restart it. **ON** restores pursuit and recovery.
+The choice is saved per aircraft in runtime payload version 4; older payloads
+still load and default to ON. This switch does not change dispatched support aircraft.
+
+Validated alongside the expanded radio controls: all three build configurations
+succeeded, all 37 focused automation cases passed, and both panels were rendered
+offscreen. The actual switch callback, hover with a moving target, firing, resumed
+pursuit, airborne exit, recovery cancellation/reconnection, reboarding and old/new
+save payloads are covered. Both local game executables and symbols were installed
+with verified backups/hashes. See [the validation receipt](validation/RemoteTaserAutopilotAndRadioControlsResults.json).
+No interactive gameplay or physical-controller check was performed.
+
 Move the mouse directly, or use the right stick, to aim. Hold right mouse to release
 the cockpit cursor. Left click,
 controller A, or RT fires. Roll the mouse wheel for 1x–4x scope zoom; hold LT for
@@ -40,7 +57,7 @@ faces the suspect. Full-airframe sweeps still govern
 travel. If a target has no clear vantage, it makes a bounded climb and retries;
 with no target it holds position and searches. The later [energy taser and free-aim
 update](EnergyTaserAndFreeAim.md) keeps the sight under the player's control in world
-space, independent of pursuit, and caps gradual approaches at normal sprint speed.
+space, independent of pursuit, and caps gradual approaches at normal turbo speed.
 Generic fleeing traffic and getaway cars with completed crime events are excluded.
 Mouse travel is independent of frame duration and
 uses the profile's X/Y sensitivity; the right stick remains a time-based rate.

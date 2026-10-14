@@ -37,7 +37,7 @@ October 11 energy/free-aim follow-up supersedes the sight-following details belo
 [EnergyTaserAndFreeAim.md](../EnergyTaserAndFreeAim.md). RemoteTaserAim is now the
 world-space manual sight, not an offset from a target-facing rotation. Target
 selection only changes the aircraft goal. Use derived airframe max speed multiplied
-by BOTH FlightModel.BaseTravelScale and TravelBoostScale for the real sprint cap.
+by BOTH FlightModel.BaseTravelScale and TravelBoostScale for the real turbo cap.
 Synthetic 1600 cm/s base car fixtures were far above authored road speeds; use
 RoadSpeedMaxUnitsPerSecond × 6.25 before the fleeing multiplier. Shared criminal
 eligibility rejects generic fleeing traffic and stale getaway mission records.

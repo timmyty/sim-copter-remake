@@ -17,7 +17,7 @@ the existing keyboard and mouse controls.
 | `Y` | Exit the helicopter, including deliberate airborne exits |
 | View / Back | Cycle camera view |
 | Menu / Start | Pause or resume |
-| `L3` | Toggle Sprint Mode |
+| `L3` | Toggle Turbo Mode |
 | `R3` + `L3` | Show / hide contextual button help |
 | `R3` + left-stick X | Dedicated lateral slide, equivalent to `Q` / `E` |
 | `R3` + D-pad up/down | Minimap zoom in/out |
@@ -25,8 +25,8 @@ the existing keyboard and mouse controls.
 | `L3` + D-pad up | Toggle mission markers |
 | `L3` + D-pad down | Toggle service vehicle markers |
 
-Sprint toggles when an ordinary L3 click is released. Using L3 for a marker shortcut
-or the help chord leaves Sprint Mode unchanged. Map chords consume the D-pad press
+Turbo toggles when an ordinary L3 click is released. Using L3 for a marker shortcut
+or the help chord leaves Turbo Mode unchanged. Map chords consume the D-pad press
 so they do not also operate a winch or change megaphone messages.
 
 LB and RB remain dedicated to turning. Holding both cancels their turn input;
@@ -103,7 +103,7 @@ seat is highlighted on the dashboard.
 | Left stick | Move |
 | Right stick | Look |
 | `LT` / `RT` | Aim / fire the taser |
-| `L3` | Toggle Sprint Mode |
+| `L3` | Toggle Turbo Mode |
 | `R3` + `L3` | Show / hide contextual button help |
 | `A` | Jump |
 | `X` | Put down a carried mission person |
@@ -177,15 +177,23 @@ The entire card containing the active tool has a broad, soft gold halo. The shar
 water card glows for either the bucket or cannon, and the Apache card glows for either
 weapon. Individual buttons do not receive selection borders.
 
-Controller help sits at the bottom left immediately above the map, with 16 HUD-scaled
-pixels of padding below it. It starts collapsed. `R3+L3` toggles the contextual rows;
-the Sprint Mode status and Show help / Hide help row always remain. `L3` toggles
-sprint in helicopters and on foot. Either `Shift` key toggles the same state on release;
-Shift+F2–F5 recall chords do not toggle it. Airplanes retain `L3` for help.
-Changing possession or restoring transient input clears Sprint Mode.
-Keyboard users press `F1` to expand the same help panel, which also contains the
-contextual tool instructions. `Ctrl+P` or Esc → Photo Mode opens the paused screenshot
-camera; `F12` captures an image and Esc returns to play.
+The minimap carries a shared **TURBO** status module at its existing left-side light
+and switch. Turbo ON lights the red lamp and flips the switch up; OFF dims it and
+flips the switch down. The same display is used with keyboard and controller input.
+A larger silver strip directly above the minimap carries yellow stencil lettering:
+**F1: Controls** for keyboard/mouse, or **L3 + R3: Show help** for controllers. Opening
+help changes the strip to the corresponding Hide controls / Hide help shortcut.
+The controller chord works in either press order without changing Turbo.
+
+`L3` or either `Shift` key toggles Turbo on release. Shift+F2–F5 recalls and minimap
+chords do not toggle it. Airplanes retain their legacy L3 help shortcut as well.
+Possession changes and input restoration clear Turbo. On foot, the Turbo indicator
+and Turbo help rows are hidden; running controls continue to work. The on-foot
+parachute status readout is removed, while pilot health and parachute controls remain.
+
+The floating collapsed-help overlay and Photo Mode help row have been removed.
+Photo Mode still opens with `Ctrl+P` or Esc → Photo Mode; `F12` captures an image
+and Esc returns to play. Expanded contextual tool instructions remain available.
 
 Expanded help uses imported Kenney Input Prompts icons. Flight help includes both
 sticks, both triggers, and the R3 camera modifier alongside the current tool.

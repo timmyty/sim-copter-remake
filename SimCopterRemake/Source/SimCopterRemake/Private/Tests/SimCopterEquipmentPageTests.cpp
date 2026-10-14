@@ -139,4 +139,45 @@ bool FSimCopterEquipmentInteractionTest::RunTest(const FString&)
 	TestTrue(TEXT("A with no available transaction moves to Done"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[10]);
 	return true;
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterCatalogNavigationTest,"SimCopter.Hangar.CatalogControllerSelection",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterCatalogNavigationTest::RunTest(const FString&)
+{
+	auto Menu = SNew(SSimCopterHangarMenu);
+	Menu->ShowPage(SSimCopterHangarMenu::EPage::Catalog);
+	auto Window = SNew(SVirtualWindow).Size(FVector2D(640,480)); Window->SetContent(Menu);
+	auto Arrange = [&]()
+	{
+		Window->SlatePrepass(); FHittestGrid Grid; Grid.SetHittestArea(FVector2D::ZeroVector,FVector2D(640,480));
+		FSlateWindowElementList Elements(Window); FPaintArgs Args(nullptr,Grid,FVector2D::ZeroVector,0,0);
+		Window->Paint(Args,FGeometry::MakeRoot(FVector2D(640,480),FSlateLayoutTransform()),
+			FSlateRect(0,0,640,480),Elements,0,FWidgetStyle(),true);
+	};
+	auto Key = [&](FKey K)
+	{ Menu->OnPreviewKeyDown(Menu->GetCachedGeometry(),FKeyEvent(K,FModifierKeysState(),0,false,0,0)); };
+	auto Tab = [&](int32 Row)
+	{
+		TArray<TSharedPtr<SWidget>> Buttons;
+		TFunction<void(TSharedRef<SWidget>)> Visit = [&](TSharedRef<SWidget> Widget)
+		{
+			if (Widget->GetTypeAsString() == TEXT("SButton")) Buttons.Add(Widget);
+			FChildren* Children = Widget->GetChildren();
+			for (int32 I=0; I<Children->Num(); ++I) Visit(Children->GetChildAt(I));
+		};
+		Visit(Menu);
+		return Buttons[Buttons.Num()-10+Row]; // Nine aircraft tabs plus Upgrades, after transactions.
+	};
+	Arrange();
+	Menu->SetControllerSelection(Tab(2));
+	Key(EKeys::Gamepad_FaceButton_Bottom); Arrange();
+	TestEqual(TEXT("Controller opens selected aircraft"),Menu->CatalogRow,2);
+	TestTrue(TEXT("Rebuilt card retains controller focus on its aircraft tab"),Menu->GetControllerSelection()==Tab(2));
+	Key(EKeys::Gamepad_DPad_Right); Key(EKeys::Gamepad_FaceButton_Bottom); Arrange();
+	TestEqual(TEXT("Next aircraft is one controller step away"),Menu->CatalogRow,3);
+	Menu->OnNavigation(Menu->GetCachedGeometry(),FNavigationEvent(FModifierKeysState(),0,EUINavigation::Left,ENavigationGenesis::Controller));
+	Key(EKeys::Gamepad_FaceButton_Bottom); Arrange();
+	TestEqual(TEXT("Stick navigation can return directly to previous aircraft"),Menu->CatalogRow,2);
+	return true;
+}
 #endif
