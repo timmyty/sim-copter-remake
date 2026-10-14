@@ -36,7 +36,7 @@ public class SimCopterRemake : ModuleRules
 		// ApplicationCore for FDisplayMetrics, which seeds the first run's resolution from the
 		// monitor the game opened on; RHI for IsRayTracingEnabled, which decides whether the
 		// Settings page may offer Hardware Lumen.
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "UMG", "RenderCore", "RHI", "ApplicationCore", "MediaAssets", "AudioMixer", "MoviePlayer", "DaySequence", "CelestialVault", "Json", "JsonUtilities" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "VorbisAudioDecoder", "Slate", "SlateCore", "UMG", "RenderCore", "RHI", "ApplicationCore", "MediaAssets", "AudioMixer", "MoviePlayer", "DaySequence", "CelestialVault", "Json", "JsonUtilities" });
 
 		// The Graphics page replaces the original's render.bmp options with Unreal's, so it drives
 		// NVIDIA's blueprint libraries directly rather than poking console variables. All three
@@ -64,6 +64,20 @@ public class SimCopterRemake : ModuleRules
 		// Editor targets deliberately skip this 237 MB copy; they read Reference directly.
 		if (Target.Type == TargetType.Game)
 		{
+			// Stage only verified compressed KINV recordings, never legacy WAV masters.
+			string KinvConfig = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Config", "KinvMusic.json"));
+			JsonObject Kinv = JsonObject.Read(new FileReference(KinvConfig));
+			JsonObject[] KinvTracks = Kinv.GetObjectArrayField("tracks");
+			if (KinvTracks.Length != 21) throw new BuildException("KINV requires all 21 compressed tracks.");
+			foreach (JsonObject Track in KinvTracks)
+			{
+				string Name = Track.GetStringField("file");
+				if (Name != Path.GetFileName(Name) || !Name.EndsWith(".ogg")) throw new BuildException("Invalid KINV file: {0}", Name);
+				string File = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Content", "Radio", "InvokeTheRevoked", Name));
+				if (!System.IO.File.Exists(File) || FileSha256(File) != Track.GetStringField("sha256"))
+					throw new BuildException("Missing or changed KINV track: {0}. Run Tools/Unreal/PrepareKinvMusic.py with the masters folder.", Name);
+				RuntimeDependencies.Add(File, StagedFileType.NonUFS);
+			}
 			for (int IntroIndex = 1; IntroIndex <= 2; ++IntroIndex)
 			{
 				string IntroMovie = Path.GetFullPath(Path.Combine(ModuleDirectory,

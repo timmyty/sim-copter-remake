@@ -1,0 +1,216 @@
+{
+  "codec": "Ogg Vorbis",
+  "nominal_bitrate": 128000,
+  "tracks": [
+    {
+      "file": "01 Expectations Increasing.ogg",
+      "sha256": "f77dcece544d1c438d777ac74b3315eef34f00b2cf912ddf37a1b7f5a6f37b33",
+      "bytes": 1465178,
+      "source_bytes": 16687726,
+      "source_sha256": "4232c7606dca4f8502595d2710719e28e26a614e0952f10600b3c0b060f1068d",
+      "frames": 4171903,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "02 Dancing to Our Doom.ogg",
+      "sha256": "b4dbb0b5d60a7c133288c5bffd8a01ce6efafbb55488b0771aa829770f7c25dc",
+      "bytes": 3681682,
+      "source_bytes": 38418002,
+      "source_sha256": "3fb798878568ce3c26bc5a713e2e64d200f5c361921ad68695cfdfc09a1e4bc5",
+      "frames": 9604472,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "03 Greed Demon (Greedy Men).ogg",
+      "sha256": "9f723e07e1c6aafa90b6a053d772a01a81ca9abe5bb68957028e9a1e7c7a2a03",
+      "bytes": 4766418,
+      "source_bytes": 51840510,
+      "source_sha256": "69578b2f61137f82da67839879887f7aa77b47f1009f5550874a30bbbdec679c",
+      "frames": 12960108,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "04 Disconnect the Net (Swim Free).ogg",
+      "sha256": "efeecb72161e7d3d8a5eeb2aa6428857f13efd5481b19d789938bcea6903a55e",
+      "bytes": 2627380,
+      "source_bytes": 31098214,
+      "source_sha256": "7e3f7beb42dc8772a5ff54d7631e25669221319cad593b9177cb2e684fbd742a",
+      "frames": 7774534,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "05 I Will Hold Her Close Tonight.ogg",
+      "sha256": "092caf394fc3f05053a92cc16a2cdc23f064a25342fe8443589fc3da5a33663f",
+      "bytes": 4098299,
+      "source_bytes": 42646514,
+      "source_sha256": "9b1c3630d3b6233ee0ad1e619f865ca6ca62fb8001ae0e3fd0b8bd9367054bc4",
+      "frames": 10661600,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "06 We Will Be More.ogg",
+      "sha256": "c76079185ee6f3297f8626e3b55a788e05631cb30262a715dfc0894dc303674e",
+      "bytes": 2187154,
+      "source_bytes": 25267718,
+      "source_sha256": "e69b1f48572c4e162eb11285ffa0530e71557d6149fac7db7f76e5cd34b98b58",
+      "frames": 6316901,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "07 Arise My Tribe (Constructive Interference).ogg",
+      "sha256": "6c307f4fbcd3679fdbdf102b38feea36ba39c3a8fb516348665bed8d7510fb8f",
+      "bytes": 4163484,
+      "source_bytes": 47606910,
+      "source_sha256": "5f9527f55ca374047d805f6b1532efa4b459be5ec0c9e2906524223a0a4f56bd",
+      "frames": 11901708,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "08 We Will Be More (Reprise).ogg",
+      "sha256": "5d88649c32fc98b7635060ccd16ac19e310eb847afb6bd1c6c828581340ad5c5",
+      "bytes": 6103921,
+      "source_bytes": 63892158,
+      "source_sha256": "33589e2bb4e6c722c54c54626aa91f73a49157babd61d5ba16821bfee5ccd609",
+      "frames": 15973020,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "09 The Great Filter (RenAIssance).ogg",
+      "sha256": "83b1ae29a1ddbc86fa8648fbc3ae5f15a1ad4f61d02e32b3affd44565888370d",
+      "bytes": 4842975,
+      "source_bytes": 62649834,
+      "source_sha256": "a1300d0b286194d28e278b2057ea94bfd908b9f18dc77ca50b95560de5e5f5fe",
+      "frames": 15662439,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "10 Invoke the Revoked.ogg",
+      "sha256": "6a28f5157a0177f7d66ec8b5197f238644ebcb2cc001ae25a1ac0f938917c3f5",
+      "bytes": 2978080,
+      "source_bytes": 34807702,
+      "source_sha256": "65011b48d8514a130e84282998b9ed804df06461dcb18a0bc239dbf2a6c398d4",
+      "frames": 8701906,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "11 I Want a Real Raise.ogg",
+      "sha256": "0343f837bdfc2d2b44bc01b855b8b5c9d63fa8bf248c4befcb7d83c74c2001ef",
+      "bytes": 1632006,
+      "source_bytes": 20005250,
+      "source_sha256": "bbed1f70d32204a27c75b0e8776dabc79d9cd249d348fb866b98a5b9265a4aa2",
+      "frames": 5001293,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "12 I Didn't Build This Life Alone.ogg",
+      "sha256": "0b0dcc2c61c2fcba9305ddc9183d2cb25f062a5db6c91106d34f662cffc40307",
+      "bytes": 3389858,
+      "source_bytes": 42484254,
+      "source_sha256": "ff9a4bd124e9612875b7f7318402781bb2556f0aa118894174ef7fab14bfb916",
+      "frames": 10621044,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "13 Speak, My Dead God, Speak.ogg",
+      "sha256": "2fe76937caa4d40520b3d9b273df7106580fab5b508191898161a5551f792cc0",
+      "bytes": 4041131,
+      "source_bytes": 46572042,
+      "source_sha256": "5106a6f70aef3a767b680128795dd1979838556785dccad13f3979d687e7667a",
+      "frames": 11642991,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "14 Positive Peace.ogg",
+      "sha256": "1e039a7fe3d5b2b19b6e2a3bc4f5833cc67da402a3cf1a239391fab3e60d4959",
+      "bytes": 3643332,
+      "source_bytes": 47627138,
+      "source_sha256": "58011d85ad126171488234552415af25968c17b6fac1627b05568052dc9841e3",
+      "frames": 11906765,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "15 NuHuman Godplex Rush.ogg",
+      "sha256": "0f07bce1debf478b608c41b64f29f4cf775d0e41f6f84f44cdf6f620e07d2fdd",
+      "bytes": 2957636,
+      "source_bytes": 36653646,
+      "source_sha256": "7889d4692a04b2e2bdd0a97ca3055babb59cca655ba730c8f45f441febb1ddd5",
+      "frames": 9163392,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "16 Depose the Dragons.ogg",
+      "sha256": "6c2d46378f2523ce616051cad10ebb296f18806479edbedad11e9b910ba4aa9d",
+      "bytes": 3082063,
+      "source_bytes": 36999858,
+      "source_sha256": "0c4a23ba26e07bce1f87ec3fa6a504f485619ef28c153eca08f63ecc851e723c",
+      "frames": 9249945,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "17 Dive to Hell for Super Earth.ogg",
+      "sha256": "afc25c7c3b506f4ebe381584bdb86901a94e96876fe109885430a13ded556c16",
+      "bytes": 3521531,
+      "source_bytes": 38815134,
+      "source_sha256": "578a2b382339890d5abf380d241b738bd793cc63787fb69d3ff34dab43ec828d",
+      "frames": 9703764,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "18 The Systems Are Built for the Rich (SySTEMS).ogg",
+      "sha256": "5db9989d6920b8fddfc553dc6cc4633210c2addfa8e4598753cbbb8b4b744aff",
+      "bytes": 5366871,
+      "source_bytes": 64679270,
+      "source_sha256": "311ccb870b22d0fb051df665de2e845e38bd8d9023c092ebcd3f73e20ebb846f",
+      "frames": 16169798,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "19 Humanist Superintelligence (HSI).ogg",
+      "sha256": "e0527e120aae5d3f5161b2abde8a033396de45f339532c82cd8f172485a80090",
+      "bytes": 3175149,
+      "source_bytes": 36349816,
+      "source_sha256": "8e7a92c7cef63cbf4b4802f3f80efb6d5b7e925452328911c1b1736be321966a",
+      "frames": 9087423,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "20 Structured Cognitive Dissonance.ogg",
+      "sha256": "3324182485d8d6c58a72809c761fd6e0eea1d8d051a51837141dbd310a14ae01",
+      "bytes": 4743224,
+      "source_bytes": 55413712,
+      "source_sha256": "48ac0778a16d266b98d20e4ef428438a053c51a757cb83f81f14393a3f403396",
+      "frames": 13853397,
+      "channels": 2,
+      "sample_rate": 44100
+    },
+    {
+      "file": "21 In Honor to a Loss.ogg",
+      "sha256": "b10276ccc4e9cb8973c7a823ddd6908ab52fd08c23636c505b9163541b12ae17",
+      "bytes": 3709052,
+      "source_bytes": 49831382,
+      "source_sha256": "6f164b79da853d69a5aeacb05ebbf72ffcc55ad517bc6682b25039ee4f4aedb4",
+      "frames": 12457826,
+      "channels": 2,
+      "sample_rate": 44100
+    }
+  ]
+}

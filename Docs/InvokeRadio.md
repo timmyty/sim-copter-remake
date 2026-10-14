@@ -21,10 +21,30 @@ Master game volume continues to control the whole mix. The October 5 follow-up
 preserves volume when tuning and saves sound settings on OK, Back, Escape, or
 controller B. See [radio volume and stalled vehicles](RadioVolumeAndStalledVehicles.md).
 
+## Compact release recordings (v1.0.13)
+
+All 21 KINV songs now ship as stereo Ogg Vorbis at a nominal 128 kbps and 44.1 kHz.
+The recordings occupy 76,176,424 bytes (72.65 MiB), down from 890,346,790 bytes
+(849.10 MiB) of PCM WAVs: a 91.4% installed-size reduction. This is deliberately
+lossy encoding; every song and its full arrangement remain included. The fifteen
+lossless original-game FLAC masters are unchanged.
+
+Unreal's bundled VorbisAudioDecoder module decodes on the cancellable radio worker.
+Tuning, pause, seeking, mute and saved playback positions retain their existing
+behavior. Legacy .wav saved filenames resolve by song name to .ogg. If an update
+is extracted over old WAVs, each song appears once, preferring Ogg; old WAVs still
+consume disk space until removed. A fresh extraction gives the advertised size.
+
+Build.cs validates and stages exactly the 21 manifest-listed Ogg recordings, so
+legacy WAV masters cannot accidentally return to the download. Reproduce with
+`python Tools/Unreal/PrepareKinvMusic.py <verified-WAV-masters-folder>`.
+The manifest in `SimCopterRemake/Config/KinvMusic.json` pins source/output hashes,
+frame counts, formats and sizes. Source masters remain in release v1.0.12/history.
+
 ## Implementation and validation
 
 Authored music resides at `SimCopterRemake/Content/Radio/InvokeTheRevoked`, staged
-as loose NonUFS content through `Config/DefaultGame.ini`, so it works with both
+as verified loose NonUFS dependencies through `SimCopterRemake.Build.cs`, so it works with both
 developer original-game roots and packaged installations.
 
 Changes extend `SimCopterRadio`, `SimCopterAudioSubsystem`, `SimCopterSettings`,

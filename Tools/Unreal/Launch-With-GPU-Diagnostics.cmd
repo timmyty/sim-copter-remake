@@ -5,7 +5,9 @@ rem Development includes GPU breadcrumbs and logs that Shipping compiles out.
 set "DIAGNOSTIC_EXE=%~dp0SimCopterRemake\Binaries\Win64\SimCopterRemake.exe"
 if not exist "%DIAGNOSTIC_EXE%" (
     echo The Development diagnostic executable is missing.
-    echo Build RebuildUnrealCpp.bat Development and install it beside the Shipping executable.
+    echo Download the Optional-Development archive matching your game version from GitHub.
+    echo Extract its contents here, beside the normal SimCopterRemake.exe launcher.
+    echo https://github.com/timmyty/sim-copter-remake/releases
     pause
     exit /b 1
 )
