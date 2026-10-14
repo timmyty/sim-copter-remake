@@ -207,7 +207,7 @@ void USimCopterDispatchMarkerComponent::ApplyMarkerEmissive()
 	const float EffectNits = USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld());
 	const float Nits = EffectNits * GetMarkerEmissiveFraction();
 	const FName ParameterName = USimCopterEffectExposureSubsystem::GetEmissiveNitsParameterName();
-	MarkerMaterial->SetScalarParameterValue(ParameterName, Nits);
+	USimCopterEffectExposureSubsystem::ApplyEmissiveNits(MarkerMaterial, GetWorld(), true, GetMarkerEmissiveFraction());
 
 	// `SetScalarParameterValue` on a name the parent does not have is silently ignored - it is the
 	// single most common way a change like this does nothing at all (see

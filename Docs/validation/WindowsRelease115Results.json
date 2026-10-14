@@ -1,0 +1,80 @@
+{
+  "version": "v1.0.15",
+  "date": "2026-10-14",
+  "baseline_commit": "daf151d8b73487d15996cb2176ebf469cb7c4f00",
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log_sha256": "011cbc4498ed68f288f2e3c067dcc5fd46ebbb8e493f68a8e77d51cf10cfe487"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "4a6b76d7c11ff5e6b961ce457c3bb1297bb95b063f3fa0b25323f0ea2eb63810"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "9bf0fa2419e7f900f4a09d72dac29ad0b8472b76c46e37d93fdba0cc6246edcc"
+    }
+  },
+  "automation": {
+    "tests": {
+      "succeeded": 499,
+      "succeededWithWarnings": 24,
+      "failed": 1,
+      "notRun": 0
+    },
+    "settings-tests": {
+      "succeeded": 1,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0
+    },
+    "render-tests": {
+      "succeeded": 1,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0
+    },
+    "final_distinct_cases": {
+      "total": 524,
+      "passed": 524,
+      "failed": 0,
+      "notRun": 0
+    },
+    "settings_rerun_reason": "Multiprocess suppresses config writes unless MultiprocessSaveConfig is set (UE ConfigCacheIni.cpp:1325). Unchanged persistence test rerun with this flag and an isolated UserDir."
+  },
+  "startup": [
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.15\\smoke-shipping",
+      "seconds": 30.6400421,
+      "launcher_pid": 55512,
+      "mode": "shipping",
+      "child_pids": [
+        43756
+      ],
+      "survived": true
+    },
+    {
+      "child_pids": [
+        null
+      ],
+      "launcher_pid": 4676,
+      "seconds": 30.8244138,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.15\\smoke-development",
+      "mode": "development",
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "survived": true
+    }
+  ],
+  "binary_sha256": {
+    "SimCopterRemake-Win64-Shipping.exe": "967d3286ba7ae67f7c188c91c399d3a4ae0e186dbec38fb0efcdea6755ff2cd1",
+    "SimCopterRemake.exe": "8b2389e16ed711e16fff2dc3ce9ad6a5e3233404a5864b0f23e1d7a382725221"
+  },
+  "source_manifest_sha256": "b2c6e0de186935e5d98107d63f8682a94fd65dadb8f32f873176985b21b2e737",
+  "scope": "Publication source: city-tour pause-overlay visibility and shared live lighting bindings. Previous cooked runtime content retained byte-for-byte.",
+  "limitations": [
+    "No interactive playthrough.",
+    "Offscreen lighting capture uses a synthetic scene and fixed camera exposure; paused eye-adaptation timing is tested separately."
+  ]
+}

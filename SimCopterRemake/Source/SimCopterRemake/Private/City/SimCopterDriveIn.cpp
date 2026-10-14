@@ -253,7 +253,7 @@ void ASimCopterDriveInPlayer::Tick(float DeltaSeconds)
 	if (!Player || CurrentFile.IsEmpty()) return;
 	const bool bPaused = UGameplayStatics::IsGamePaused(this);
 	if (bPaused != bWasPaused) { if (bPaused) Player->Pause(); else Player->Play(); bWasPaused = bPaused; }
-	ScreenMaterial->SetScalarParameterValue(TEXT("EmissiveNits"), USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld()) * 0.6f);
+	USimCopterEffectExposureSubsystem::ApplyEmissiveNits(ScreenMaterial,GetWorld(),true,.6f);
 	const float Volume = bPaused ? 0.f : MovieVolume(this);
 	bool bAnyStanding = false;
 	for (int32 Index = 0; Index < Screens.Num(); ++Index)

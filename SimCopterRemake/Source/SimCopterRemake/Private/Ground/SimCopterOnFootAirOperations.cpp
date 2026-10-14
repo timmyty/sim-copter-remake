@@ -141,7 +141,7 @@ void ASimCopterOnFootPawn::UpdateEnergyTaser(float DeltaSeconds)
 		else TaserMesh->CreateMeshSection_LinearColor(Section,Shape.Vertices,Shape.Triangles,Shape.Normals,Shape.UVs,Shape.VertexColors,Shape.Tangents,false);
 	};
 	Apply(0,Body); Apply(1,Circuits); Apply(2,Ball);
-	if (TaserGlow) TaserGlow->SetScalarParameterValue(TEXT("EmissiveNits"),USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld())*(.08f+TaserCharge.Energy*1.3f));
+	USimCopterEffectExposureSubsystem::ApplyEmissiveNits(TaserGlow,GetWorld(),true,.08f+TaserCharge.Energy*1.3f);
 }
 bool ASimCopterOnFootPawn::TryCarryDownedPerson()
 {

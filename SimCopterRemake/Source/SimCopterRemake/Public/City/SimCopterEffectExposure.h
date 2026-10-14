@@ -8,6 +8,7 @@
 
 class FSimCopterExposureViewExtension;
 class UDirectionalLightComponent;
+class ULightComponent;
 class UMaterialInstanceDynamic;
 
 /**
@@ -95,17 +96,17 @@ SIMCOPTERREMAKE_API float ComputeMeasuredFloorNits(
 /**
  * Publishes the current effect emissive value for a world, resolved from that world's key light.
  *
- * The drawing components (`USimCopterParticleFXComponent`, `USimCopterFlashingLightsComponent`) ask
- * for it when they rebuild and push it into their card material's `EmissiveNits` parameter. It is
- * cached per frame, because every one of them asks and the answer cannot change within a frame.
+ * Drawing components register their card materials and authored scales through ApplyEmissiveNits.
+ * A presentation tick refreshes them even when simulation is paused or their owners stop ticking.
+ * Values are shared within a frame and invalidated after explicit time-of-day changes.
  *
  * The key light is found by scanning for the brightest directional light component in the world -
  * the celestial vault's sun is a component on the day sequence actor, not an `ADirectionalLight`,
- * so an actor-class search finds nothing. The result is cached and only re-scanned when it goes
- * stale, which is what keeps this off the per-frame cost.
+ * so an actor-class search finds nothing. Cache the set of components, then re-evaluate their
+ * current ground illuminance, visibility and direction so a daylight cache cannot hide the moon.
  */
 UCLASS()
-class SIMCOPTERREMAKE_API USimCopterEffectExposureSubsystem : public UWorldSubsystem
+class SIMCOPTERREMAKE_API USimCopterEffectExposureSubsystem : public UTickableWorldSubsystem
 {
 	GENERATED_BODY()
 
@@ -114,6 +115,11 @@ public:
 	// view states private, and FSceneView's accessors are ENGINE_API but only reachable from a view.
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
+	virtual void Tick(float DeltaTime) override;
+	virtual TStatId GetStatId() const override;
+	virtual bool IsTickableWhenPaused() const override { return true; }
+	/** Refresh only presentation, including after a time-of-day seek within the same frame. */
+	void RefreshLighting();
 
 	/** Nits for an unlit effect card this frame. Cheap to call repeatedly; recomputed once a frame. */
 	UFUNCTION(BlueprintCallable, Category = "SimCopter|Effects")
@@ -152,7 +158,10 @@ public:
 	static void ApplyEmissiveNits(
 		UMaterialInstanceDynamic* MaterialInstance,
 		const UWorld* World,
-		bool bIsLightSource);
+		bool bIsLightSource, float Scale = 1.0f, float Minimum = 0.0f);
+
+	/** Exposure-scaled fill lighting follows the same clock as the materials, even while paused. */
+	static void ApplyLightIntensity(ULightComponent* Light, const UWorld* World, float Scale, float Minimum);
 
 	/** The parameter the effect materials expose, written by the drawing components. */
 	static FName GetEmissiveNitsParameterName() { return FName(TEXT("EmissiveNits")); }
@@ -167,7 +176,18 @@ public:
 	static float GetBrightnessScale(const UWorld* World);
 
 private:
-	/** Re-resolves the key light if the cached one has gone away. */
+	struct FExposureBinding
+	{
+		bool bIsLightSource = true;
+		float Scale = 1.0f;
+		float Minimum = 0.0f;
+		float LastValue = -1.0f;
+	};
+	// Weak bindings cannot retain a destroyed/rebuilt actor's materials or lights. Owners update
+	// their authored scale while simulating; the subsystem keeps that frozen state correctly lit.
+	TMap<TWeakObjectPtr<UMaterialInstanceDynamic>, FExposureBinding> MaterialBindings;
+	TMap<TWeakObjectPtr<ULightComponent>, FExposureBinding> LightBindings;
+	/** Chooses the current key from the cached directional-light set. */
 	UDirectionalLightComponent* ResolveKeyLight();
 
 	/** Last average scene luminance the view extension saw, in nits; 0 when it has seen nothing. */
@@ -176,8 +196,8 @@ private:
 	/** Registered for this world's lifetime; records the exposure readback off each frame's view. */
 	TSharedPtr<FSimCopterExposureViewExtension, ESPMode::ThreadSafe> ExposureViewExtension;
 
-	/** Brightest directional light in the world, cached across frames. */
-	TWeakObjectPtr<UDirectionalLightComponent> KeyLight;
+	/** Cache the set, then choose the current ground illumination (sun/moon) on each refresh. */
+	TArray<TWeakObjectPtr<UDirectionalLightComponent>> DirectionalLights;
 
 	/** Frame the cached value was computed on, so one scan serves every effect component. */
 	uint64 CachedFrame = 0;

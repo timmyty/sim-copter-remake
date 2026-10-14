@@ -53,3 +53,8 @@ active-device help shortcut on a yellow-lettered silver header. On foot, Turbo
 and parachute status readouts are hidden. Photo Mode help overlay text is removed;
 the feature remains available through its shortcut and pause-menu entry.
 See [Turbo HUD](TurboHud.md).
+
+As of v1.0.15, Photo Mode time changes refresh warehouse/hangar materials, smoke
+and the shared exposure-scaled effects while the world is paused. Camera exposure
+also adapts without advancing simulation time. The same material/light refresh
+applies during ordinary gameplay. [Details and validation](Releases/v1.0.15.md).

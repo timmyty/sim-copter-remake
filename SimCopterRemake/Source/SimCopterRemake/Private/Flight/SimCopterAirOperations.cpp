@@ -188,9 +188,8 @@ void ASimCopterRecoverySite::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	if (RingMaterial && bWaypointActive)
-		RingMaterial->SetScalarParameterValue(TEXT("EmissiveNits"),
-			USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld()) *
-			(1.6f+0.3f*FMath::Sin(GetWorld()->GetTimeSeconds()*3.0f)));
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(RingMaterial,GetWorld(),true,
+			1.6f+0.3f*FMath::Sin(GetWorld()->GetTimeSeconds()*3.0f));
 }
 
 void ASimCopterRecoverySite::Configure(ESimCopterRecoverySite Kind, const FVector& Location)
@@ -1120,8 +1119,7 @@ void USimCopterAirOperationsComponent::UpdateRemoteTaserDischarge(float DeltaSec
 	RemoteTaserTrail->SetVisibility(TaserTrailSeconds > 0 || TaserImpactSeconds > 0);
 	if (TaserTrailSeconds <= 0 && TaserImpactSeconds <= 0) RemoteTaserTrail->ClearAllMeshSections();
 	if (TaserTrailMaterialInstance)
-		TaserTrailMaterialInstance->SetScalarParameterValue(TEXT("EmissiveNits"),
-			USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld())*2);
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(TaserTrailMaterialInstance,GetWorld(),true,2);
 }
 
 void USimCopterAirOperationsComponent::UpdateTaserImpact(float DeltaSeconds)

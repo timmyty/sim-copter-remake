@@ -3,6 +3,7 @@
 #include "City/SimCopterDayNight.h"
 
 #include "City/SimCopterDayNightLength.h"
+#include "City/SimCopterEffectExposure.h"
 #include "DaySequenceActor.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -657,6 +658,7 @@ void USimCopterDayNightSubsystem::ApplyTimeOfDaySettings()
 
 	// The seek moved the clock; publish the new blend now rather than one frame late.
 	Refresh();
+	if (auto* Exposure = World->GetSubsystem<USimCopterEffectExposureSubsystem>()) Exposure->RefreshLighting();
 }
 
 void USimCopterDayNightSubsystem::ApplyPendingSavedTimeOfDay()
@@ -698,4 +700,5 @@ void USimCopterDayNightSubsystem::ApplyPendingSavedTimeOfDay()
 
 	bWasNight = false;
 	Refresh();
+	if (auto* Exposure = GetWorld()->GetSubsystem<USimCopterEffectExposureSubsystem>()) Exposure->RefreshLighting();
 }

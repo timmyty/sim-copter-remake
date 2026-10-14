@@ -156,7 +156,7 @@ void ASimCopterTaserOrb::UpdateVisual()
 		for (auto& V:Shape.Vertices) V=Target->GetActorRotation().RotateVector(V*Half/FMath::Max(1.f,Radius));
 	}
 	Mesh->CreateMeshSection_LinearColor(0,Shape.Vertices,Shape.Triangles,Shape.Normals,Shape.UVs,Shape.VertexColors,Shape.Tangents,false);
-	if (Glow) Glow->SetScalarParameterValue(TEXT("EmissiveNits"),USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld())*Energy*1.5f);
+	USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Glow,GetWorld(),true,Energy*1.5f);
 }
 
 void ASimCopterTaserOrb::EndPlay(const EEndPlayReason::Type Reason)
