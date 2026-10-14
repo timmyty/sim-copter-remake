@@ -1,0 +1,306 @@
+{
+  "release": "v1.0.14",
+  "date": "2026-10-14",
+  "package_count": 19,
+  "game_collection_count": 32,
+  "recording_count": 959,
+  "unchanged_payload_file_count": 1005,
+  "audio_bytes_unchanged": true,
+  "install_and_repeat_install_passed": true,
+  "grouped_packages": [
+    {
+      "title": "SimCity 3000 Unlimited + SimCity 4 Rush Hour",
+      "games": [
+        "SimCity 3000 Unlimited",
+        "SimCity 4 Rush Hour"
+      ],
+      "files": 28,
+      "recordings": 26,
+      "bytes": 137741117,
+      "archive": "SimCopterRemake-v1.0.14-Music-SimCity-3000-Unlimited-and-SimCity-4-Rush-Hour.zip",
+      "sha256": "7a30d5a51d7b6035c9a345f67c7308105cb59a69a0165b79a9ec0fc9235b4a91",
+      "installer_results": [
+        "Installed 28 files; 0 files were already installed.",
+        "Installed 0 files; 28 files were already installed."
+      ]
+    },
+    {
+      "title": "SimCity Creator DS + Wii",
+      "games": [
+        "SimCity Creator DS",
+        "SimCity Creator Wii"
+      ],
+      "files": 73,
+      "recordings": 70,
+      "bytes": 114159331,
+      "archive": "SimCopterRemake-v1.0.14-Music-SimCity-Creator-DS-and-Wii.zip",
+      "sha256": "4465d57e0828148f0ffe01022f0360d72e61a00c5b1948ca2d2806aa8357ac21",
+      "installer_results": [
+        "Installed 73 files; 0 files were already installed.",
+        "Installed 0 files; 73 files were already installed."
+      ]
+    },
+    {
+      "title": "SimCity Jr. + BuildIt + Social + Societies Destinations",
+      "games": [
+        "SimCity Jr",
+        "SimCity BuildIt",
+        "SimCity Social",
+        "SimCity Societies Destinations"
+      ],
+      "files": 31,
+      "recordings": 25,
+      "bytes": 97229970,
+      "archive": "SimCopterRemake-v1.0.14-Music-SimCity-Jr-BuildIt-Social-and-Societies-Destinations.zip",
+      "sha256": "37eaa34a317da24a68a0023266cf0e04fbbb39f9c4cc0ba773f57ff971ca2d42",
+      "installer_results": [
+        "Installed 31 files; 0 files were already installed.",
+        "Installed 0 files; 31 files were already installed."
+      ]
+    },
+    {
+      "title": "SimFarm + SimIsle + SimLife + SimHealth + SimPark + SimSafari",
+      "games": [
+        "SimFarm",
+        "SimIsle",
+        "SimLife",
+        "SimHealth",
+        "SimPark",
+        "SimSafari"
+      ],
+      "files": 54,
+      "recordings": 48,
+      "bytes": 98692441,
+      "archive": "SimCopterRemake-v1.0.14-Music-SimFarm-SimIsle-SimLife-SimHealth-SimPark-SimSafari.zip",
+      "sha256": "380be28f9209ae06cdfca97e3711bed1277443bf243a523cb6bf1c2b13caf64b",
+      "installer_results": [
+        "Installed 54 files; 0 files were already installed.",
+        "Installed 0 files; 54 files were already installed."
+      ]
+    },
+    {
+      "title": "Theme Park + Sid Meier's SimGolf + SimTower + SimTown",
+      "games": [
+        "Theme Park",
+        "Sid Meier's SimGolf",
+        "SimTower",
+        "SimTown"
+      ],
+      "files": 42,
+      "recordings": 38,
+      "bytes": 116409241,
+      "archive": "SimCopterRemake-v1.0.14-Music-Theme-Park-SimGolf-SimTower-SimTown.zip",
+      "sha256": "060a9df6f09d7013503424635e838e2019013f1b37212f8bf26c8167fc3160a9",
+      "installer_results": [
+        "Installed 42 files; 0 files were already installed.",
+        "Installed 0 files; 42 files were already installed."
+      ]
+    }
+  ],
+  "note": "Packaging and download organization only; game binaries and original full bundles unchanged. No game rebuild or new playback check required.",
+  "release_url": "https://github.com/timmyty/sim-copter-remake/releases/tag/v1.0.14",
+  "game_source_commit": "d804881ec89e13571108592f071c7b83273c69ff",
+  "public_download_count": 28,
+  "all_download_urls_verified": true,
+  "all_github_sha256_digests_verified": true,
+  "obsolete_small_downloads_replaced": 18,
+  "assets": [
+    {
+      "name": "Music-Downloads.json",
+      "label": "REFERENCE - Music download catalog (32 games mapped to 19 packs)",
+      "bytes": 16770,
+      "sha256": "ff5dde5410483820cef7f0595e62ea695aa0d0374428c67615df003748f47937",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/Music-Downloads.json"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-All-Games.7z.001",
+      "label": "OPTIONAL MUSIC - All 32 game collections - part 1 of 3 (download all 3)",
+      "bytes": 1887436800,
+      "sha256": "4f54dbcf14b1dd662cf30f5b3814082d2d9a9b62f23623ccf1adce08c44f0df3",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-All-Games.7z.001"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-All-Games.7z.002",
+      "label": "OPTIONAL MUSIC - All 32 game collections - part 2 of 3 (download all 3)",
+      "bytes": 1887436800,
+      "sha256": "82f17715acdaa06bfb1c00050b3a6436a6f7071011b69e1f6699221c5c362929",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-All-Games.7z.002"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-All-Games.7z.003",
+      "label": "OPTIONAL MUSIC - All 32 game collections - part 3 of 3 (download all 3)",
+      "bytes": 784329509,
+      "sha256": "f28aa9b016232190614f2dd9e9c7fec5a695f71e585d70d26177c095496adfd1",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-All-Games.7z.003"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-Sim-Theme-Park.zip",
+      "label": "OPTIONAL MUSIC - Sim Theme Park (347.5 MB, installer)",
+      "bytes": 347539386,
+      "sha256": "1801397baee44a2e01435aec4357894e44339d0e11e6a77ec4f9eaaf185a670f",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Sim-Theme-Park.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimAnt.zip",
+      "label": "OPTIONAL MUSIC - SimAnt (222.5 MB, installer)",
+      "bytes": 222490176,
+      "sha256": "01d812fedc8239e1c64c5eb04f9836398f1d9ef693eced7c9a39b71291eaf31d",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimAnt.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-2000.zip",
+      "label": "OPTIONAL MUSIC - SimCity 2000 (824.5 MB, installer)",
+      "bytes": 824485980,
+      "sha256": "a71d905086905d795ba7264e498a09a5b8f2b9598e409db59039b0e09783b76b",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-2000.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-3000-Unlimited-and-SimCity-4-Rush-Hour.zip",
+      "label": "OPTIONAL MUSIC - SimCity 3000 Unlimited + SimCity 4 Rush Hour (137.7 MB, installer)",
+      "bytes": 137741117,
+      "sha256": "7a30d5a51d7b6035c9a345f67c7308105cb59a69a0165b79a9ec0fc9235b4a91",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-3000-Unlimited-and-SimCity-4-Rush-Hour.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-3000.zip",
+      "label": "OPTIONAL MUSIC - SimCity 3000 (115.9 MB, installer)",
+      "bytes": 115862116,
+      "sha256": "ab982ff01a4c235a381b940d91a42f4299699eedf7ce45b16825f91d3edf5048",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-3000.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-4.zip",
+      "label": "OPTIONAL MUSIC - SimCity 4 (276.1 MB, installer)",
+      "bytes": 276117366,
+      "sha256": "0cdd391a909fac296c042f45d4889cd7a2c4af52e2769ccfc6eff43621668105",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-4.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-64.zip",
+      "label": "OPTIONAL MUSIC - SimCity 64 (217.1 MB, installer)",
+      "bytes": 217067404,
+      "sha256": "ed26a5ecef6f17bbe5a05aff11005c010569a5acd5af4a842058f4662c703ee7",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-64.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-Creator-DS-and-Wii.zip",
+      "label": "OPTIONAL MUSIC - SimCity Creator DS + Wii (114.2 MB, installer)",
+      "bytes": 114159331,
+      "sha256": "4465d57e0828148f0ffe01022f0360d72e61a00c5b1948ca2d2806aa8357ac21",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Creator-DS-and-Wii.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-DS.zip",
+      "label": "OPTIONAL MUSIC - SimCity DS (228.1 MB, installer)",
+      "bytes": 228085111,
+      "sha256": "7fe461339559970f98479b910eef74696b0d448e0b5ace76ca4fe082366cec3c",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-DS.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-Jr-BuildIt-Social-and-Societies-Destinations.zip",
+      "label": "OPTIONAL MUSIC - SimCity Jr. + BuildIt + Social + Societies Destinations (97.2 MB, installer)",
+      "bytes": 97229970,
+      "sha256": "37eaa34a317da24a68a0023266cf0e04fbbb39f9c4cc0ba773f57ff971ca2d42",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Jr-BuildIt-Social-and-Societies-Destinations.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity-Societies.zip",
+      "label": "OPTIONAL MUSIC - SimCity Societies (189.1 MB, installer)",
+      "bytes": 189099585,
+      "sha256": "c02bc4c28353611c4d98929e604f9871fc25109aa71945654e29d30f91f92b59",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity-Societies.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCity.zip",
+      "label": "OPTIONAL MUSIC - SimCity (478.0 MB, installer)",
+      "bytes": 478020207,
+      "sha256": "4cbc6eb88f5844364a613024d898cbab6af5f22853e3631b19d862ff38274665",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCity.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimCoaster.zip",
+      "label": "OPTIONAL MUSIC - SimCoaster (267.0 MB, installer)",
+      "bytes": 266953135,
+      "sha256": "835be2aced6e58f79cffa993d24e89e626c93505f33d93b4cd8b3c4feef0fab8",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimCoaster.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimEarth.zip",
+      "label": "OPTIONAL MUSIC - SimEarth (194.7 MB, installer)",
+      "bytes": 194701974,
+      "sha256": "2f9bdac0d8c0677d9e00eeebcc991eaddc84587e267482eaae6040b7b3eadef7",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimEarth.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimFarm-SimIsle-SimLife-SimHealth-SimPark-SimSafari.zip",
+      "label": "OPTIONAL MUSIC - SimFarm + SimIsle + SimLife + SimHealth + SimPark + SimSafari (98.7 MB, installer)",
+      "bytes": 98692441,
+      "sha256": "380be28f9209ae06cdfca97e3711bed1277443bf243a523cb6bf1c2b13caf64b",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimFarm-SimIsle-SimLife-SimHealth-SimPark-SimSafari.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimMars.zip",
+      "label": "OPTIONAL MUSIC - SimMars (105.9 MB, installer)",
+      "bytes": 105913300,
+      "sha256": "acd751835b5d0f8d31c6a8458a58b89cfd07089fda2087bcb1848cde4d44c24a",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimMars.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-SimTunes.zip",
+      "label": "OPTIONAL MUSIC - SimTunes (285.9 MB, installer)",
+      "bytes": 285948081,
+      "sha256": "c0a1fba8151f4db60e9410e21537f73d8a6066ff4eca266e78189ba274beaf7e",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-SimTunes.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-Streets-of-SimCity.zip",
+      "label": "OPTIONAL MUSIC - Streets of SimCity (269.4 MB, installer)",
+      "bytes": 269381632,
+      "sha256": "85f2ebd0092c04a5de1d0ccb7f2c37e272b0c20a9cec9c0ca7b089ca0614ba10",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Streets-of-SimCity.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Music-Theme-Park-SimGolf-SimTower-SimTown.zip",
+      "label": "OPTIONAL MUSIC - Theme Park + Sid Meier's SimGolf + SimTower + SimTown (116.4 MB, installer)",
+      "bytes": 116409241,
+      "sha256": "060a9df6f09d7013503424635e838e2019013f1b37212f8bf26c8167fc3160a9",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Music-Theme-Park-SimGolf-SimTower-SimTown.zip"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Optional-Development-Windows-x64.7z",
+      "label": "OPTIONAL DIAGNOSTICS - Development tools (requires full v1.0.14 game)",
+      "bytes": 101732209,
+      "sha256": "1b0150deed229e6b3bf931af50a6f91c9ab2b08c7335b769e5c4ce722c800b42",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Optional-Development-Windows-x64.7z"
+    },
+    {
+      "name": "SimCopterRemake-v1.0.14-Windows-x64.7z",
+      "label": "REQUIRED TO PLAY - Full SimCopter Remake v1.0.14 for Windows (1.33 GB)",
+      "bytes": 1330628431,
+      "sha256": "897bf1797018efb49a43984b212b4724038f2432ea36c26dbbc35422373b9f6b",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimCopterRemake-v1.0.14-Windows-x64.7z"
+    },
+    {
+      "name": "SimEverything-Original-Preservation.7z.001",
+      "label": "OPTIONAL PRESERVATION - SimEverything original: 854 MP3s + cover, including music, ads and news - part 1 of 2 (both required)",
+      "bytes": 1887436800,
+      "sha256": "8cf1cb509aab5d1ceefd74e354c5e4c2d901e4b686f99b8947023153356b2b99",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimEverything-Original-Preservation.7z.001"
+    },
+    {
+      "name": "SimEverything-Original-Preservation.7z.002",
+      "label": "OPTIONAL PRESERVATION - SimEverything original: 854 MP3s + cover, including music, ads and news - part 2 of 2 (both required)",
+      "bytes": 697013640,
+      "sha256": "6007addc25ed75b5eb3cc5e97e77f9e9d25c46128e73cc1034fb8c77daf1bd56",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SimEverything-Original-Preservation.7z.002"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "label": "REFERENCE - SHA-256 download checksums",
+      "bytes": 3179,
+      "sha256": "c793250957dcf24174bc3b5cf59a6cde1581a0e4edd0523d57ca564eab016be3",
+      "url": "https://github.com/timmyty/sim-copter-remake/releases/download/v1.0.14/SHA256SUMS.txt"
+    }
+  ],
+  "public_html_sections_and_all_asset_labels_verified": true
+}

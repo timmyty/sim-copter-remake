@@ -25,9 +25,10 @@ Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 
 ## New in v1.0.14: optional game music
 
-Add **959 recordings from 32 game collections** to the radio. Download individual
-game ZIPs or the All-Games bundle, extract, and run **Install-Music.cmd**. Choose
-the game folder, restart, and select the collection in Radio. Original audio quality
+Add **959 recordings from 32 game collections** to the radio. Choose from 19 named
+music packs (smaller collections are grouped around 100 MB) or the All-Games bundle.
+Extract and run **Install-Music.cmd**, choose the game folder, then restart and
+select the collection in Radio. Original audio quality
 and the existing FLAC soundtrack are preserved. The complete SimEverything archive
 is also available as a separate preservation download.
 
