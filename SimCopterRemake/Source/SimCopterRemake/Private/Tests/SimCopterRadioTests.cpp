@@ -13,6 +13,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/ConfigCacheIni.h"
 #include "HAL/FileManager.h"
+#include "HAL/PlatformProcess.h"
 #include "Engine/GameInstance.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterRadioPreferenceTest,
@@ -56,21 +57,31 @@ bool FSimCopterRadioSequentialTest::RunTest(const FString& Parameters)
 	const FString SaveFile = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("InvokeRadio.ini"));
 	FString OldSave;
 	const bool bHadSave = FFileHelper::LoadFileToString(OldSave, *SaveFile);
+	FFileHelper::SaveStringToFile(TEXT("[Playback]\nTrack=08 We Will Be More (Reprise).wav\nSeconds=17.5\n"), *SaveFile);
 	const UWorld::InitializationValues Init = UWorld::InitializationValues()
 		.AllowAudioPlayback(false).CreatePhysicsScene(false).CreateNavigation(false).CreateAISystem(false);
 	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
 	USimCopterRadioSubsystem* Radio = World->GetSubsystem<USimCopterRadioSubsystem>();
 	USimCopterAudioSubsystem* Audio = World->GetSubsystem<USimCopterAudioSubsystem>();
 	Audio->bSoundsAvailable = true;
+	const auto FinishDecode = [&]
+	{
+		const double Deadline = FPlatformTime::Seconds() + 10;
+		while (Audio->PendingRadioClip.IsValid() && FPlatformTime::Seconds() < Deadline)
+		{ Audio->UpdateRadioPlayback(); FPlatformProcess::Sleep(.005f); }
+		TestFalse(TEXT("Compressed radio decode completes"), Audio->PendingRadioClip.IsValid());
+	};
 	const int32 ArtistIndex = Radio->Stations.IndexOfByPredicate([](const FSimCopterRadioStation& S) { return S.bSequential; });
 	if (TestTrue(TEXT("Artist station discovered"), ArtistIndex != INDEX_NONE))
 	{
 		Radio->SetStationIndex(ArtistIndex);
 		TestEqual(TEXT("All 21 songs present"), Radio->Stations[ArtistIndex].Music.Num(), 21);
+		TestEqual(TEXT("Legacy WAV save selects same Ogg song"), Radio->SequentialTrack, 7);
+		TestEqual(TEXT("Legacy saved offset survives"), Radio->SequentialOffset, 17.5f);
 		Radio->SequentialTrack = 0;
 		Radio->SequentialOffset = 0.0f;
 		Radio->SetPlayerInHelicopter(true);
-		Radio->Tick(0.0f);
+		Radio->Tick(0.0f); FinishDecode();
 		TestEqual(TEXT("Album opens with Expectations Increasing"), Radio->GetCurrentTitle(), FString(TEXT("Expectations Increasing")));
 		Audio->RadioEndTime -= 12.0; // Progress now follows the audio clock, including pause/seek.
 		Radio->SetVolume(0.35f);
@@ -79,7 +90,7 @@ bool FSimCopterRadioSequentialTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Station switch saves partial track"), Radio->SequentialOffset >= 12.0f);
 		const float SavedOffset = Radio->SequentialOffset;
 		Radio->SetStationIndex(ArtistIndex);
-		Radio->Tick(0.0f);
+		Radio->Tick(0.0f); FinishDecode();
 		TestEqual(TEXT("Resumed playback preserves mixer volume"), Audio->GetRadioVolumeMultiplier(), 0.35f);
 		TestEqual(TEXT("Returning retains track"), Radio->SequentialTrack, 0);
 		TestEqual(TEXT("Returning retains offset"), Radio->SequentialOffset, SavedOffset);
@@ -91,20 +102,26 @@ bool FSimCopterRadioSequentialTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("Radio slider can mute"), Audio->RadioComponent->VolumeMultiplier, 0.0f);
 		Radio->StepStation(1);
 		Radio->SetStationIndex(ArtistIndex);
-		Radio->Tick(0.0f);
+		Radio->Tick(0.0f); FinishDecode();
 		TestEqual(TEXT("Tuning away and back preserves mute"), Radio->GetVolume(), 0.0f);
 		TestEqual(TEXT("Resumed playback stays muted"), Audio->RadioComponent->VolumeMultiplier, 0.0f);
 		Audio->RadioEndTime = 0.0;
-		Radio->Tick(0.0f);
+		Radio->Tick(0.0f); FinishDecode();
 		TestEqual(TEXT("Natural end advances sequentially"), Radio->SequentialTrack, 1);
 		TestEqual(TEXT("Next album track"), Radio->GetCurrentTitle(), FString(TEXT("Dancing to Our Doom")));
+		Audio->SetRadioPaused(true);
+		TestTrue(TEXT("Compressed song seeks while paused"), Audio->SeekRadio(25.f));
+		TestTrue(TEXT("Seek uses cancellable worker"), Audio->PendingRadioClip.IsValid());
+		FinishDecode();
+		TestTrue(TEXT("Ogg seek retains pause and position"), Audio->IsRadioPaused() && FMath::IsNearlyEqual(Audio->GetRadioPositionSeconds(), 25.f, .02f));
+		Audio->SetRadioPaused(false);
 		Radio->SequentialTrack = 7;
 		Audio->RadioEndTime = 0.0;
-		Radio->Tick(0.0f);
+		Radio->Tick(0.0f); FinishDecode();
 		TestEqual(TEXT("Album followed by screenshot song 1"), Radio->GetCurrentTitle(), FString(TEXT("The Great Filter (RenAIssance)")));
 		Radio->SequentialTrack = 20;
 		Audio->RadioEndTime = 0.0;
-		Radio->Tick(0.0f);
+		Radio->Tick(0.0f); FinishDecode();
 		TestEqual(TEXT("Playlist wraps to album"), Radio->SequentialTrack, 0);
 		Radio->SetPowered(false);
 		TestFalse(TEXT("Power off suspends"), Radio->bSequentialPlaying);

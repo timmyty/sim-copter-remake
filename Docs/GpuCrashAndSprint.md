@@ -1,5 +1,10 @@
 # GPU crash investigation and L3 Turbo Mode — October 11, 2026
 
+Starting with v1.0.13, download the matching **Optional-Development** archive from
+[GitHub Releases](https://github.com/timmyty/sim-copter-remake/releases) and extract
+its contents inside the extracted game folder, beside the normal launcher.
+The add-on requires the same-version full game and supplies both diagnostic launchers.
+
 ## GPU evidence
 
 The 8:37 PM CDT crash (`UECC-Windows-E3FBCAF549F716D1D8102498F38A73CF_0001`)

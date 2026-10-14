@@ -1,0 +1,95 @@
+{
+  "version": "v1.0.13",
+  "verified_at_utc": "2026-10-14T15:40:52.502050+00:00",
+  "baseline_commit": "b3a9eae7605937a6ae6f9b27907ec26d20d091e7",
+  "release_scope": "Published v1.0.12 plus compressed KINV music and optional Development download; unrelated shared-checkout changes excluded.",
+  "builds": [
+    {
+      "target": "editor",
+      "result": "Succeeded",
+      "log_sha256": "973d07bcb818981e8a0cca231ff372f1a2e2ff631add6adda9edb3f437cd3448"
+    },
+    {
+      "target": "shipping",
+      "result": "Succeeded",
+      "log_sha256": "b66eea08ae79ab7a8d23a028e15c27cccdfab3cd309a6d720ff480be4dd35170"
+    },
+    {
+      "target": "development",
+      "result": "Succeeded",
+      "log_sha256": "b5c0629325f2753f8e8dd6c143cb6e0654e911ffee7cf1e8f91ca106d1f52b11"
+    }
+  ],
+  "tests": {
+    "passed": 522,
+    "total": 522,
+    "clean": 482,
+    "with_warnings": 40,
+    "failed": 0,
+    "not_run": 0,
+    "report_sha256": "c6595eb03e874ebe539adc387733e63363d2e8482a3135bb9562f8b7f5484d0b",
+    "mode": "NullRHI, isolated profile",
+    "initial_sweep": {
+      "passed": 520,
+      "failed": 2,
+      "failures": [
+        "SimCopter.ServicePosts.ActualHospitalGeometry",
+        "SimCopter.ServicePosts.SpacingEntrancesAndImpact"
+      ]
+    },
+    "rerun": {
+      "passed": 3,
+      "failed": 0,
+      "report_sha256": "845cb46dd958abbfe65fbe89cbea485e5be70a48625b6618dbecdb26d39eaf8c",
+      "reason": "Restored omitted ignored Content/Generated editor assets, including the hospital mesh and impact sound; no code or test changes."
+    }
+  },
+  "music": {
+    "tracks": 21,
+    "format": "Ogg Vorbis, nominal 128 kbps, 44.1 kHz stereo",
+    "original_bytes": 890346790,
+    "encoded_bytes": 76176424,
+    "independent_ffmpeg_complete_decodes": 21,
+    "unreal_complete_decodes": 21,
+    "original_lossless_flac_unchanged": true
+  },
+  "source_manifest_sha256": "d776cb46272951bc5f10c434135fc402872286d26e24fa1fde42bcb8b12ac7fe",
+  "startup": [
+    {
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.13\\smoke-shipping",
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "launcher_pid": 17656,
+      "child_pids": [
+        52436
+      ],
+      "survived": true,
+      "mode": "shipping",
+      "seconds": 30.5599719
+    },
+    {
+      "seconds": 30.8463106,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.13\\smoke-development",
+      "mode": "development",
+      "survived": true,
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "launcher_pid": 44780,
+      "child_pids": [
+        null
+      ]
+    }
+  ],
+  "packaging": {
+    "base": "Shipping game only; no Development executable or diagnostic launchers",
+    "optional": "Matching Development executable, WinPix runtime DLL and both diagnostic launchers; requires base game",
+    "archive_gate": "Every extracted file must match its source hash before publication; both GitHub asset sizes and SHA-256 digests must match"
+  },
+  "limitations": [
+    "No interactive gameplay, physical controller or manual listening check.",
+    "Existing GPU crash and witness-photo slowdown investigations are unchanged."
+  ],
+  "shared_tree_run": {
+    "passed": 532,
+    "failed": 6,
+    "note": "Six unrelated unreleased population-test failures. This shared-tree build is not published."
+  }
+}

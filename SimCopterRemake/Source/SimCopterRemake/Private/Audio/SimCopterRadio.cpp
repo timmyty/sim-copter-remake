@@ -2,6 +2,7 @@
 
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Audio/SimCopterHighQualityMusic.h"
+#include "Audio/SimCopterCompressedMusic.h"
 #include "Game/SimCopterSettings.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -61,10 +62,7 @@ void USimCopterRadioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Artist.CallSign = TEXT("KINV");
 	Artist.Directory = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Radio/InvokeTheRevoked"));
 	Artist.bSequential = true;
-	TArray<FString> Tracks;
-	IFileManager::Get().FindFiles(Tracks, *FPaths::Combine(Artist.Directory, TEXT("*.wav")), true, false);
-	Tracks.Sort();
-	for (const FString& Track : Tracks) { Artist.Music.Add(FPaths::Combine(Artist.Directory, Track)); }
+	Artist.Music = SimCopterCompressedMusic::FindTracks(Artist.Directory);
 	if (Artist.HasContent()) { Stations.Add(MoveTemp(Artist)); }
 	FString SavedTrack;
 	const FString ProgressFile = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("InvokeRadio.ini"));
@@ -77,7 +75,9 @@ void USimCopterRadioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		for (int32 I = 0; I < Stations.Last().Music.Num(); ++I)
 		{
-			if (FPaths::GetCleanFilename(Stations.Last().Music[I]) == SavedTrack) { SequentialTrack = I; break; }
+			// Retain position when an older save names the same track with a .wav extension.
+			if (FPaths::GetBaseFilename(Stations.Last().Music[I]).Equals(FPaths::GetBaseFilename(SavedTrack), ESearchCase::IgnoreCase))
+			{ SequentialTrack = I; break; }
 		}
 	}
 	if (Stations.Num() == 0)

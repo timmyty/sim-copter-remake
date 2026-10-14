@@ -1,5 +1,10 @@
 # Witness photo stutter investigation — October 12, 2026
 
+Starting with v1.0.13, download the matching **Optional-Development** archive from
+[GitHub Releases](https://github.com/timmyty/sim-copter-remake/releases) and extract
+its contents inside the extracted game folder, beside the normal launcher.
+The add-on requires the same-version full game and supplies both diagnostic launchers.
+
 The later 9:50–9:57 PM flight has now been decoded separately: [progressive flight stutter](FlightStutterInvestigation.md). It shows large ground-agent CPU stalls near the end and led to a reproduced responder pathfinding fix. This does not establish the cause of the earlier photograph-related report below.
 
 The user reported severe choppy frames after the robber photograph appeared in
