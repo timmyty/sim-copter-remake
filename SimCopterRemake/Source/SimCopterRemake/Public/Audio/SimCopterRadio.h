@@ -61,6 +61,8 @@ struct FSimCopterRadioStation
 	TArray<FString> Jingle;
 
 	bool bSequential = false;
+	/** Optional game soundtrack: ordered music only, independent of KINV's saved progress. */
+	bool bMusicCollection = false;
 
 	bool HasContent() const { return Music.Num() > 0 || Dj.Num() > 0 || Jingle.Num() > 0; }
 };
@@ -203,6 +205,7 @@ public:
 
 private:
 	friend class FSimCopterRadioSequentialTest;
+	friend class FSimCopterOptionalMusicTest;
 	friend class FSimCopterRadioMenuPlaybackTest;
 	friend class FSimCopterFlacPlaybackTest;
 	friend class FSimCopterCityIntroAudioTest;
@@ -253,6 +256,7 @@ private:
 	FLaggedFibonacci Rng;
 
 	void ScanStations(const FString& SoundRoot);
+	void ScanMusicCollections(const FString& Root);
 	void RebuildPlaylists();
 	void ReshufflePattern();
 	const TArray<FString>& GetList(ESimCopterRadioSlot Slot) const;

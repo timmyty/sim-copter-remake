@@ -8,5 +8,6 @@ struct FSimCopterPcmClip;
 namespace SimCopterCompressedMusic
 {
 	bool DecodeOgg(const FString& Path, FSimCopterPcmClip& OutClip, const TAtomic<bool>* Cancelled = nullptr);
+	bool DecodeMp3(const FString& Path, FSimCopterPcmClip& OutClip, const TAtomic<bool>* Cancelled = nullptr);
 	TArray<FString> FindTracks(const FString& Directory);
 }

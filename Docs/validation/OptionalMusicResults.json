@@ -1,0 +1,131 @@
+{
+  "version": "v1.0.14",
+  "date": "2026-10-14",
+  "baseline_commit": "37d571e9256d1beb8971addca8fda07aa38b1f17",
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log_sha256": "12ec08a03d6bfdbafd0efe3eafa7cba4ddc8e1e0f7848a1b6435788f15a35761"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log_sha256": "c266cd8292c94f1e7304c612743a6f85cad8933f66e64f1ad992f788ef41d480"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log_sha256": "17b4c1f576b4bed0d680cba8caf484246aa60a272a079b833e74a689fdad12c7"
+    }
+  },
+  "automation": {
+    "succeeded": 37,
+    "succeededWithWarnings": 1,
+    "failed": 0,
+    "notRun": 0
+  },
+  "automation_scope": "SimCopter.Radio + SimCopter.Sound + SimCopter.Settings",
+  "music": {
+    "recordings": 959,
+    "game_collections": 32,
+    "hours": 36.027486067742075,
+    "encoded_bytes": 4712189034,
+    "formats": {
+      ".mp3": 862,
+      ".wav": 14,
+      ".flac": 36,
+      ".ogg": 47
+    },
+    "complete_decoders": [
+      "FFmpeg",
+      "Unreal runtime audio path"
+    ],
+    "source_simcopter_duplicates_excluded": 52,
+    "quality": "No lossy re-encoding, resampling or channel reduction. Four Ogg container repairs retain identical decoded PCM and original source copies.",
+    "ogg_repairs": [
+      {
+        "game": "SimCity 2000",
+        "file": "161 SNES - Title.ogg",
+        "pcm_md5": "a8498e0265e83812479cced5433100fd",
+        "original_sha256": "28e460d615e09a28fa99490668e2a0c5aa07415a59ec1b28874f8890c47c5ac9",
+        "playable_sha256": "a635ffaa43bd9ed837b280b38d33aee61915628178a93170953e124a8526166c"
+      },
+      {
+        "game": "SimCity 2000",
+        "file": "162 SNES - Newspaper.ogg",
+        "pcm_md5": "b360c103ebfc5080756862ef2de1efd7",
+        "original_sha256": "6f0f71e7f3cf9fa24026ab491d177a5eb9c27c4364eb2dcd57ebc941b5834b28",
+        "playable_sha256": "8cb63335a3689128c23fcc46991e43dac311c61b7ac5bfc561defa558c0877a2"
+      },
+      {
+        "game": "SimCity 2000",
+        "file": "163 SNES - Disaster!.ogg",
+        "pcm_md5": "c02cb6960367bf7f9c7f9754fced265f",
+        "original_sha256": "eefccac754f1e57581620979dd74d486d69945507bf6d11784e4ed979147d425",
+        "playable_sha256": "4ccd1913183ab9c9987f1e9c0bcf558797ef6ba56c425f99c69a8ba29a4d8edd"
+      },
+      {
+        "game": "SimCity Creator DS",
+        "file": "001 Soundtrack - Open Asia Age.ogg",
+        "pcm_md5": "a4753e1b57b7bbf3c82cf34e43322545",
+        "original_sha256": "0404f631f68a56c7f71871351e9089e50bb95f349985f71afa7b01ea94b2c3d4",
+        "playable_sha256": "baf04970e3dbc7c1f2d2b7c29ca494bd96c8a48e0d4cf95a69f811881166ae61"
+      }
+    ],
+    "new_midi_renditions": 3,
+    "simcity_64_original_flacs": 17
+  },
+  "installer": {
+    "regression_checks": [
+      "minimum version",
+      "path containment",
+      "corrupt download preflight",
+      "installation and SHA-256",
+      "idempotent reinstall",
+      "custom file protection",
+      "unrelated save preservation"
+    ],
+    "complete_install_files_verified": 1005,
+    "every_installed_sha256_matches_manifest": true,
+    "script_sha256": "4747b2c3916c8871cf9d49dec1391b19d6438624b38d59e4a32a7145a8aa5868"
+  },
+  "packaging": {
+    "per_game_zip_count": 32,
+    "per_game_zip_crc_and_every_payload_sha256_verified": true,
+    "all_games_parts": 3,
+    "all_games_7z_integrity_test": "passed",
+    "original_simeverything_parts": 2,
+    "original_simeverything_7z_integrity_test": "passed",
+    "original_simeverything_archive_sha256": "7ebccf8f223bb5002b25e326fe66f35103d18ccd047880ce60289f9d4b098a2e",
+    "original_simeverything_files": 855,
+    "original_simeverything_mp3s": 854
+  },
+  "startup": [
+    {
+      "total_radio_stations": 38,
+      "installed_recordings": 959,
+      "limitation": "Headless startup only; no interactive gameplay or manual listening.",
+      "installed_collections": 32,
+      "survived": true,
+      "seconds": 30.4162796,
+      "mode": "shipping"
+    },
+    {
+      "total_radio_stations": 38,
+      "installed_recordings": 959,
+      "limitation": "Headless startup only; no interactive gameplay or manual listening.",
+      "installed_collections": 32,
+      "survived": true,
+      "seconds": 30.592336,
+      "mode": "development"
+    }
+  ],
+  "installed_collection_discovery": {
+    "evidence": "Packaged Development log: [Radio] 38 stations",
+    "original_stations": 6,
+    "optional_collections": 32
+  },
+  "limitations": [
+    "No interactive gameplay or manual listening check.",
+    "Existing source damage cannot be reconstructed by container repair.",
+    "Conservative matching retains labelled alternate arrangements/cuts and uncertain matches."
+  ]
+}
