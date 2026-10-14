@@ -6,6 +6,10 @@ collections), or download the **Music-All-Games** bundle
 from the [release](https://github.com/timmyty/sim-copter-remake/releases/tag/v1.0.14).
 Music is optional; the normal game keeps its existing soundtrack and FLAC masters.
 
+These packs also work with v1.0.15 and later. Get the game from the
+[latest release](https://github.com/timmyty/sim-copter-remake/releases/latest).
+The v1.0.14 page remains the music library after its older game downloads retire.
+
 ## Install
 
 1. Install the full **SimCopter Remake v1.0.14 or newer** game.

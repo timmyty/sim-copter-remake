@@ -329,9 +329,7 @@ void USimCopterFlashingLightsComponent::RebuildCards(
 	}
 	if (CardMaterialInstance != nullptr)
 	{
-		CardMaterialInstance->SetScalarParameterValue(
-			USimCopterEffectExposureSubsystem::GetEmissiveNitsParameterName(),
-			USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld()));
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(CardMaterialInstance, GetWorld(), true);
 		MeshComponent->SetMaterial(0, CardMaterialInstance);
 	}
 	else if (CardMaterial != nullptr)

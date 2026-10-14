@@ -37,19 +37,18 @@ namespace
 void RefreshInteriorFill(UProceduralMeshComponent* Interior, UProceduralMeshComponent* Shell,
 	UProceduralMeshComponent* Glazing, UPointLightComponent* Light, UPointLightComponent* DeskLight, const UWorld* World)
 {
-	const float Daylight=USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(World);
 	// A modest ambient floor keeps the reference's dark wood/paint. Inverse-exposure point
 	// lighting used to bleach every object as the outdoor camera adapted.
 	if (auto* Material=Cast<UMaterialInstanceDynamic>(Interior->GetMaterial(0)))
-		Material->SetScalarParameterValue(TEXT("EmissiveNits"),FMath::Max(2.0f,Daylight*.85f));
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,true,.85f,2.0f);
 	if (auto* Material=Cast<UMaterialInstanceDynamic>(Shell->GetMaterial(0)))
-		Material->SetScalarParameterValue(TEXT("EmissiveNits"),FMath::Max(1.0f,Daylight*.65f));
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,true,.65f,1.0f);
 	if (auto* Material=Cast<UMaterialInstanceDynamic>(Glazing->GetMaterial(0)))
-		Material->SetScalarParameterValue(TEXT("EmissiveNits"),FMath::Max(3.0f,Daylight*1.25f));
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,true,1.25f,3.0f);
 	// Window bounce adds actual directional shading, instead of flattening the room with
 	// an exposure-independent lamp or an entirely emissive material.
-	Light->SetIntensity(FMath::Max(250.0f,Daylight*12.0f));
-	DeskLight->SetIntensity(FMath::Max(60.0f,Daylight*3.0f));
+	USimCopterEffectExposureSubsystem::ApplyLightIntensity(Light,World,12.0f,250.0f);
+	USimCopterEffectExposureSubsystem::ApplyLightIntensity(DeskLight,World,3.0f,60.0f);
 }
 constexpr const TCHAR* VertexColorMaterialPath =
 	TEXT("/Game/Materials/M_SimCopterLitVertexColor.M_SimCopterLitVertexColor");

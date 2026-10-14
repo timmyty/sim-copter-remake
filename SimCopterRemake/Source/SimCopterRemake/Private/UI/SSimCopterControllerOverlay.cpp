@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/SSimCopterControllerOverlay.h"
+#include "Game/SimCopterGameMode.h"
 #include "UI/SSimCopterRadialWheel.h"
 #include "Widgets/Layout/SScaleBox.h"
 
@@ -284,7 +285,8 @@ EVisibility SSimCopterControllerOverlay::GetPauseVisibility() const
 		GEngine != nullptr && GEngine->GameViewport != nullptr
 			? GEngine->GameViewport->GetWorld()
 			: nullptr;
-	return World != nullptr && World->IsPaused()
+	const ASimCopterGameMode* CityMode = World != nullptr ? World->GetAuthGameMode<ASimCopterGameMode>() : nullptr;
+	return World != nullptr && World->IsPaused() && !(CityMode != nullptr && CityMode->IsCityIntroPlaying())
 		? EVisibility::Visible
 		: EVisibility::Collapsed;
 }

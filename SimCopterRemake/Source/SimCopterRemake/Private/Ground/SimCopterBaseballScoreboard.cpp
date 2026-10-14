@@ -166,8 +166,7 @@ void ASimCopterBaseballGame::InitializeScoreboard()
 void ASimCopterBaseballGame::UpdateScoreboardLighting()
 {
 	if (BoardLampMaterial)
-		BoardLampMaterial->SetScalarParameterValue(TEXT("EmissiveNits"),
-			USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld())*.65f);
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(BoardLampMaterial,GetWorld(),true,.65f);
 }
 
 void ASimCopterBaseballGame::UpdateBoard()

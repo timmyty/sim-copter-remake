@@ -3,6 +3,7 @@
 #include "City/SimCopterEffectExposure.h"
 
 #include "Components/DirectionalLightComponent.h"
+#include "Components/LightComponent.h"
 #include "Engine/World.h"
 #include "Game/SimCopterSettings.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -28,6 +29,18 @@ public:
 		: FSceneViewExtensionBase(AutoRegister)
 		, World(InWorld)
 	{
+	}
+
+	virtual void SetupViewFamily(FSceneViewFamily& Family) override
+	{
+		if (!World.IsValid() || !World->IsPaused() || !Family.Scene || Family.Scene->GetWorld() != World.Get()
+			|| Family.Time.GetDeltaWorldTimeSeconds() > 0) return;
+		// Eye adaptation consumes the render family's world delta. A paused zero freezes its
+		// response to Photo Mode time changes. Supply real delta, keeping the absolute shader
+		// clock and paused flag frozen; this never advances gameplay, water or cloud positions.
+		Family.Time = FGameTime::CreateDilated(Family.Time.GetRealTimeSeconds(),
+			Family.Time.GetDeltaRealTimeSeconds(), Family.Time.GetWorldTimeSeconds(),
+			Family.Time.GetDeltaRealTimeSeconds());
 	}
 
 	virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override
@@ -148,46 +161,44 @@ float SimCopterEffectExposure::ComputeMeasuredFloorNits(
 
 UDirectionalLightComponent* USimCopterEffectExposureSubsystem::ResolveKeyLight()
 {
-	if (UDirectionalLightComponent* Cached = KeyLight.Get())
-	{
-		return Cached;
-	}
-
 	const UWorld* World = GetWorld();
 	if (World == nullptr)
 	{
 		return nullptr;
 	}
 
-	// Rate limited: with no directional light at all (the main menu, a test map) the cache stays
-	// empty and this would otherwise walk every component in the world every frame.
+	// Cache only discovery. Which light illuminates the ground changes with the clock and must
+	// be evaluated even while paused, without waiting for this component scan.
 	const double Now = FPlatformTime::Seconds();
-	if (LastScanTimeSeconds >= 0.0 && (Now - LastScanTimeSeconds) < KeyLightRescanIntervalSeconds)
+	if (LastScanTimeSeconds < 0.0 || (Now - LastScanTimeSeconds) >= KeyLightRescanIntervalSeconds)
 	{
-		return nullptr;
+		LastScanTimeSeconds = Now;
+		DirectionalLights.Reset();
+		for (TObjectIterator<UDirectionalLightComponent> It; It; ++It)
+			if (It->GetWorld() == World && It->IsRegistered()) DirectionalLights.Add(*It);
 	}
-	LastScanTimeSeconds = Now;
 
 	// By component, not by actor class: the celestial vault's sun is a UDirectionalLightComponent on
 	// the day sequence actor, so TActorIterator<ADirectionalLight> finds nothing in this level.
 	UDirectionalLightComponent* Brightest = nullptr;
-	float BrightestIntensity = 0.0f;
-	for (TObjectIterator<UDirectionalLightComponent> It; It; ++It)
+	float BrightestIlluminance = 0.0f;
+	for (const auto& Entry : DirectionalLights)
 	{
-		UDirectionalLightComponent* Light = *It;
-		if (Light == nullptr || Light->GetWorld() != World || !Light->IsRegistered() || !Light->IsVisible())
+		UDirectionalLightComponent* Light = Entry.Get();
+		if (Light == nullptr || !Light->IsRegistered() || !Light->IsVisible() || !Light->bAffectsWorld)
 		{
 			continue;
 		}
 
-		if (Light->Intensity > BrightestIntensity)
+		const float Illuminance = SimCopterEffectExposure::ComputeGroundIlluminanceLux(
+			Light->Intensity, Light->GetForwardVector());
+		if (Illuminance > BrightestIlluminance)
 		{
-			BrightestIntensity = Light->Intensity;
+			BrightestIlluminance = Illuminance;
 			Brightest = Light;
 		}
 	}
 
-	KeyLight = Brightest;
 	return Brightest;
 }
 
@@ -219,9 +230,52 @@ void USimCopterEffectExposureSubsystem::Initialize(FSubsystemCollectionBase& Col
 
 void USimCopterEffectExposureSubsystem::Deinitialize()
 {
+	MaterialBindings.Reset();
+	LightBindings.Reset();
 	// The registry holds a weak reference, so dropping ours is the unregistration.
 	ExposureViewExtension.Reset();
 	Super::Deinitialize();
+}
+
+TStatId USimCopterEffectExposureSubsystem::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(USimCopterEffectExposureSubsystem, STATGROUP_Tickables);
+}
+
+void USimCopterEffectExposureSubsystem::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	RefreshLighting();
+}
+
+void USimCopterEffectExposureSubsystem::RefreshLighting()
+{
+	// Actor ticks may have sampled before a sequence seek in this very frame. Presentation is
+	// independent of simulation time and must also run with zero delta during Photo Mode.
+	bHasCachedValue = false;
+	if (MaterialBindings.IsEmpty() && LightBindings.IsEmpty()) return;
+	const float Effects = GetEffectEmissiveNits();
+	const float Surfaces = GetSurfaceEmissiveNitsForWorld(GetWorld());
+	for (auto It = MaterialBindings.CreateIterator(); It; ++It)
+	{
+		auto* Material = It.Key().Get();
+		if (!Material) { It.RemoveCurrent(); continue; }
+		auto& Binding = It.Value();
+		const float Value = FMath::Max(Binding.Minimum, (Binding.bIsLightSource ? Effects : Surfaces) * Binding.Scale);
+		if (Value != Binding.LastValue)
+		{
+			Material->SetScalarParameterValue(GetEmissiveNitsParameterName(), Value);
+			Binding.LastValue = Value;
+		}
+	}
+	for (auto It = LightBindings.CreateIterator(); It; ++It)
+	{
+		auto* Light = It.Key().Get();
+		if (!Light) { It.RemoveCurrent(); continue; }
+		auto& Binding = It.Value();
+		const float Value = FMath::Max(Binding.Minimum, Effects * Binding.Scale);
+		if (Value != Binding.LastValue) { Light->SetIntensity(Value); Binding.LastValue = Value; }
+	}
 }
 
 float USimCopterEffectExposureSubsystem::ReadAverageSceneLuminanceNits() const
@@ -235,8 +289,7 @@ float USimCopterEffectExposureSubsystem::ReadAverageSceneLuminanceNits() const
 
 float USimCopterEffectExposureSubsystem::GetEffectEmissiveNits()
 {
-	// Every effect component in the world asks for this while rebuilding, and the answer cannot
-	// change inside a frame, so the scan and the maths run once.
+	// Share this sample between consumers until the next frame or an explicit lighting refresh.
 	const uint64 Frame = GFrameCounter;
 	if (bHasCachedValue && Frame == CachedFrame)
 	{
@@ -249,8 +302,8 @@ float USimCopterEffectExposureSubsystem::GetEffectEmissiveNits()
 
 	if (const UDirectionalLightComponent* Light = ResolveKeyLight())
 	{
-		// The moon is a directional light too and is by far the dimmer of the two, so the brightest
-		// one is the sun by day and the moon by night without needing to know which is which.
+		// ResolveKeyLight compares illumination reaching the ground, not a below-horizon sun's
+		// nominal intensity, so the moon can become the key at night.
 		CachedIlluminanceLux = SimCopterEffectExposure::ComputeGroundIlluminanceLux(
 			Light->Intensity,
 			Light->GetComponentTransform().GetUnitAxis(EAxis::X));
@@ -311,16 +364,28 @@ float USimCopterEffectExposureSubsystem::GetSurfaceEmissiveNitsForWorld(const UW
 void USimCopterEffectExposureSubsystem::ApplyEmissiveNits(
 	UMaterialInstanceDynamic* MaterialInstance,
 	const UWorld* World,
-	const bool bIsLightSource)
+	const bool bIsLightSource, const float Scale, const float Minimum)
 {
 	if (MaterialInstance == nullptr)
 	{
 		return;
 	}
 
-	MaterialInstance->SetScalarParameterValue(
-		GetEmissiveNitsParameterName(),
-		bIsLightSource ? GetEffectEmissiveNitsForWorld(World) : GetSurfaceEmissiveNitsForWorld(World));
+	const float Value = FMath::Max(Minimum, Scale *
+		(bIsLightSource ? GetEffectEmissiveNitsForWorld(World) : GetSurfaceEmissiveNitsForWorld(World)));
+	MaterialInstance->SetScalarParameterValue(GetEmissiveNitsParameterName(), Value);
+	if (auto* Subsystem = World ? World->GetSubsystem<USimCopterEffectExposureSubsystem>() : nullptr)
+		Subsystem->MaterialBindings.FindOrAdd(MaterialInstance) = {bIsLightSource, Scale, Minimum, Value};
+}
+
+void USimCopterEffectExposureSubsystem::ApplyLightIntensity(
+	ULightComponent* Light, const UWorld* World, const float Scale, const float Minimum)
+{
+	if (!Light) return;
+	const float Value = FMath::Max(Minimum, Scale * GetEffectEmissiveNitsForWorld(World));
+	Light->SetIntensity(Value);
+	if (auto* Subsystem = World ? World->GetSubsystem<USimCopterEffectExposureSubsystem>() : nullptr)
+		Subsystem->LightBindings.FindOrAdd(Light) = {true, Scale, Minimum, Value};
 }
 
 float USimCopterEffectExposureSubsystem::GetBrightnessScale(const UWorld* World)

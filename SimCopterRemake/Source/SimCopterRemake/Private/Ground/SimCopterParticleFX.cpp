@@ -1530,16 +1530,14 @@ void USimCopterParticleFXComponent::ApplyEffectExposure()
 		CardMaterialInstance = Parent != nullptr ? UMaterialInstanceDynamic::Create(Parent, this) : nullptr;
 	}
 
-	const float Nits = USimCopterEffectExposureSubsystem::GetEffectEmissiveNitsForWorld(GetWorld());
-	const FName ParameterName = USimCopterEffectExposureSubsystem::GetEmissiveNitsParameterName();
 	if (CardMaterialInstance != nullptr)
 	{
-		CardMaterialInstance->SetScalarParameterValue(ParameterName, Nits);
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(CardMaterialInstance, GetWorld(), true);
 	}
 	if (KernelMaterialInstance != nullptr)
 	{
 		// The kernels ride M_SimCopterSpriteTexture, which is unlit for the same reason and needs
 		// the same scale. A material without the parameter ignores this silently.
-		KernelMaterialInstance->SetScalarParameterValue(ParameterName, Nits);
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(KernelMaterialInstance, GetWorld(), true);
 	}
 }
