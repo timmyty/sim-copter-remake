@@ -6,12 +6,52 @@ behavior with new tools, on-foot rescue work and modern controls.
 
 **[Download v1.0.14 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
 [Release notes](Docs/Releases/v1.0.14.md) · [Controller guide](Docs/ControllerSupport.md) ·
-[All changes](Docs/ForkChanges.md)
+[Quick summary](#quick-summary-added-or-expanded) · [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
 and [wyozi's fork](https://github.com/wyozi/sim-copter-remake), preserving their
 history and authorship. The capture cage, police tasers, AI helper and expanded
 recovery systems are deliberate additions to the remake.
+
+## Quick summary: added or expanded
+
+[JamesIV4's remake](https://github.com/JamesIV4/sim-copter-remake) focuses on
+recreating the original SimCopter experience on modern PCs. **Timmyty's fork
+extends that foundation with additional gameplay**, building on JamesIV4 through
+[wyozi's fork](https://github.com/wyozi/sim-copter-remake). Unreal Engine rendering,
+widescreen support, longer view distances and controller support are already part
+of JamesIV4's remake and are shared by this fork.
+
+The main timmyty additions beyond the 1996 game are:
+
+| Area | Added or expanded |
+| --- | --- |
+| **Direct arrests** | Handheld and helicopter-mounted tasers, remote aiming with autopilot, vehicle disabling, and carrying restrained suspects to police. [Details](Docs/AirOperations.md) |
+| **Capture and recovery** | A deployable cage carries four people or one car/boat; new recovery jobs deliver cargo to junkyards, harbors or police roofs. [Details](Docs/CaptureCage.md) |
+| **AI assistance** | A second helicopter unlocks after city graduation and performs individually assigned passenger or cargo missions. [Details](Docs/AirOperations.md#ai-helicopter-and-remote-taser-mode) |
+| **Pilot and aircraft gameplay** | Flyable transport airplanes, parachuting, expanded on-foot carrying/rescue, automatic unattended helicopter landing and pilot retrieval. [Changes](Docs/ForkChanges.md) |
+| **City activity** | Actual nine-inning baseball games with scoring and a stadium scoreboard; the original only had baseball gestures and running animations. Also adds suspect photographs and spoken witness reports. [Baseball](Docs/BaseballGames.md) · [Witness reports](Docs/MissionImprovements.md) |
+| **Progression and photography** | Four score-based progression stages in custom cities, equipment-dependent missions, aircraft-sized rescue groups, and Photo Mode with a free camera and lighting controls. [Details](Docs/CustomCityProgressionAndPhotoMode.md) |
+| **Music and movies** | KINV's 21 additional songs, optional music from 32 game collections, lossless original music, track selection/seeking, and custom MP4 drive-in movies. [Music](Docs/OptionalMusic.md) · [Radio](Docs/RadioMenu.md) · [Movies](#cheat-codes-and-drive-in-videos) |
+
+### Modified existing systems
+
+Medical treatment and body recovery, traffic and emergency dispatch, mission
+timing, injury/destruction rules and fleet-wide equipment purchases are expanded
+or revised. Presentation changes include helicopter paint, visible cabin
+occupants and a reconstructed hangar interior. These changes combine bug fixes,
+restored original behavior and deliberate gameplay departures; the
+[full change inventory](Docs/ForkChanges.md) records details and attribution.
+
+### Features with original-game roots
+
+Walking outside the helicopter, owning multiple helicopters, SimCity 2000 city
+imports, the core emergency missions, the rescue harness, the Apache, UFOs, cheats
+and drive-in movies originated in SimCopter. This fork restores or extends those
+systems rather than claiming their underlying concepts as new. Controller support
+and multiple-aircraft ownership also already exist in JamesIV4's remake. The
+[cheat guide](Docs/CheatCodes.md) distinguishes restored cheats from extensions
+such as custom MP4 playback.
 
 ## Start playing
 
