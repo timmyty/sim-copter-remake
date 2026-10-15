@@ -57,14 +57,14 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			break;
 		case EContext::ToolWheel:
 			Add(TEXT("rs"), TEXT("Select tool / remote taser / passengers"));
-			Add(TEXT("r3"), TEXT("Release to equip highlighted option"));
-			Add(TEXT("x"), TEXT("Switch to Dispatch"));
+			Add(TEXT("a"), TEXT("Equip highlighted option"));
+			Add(TEXT("r3"), TEXT("Switch to Dispatch"));
 			Add(TEXT("b"), TEXT("Cancel"));
 			break;
 		case EContext::DispatchWheel:
 			Add(TEXT("rs"), TEXT("Select service / Recall All"));
-			Add(TEXT("r3"), TEXT("Release to dispatch highlighted option"));
-			Add(TEXT("x"), TEXT("Switch to Tools"));
+			Add(TEXT("a"), TEXT("Dispatch highlighted option"));
+			Add(TEXT("r3"), TEXT("Switch to Tools"));
 			Add(TEXT("b"), TEXT("Cancel"));
 			break;
 		case EContext::Passengers:
@@ -92,7 +92,7 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			Add(TEXT("lt"), TEXT("Hold for 4x scope zoom"));
 			Add(TEXT("a"), TEXT("Fire remote taser"));
 			Add(TEXT("rt"), TEXT("Fire remote taser"));
-			Add(TEXT("r3"), TEXT("Hold Tools / select Fly Helicopter"));
+			Add(TEXT("r3"), TEXT("Open Tools / select Fly Helicopter"));
 			if (State.bCanExit) Add(TEXT("y"), TEXT("Exit helicopter"));
 			break;
 		default:
@@ -107,7 +107,7 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 				if (State.bMegaphone) Add(TEXT("horizontal"), TEXT("Change message"));
 				else if (State.bRope) Add(TEXT("vertical"), TEXT("Raise / lower"));
 			}
-			Add(TEXT("r3"), TEXT("Hold Tools; release to equip | X: Dispatch"));
+			Add(TEXT("r3"), TEXT("Click: Tools | Click again: Dispatch"));
 			Add(TEXT("lb"), TEXT("LB / RB: turn left / right"));
 			if (State.bCanExit) Add(TEXT("y"), TEXT("Exit helicopter"));
 			break;

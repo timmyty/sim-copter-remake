@@ -1092,7 +1092,7 @@ void ASimCopterHelicopterPawn::SetupPlayerInputComponent(UInputComponent* Player
 	PlayerInputComponent->BindKey(EKeys::Equals, IE_Pressed, this, &ASimCopterHelicopterPawn::MapZoomIn);
 	PlayerInputComponent->BindKey(EKeys::Hyphen, IE_Pressed, this, &ASimCopterHelicopterPawn::MapZoomOut);
 
-	// Hold R3 for the wheel; release commits. X adjusts the camera or switches wheel pages.
+	// R3 clicks open Tools, then alternate wheel pages. A confirms; B cancels.
 	PlayerInputComponent->BindKey(EKeys::Gamepad_RightShoulder, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerRightBumperPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_RightShoulder, IE_Released, this, &ASimCopterHelicopterPawn::ControllerRightBumperReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerLeftBumperPressed);
@@ -4650,15 +4650,14 @@ void ASimCopterHelicopterPawn::ControllerRadialPressed()
 	if (bControllerRadialHeld) return;
 	bControllerRadialHeld = true;
 	bControllerCameraAdjustHeld = false;
-	ControllerToolWheelPressed();
+	if (ControllerMode == ESimCopterControllerMode::ToolWheel) ControllerDispatchWheelPressed();
+	else ControllerToolWheelPressed();
 }
 
 void ASimCopterHelicopterPawn::ControllerRadialReleased()
 {
-	if (!bControllerRadialHeld) return;
+	// Keep the physical hold for map/help/radio chords separate from the open menu.
 	bControllerRadialHeld = false;
-	if (ControllerMode == ESimCopterControllerMode::ToolWheel) ControllerToolWheelReleased();
-	else if (ControllerMode == ESimCopterControllerMode::DispatchWheel) ControllerDispatchWheelReleased();
 }
 
 void ASimCopterHelicopterPawn::ControllerCameraAdjustPressed()

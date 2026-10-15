@@ -188,7 +188,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildDispatchWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"DispatchInstructions",
-			"RELEASE R3: CONFIRM   X: TOOLS\nB: CANCEL"), DispatchWheel);
+			"A: CONFIRM   R3: TOOLS\nB: CANCEL"), DispatchWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
@@ -216,7 +216,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"ToolInstructions",
-			"RELEASE R3: EQUIP   X: DISPATCH\nB: CANCEL"), ToolWheel);
+			"A: EQUIP   R3: DISPATCH\nB: CANCEL"), ToolWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildRadialWheel(

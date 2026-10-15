@@ -6,6 +6,7 @@
 #include "Engine/GameViewportClient.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Misc/MessageDialog.h"
+#include "HAL/PlatformProcess.h"
 
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Formats/SimCity2000Reader.h"
@@ -18,6 +19,9 @@
 #include "Widgets/Layout/SConstraintCanvas.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Images/SImage.h"
+#include "Widgets/SBoxPanel.h"
 #include "Widgets/Views/STableRow.h"
 
 #define LOCTEXT_NAMESPACE "SimCopterUserCityPicker"
@@ -125,6 +129,7 @@ void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 {
 	OnAccepted = InArgs._OnAccepted;
 	OnCancelled = InArgs._OnCancelled;
+	OnOpenWebsite = InArgs._OnOpenWebsite;
 
 	for (const FString& Path : InArgs._CityFilePaths)
 	{
@@ -208,6 +213,32 @@ void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 			.ColorAndOpacity(FSlateColor(bHasPage ? ListText : PlateTextColor)));
 	}
 
+	const bool bHasPage = HasPageBitmap(ArtObject, PickerPage);
+	const FLinearColor LinkColor = bHasPage ? FLinearColor(0.04f, 0.18f, 0.42f) : FLinearColor(0.50f, 0.76f, 1.0f);
+	AddAtPage(FRect{ 70, 275, 444, 293 }, SNew(STextBlock)
+		.Text(LOCTEXT("MoreCities", "Find more cities online (opens browser)"))
+		.Font(PageFont(14, true)).ColorAndOpacity(bHasPage ? ListText : PlateTextColor));
+	for (int32 Index = 0; Index < 2; ++Index)
+	{
+		const FString Url = GetCityWebsiteUrl(Index);
+		TSharedRef<SWidget> Link = SNew(SButton)
+			.ButtonStyle(FCoreStyle::Get(), "NoBorder").ContentPadding(0)
+			.HAlign(HAlign_Left).VAlign(VAlign_Center)
+			.ToolTipText(FText::FromString(Url))
+			.OnClicked_Lambda([this, Index]() { RequestWebsite(Index); return FReply::Handled(); })
+			[
+				SNew(SVerticalBox)
+				+ SVerticalBox::Slot().AutoHeight()
+				[SNew(STextBlock).Text(FText::FromString(Url.RightChop(8)))
+					.Font(PageFont(14)).ColorAndOpacity(LinkColor)]
+				+ SVerticalBox::Slot().AutoHeight()
+				[SNew(SBox).HeightOverride(1)
+					[SNew(SImage).Image(FCoreStyle::Get().GetBrush("WhiteBrush")).ColorAndOpacity(LinkColor)]]
+			];
+		WebsiteLinks.Add(Link);
+		AddAtPage(FRect{ 70, 295.f + Index * 19, 444, 313.f + Index * 19 }, Link);
+	}
+
 	AddAtPage(FRect{ AcceptButtonX, ButtonY, AcceptButtonX + ButtonWidth, ButtonY + ButtonHeight },
 		MakeButton(
 			ArtObject,
@@ -231,10 +262,76 @@ void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 	AddAtPage(FRect{ 70, ButtonY, 70 + ButtonWidth, ButtonY + ButtonHeight },
 		MakeButton(ArtObject, LOCTEXT("Browse", "Browse..."), ButtonFontHeight,
 			FOnClicked::CreateLambda([this]() { Browse(); return FReply::Handled(); }), ButtonStyles));
-	ChildSlot
-	[
-		MakeScaledScreen(Canvas)
-	];
+	PickerScreen = MakeScaledScreen(Canvas);
+	WebsiteConfirmationScreen = BuildWebsiteConfirmation();
+	ChildSlot[PickerScreen.ToSharedRef()];
+}
+
+FString SSimCopterUserCityPicker::GetCityWebsiteUrl(int32 Index)
+{
+	if (Index == 0) return TEXT("https://cities.opencity2k.org/");
+	if (Index == 1) return TEXT("https://patcoston.com/sc2k/cities.asp");
+	return FString();
+}
+
+TSharedRef<SWidget> SSimCopterUserCityPicker::BuildWebsiteConfirmation()
+{
+	WebsiteCancelButton = MakeButton(nullptr, LOCTEXT("WebsiteCancel", "Cancel"), ButtonFontHeight,
+		FOnClicked::CreateLambda([this]() { CompleteWebsiteConfirmation(false); return FReply::Handled(); }), ButtonStyles);
+	WebsiteOpenButton = MakeButton(nullptr, LOCTEXT("WebsiteOpen", "Open site"), ButtonFontHeight,
+		FOnClicked::CreateLambda([this]() { CompleteWebsiteConfirmation(true); return FReply::Handled(); }), ButtonStyles);
+	return MakeScaledScreen(SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+		[SNew(SBox).WidthOverride(460)
+			[MakeFallbackPlate(SNew(SVerticalBox)
+				+ SVerticalBox::Slot().AutoHeight().Padding(24, 22, 24, 12)
+				[SNew(STextBlock).Text(LOCTEXT("WebsiteTitle", "Open external website?"))
+					.Font(PageFont(22, true)).ColorAndOpacity(PlateTextColor).Justification(ETextJustify::Center)]
+				+ SVerticalBox::Slot().AutoHeight().Padding(24, 0, 24, 20)
+				[SNew(STextBlock).Text_Lambda([this]()
+					{
+						return FText::Format(LOCTEXT("WebsiteWarning",
+							"You're about to leave the game for a third-party website in your browser.\n\n"
+							"We don't control this site or its content.\n\n{0}"), FText::FromString(GetCityWebsiteUrl(PendingWebsiteIndex)));
+					})
+					.Font(PageFont(17)).ColorAndOpacity(PlateTextColor).WrapTextAt(406)
+					.WrappingPolicy(ETextWrappingPolicy::AllowPerCharacterWrapping)
+					.Justification(ETextJustify::Center)]
+				+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(24, 0, 24, 22)
+				[SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 16, 0)
+					[SNew(SBox).WidthOverride(ButtonWidth).HeightOverride(ButtonHeight)[WebsiteCancelButton.ToSharedRef()]]
+					+ SHorizontalBox::Slot().AutoWidth()
+					[SNew(SBox).WidthOverride(ButtonWidth).HeightOverride(ButtonHeight)[WebsiteOpenButton.ToSharedRef()]]
+				])]]);
+}
+
+void SSimCopterUserCityPicker::RequestWebsite(int32 Index)
+{
+	if (PendingWebsiteIndex != INDEX_NONE || GetCityWebsiteUrl(Index).IsEmpty()) return;
+	PendingWebsiteIndex = Index;
+	ChildSlot[WebsiteConfirmationScreen.ToSharedRef()];
+	SetControllerSelection(WebsiteCancelButton);
+	FSlateApplication::Get().SetKeyboardFocus(WebsiteCancelButton, EFocusCause::SetDirectly);
+}
+
+void SSimCopterUserCityPicker::CompleteWebsiteConfirmation(bool bOpen)
+{
+	if (PendingWebsiteIndex == INDEX_NONE) return;
+	const int32 Index = PendingWebsiteIndex;
+	const FString Url = GetCityWebsiteUrl(Index);
+	PendingWebsiteIndex = INDEX_NONE;
+	ChildSlot[PickerScreen.ToSharedRef()];
+	SetControllerSelection(WebsiteLinks[Index]);
+	FSlateApplication::Get().SetKeyboardFocus(WebsiteLinks[Index], EFocusCause::SetDirectly);
+	if (!bOpen) return;
+	if (OnOpenWebsite.IsBound()) OnOpenWebsite.Execute(Url);
+	else
+	{
+		FString Error;
+		FPlatformProcess::LaunchURL(*Url, nullptr, &Error);
+		if (!Error.IsEmpty()) FMessageDialog::Open(EAppMsgType::Ok,
+			FText::Format(LOCTEXT("WebsiteError", "Unable to open your browser.\n{0}"), FText::FromString(Error)));
+	}
 }
 
 TSharedRef<ITableRow> SSimCopterUserCityPicker::MakeRow(
@@ -254,6 +351,7 @@ TSharedRef<ITableRow> SSimCopterUserCityPicker::MakeRow(
 
 void SSimCopterUserCityPicker::Browse()
 {
+	if (PendingWebsiteIndex != INDEX_NONE) return;
 	FString Path;
 	if (!SimCopterFileBrowser::Open(AsShared(), false, TEXT("Open a SimCity 2000 city"), Path)) return;
 	FSimCity2000City City;
@@ -269,7 +367,7 @@ void SSimCopterUserCityPicker::Browse()
 
 void SSimCopterUserCityPicker::Accept()
 {
-	if (!ListView.IsValid())
+	if (PendingWebsiteIndex != INDEX_NONE || !ListView.IsValid())
 	{
 		return;
 	}
@@ -284,6 +382,16 @@ void SSimCopterUserCityPicker::Accept()
 FReply SSimCopterUserCityPicker::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
 {
 	const FKey Key = InKeyEvent.GetKey();
+	if (PendingWebsiteIndex != INDEX_NONE)
+	{
+		if (Key == EKeys::Escape || Key == EKeys::Enter)
+		{
+			if (!InKeyEvent.IsRepeat()) CompleteWebsiteConfirmation(
+				Key == EKeys::Enter && GetControllerSelection() == WebsiteOpenButton);
+			return FReply::Handled();
+		}
+		return SCompoundWidget::OnKeyDown(MyGeometry, InKeyEvent);
+	}
 	if (Key == EKeys::Escape)
 	{
 		OnCancelled.ExecuteIfBound();

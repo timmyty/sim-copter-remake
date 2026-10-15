@@ -30,7 +30,7 @@ constexpr float PageWidth = 510.0f;
 constexpr float PageHeight = 436.0f;
 
 // The big pale list panel, whose printed edges are x 59..455, y 90..338.
-constexpr FRect ListRect{ 64.0f, 95.0f, 450.0f, 333.0f };
+constexpr FRect ListRect{ 64.0f, 95.0f, 450.0f, 268.0f };
 // The printed button plate is x 336..461, y 360..398 - one 100x28 button wide, so Cancel sits on
 // the plate beside it.
 constexpr float ButtonY = 366.0f;
@@ -41,6 +41,7 @@ constexpr int32 ButtonFontHeight = 14;
 }
 
 DECLARE_DELEGATE_OneParam(FOnSimCopterUserCityChosen, const FString&);
+DECLARE_DELEGATE_OneParam(FOnSimCopterCityWebsiteOpened, const FString&);
 
 struct FSimCopterUserCityEntry
 {
@@ -56,6 +57,7 @@ public:
 		SLATE_ARGUMENT(TArray<FString>, CityFilePaths)
 		SLATE_EVENT(FOnSimCopterUserCityChosen, OnAccepted)
 		SLATE_EVENT(FSimpleDelegate, OnCancelled)
+		SLATE_EVENT(FOnSimCopterCityWebsiteOpened, OnOpenWebsite)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
@@ -68,6 +70,19 @@ public:
 	static FString FormatDisplayName(const FString& FilePath, const FString& EmbeddedCityName = FString());
 
 private:
+	friend class FSimCopterUserCityWebsitesTest;
+	FOnSimCopterCityWebsiteOpened OnOpenWebsite;
+	TSharedPtr<SWidget> PickerScreen;
+	TSharedPtr<SWidget> WebsiteConfirmationScreen;
+	TArray<TSharedPtr<SWidget>> WebsiteLinks;
+	TSharedPtr<SWidget> WebsiteCancelButton;
+	TSharedPtr<SWidget> WebsiteOpenButton;
+	int32 PendingWebsiteIndex = INDEX_NONE;
+	static FString GetCityWebsiteUrl(int32 Index);
+	TSharedRef<SWidget> BuildWebsiteConfirmation();
+	void RequestWebsite(int32 Index);
+	void CompleteWebsiteConfirmation(bool bOpen);
+
 	TArray<TSharedPtr<FSimCopterUserCityEntry>> Entries;
 	FOnSimCopterUserCityChosen OnAccepted;
 	FSimpleDelegate OnCancelled;

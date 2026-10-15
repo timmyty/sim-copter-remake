@@ -7,6 +7,130 @@
 #include "UI/SSimCopterCareerSelect.h"
 #include "UI/SSimCopterMainMenu.h"
 #include "UI/SSimCopterUserCityPicker.h"
+#include "Game/SimCopterSessionSubsystem.h"
+#include "UI/SimCopterHangarArt.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Input/HittestGrid.h"
+#include "Types/PaintArgs.h"
+#include "Widgets/SVirtualWindow.h"
+#include "Misc/ScopeExit.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
+#include "Misc/FileHelper.h"
+#include "UObject/StrongObjectPtr.h"
+#include "Slate/WidgetRenderer.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "ImageUtils.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterUserCityWebsitesTest,
+	"SimCopter.FrontEnd.UserCityWebsites", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterUserCityWebsitesTest::RunTest(const FString&)
+{
+	TArray<FString> CityPaths;
+	USimCopterSessionSubsystem::GetUserCityFilePaths(CityPaths);
+	if (!TestTrue(TEXT("City selection fixture has a real city"), !CityPaths.IsEmpty())) return false;
+	CityPaths.SetNum(FMath::Min(CityPaths.Num(), 2));
+	TStrongObjectPtr<USimCopterHangarArt> Art(NewObject<USimCopterHangarArt>());
+	Art->SetOriginalGameRoot(FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../Reference/SimCopterOriginalGame")));
+	for (bool bHasCities : {true, false})
+	{
+		TArray<FString> Opened;
+		int32 Accepted = 0, Cancelled = 0;
+		TSharedRef<SSimCopterUserCityPicker> Picker = SNew(SSimCopterUserCityPicker)
+			.Art(bHasCities ? Art.Get() : nullptr)
+			.CityFilePaths(bHasCities ? CityPaths : TArray<FString>())
+			.OnAccepted_Lambda([&](const FString&) { ++Accepted; })
+			.OnCancelled_Lambda([&]() { ++Cancelled; })
+			.OnOpenWebsite_Lambda([&](const FString& Url) { Opened.Add(Url); });
+		TSharedRef<SVirtualWindow> Window = SNew(SVirtualWindow).Size(FVector2D(640, 480));
+		Window->SetContent(Picker);
+		auto& Slate = FSlateApplication::Get();
+		const TSharedPtr<SWidget> PreviousFocus = Slate.GetUserFocusedWidget(0);
+		Slate.RegisterVirtualWindow(Window);
+		ON_SCOPE_EXIT { Slate.UnregisterVirtualWindow(Window); if (PreviousFocus) Slate.SetUserFocus(0, PreviousFocus); };
+		const auto Arrange = [&]()
+		{
+			Window->SlatePrepass();
+			FHittestGrid Grid;
+			Grid.SetHittestArea(FVector2D::ZeroVector, FVector2D(640, 480));
+			FSlateWindowElementList Elements(Window);
+			FPaintArgs Args(nullptr, Grid, FVector2D::ZeroVector, 0, 0);
+			Window->Paint(Args, FGeometry::MakeRoot(FVector2D(640, 480), FSlateLayoutTransform()),
+				FSlateRect(0, 0, 640, 480), Elements, 0, FWidgetStyle(), true);
+		};
+		const auto Press = [&](FKey Key, bool bRepeat = false)
+		{
+			Picker->OnPreviewKeyDown(Picker->GetCachedGeometry(), FKeyEvent(Key, FModifierKeysState(), 0, bRepeat, 0, 0));
+		};
+		const auto Capture = [&](const TCHAR* Name)
+		{
+			if (!FParse::Param(FCommandLine::Get(), TEXT("SimCityWebsitePreview"))) return;
+			FWidgetRenderer Renderer(true);
+			auto* Target = Renderer.DrawWidget(Picker, FVector2D(1280, 960));
+			if (!TestNotNull(TEXT("City website screen rendered offscreen"), Target)) return;
+			TArray<FColor> Pixels;
+			FReadSurfaceDataFlags Flags; Flags.SetLinearToGamma(false);
+			Target->GameThread_GetRenderTargetResource()->ReadPixels(Pixels, Flags);
+			TArray64<uint8> Png; FImageUtils::PNGCompressImageArray(1280, 960, Pixels, Png);
+			const FString Path = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() /
+				TEXT("../Docs/scratchpad/radial-click-2026-10-15") /
+				FString::Printf(TEXT("city-websites-%s-%s.png"), bHasCities ? TEXT("art") : TEXT("fallback"), Name));
+			TestTrue(TEXT("City website preview saved"), FFileHelper::SaveArrayToFile(Png, *Path));
+		};
+		Arrange();
+		Capture(TEXT("picker"));
+		TestEqual(TEXT("Both requested websites are linked"), Picker->WebsiteLinks.Num(), 2);
+		TSharedPtr<FSimCopterUserCityEntry> Selected;
+		if (bHasCities) { Selected = Picker->Entries.Last(); Picker->ListView->SetSelection(Selected); }
+		for (int32 Index = 0; Index < 2; ++Index)
+		{
+			Arrange();
+			Picker->SetControllerSelection(Picker->WebsiteLinks[Index]);
+			Press(EKeys::Gamepad_FaceButton_Bottom);
+			TestEqual(TEXT("Link opens confirmation before leaving the game"), Picker->PendingWebsiteIndex, Index);
+			TestEqual(TEXT("Link alone cannot open the browser"), Opened.Num(), Index);
+			Picker->Accept();
+			TestEqual(TEXT("Confirmation blocks city loading behind it"), Accepted, 0);
+			Arrange();
+			if (Index == 1) Capture(TEXT("warning"));
+			TestTrue(TEXT("Cancel is selected initially"), Picker->GetControllerSelection() == Picker->WebsiteCancelButton);
+			Press(EKeys::Gamepad_FaceButton_Bottom, true);
+			TestEqual(TEXT("Held opener cannot dismiss the warning"), Picker->PendingWebsiteIndex, Index);
+			Press(EKeys::Gamepad_FaceButton_Right);
+			TestEqual(TEXT("B dismisses only the website warning"), Picker->PendingWebsiteIndex, INDEX_NONE);
+			TestEqual(TEXT("B does not leave the city picker"), Cancelled, 0);
+			TestEqual(TEXT("B cannot open a website"), Opened.Num(), Index);
+			Arrange();
+			Press(EKeys::Gamepad_FaceButton_Bottom);
+			Arrange();
+			Press(EKeys::Gamepad_FaceButton_Bottom);
+			TestEqual(TEXT("Default A cancels without opening a website"), Opened.Num(), Index);
+			TestEqual(TEXT("Cancel button restores the city picker"), Picker->PendingWebsiteIndex, INDEX_NONE);
+			Arrange();
+			Press(EKeys::Gamepad_FaceButton_Bottom);
+			Arrange();
+			Press(EKeys::Gamepad_DPad_Right);
+			TestTrue(TEXT("Controller can choose Open site"), Picker->GetControllerSelection() == Picker->WebsiteOpenButton);
+			Press(EKeys::Gamepad_FaceButton_Bottom);
+			TestEqual(TEXT("Explicit confirmation opens exactly once"), Opened.Num(), Index + 1);
+			if (Opened.IsValidIndex(Index)) TestEqual(TEXT("Exact requested URL is opened"), Opened[Index],
+				FString(Index == 0 ? TEXT("https://cities.opencity2k.org/") : TEXT("https://patcoston.com/sc2k/cities.asp")));
+			Picker->CompleteWebsiteConfirmation(true);
+			TestEqual(TEXT("An expired confirmation cannot launch twice"), Opened.Num(), Index + 1);
+			TestEqual(TEXT("Opening a website restores the picker"), Picker->PendingWebsiteIndex, INDEX_NONE);
+			if (bHasCities) TestTrue(TEXT("Selected city survives confirmation"), Picker->ListView->GetSelectedItems().Contains(Selected));
+		}
+		Picker->RequestWebsite(0);
+		Picker->OnKeyDown(Picker->GetCachedGeometry(), FKeyEvent(EKeys::Escape, FModifierKeysState(), 0, false, 0, 0));
+		TestEqual(TEXT("Escape cancels without launching"), Opened.Num(), 2);
+		TestEqual(TEXT("Escape stays in the city picker"), Cancelled, 0);
+		Picker->RequestWebsite(77);
+		TestEqual(TEXT("Only the two fixed destinations can be requested"), Picker->PendingWebsiteIndex, INDEX_NONE);
+		Picker->Accept();
+		TestEqual(TEXT("City loading still works after browsing"), Accepted, bHasCities ? 1 : 0);
+	}
+	return true;
+}
 
 // The front end's pure logic: the two decoded selection wheels and the career graph. The pages
 // themselves need artwork and a viewport, so they are left to whoever is at the keyboard; these

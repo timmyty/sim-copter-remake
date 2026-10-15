@@ -11,7 +11,7 @@ the existing keyboard and mouse controls.
 | Left stick | Analog equivalent of `WASD`: forward/back pitch and coordinated left/right turn |
 | Right stick | Pan/orbit the camera like holding the right mouse button |
 | `RT` / `LT` or `B` | Climb / descend; on the ground these also hold engine start / shutdown |
-| Hold `R3` | Open Tools; release to equip the last highlighted option |
+| Click `R3` | Open Tools; click again for Dispatch, then alternate between the two |
 | `X` while a radial is open | Switch Tools / Dispatch |
 | `A` | Use the selected tool / confirm a menu choice |
 | `LB` / `RB` | Turn left / right |
@@ -32,7 +32,7 @@ so they do not also operate a winch or change megaphone messages.
 
 LB and RB remain dedicated to turning. Holding both cancels their turn input;
 releasing either immediately restores the other direction, including at cruise.
-The retired LB+RB tool-wheel shortcut no longer latches steering off. Hold R3 for Tools.
+The retired LB+RB tool-wheel shortcut no longer latches steering off. Click R3 for Tools.
 
 ### Camera adjustment
 
@@ -50,7 +50,7 @@ slide described above.
 
 ## Dispatch radial
 
-Hold `R3` to open Tools, then press `X` to switch to Dispatch. Select a service
+Click `R3` to open Tools, then click `R3` again to switch to Dispatch. Select a service
 with the right stick, including ground services and **Air: Map Mission**. Air support
 unlocks after passing the current level and waits for an order. Select the mission
 on the map, then confirm **Air: Map Mission** to assign that one job. The helper
@@ -59,9 +59,9 @@ returns to standby afterward; each further mission requires another order.
 | Control in Dispatch | Action |
 | --- | --- |
 | `B` | Cancel and close without dispatching |
-| Select Recall All, then release `R3` | Recall every active dispatch and chase vehicle, then close |
-| `X` | Switch back to Tools |
-| Release `R3` (or press `A`) | Dispatch the highlighted service |
+| Select Recall All, then press `A` | Recall every active dispatch and chase vehicle, then close |
+| `R3` (or `X`) | Switch back to Tools |
+| `A` | Dispatch the highlighted service and close |
 
 The spotlight determines the dispatch and chase tile. Recall All is immediate and does not require
 a valid spotlight target; the original Shift+F2-F5 bindings retain their selected-service,
@@ -69,24 +69,26 @@ spotlight-local release behavior.
 
 ## Tool radial and use
 
-Hold `R3` to open the tool radial and navigate with the right stick. Release `R3` to
-equip the last highlighted installed tool, even if the stick has returned to center.
-Press `B` to cancel without changing tools. `A` also confirms while the wheel is open.
+Click `R3` to open the tool radial and navigate with the right stick. The menu stays
+open after releasing R3 and while idle. Press `A` to equip the last highlighted
+installed tool and close, even if the stick has returned to center. Press `B` to
+cancel without changing tools. Another R3 click switches to Dispatch without
+equipping or activating the highlighted option. X remains an alternate page switch.
 
 | Control | Action |
 | --- | --- |
 | `A` | Activate the equipped tool; held tools remain active until `A` is released |
-| Select Passengers in Tools, then release `R3` | Open passenger selection |
-| Select purchased Remote Taser in Tools, then release `R3` | Activate the remote sight while airborne |
+| Select Passengers in Tools, then press `A` | Open passenger selection |
+| Select purchased Remote Taser in Tools, then press `A` | Activate the remote sight while airborne |
 | D-pad up/down with bucket selected | Raise/lower the bucket |
 | D-pad up/down with rescue harness selected | Raise/lower the harness |
 | D-pad left/right with megaphone selected | Select the previous/next message |
 
-The radial contains installed tools, the purchased Remote Taser, and Passengers when the cabin is occupied. In remote mode, right stick aims, hold LT for 4x scope zoom, and A or RT fires. Release LT to return to the previous zoom. The mouse wheel adjusts zoom from 1x to 4x. The helicopter holds a steady firing position until range or sustained cover requires following again. Hold R3, select Fly Helicopter, and release R3 to return. Selecting an ordinary tool also returns to manual flight. Confirming an option does not perform a tool action on the same press.
+The radial contains installed tools, the purchased Remote Taser, and Passengers when the cabin is occupied. In remote mode, right stick aims, hold LT for 4x scope zoom, and A or RT fires. Release LT to return to the previous zoom. The mouse wheel adjusts zoom from 1x to 4x. The helicopter holds a steady firing position until range or sustained cover requires following again. Click R3, select Fly Helicopter, and press A to return. Selecting an ordinary tool also returns to manual flight. Confirming an option does not perform a tool action on the same press.
 
 ## Passengers
 
-Hold `R3`, select Passengers with the right stick, then release `R3`. The selected
+Click `R3`, select Passengers with the right stick, then press `A`. The selected
 seat is highlighted on the dashboard.
 
 | Control in passenger-selection mode | Action |
@@ -96,7 +98,7 @@ seat is highlighted on the dashboard.
 | D-pad left/up or right/down | Select Drop or Cancel |
 | `A` | Confirm the highlighted choice |
 | `B` | Back out one level; press again to leave passenger mode |
-| Hold `R3` | Return to Tools |
+| Click `R3` | Return to Tools |
 
 ## On foot
 
@@ -198,7 +200,7 @@ Photo Mode still opens with `Ctrl+P` or Esc → Photo Mode; `F12` captures an im
 and Esc returns to play. Expanded contextual tool instructions remain available.
 
 Expanded help uses imported Kenney Input Prompts icons. Flight help includes both
-sticks, both triggers, and the R3 camera modifier alongside the current tool.
+sticks, both triggers, and the X camera modifier alongside the current tool.
 On-foot help explains movement, looking and aiming, both taser triggers, and actions.
 Camera-adjust help shows zoom, lateral slide and trigger framing; remote-taser help
 shows aiming, firing and returning to flight. Wheels and passengers retain their
@@ -208,7 +210,7 @@ The megaphone's broadcast row includes the current message; the D-pad icon expla
 how to change it without broadcasting. A / Cross broadcasts. No top-of-screen tool
 help panel is shown. Wheel and passenger control hints live in this list too.
 
-L3 is no longer spotlight toggle. Hold R3 and press X / Square to toggle the spotlight.
+L3 is no longer spotlight toggle. Hold X / Square and press A / Cross to toggle the spotlight.
 D-pad spotlight aiming has been removed in both flight and camera-adjust mode.
 Keyboard spotlight aiming remains unchanged.
 
