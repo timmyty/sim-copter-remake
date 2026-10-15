@@ -85,6 +85,8 @@ private:
 	FReply HandleActivateUpgradeRow(int32 NewRow);
 	void SelectEquipmentAction();
 	virtual void OnControllerSelectionChanged(int32 Index) override;
+	virtual bool IsControllerNavigationCandidate(const TSharedPtr<SWidget>& From,
+		const TSharedRef<SWidget>& To, FVector2D Direction) const override;
 
 	FString StatusText;
 

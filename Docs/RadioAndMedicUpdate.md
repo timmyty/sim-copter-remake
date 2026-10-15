@@ -1,5 +1,10 @@
 # Radio and medic update — October 14, 2026
 
+The medic early-return exception described below is superseded by the October 15
+[crew cooldown update](CivicAndWaterfrontReview.md): manually ejected police and
+medics must wait the full 15 gameplay seconds, including after a final patient handoff.
+The remainder of this document records the earlier implementation and validation.
+
 Radio uses the original category schedule by default on retail stations. Track
 selection no longer silently creates a sequential queue. The original constructor
 `FUN_0042e570` appends each of music, DJ, commercials and jingles once; the remake's

@@ -20,6 +20,8 @@ protected:
 	// focus brush would outline the entire viewport when navigation restores focus here.
 	virtual const FSlateBrush* GetFocusBrush() const override { return nullptr; }
 	virtual void OnControllerSelectionChanged(int32 Index) {}
+	virtual bool IsControllerNavigationCandidate(const TSharedPtr<SWidget>& From,
+		const TSharedRef<SWidget>& To, FVector2D Direction) const { return true; }
 	virtual bool IsCapturingControllerBinding() const { return false; }
 	TSharedPtr<SWidget> GetControllerSelection() const { return SelectedControl.Pin(); }
 	void SetControllerSelection(const TSharedPtr<SWidget>& Widget)

@@ -490,8 +490,8 @@ public:
 	// Starts a visible passenger fall from the current airborne position. When the landing impact
 	// is too large, the agent becomes an injured medevac victim owned by a new no-reward mission.
 	void BeginPassengerFall(int32 SourceEventId, float InjuryDistanceCm);
-	// A manual crew deployment may take an existing cabin patient through the normal handoff.
-	void PrepareMedicDeployment(class ASimCopterHelicopterPawn* Helicopter, bool bTakeCabinPatient);
+	// Manual crew drops start a boarding cooldown; a medic may also take a cabin patient.
+	void PrepareEmergencyCrewDeployment(class ASimCopterHelicopterPawn* Helicopter, bool bTakeCabinPatient);
 
 	// Turns the agent into a script-driven mover: no behavior VM, no ground snapping (its owner
 	// keeps it on a chosen plane), driven purely by SetMoveTarget.
@@ -1442,9 +1442,8 @@ private:
 	TWeakObjectPtr<AActor> BehaviorCarrier;
 	// person+0x170: the emergency vehicle that deployed this crew member.
 	TWeakObjectPtr<AActor> BehaviorStartingVehicle;
-	/** Manual crew deployment holds boarding for 15 simulation seconds, except a final patient handoff. */
-	double MedicReboardAfterTime = 0.0;
-	TWeakObjectPtr<ASimCopterGroundAgent> MedicReboardPatient;
+	/** Manual police/medic drops prevent all helicopter boarding for 15 simulation seconds. */
+	double CrewReboardAfterTime = 0.0;
 	bool bBehaviorStartingVehicleMessaged = false;
 	// person+0x1a4, written by FUN_004c1050 when an interaction is delivered, and by the move core
 	// when this person walks into somebody.

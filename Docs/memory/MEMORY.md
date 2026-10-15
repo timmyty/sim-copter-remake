@@ -1,6 +1,8 @@
 # Memory Index
 
-- [Water tower presentation](../WaterTowerPresentation.md) — 2026-10-15: painted tanks and city lettering, shared once per city; original geometry, collision and single-section instancing retained.
+- [Civic and waterfront review](../CivicAndWaterfrontReview.md) — 2026-10-15: reference-based stepped City Hall crown/lantern, rooftop equipment and entry hedges, textured facades with 70.9% fewer triangles, strict 15-second police/medic manual-drop cooldown, water-relative AP223/AP223F placement, closed neutral-metal WT235 lids and bracing, Catalog row navigation, and Select through persistent panels/remote sight. Documentation screenshots use full-resolution WebP. User authorized publication in v1.0.18 after validation; see Docs/validation/WindowsRelease118Results.json.
+
+- [Water tower presentation](../WaterTowerPresentation.md) — 2026-10-15: painted tanks and city lettering shared once per city; original tank/leg geometry retained with a closed lid, ladder and bracing in the same instanced mesh/material slot.
 
 - [Controller menus and city links](controller-radial-click.md) — 2026-10-15: persistent R3 Tools/Dispatch clicks, explicit A confirmation/B cancellation, and both requested city-download links behind an in-game third-party warning. See the note and validation receipt for checks and release status.
 

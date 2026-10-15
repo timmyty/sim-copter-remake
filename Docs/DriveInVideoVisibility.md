@@ -28,9 +28,9 @@ offscreen captures, not a manual flight or listening test.
 
 | Before: HSI hidden | After: HSI visible |
 | --- | --- |
-| ![Hidden HSI picture](screenshots/drive-in-before-fix.png) | ![HSI on the actual theater](screenshots/drive-in-hsi-fixed.png) |
+| ![Hidden HSI picture](screenshots/drive-in-before-fix.webp) | ![HSI on the actual theater](screenshots/drive-in-hsi-fixed.webp) |
 
-![Original movie on the theater](screenshots/drive-in-original-fixed.png)
+![Original movie on the theater](screenshots/drive-in-original-fixed.webp)
 
 Build and test results: [DriveInVideoVisibilityResults.json](validation/DriveInVideoVisibilityResults.json).
 Local reproduction, build logs, test reports and installation receipts:

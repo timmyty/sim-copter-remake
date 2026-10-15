@@ -16,7 +16,7 @@ the existing keyboard and mouse controls.
 | `A` | Use the selected tool / confirm a menu choice |
 | `LB` / `RB` | Turn left / right |
 | `Y` | Exit the helicopter, including deliberate airborne exits |
-| View / Back | Cycle camera view |
+| View / Back / Select | Cycle camera view; close an open Tools, Dispatch or passenger panel |
 | Menu / Start | Pause or resume |
 | `L3` | Toggle Turbo Mode |
 | `R3` + `L3` | Show / hide contextual button help |
@@ -33,6 +33,15 @@ so they do not also operate a winch or change megaphone messages.
 LB and RB remain dedicated to turning. Holding both cancels their turn input;
 releasing either immediately restores the other direction, including at cruise.
 The retired LB+RB tool-wheel shortcut no longer latches steering off. Click R3 for Tools.
+
+A plain Select press advances once through Chase, Orbit, Rescue, Cockpit and Spotlight,
+then returns to Chase. Holding the button does not skip views. From the remote-taser
+sight it restores the aircraft view and advances the camera. Holding R3 or the camera
+adjust modifier while pressing Select retains the deliberate Radio shortcut.
+
+In the hangar Catalog, left/right stays among the aircraft tabs. Press Down to reach
+Upgrades or Apache; Up returns to the aircraft row. This applies to the D-pad, stick
+navigation and keyboard arrows.
 
 ### Camera adjustment
 

@@ -19,7 +19,7 @@ checks the resulting picture's width, height, vertical centering and complete UV
 coverage, and verifies that decoded video pixels are visible in the rendered city.
 The same run covers all-map theater placement, minimap logos and movie commands.
 
-![HSI using the requested picture area](screenshots/drive-in-hsi-three-quarter.png)
+![HSI using the requested picture area](screenshots/drive-in-hsi-three-quarter.webp)
 
 Build/test results: [DriveInPictureSizingResults.json](validation/DriveInPictureSizingResults.json).
 Local evidence: `Docs/scratchpad/drive-in-full-screen/`. Captures use controlled

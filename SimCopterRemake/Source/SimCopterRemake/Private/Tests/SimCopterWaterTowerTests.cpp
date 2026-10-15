@@ -43,8 +43,8 @@ bool FWaterTowerContractTest::RunTest(const FString& Parameters)
  if(!TestNotNull(TEXT("Water tower loads"),Original)) return false;
  TestEqual(TEXT("Only WT235 is the tower"),Original->Header.TableName,FString(TEXT("WT235")));
  const auto Prepared=SimCopterWaterTowers::PrepareModel(*Original);
- TestEqual(TEXT("No additional vertices"),Prepared.Vertices.Num(),Original->Vertices.Num());
- TestEqual(TEXT("No additional polygons"),Prepared.Faces.Num(),Original->Faces.Num());
+ TestTrue(TEXT("Closed lid and frame detail are present"),Prepared.Vertices.Num()>Original->Vertices.Num());
+ TestTrue(TEXT("Added geometry remains bounded"),Prepared.Vertices.Num()<1500 && Prepared.Faces.Num()<350);
  for(int32 I=0;I<Original->Vertices.Num();++I)
  {
   TestEqual(TEXT("Collision X unchanged"),Prepared.Vertices[I].X,Original->Vertices[I].X);
@@ -120,7 +120,7 @@ bool FWaterTowerCityTest::RunTest(const FString& Parameters)
 	if(!TestEqual(TEXT("All towers share one instanced component"),Towers.Num(),1)) return false;
 	TestEqual(TEXT("Sixteen towers are instances, not separate actors"),Towers[0]->GetInstanceCount(),16);
 	TestEqual(TEXT("Tower retains one finish slot plus its existing foundation slot"),Towers[0]->GetNumMaterials(),2);
-	TestEqual(TEXT("Original 232 tower and 16 foundation triangles remain unchanged"),int32(Towers[0]->GetStaticMesh()->GetRenderData()->LODResources[0].GetNumTriangles()),248);
+ TestTrue(TEXT("Detailed tower remains below 1500 triangles including its foundation"),Towers[0]->GetStaticMesh()->GetRenderData()->LODResources[0].GetNumTriangles()<1500);
 	auto* Paint=Cast<UMaterialInstanceDynamic>(Towers[0]->GetMaterial(0));
 	if(!TestNotNull(TEXT("City owns a shared paint instance"),Paint)) return false;
 	TestEqual(TEXT("Dedicated material is actually bound"),Paint->Parent->GetName(),FString(TEXT("M_WaterTower")));

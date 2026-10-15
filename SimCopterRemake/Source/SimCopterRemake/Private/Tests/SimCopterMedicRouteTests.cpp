@@ -646,7 +646,7 @@ bool FSimCopterMedicReboardingTest::RunTest(const FString&)
 			for (int32 Frame = 0; Frame < 149; ++Frame) World->Tick(LEVELTICK_TimeOnly, .1f);
 			TestFalse(TEXT("Empty-handed medic still waits before fifteen seconds"), Medic->BoardCarrier(Heli, false));
 			World->Tick(LEVELTICK_TimeOnly, .2f);
-			AddInfo(FString::Printf(TEXT("Medic return time %.2f, deadline %.2f"), World->GetTimeSeconds(), Medic->MedicReboardAfterTime));
+			AddInfo(FString::Printf(TEXT("Medic return time %.2f, deadline %.2f"), World->GetTimeSeconds(), Medic->CrewReboardAfterTime));
 			TestTrue(TEXT("Empty-handed medic can return after fifteen seconds"), Medic->BoardCarrier(Heli, false));
 			TestTrue(TEXT("Medic can be deployed again"), Heli->DropPassengerAtSlot(0));
 			TestFalse(TEXT("A second drop restarts the delay"), Medic->BoardCarrier(Heli, false));
@@ -656,7 +656,10 @@ bool FSimCopterMedicReboardingTest::RunTest(const FString&)
 		TestTrue(TEXT("Medic carries patient"), Patient->BoardCarrier(Medic, false, false, true));
 		if (Scenario == 1)
 		{
-			TestTrue(TEXT("Final carried patient allows early return"), Medic->BoardCarrier(Heli, false));
+			TestFalse(TEXT("Even the final patient cannot shorten the fifteen-second crew delay"), Medic->BoardCarrier(Heli, false));
+			TestTrue(TEXT("Patient can board during the crew delay"), Patient->BoardCarrier(Heli, false));
+			for(int32 Frame=0;Frame<151;++Frame) World->Tick(LEVELTICK_TimeOnly,.1f);
+			TestTrue(TEXT("Medic can follow after the full delay"), Medic->BoardCarrier(Heli, false));
 			TestTrue(TEXT("Patient and medic occupy their own seats"), Patient->GetBehaviorCarrier() == Heli && Heli->GetAvailablePassengerSeats() == 0);
 		}
 		else if (Scenario == 2)
@@ -665,7 +668,9 @@ bool FSimCopterMedicReboardingTest::RunTest(const FString&)
 			FSimCopterPersonContext Context; Context.SelectedObject = Heli; Context.bHasSelection = true;
 			TestTrue(TEXT("Actual opcode hands patient to cabin first"), Actions.SelectCarriedPerson(Context, false));
 			Context.SelectedObject = Heli;
-			TestTrue(TEXT("Medic may follow their completed final handoff before timer expires"), Actions.BoardSelection(Context));
+			TestFalse(TEXT("Completed handoff cannot bypass the crew delay"), Actions.BoardSelection(Context));
+			for(int32 Frame=0;Frame<151;++Frame) World->Tick(LEVELTICK_TimeOnly,.1f);
+			TestTrue(TEXT("Actual boarding opcode succeeds after the delay"), Actions.BoardSelection(Context));
 		}
 		else if (Scenario == 3)
 		{
@@ -686,9 +691,32 @@ bool FSimCopterMedicReboardingTest::RunTest(const FString&)
 		else
 		{
 			Patient->BoardCarrier(Heli, false);
-			auto* Idle = Person(5); Idle->PrepareMedicDeployment(Heli, false);
-			TestFalse(TEXT("Another medic cannot borrow the final handoff exception"), Idle->BoardCarrier(Heli, false));
+			auto* Idle = Person(5); Idle->PrepareEmergencyCrewDeployment(Heli, false);
+			TestFalse(TEXT("Each medic has an independent deployment cooldown"), Idle->BoardCarrier(Heli, false));
 		}
+	}
+	for(int32 State:{7,8,0xe})
+	{
+		auto* World=CreateMedicalWorld();
+		ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+		MedicalBox(World,FVector(0,0,-10),FVector(10000,10000,10));
+		auto* Traffic=World->SpawnActor<ASimCopterTrafficSystemActor>();
+		auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>();
+		TestTrue(TEXT("Police test aircraft loads"),Heli->SwitchHelicopterModel(4));
+		Heli->SetActorLocation(FVector(0,0,Heli->GetSimpleCollisionHalfHeight()+1));
+		auto* Officer=World->SpawnActor<ASimCopterGroundAgent>(); Officer->SetOwner(Traffic);
+		Officer->InitialPersonState=State; Officer->BehaviorContext.ResetToState(State);
+		Officer->SetActorLocation(FVector(500,0,100));
+		TestTrue(TEXT("Officer initially boards"),Officer->BoardCarrier(Heli,false));
+		TestTrue(TEXT("Passenger action ejects officer"),Heli->DropPassengerAtSlot(0));
+		TestFalse(TEXT("Ejected officer cannot immediately reboard"),Officer->BoardCarrier(Heli,false));
+		TestFalse(TEXT("Harness cannot bypass police delay"),Officer->BoardCarrier(Heli,true));
+		for(int32 Frame=0;Frame<149;++Frame) World->Tick(LEVELTICK_TimeOnly,.1f);
+		TestFalse(TEXT("Officer still waits at 14.9 seconds"),Officer->BoardCarrier(Heli,false,true));
+		World->Tick(LEVELTICK_TimeOnly,.2f);
+		TestTrue(TEXT("Officer can reboard after fifteen seconds"),Officer->BoardCarrier(Heli,false));
+		TestTrue(TEXT("Officer can be dropped again"),Heli->DropPassengerAtSlot(0));
+		TestFalse(TEXT("Repeated police drop restarts cooldown"),Officer->BoardCarrier(Heli,false));
 	}
 	return true;
 }

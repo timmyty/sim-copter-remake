@@ -4090,33 +4090,12 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	ASimCopterHelicopterPawn* Helicopter = Cast<ASimCopterHelicopterPawn>(NewCarrier);
 	if (Helicopter && (!Helicopter->CanAcceptPassenger(GetMissionPassengerKind(), this) ||
 		(Helicopter->IsFixedWingAircraft() && bAsHarnessRider))) return false;
-	ASimCopterGroundAgent* FinalCarriedPatient = nullptr;
-	if (Helicopter && BehaviorContext.GetStateIndex() == 5 && GetWorld()->GetTimeSeconds() < MedicReboardAfterTime)
+	if (Helicopter && GetWorld()->GetTimeSeconds() < CrewReboardAfterTime)
 	{
-		// Requested departure from BHAV 269: a manually deployed medic cannot immediately
-		// undo the drop. BHAV 275 hands its patient over before it boards, so remember that
-		// exact handoff as well as a patient still in the medic's arms.
-		const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
-		FinalCarriedPatient = Traffic ? Traffic->FindPersonCarriedBy(*this) : nullptr;
-		const auto* Patient = FinalCarriedPatient ? FinalCarriedPatient : MedicReboardPatient.Get();
-		if (bAsHarnessRider || !Patient || !Patient->IsMedevacVictim() || Patient->IsMissionPatientDead() ||
-			Patient->HasMissionResolutionReported() ||
-			(!FinalCarriedPatient && Patient->GetBehaviorCarrier() != Helicopter) ||
-			Helicopter->GetAvailablePassengerSeats() < (FinalCarriedPatient ? 2 : 1)) return false;
-		for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
-		{
-			const auto* Other = *It;
-			if (Other == Patient || Other->IsActorBeingDestroyed() || !Other->IsMedevacVictim() ||
-				Other->IsMissionPatientDead() || Other->HasMissionResolutionReported() ||
-				Other->GetBehaviorCarrier() == Helicopter) continue;
-			const auto* Carrier = Cast<ASimCopterGroundAgent>(Other->GetBehaviorCarrier());
-			int32 HeliX, HeliY, OtherX, OtherY;
-			const bool bNearby = Traffic && Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Helicopter->GetActorLocation(), HeliX, HeliY) &&
-				Other->TryGetTileCoordinate(OtherX, OtherY) && FMath::Max(FMath::Abs(HeliX - OtherX), FMath::Abs(HeliY - OtherY)) <= 8;
-			if ((Carrier && Carrier->BehaviorStartingVehicle.Get() == Helicopter) ||
-				bNearby)
-				return false;
-		}
+		// Requested departure from the retail boarding actions (including BHAV 269):
+		// every manually ejected officer/medic stays out for a full fifteen simulation
+		// seconds. A patient handoff, another helicopter or the harness cannot bypass it.
+		return false;
 	}
 	if (Helicopter != nullptr && bAsHarnessRider)
 	{
@@ -4200,9 +4179,6 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	// door cue below - the "get in sound over and over" while boarding with a patient.
 	const bool bAlreadyInThisCabin =
 		BehaviorCarrier.Get() == NewCarrier && !bRidingHarness && bClaimedPassengerSeat;
-	if (FinalCarriedPatient && !FinalCarriedPatient->BoardCarrier(Helicopter, false)) return false;
-	auto* HandoffMedic = Helicopter && !bAsHarnessRider && IsMedevacVictim()
-		? Cast<ASimCopterGroundAgent>(BehaviorCarrier.Get()) : nullptr;
 
 	ClearRescueDeck();
 	// Relinquish the old carrier before taking the new one. This is deliberately attachment-only:
@@ -4265,8 +4241,6 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	}
 
 	BehaviorCarrier = NewCarrier;
-	if (HandoffMedic && HandoffMedic->BehaviorContext.GetStateIndex() == 5)
-		HandoffMedic->MedicReboardPatient = this;
 	bRidingHarness = bAsHarnessRider;
 	// `!bAlreadyInThisCabin`, because the cue belongs to the TRANSITION into the cabin: somebody who
 	// was already sitting in it has not opened a door, however many times a caller re-runs this.
@@ -7692,13 +7666,12 @@ void ASimCopterGroundAgent::SetDroppedInjuredOnGround(const FVector& WorldLocati
 	VerticalVelocityCmPerSec = 0.0f;
 }
 
-void ASimCopterGroundAgent::PrepareMedicDeployment(ASimCopterHelicopterPawn* Helicopter, bool bTakeCabinPatient)
+void ASimCopterGroundAgent::PrepareEmergencyCrewDeployment(ASimCopterHelicopterPawn* Helicopter, bool bTakeCabinPatient)
 {
-	if (!Helicopter || BehaviorContext.GetStateIndex() != 5 || bMissionPatientDead) return;
+	if (!Helicopter || !IsEmergencyCrewMember() || bMissionPatientDead) return;
 	SetBehaviorStartingVehicle(Helicopter);
-	MedicReboardAfterTime = GetWorld()->GetTimeSeconds() + 15.0;
-	MedicReboardPatient.Reset();
-	if (!bTakeCabinPatient) return;
+	CrewReboardAfterTime = GetWorld()->GetTimeSeconds() + 15.0;
+	if (BehaviorContext.GetStateIndex() != 5 || !bTakeCabinPatient) return;
 	const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
 	auto* Patient = Traffic ? Traffic->FindMedevacPassengerAboard(Helicopter, this) : nullptr;
 	if (!Patient) return;

@@ -135,6 +135,11 @@ void SSimCopterNavigableMenu::MoveSelection(FVector2D Direction, uint32 UserInde
 	ControlGeometries.Reset();
 	CollectControls(SharedThis(this), Controls, GetCachedGeometry());
 	TArray<FSlateRect> Rects;
+	const TArray<TSharedRef<SWidget>> AllControls = Controls;
+	Controls.RemoveAll([&](const TSharedRef<SWidget>& Candidate)
+	{
+		return Candidate != Selected && !IsControllerNavigationCandidate(Selected, Candidate, Direction);
+	});
 	int32 Current = INDEX_NONE;
 	for (int32 Index = 0; Index < Controls.Num(); ++Index)
 	{
@@ -145,7 +150,7 @@ void SSimCopterNavigableMenu::MoveSelection(FVector2D Direction, uint32 UserInde
 	if (Controls.IsValidIndex(Target))
 	{
 		SelectedControl = Controls[Target];
-		OnControllerSelectionChanged(Target);
+		OnControllerSelectionChanged(AllControls.IndexOfByKey(Controls[Target]));
 		// Scroll ancestors reveal the new control, including settings below the fold.
 		for (TSharedPtr<SWidget> Parent = Controls[Target]->GetParentWidget(); Parent; Parent = Parent->GetParentWidget())
 			if (Parent->GetTypeAsString() == TEXT("SScrollBox"))
