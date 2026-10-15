@@ -1,0 +1,115 @@
+{
+  "version": "v1.0.17",
+  "date": "2026-10-15",
+  "baseline_commit": "1684411ff97a8baa8f21e57b4bf3fe208ee93e5c",
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log_sha256": "3bcc1d0b0083e15db1b2a4acbead5752e9107410cb18834e22bf275de7ab877e"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "9c96f826d7f55a635abd8d91b2b47f852ff9d85ead7586e4392f7b2786f5f836"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "77991b30f4e4097c31edbdaec00beb9c757d0ba3e67b3ed565d100c99d587f09"
+    }
+  },
+  "cook": {
+    "result": "Succeeded",
+    "log_sha256": "015c1e3730e424feff24d5c78f40976feee0372ac6c197cd5dfa9d7938f5e53c",
+    "new_materials": {
+      "M_WaterTower": "64875d4cfaffa5624b0582762c08bd5a9b10f81749876dc74193bd441791be35"
+    },
+    "generator_sha256": "2bcc6c8ab2602367a78b63bd982983e564a62bc4bd1c70b2db1be248d6ef2437",
+    "warnings": "76 IoStore missing-manifest warnings, identical to the v1.0.16 cook; no material compilation failure."
+  },
+  "tower_performance": {
+    "resolution": [
+      1600,
+      1200
+    ],
+    "towers": 16,
+    "samples_per_material": 24,
+    "order": "ABBA",
+    "old_median_ms": 12.014,
+    "old_p95_ms": 12.929,
+    "new_median_ms": 4.414,
+    "new_p95_ms": 12.584,
+    "triangles_per_tower": 232,
+    "triangles_with_existing_foundation": 248,
+    "material_slots_with_foundation": 2,
+    "new_per_frame_updates": 0,
+    "label_dimensions": [
+      1024,
+      256
+    ],
+    "label_count_per_city": 1,
+    "limitation": "Completed offscreen captures including synchronization; not whole-flight FPS."
+  },
+  "automation": {
+    "tests": {
+      "succeeded": 526,
+      "succeededWithWarnings": 36,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 408.4310607910156
+    },
+    "render-tests": {
+      "succeeded": 4,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 3.8467793464660645
+    },
+    "tower-validated": {
+      "succeeded": 2,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 4.208027362823486
+    }
+  },
+  "final_distinct_cases": {
+    "total": 562,
+    "passed": 562,
+    "failed": 0,
+    "notRun": 0
+  },
+  "startup": [
+    {
+      "launcher_pid": 79856,
+      "survived": true,
+      "child_pids": [
+        53720
+      ],
+      "seconds": 30.7977315,
+      "mode": "shipping",
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.17\\smoke-shipping"
+    },
+    {
+      "launcher_pid": 80480,
+      "child_pids": [
+        null
+      ],
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.17\\smoke-development",
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "mode": "development",
+      "seconds": 30.6618585,
+      "survived": true
+    }
+  ],
+  "source_manifest_sha256": "0ba16902bd7adf06b8b13a02b88b65746cc036c07b77dafeec25d361397902cc",
+  "binary_sha256": {
+    "SimCopterRemake-Win64-Shipping.exe": "e420d586318effefba51c7f30cfc9b4bf584f6abca31ebf9efbdffab0b2c53ce",
+    "SimCopterRemake.exe": "96561e52839eb4030e6c63e0028b3b948f5b8136a23eb304fc355d4627fc61de"
+  },
+  "scope": "Scoped water-tower appearance and city-lettering update on the current published main branch; existing unrelated local changes excluded.",
+  "limitations": [
+    "No interactive playthrough, physical-controller or manual listening test.",
+    "Headless broad-suite rendering checks can be no-ops; focused D3D12 offscreen tests cover the water-tower and related city rendering paths.",
+    "Performance benchmarks in task receipts are controlled workloads, not whole-flight FPS measurements."
+  ]
+}

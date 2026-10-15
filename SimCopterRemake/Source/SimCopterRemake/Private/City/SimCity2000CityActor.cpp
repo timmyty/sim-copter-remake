@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "City/SimCity2000CityActor.h"
+#include "City/SimCopterWaterTowers.h"
 #include "City/SimCopterDriveInPlacement.h"
 #include "Game/SimCopterCheats.h"
 #include "Ground/SimCopterParticleFX.h"
@@ -3204,12 +3205,13 @@ int32 AppendMaxisMeshObject(
 		// these separate foundation objects paving; actual roads, roofs and helipads keep their art.
 		const int32 ScenerySection = SimCopterScenery::IsBuildingBase(MeshObject.Header.Id) ? SimCopterScenery::PavingSection :
 			(MeshObject.Header.Id == 0x143 && Face.FaceType == 15 ? SimCopterScenery::ParkPathSection : INDEX_NONE);
-		const int32 SectionKey = ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
+		const bool bWaterTower = MeshObject.Header.Id == SimCopterWaterTowers::ObjectId;
+		const int32 SectionKey = bWaterTower ? SimCopterWaterTowers::SectionKey : ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
 			? MakeBakedAtlasPageSectionKey(Face.TextureAtlasIndex)
 			: (bBakedDirectTexturedFace ? MakeBakedDirectImageSectionKey(Face.MaterialIndex) : (bRuntimeTexturedFace ? TextureKey : (bTranslucentDiscFace ? TranslucentDiscSectionKeyFlag : INDEX_NONE)));
 		FOriginalMeshSectionData& Section = Sections.FindOrAdd(SectionKey);
 		const int32 FaceVertexStart = Section.Vertices.Num();
-		const FLinearColor FaceColor = bTexturedFace
+		const FLinearColor FaceColor = bWaterTower ? FLinearColor(Face.MaterialIndex * 0.5f, 0, 0) : bTexturedFace
 			? FLinearColor::White
 			: ResolveMaxisFaceColor(ColorMap, Face.FaceType, Face.MaterialIndex, TexturedFaceFallbackColor);
 
@@ -4185,7 +4187,14 @@ void ASimCity2000CityActor::RebuildCity()
 		}
 
 		UMaterialInterface* Resolved = nullptr;
-		if (SectionKey == SimCopterScenery::PavingSection || SectionKey == SimCopterScenery::ParkPathSection)
+		if (SectionKey == SimCopterWaterTowers::SectionKey)
+		{
+			auto* TowerMaterial = SimCopterWaterTowers::CreateMaterial(this,
+				LoadGeneratedCityAtlasMaterial(TEXT("M_WaterTower")), SimCopterWaterTowers::ResolveCityName(City.SourceFile, City.CityName));
+			if (TowerMaterial) OriginalTextureMaterials.Add(TowerMaterial);
+			Resolved = TowerMaterial ? static_cast<UMaterialInterface*>(TowerMaterial) : VertexColorMaterial.Get();
+		}
+		else if (SectionKey == SimCopterScenery::PavingSection || SectionKey == SimCopterScenery::ParkPathSection)
 		{
 			Resolved = LoadGeneratedCityAtlasMaterial(SectionKey == SimCopterScenery::PavingSection ? TEXT("M_SceneryPaving") : TEXT("M_ParkPath"));
 			if (!Resolved) Resolved = VertexColorMaterial;
@@ -4397,6 +4406,7 @@ void ASimCity2000CityActor::RebuildCity()
 	};
 	TMap<int32, TArray<FTreeModel>> TreeModels;
 	TMap<int32, FMaxisMeshObject> ParkModels;
+	TOptional<FMaxisMeshObject> WaterTowerModel;
 	struct FPendingTreeGrounding
 	{
 		FVector Origin;
@@ -4692,6 +4702,11 @@ void ASimCity2000CityActor::RebuildCity()
 						? MeshLibrary.FindObjectByObjectId(PrimaryObjectId, &ColorMap)
 						: MeshLibrary.FindObjectByTileId(MeshTileId, &ColorMap);
 					MeshObject = ResolveTerrainRelativePowerLineMesh(MeshObject);
+					if (MeshObject && MeshObject->Header.Id == SimCopterWaterTowers::ObjectId)
+					{
+						if (!WaterTowerModel.IsSet()) WaterTowerModel = SimCopterWaterTowers::PrepareModel(*MeshObject);
+						MeshObject = &WaterTowerModel.GetValue();
+					}
 					const int32 ParkVariant = SimCopterScenery::ParkVariantForTile(FileX, FileY);
 					if (MeshObject && IsOriginalParkTile(Tile.Building))
 					{
@@ -5647,7 +5662,7 @@ void ASimCity2000CityActor::RebuildCity()
 
 		UMaterialInterface* SectionMaterial = nullptr;
 		UTexture2D* RuntimeTexture = nullptr;
-		if (TextureKey >= SimCopterScenery::ParkPathSection && TextureKey <= -201)
+		if (TextureKey >= SimCopterWaterTowers::SectionKey && TextureKey <= -201)
 		{
 			SectionMaterial = ResolveBuildingSectionMaterial(TextureKey);
 		}
