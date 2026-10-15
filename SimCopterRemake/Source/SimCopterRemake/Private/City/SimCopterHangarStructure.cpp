@@ -95,7 +95,10 @@ void SimCopterHangarInterior::BuildStructure(UProceduralMeshComponent& Shell,UPr
 		for (int32 Bay=0; Bay<8; ++Bay)
 		{
 			const float X=-D+Bay*95;
-			Steel.Box({X,S*(W-2),E*.5},{5,8,E},Beam);
+			// Bay posts stop 1 cm inside the wall plane. Their outer face used to sit exactly on
+			// the side walls' outer face (W+2) and flickered against it from the apron.
+			Steel.Box({X,S*(W-4.5f),E*.5},{5,7,E},Beam);
+
 			for (const FVector2D Band : {FVector2D(43,205),FVector2D(243,E-17)})
 			{
 				const FLinearColor Pane=S>0 ? FLinearColor(.58f,.53f,.39f) : FLinearColor(.16f,.22f,.35f);

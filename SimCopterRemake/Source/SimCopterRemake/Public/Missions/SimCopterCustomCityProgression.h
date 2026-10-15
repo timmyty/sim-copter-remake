@@ -35,7 +35,9 @@ inline bool Allows(int32 Type, const FCapabilities& C)
 	case TYPE_Burglar: case TYPE_Arsonist: return C.Tier >= 3;
 	case TYPE_Robber: case TYPE_Mugger: return C.Tier >= 2;
 	case TYPE_PlaneCrash: case TYPE_TrainCrash: return C.Tier >= 3 && C.bFireEquipment && C.bHarness && C.Seats > 0;
-	case TYPE_BuildingFire: case TYPE_CarFireEvent: return C.Tier >= 2 && C.bFireEquipment;
+	// Fires are available from the first stage whenever the aircraft carries water equipment,
+	// so a new user city is not all Transport work (user request, v1.0.19).
+	case TYPE_BuildingFire: case TYPE_CarFireEvent: return C.bFireEquipment;
 	case TYPE_TrainRescue: return C.Tier >= 3 && C.bHarness && C.Seats > 0;
 	case TYPE_BoatRescue: return C.Tier >= 2 && C.bHarness && C.Seats > 0;
 	case TYPE_RooftopRescue: return C.bHarness && C.Seats > 0;

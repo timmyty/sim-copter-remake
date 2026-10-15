@@ -94,6 +94,7 @@ void SSimCopterHangarMenu::Construct(const FArguments& InArgs)
 	{
 		const int32 Row = SimCopterHangarLayout::GetCatalogRowForTypeIndex(Helicopter->GetHelicopterTypeIndex());
 		CatalogRow = Row != INDEX_NONE ? Row : 0;
+		LastAircraftCatalogRow = CatalogRow;
 		EquipmentPreviewType = Helicopter->IsFixedWingAircraft() ? 4 : Helicopter->GetHelicopterTypeIndex();
 	}
 
@@ -854,6 +855,7 @@ FReply SSimCopterHangarMenu::HandleDone()
 FReply SSimCopterHangarMenu::HandleSelectCatalogRow(const int32 NewRow)
 {
 	CatalogRow = NewRow;
+	if (NewRow != INDEX_NONE) LastAircraftCatalogRow = NewRow;
 	StatusText.Reset();
 	RebuildPage();
 	if (CatalogTabWidgets.IsValidIndex(CatalogRow)) SetControllerSelection(CatalogTabWidgets[CatalogRow]);
@@ -929,16 +931,9 @@ FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const F
 	if (Page == EPage::Catalog && CatalogRow == INDEX_NONE)
 	{
 		const FKey Key=Event.GetKey();
-		if (Key==EKeys::Gamepad_FaceButton_Right)
-		{
-			const int32 Index=ControllerFocusableWidgets.IndexOfByKey(GetControllerSelection());
-			if (Index>=2+SimCopterHangarShop::UpgradeRowCount && Index<=4+SimCopterHangarShop::UpgradeRowCount)
-			{
-				if (!Event.IsRepeat()) SetControllerSelection(ControllerFocusableWidgets[2+UpgradeRow]);
-				return FReply::Handled();
-			}
-		}
-		if (Key==EKeys::Left || Key==EKeys::Gamepad_LeftShoulder) return CycleEquipmentHelicopter(-1);
+		// B leaves Upgrades for the aircraft list (OnKeyDown); it no longer stops on the item row.
+		if (Key==EKeys::Left
+ || Key==EKeys::Gamepad_LeftShoulder) return CycleEquipmentHelicopter(-1);
 		if (Key==EKeys::Right || Key==EKeys::Gamepad_RightShoulder) return CycleEquipmentHelicopter(1);
 		if (Key==EKeys::Up || Key==EKeys::Down)
 			return HandleSelectUpgradeRow((UpgradeRow+(Key==EKeys::Up ? -1 : 1)+SimCopterHangarShop::UpgradeRowCount)%SimCopterHangarShop::UpgradeRowCount);
@@ -1025,7 +1020,15 @@ FReply SSimCopterHangarMenu::OnKeyDown(const FGeometry& MyGeometry, const FKeyEv
 	}
 	if (InKeyEvent.GetKey() == EKeys::Gamepad_FaceButton_Right || InKeyEvent.GetKey() == EKeys::Escape)
 	{
+		// Upgrades is a sub-page of the catalog: back steps out to the aircraft list first,
+		// and a second back closes the catalog.
+		if (Page == EPage::Catalog && CatalogRow == INDEX_NONE)
+		{
+			return InKeyEvent.IsRepeat() ? FReply::Handled() : HandleSelectCatalogRow(LastAircraftCatalogRow);
+		}
+		if (InKeyEvent.IsRepeat()) return FReply::Handled();
 		return Page == EPage::Hangar
+
 			? HandleDone()
 			: HandleShowPage(EPage::Hangar);
 	}

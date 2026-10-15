@@ -226,6 +226,33 @@ void FMaxisProceduralMeshBuilder::BuildAutoSmoothCornerNormals(
 		ObjectCenter /= static_cast<float>(VertexPositions.Num());
 	}
 
+	// Consistently wound geometry: one orientation for the whole object, chosen by an area-weighted
+	// vote of "faces away from the centre". Most of a building's area is its exterior, so the vote
+	// finds the winding convention, and then every face - including the ones that look back toward
+	// the building - keeps the side its winding says is the front.
+	double WindingSign = 1.0;
+	if (Object.Header.bConsistentWinding)
+	{
+		double Vote = 0.0;
+		for (const FMaxisMeshFace& Face : Object.Faces)
+		{
+			FVector Newell = FVector::ZeroVector, Center = FVector::ZeroVector;
+			int32 Count = 0;
+			for (int32 Corner = 0; Corner < Face.VertexIndices.Num(); ++Corner)
+			{
+				const uint16 I0 = Face.VertexIndices[Corner], I1 = Face.VertexIndices[(Corner + 1) % Face.VertexIndices.Num()];
+				if (!VertexPositions.IsValidIndex(I0) || !VertexPositions.IsValidIndex(I1)) continue;
+				const FVector& A = VertexPositions[I0];
+				const FVector& B = VertexPositions[I1];
+				Newell += FVector((A.Y - B.Y) * (A.Z + B.Z), (A.Z - B.Z) * (A.X + B.X), (A.X - B.X) * (A.Y + B.Y));
+				Center += A;
+				++Count;
+			}
+			if (Count >= 3) Vote += FVector::DotProduct(Newell, (Center / Count - ObjectCenter).GetSafeNormal());
+		}
+		WindingSign = Vote < 0.0 ? -1.0 : 1.0;
+	}
+
 	for (int32 FaceIndex = 0; FaceIndex < Object.Faces.Num(); ++FaceIndex)
 	{
 		const FMaxisMeshFace& Face = Object.Faces[FaceIndex];
@@ -277,7 +304,11 @@ void FMaxisProceduralMeshBuilder::BuildAutoSmoothCornerNormals(
 		}
 
 		bool bFlipNormal = false;
-		if (bForceHorizontalFacesUp && FMath::Abs(FaceNormal.Z) > 0.85f)
+		if (Object.Header.bConsistentWinding)
+		{
+			bFlipNormal = WindingSign < 0.0;
+		}
+		else if (bForceHorizontalFacesUp && FMath::Abs(FaceNormal.Z) > 0.85f)
 		{
 			bFlipNormal = FaceNormal.Z < 0.0f;
 		}

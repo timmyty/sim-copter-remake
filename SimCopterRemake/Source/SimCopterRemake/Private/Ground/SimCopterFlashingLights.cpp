@@ -207,7 +207,9 @@ void USimCopterFlashingLightsComponent::SyncLights(
 		return;
 	}
 
+	// Stretched beacons (PhaseStretch) change on a slower clock; fold its step into the redraw key.
 	const int32 Phase = FSimCopterFlashingLightSchedule::GetPhaseAtTime(GameTimeSeconds);
+	const int32 RedrawKey = Phase + 8 * FSimCopterFlashingLightSchedule::GetPhaseAtTime(GameTimeSeconds / SlowBeaconPhaseStretch);
 
 	// The cards are camera-facing, so they need rebuilding when the view or the owner moves as
 	// well as when the phase flips. The thresholds are loose - a light is a few pixels across.
@@ -216,24 +218,25 @@ void USimCopterFlashingLightsComponent::SyncLights(
 		!CameraLocation.Equals(LastCameraLocation, 25.0f) ||
 		!CameraRotation.Equals(LastCameraRotation, 0.5f) ||
 		!ComponentTransform.Equals(LastComponentTransform, 1.0f);
-	if (bHasDrawnOnce && Phase == LastPhase && !bViewMoved)
+	if (bHasDrawnOnce && RedrawKey == LastPhase && !bViewMoved)
 	{
 		return;
 	}
 
-	LastPhase = Phase;
+	LastPhase = RedrawKey;
 	LastCameraLocation = CameraLocation;
 	LastCameraRotation = CameraRotation;
 	LastComponentTransform = ComponentTransform;
 	bHasDrawnOnce = true;
 
-	RebuildCards(Phase, CameraLocation, CameraRotation);
+	RebuildCards(Phase, CameraLocation, CameraRotation, GameTimeSeconds);
 }
 
 void USimCopterFlashingLightsComponent::RebuildCards(
 	int32 Phase,
 	const FVector& CameraLocation,
-	const FRotator& CameraRotation)
+	const FRotator& CameraRotation,
+	double GameTimeSeconds)
 {
 	if (MeshComponent == nullptr)
 	{
@@ -267,7 +270,9 @@ void USimCopterFlashingLightsComponent::RebuildCards(
 
 	for (const FSimCopterFlashingLightPoint& Point : LightPoints)
 	{
-		if (!FSimCopterFlashingLightSchedule::IsLitAtPhase(Point.PaletteIndex, Phase))
+		const int32 PointPhase = Point.PhaseStretch > 1
+			? FSimCopterFlashingLightSchedule::GetPhaseAtTime(GameTimeSeconds / Point.PhaseStretch) : Phase;
+		if (!FSimCopterFlashingLightSchedule::IsLitAtPhase(Point.PaletteIndex, PointPhase))
 		{
 			continue;
 		}

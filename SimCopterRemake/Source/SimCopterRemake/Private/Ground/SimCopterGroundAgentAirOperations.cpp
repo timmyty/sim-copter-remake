@@ -28,11 +28,24 @@ bool ASimCopterGroundAgent::UpdatePoliceRecovery()
 	// Remake taser custody has no retail BHAV: 1053 selects only active criminals,
 	// and 1060 immediately credits arrest and sends them to a police car. Recover
 	// disabled people physically instead, retaining delivery credit for the station.
-	if (BehaviorContext.GetStateIndex() != 7 || BehaviorCarrier.IsValid() ||
+	// Street officers put down by a police car (states 8 and 0xe, BHAV 1150/1152) keep their
+	// original programs, except that they now also deal with burglars: BHAV 1053's search only
+	// sees criminals on foot, so beside a burglar's car it reported "no suspect in area".
+	const int32 OfficerState = BehaviorContext.GetStateIndex();
+	const bool bStreetOfficer = OfficerState == SimCopterCriminalCar::OfficerStateDefault ||
+		OfficerState == SimCopterCriminalCar::OfficerStateAgainstFleeing;
+	if ((OfficerState != 7 && !bStreetOfficer) || BehaviorCarrier.IsValid() ||
 		bMissionCarried || bPassengerFallActive || bMissionPatientDead || IsInPoliceCustody() || IsKnockedDown()) return false;
 	auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
 	auto* Heli = ResolvePlayerHelicopter();
-	if (!Traffic || (!bHasHospitalRoofPost && (!Heli || Heli->IsFixedWingAircraft()))) return false;
+	if (!Traffic) return false;
+	if (bStreetOfficer)
+	{
+		ASimCopterGroundAgent* Burglary = Traffic->FindPoliceRecoveryTarget(*this);
+		if (!Burglary || !(Burglary->IsCriminalCar() ||
+			Burglary->InitialPersonState == SimCopterCriminalCar::BurglarPersonState)) return false;
+	}
+	else if (!bHasHospitalRoofPost && (!Heli || Heli->IsFixedWingAircraft())) return false;
 	auto* Carried = Traffic->FindPersonCarriedBy(*this);
 	if (Carried && (!Carried->IsInPoliceCustody() && !Carried->IsMedevacVictim())) return false;
 	ASimCopterGroundAgent* Target = nullptr;
@@ -61,7 +74,7 @@ bool ASimCopterGroundAgent::UpdatePoliceRecovery()
 		Target = Traffic->FindPoliceRecoveryTarget(*this);
 		// Requested remake addition: deployed police help with medical retrieval only
 		// after criminal work. Keep the same patient claims, route and real-body carry.
-		if (!Target) Target = Traffic->FindAndClaimGroundPatient(*this);
+		if (!Target && !bStreetOfficer) Target = Traffic->FindAndClaimGroundPatient(*this);
 	}
 	if (auto* Previous = Cast<ASimCopterGroundAgent>(BehaviorContext.SelectedObject.Get());
 		Previous && Previous != Target && Previous != Carried && Previous->HospitalPatientClaim.Get() == this)
@@ -111,10 +124,16 @@ bool ASimCopterGroundAgent::UpdatePoliceRecovery()
 	}
 	else if (!Target->IsInPoliceCustody())
 	{
+		// A burglar caught on foot closes the burglary itself; the abandoned car then leaves
+		// with its retired record (RunBurglarOutsidePhase).
+		if (Target->InitialPersonState == SimCopterCriminalCar::BurglarPersonState && Target->MissionEventId != INDEX_NONE)
+			if (auto* Missions = MissionActor(this); Missions && Missions->IsMissionEventActive(Target->MissionEventId))
+				Missions->ReportBurglarCaught(Target->MissionEventId);
 		// BHAV 1053 rec[17] / 1150 rec[6] push criminal-caught; 1053 rec[26]
 		// holds the officer in the original 2Gab pose while the player remains nearby.
-		if (PushReactionOnSelectedObject(BehaviorContext, 1060))
+		if (PushReactionOnSelectedObject(BehaviorContext, 1060) && !bStreetOfficer)
 		{
+			// Street officers keep their own BHAV 1150/1152, which walks them back to the car.
 			BehaviorContext.Stack.Reset();
 			BehaviorContext.Stack.Add({1053, 26, {}});
 		}

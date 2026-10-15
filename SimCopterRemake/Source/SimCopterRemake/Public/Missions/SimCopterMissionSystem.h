@@ -497,6 +497,9 @@ public:
 	virtual bool TryStartTrafficJam(int32 EventId, int32& OutTileX, int32& OutTileY) { return false; }
 	virtual void EndTrafficJam(int32 EventId) {}
 	virtual bool TryStartCarFire(int32 EventId, int32& OutTileX, int32& OutTileY) { return false; }
+	// Creation sets this around its TryResolveTransportSpawnTile calls, so a new fare picks among
+	// several nearby clearings; re-resolving a saved fare keeps the nearest, stable one.
+	virtual void SetTransportPlacementVariety(bool bEnabled) {}
 	virtual bool TryResolveTransportSpawnTile(int32 OriginX, int32 OriginY, int32& OutTileX, int32& OutTileY)
 	{
 		OutTileX = OriginX;
@@ -778,6 +781,8 @@ public:
 	bool RollScheduledMissionNow();
 	// Derived from the possessed aircraft, never persisted over a helicopter switch.
 	bool bTransportOnly = false;
+	// Remake variety rule (not saved): whether the previous scheduled roll picked Transport.
+	bool LastScheduledWasTransport = false;
 
 	// BOMB-side save payload. The original writes the live 30-record mission table, scheduler
 	// globals and fire pools separately from CINF/CSET. Keep this explicit and pointer-free so a

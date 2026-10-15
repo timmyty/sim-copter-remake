@@ -77,6 +77,9 @@ private:
 	// Which catalog row is showing. INDEX_NONE is the upgrades page, exactly as FUN_0042b840
 	// treats a row outside 0..7.
 	int32 CatalogRow = 0;
+	// The aircraft row B returns to from Upgrades.
+	int32 LastAircraftCatalogRow = 0;
+
 	// Which of the five upgrade rows the upgrades page has selected (ui + 0x172).
 	int32 UpgradeRow = 0;
 	int32 EquipmentPreviewType = 4;

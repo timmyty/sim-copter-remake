@@ -136,9 +136,14 @@ UStaticMesh* Build(
 			const FVertexID VertexID = MeshDescription.CreateVertex();
 			VertexPositions[VertexID] = FVector3f(Section.Vertices[VertexIndex]) - Normal.GetSafeNormal() * BackCopyInsetCm;
 			const FVertexInstanceID InstanceID = MeshDescription.CreateVertexInstance(VertexID);
-			InstanceNormals[InstanceID] = Normal;
+			// The copy is the side seen from BEHIND the source normal, so it is lit with the normal
+			// turned round. Keeping the front normal shaded every thin part seen from its back (the
+			// airport radar dish, signs, fins) as if it faced away from the light: nearly black.
+			// The binormal sign flips too, so the texture keeps its orientation.
+			InstanceNormals[InstanceID] = -Normal;
 			InstanceTangents[InstanceID] = InstanceTangents[Source];
-			InstanceBinormalSigns[InstanceID] = InstanceBinormalSigns[Source];
+			InstanceBinormalSigns[InstanceID] = -InstanceBinormalSigns[Source];
+
 			InstanceColors[InstanceID] = InstanceColors[Source];
 			InstanceUVs.Set(InstanceID, 0, InstanceUVs.Get(Source, 0));
 			InstanceUVs.Set(InstanceID, 1, InstanceUVs.Get(Source, 1));

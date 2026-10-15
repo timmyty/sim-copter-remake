@@ -29,6 +29,10 @@ struct FSimCopterFlashingLightPoint
 	// a busy, flickering city; as hundreds of coloured lights strobing the streets in unison it is
 	// genuinely unpleasant and a seizure risk. The cards stay, the lights do not.
 	bool bCastPointLight = true;
+	// Remake addition (v1.0.19): the police and fire stations' beacons step through the colour
+	// cycle this many times slower. At the original 20 Hz each colour lit for one 50 ms frame,
+	// which on these large buildings read as rapid flickering.
+	uint8 PhaseStretch = 1;
 };
 
 // SCHOOK: flashing light rasteriser 0x00496c00
@@ -170,6 +174,8 @@ public:
 	// Multiplies the card's world size. 1 is the size derived from the original's 4-pixel block.
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Lights", meta = (ClampMin = "0.05"))
 	float CardSizeScale = 1.0f;
+	// PhaseStretch given to the police and fire stations' beacons: each colour holds 0.3 s.
+	static constexpr uint8 SlowBeaconPhaseStretch = 6;
 
 	// Each lit marker also casts a real point light of its own colour. The original had no dynamic
 	// lighting at all - this is purely the remake making the beacons throw light on the geometry
@@ -232,7 +238,7 @@ private:
 		float CameraDistanceSquared = 0.0f;
 	};
 
-	void RebuildCards(int32 Phase, const FVector& CameraLocation, const FRotator& CameraRotation);
+	void RebuildCards(int32 Phase, const FVector& CameraLocation, const FRotator& CameraRotation, double GameTimeSeconds = 0.0);
 	void UpdatePointLights(const TArray<FLitLight>& LitLights);
 	void ReleasePointLights(int32 FirstUnusedIndex);
 

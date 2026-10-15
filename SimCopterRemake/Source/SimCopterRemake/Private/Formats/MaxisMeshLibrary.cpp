@@ -389,20 +389,29 @@ bool FMaxisMeshLibrary::LoadFromOriginalGameRoot(const FString& OriginalGameRoot
 	}
 
 	// DELIBERATE PRESENTATION DIVERGENCE (user request): the fire station, FS211 (object 0xE3,
-	// XBLD 0xD3), is 8.97M original units tall against the police station's 11.44M (PO210) and
-	// the hospital's 13.95M (HO209). Stretch it vertically so the three emergency buildings read
-	// as a set. Done once on the shared source data, so render, collision, its light markers and
-	// every later lookup agree; footprints and roads are untouched.
-	constexpr int32 FireStationObjectId = 0x0E3;
-	constexpr int32 FireStationHeightPercent = 135;
+	// XBLD 0xD3, 8.97M original units tall) and the police station, PO210 (object 0x000, XBLD
+	// 0xD2, 11.44M) are stretched vertically to the hospital's height (HO209, 13.95M) so the three
+	// emergency buildings read as a set. Done once on the shared source data, so render,
+	// collision, roof posts, light markers and every later lookup agree; footprints are untouched.
+	constexpr int32 HospitalObjectId = 0x016;
+	constexpr int32 StationObjectIds[] = { 0x000, 0x0E3 };
+	int64 HospitalTop = 0;
+	for (const FMaxisMeshFile& File : MeshFiles)
+		for (const FMaxisMeshObject& Object : File.Objects)
+			if (Object.Header.Id == HospitalObjectId)
+				for (const FMaxisMeshVertex& Vertex : Object.Vertices) HospitalTop = FMath::Max<int64>(HospitalTop, Vertex.Y);
+	if (HospitalTop <= 0) HospitalTop = 13950477; // HO209's measured top, if the pack lacks it
 	for (FMaxisMeshFile& File : MeshFiles)
 	{
 		for (FMaxisMeshObject& Object : File.Objects)
 		{
-			if (Object.Header.Id != FireStationObjectId) continue;
+			if (Object.Header.Id != StationObjectIds[0] && Object.Header.Id != StationObjectIds[1]) continue;
+			int64 Top = 0;
+			for (const FMaxisMeshVertex& Vertex : Object.Vertices) Top = FMath::Max<int64>(Top, Vertex.Y);
+			if (Top <= 0 || Top >= HospitalTop) continue;
 			for (FMaxisMeshVertex& Vertex : Object.Vertices)
 			{
-				Vertex.Y = int32(int64(Vertex.Y) * FireStationHeightPercent / 100);
+				Vertex.Y = int32(int64(Vertex.Y) * HospitalTop / Top);
 			}
 		}
 	}

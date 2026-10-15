@@ -213,6 +213,8 @@ public:
 	virtual bool TryStartCarFire(int32 EventId, int32& OutTileX, int32& OutTileY) override;
 	virtual bool TryActivateBurglarCar(int32 EventId, int32 TileX, int32 TileY, int32 CruiseDelay1616) override;
 	virtual bool TryResolveTransportSpawnTile(int32 OriginX, int32 OriginY, int32& OutTileX, int32& OutTileY) override;
+	virtual void SetTransportPlacementVariety(bool bEnabled) override { bTransportPlacementVariety = bEnabled; }
+	bool bTransportPlacementVariety = false;
 	virtual bool TrySpawnMissionPerson(int32 PersonState, int32 BehaviorClass, int32 TileX, int32 TileY, int32 EventId) override;
 	// Periodic riot census for the SimCopter.Riot.Log trace; does nothing when it is disabled.
 	void UpdateRiotTrace();

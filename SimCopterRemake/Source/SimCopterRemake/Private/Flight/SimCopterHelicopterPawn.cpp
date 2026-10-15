@@ -59,6 +59,8 @@
 #include "Ground/SimCopterPopulationSprite.h"
 #include "Ground/SimCopterTearGasPool.h"
 #include "EngineUtils.h"
+#include "City/SimCopterHangar.h"
+
 #include "Components/VolumetricCloudComponent.h"
 #include "UObject/UObjectIterator.h"
 #include "Camera/CameraActor.h"
@@ -2041,6 +2043,12 @@ void ASimCopterHelicopterPawn::PlaceOnHelipad(const FVector& PadSurfaceWorldLoca
 {
 	// FUN_00484790 writes the pad cell's own position straight into the helicopter's nodes and
 	// clears its orientation - there is no descent and no collision test.
+	if (!bHasHomePad)
+	{
+		bHasHomePad = true;
+		HomePadSurface = PadSurfaceWorldLocation;
+		HomePadYaw = YawDegrees;
+	}
 	SetActorRotation(FRotator(0.0f, YawDegrees, 0.0f));
 	SetActorLocation(
 		PadSurfaceWorldLocation + FVector(0.0f, 0.0f, GetHelipadRestingOriginOffsetCm()),
@@ -2054,6 +2062,31 @@ void ASimCopterHelicopterPawn::PlaceOnHelipad(const FVector& PadSurfaceWorldLoca
 	bIsLanded = true;
 	SeedFlightModelFromActor();
 	UpdateGroundProbe();
+}
+
+bool ASimCopterHelicopterPawn::ReturnHomeIfParkedInHangar()
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr || IsSupportAircraft()) return false;
+	const FVector Skids = GetActorLocation() - FVector(0.0f, 0.0f, GetHelipadRestingOriginOffsetCm());
+	bool bInside = false;
+	for (TActorIterator<ASimCopterHangar> It(World); It && !bInside; ++It)
+		bInside = It->IsInsideEntryVolume(GetActorLocation()) || It->IsInsideEntryVolume(Skids + FVector(0, 0, 50));
+	if (!bInside) return false;
+
+	bool bHomeTaken = !bHasHomePad;
+	for (TActorIterator<ASimCopterHelicopterPawn> It(World); It && !bHomeTaken; ++It)
+		bHomeTaken = *It != this && FVector::Dist2D(It->GetActorLocation(), HomePadSurface) < CrashRespawnPadClearanceCm;
+	bEngineRunning = false;
+	if (bHomeTaken)
+	{
+		// Somebody else is on the home pad (or there never was one): use the crash respawn's
+		// free-pad search, which is the same pad set the hangar delivers to.
+		return ReturnToAirportAfterCrash();
+	}
+	PlaceOnHelipad(HomePadSurface, HomePadYaw);
+	UE_LOG(LogSimCopterHelicopterPawn, Display, TEXT("SimCopter: aircraft left in the hangar returned to its home pad."));
+	return true;
 }
 
 bool ASimCopterHelicopterPawn::ReturnToAirportAfterCrash()
@@ -4474,6 +4507,8 @@ void ASimCopterHelicopterPawn::ExitHelicopter()
 		}
 		const bool bRecoverAfterExit=!bIsLanded && !IsFixedWingAircraft();
 		PlayerController->Possess(OnFootPawn);
+		if (bIsLanded) ReturnHomeIfParkedInHangar();
+
 		if (bRecoverAfterExit) AirOperations->BeginPilotRecovery(OnFootPawn);
 		BlendPossessionViewTarget(
 			PlayerController,

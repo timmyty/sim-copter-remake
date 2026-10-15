@@ -78,6 +78,11 @@ private:
 	void ApplyTourClouds();
 	void RestoreTourClouds();
 	bool bCloudOverride = false;
+	bool bLoggedTourClouds = false;
+	// Whether TourCloudMaterial is our own instance (restored away afterwards) or the day
+	// sequence's live one (only its coverage is put back).
+	bool bCreatedTourCloudMaterial = false;
+
 	float PreviousCloudCoverage = -1;
 	int32 PreviousVolumetricCloudCVar = -1;
 	TWeakObjectPtr<class UVolumetricCloudComponent> TourCloud;

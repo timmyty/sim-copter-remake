@@ -385,8 +385,16 @@ public:
 	// planning, a nearby patient falls back to the original straight bearing, and a responder
 	// this much closer may take over another responder's patient reservation.
 	static constexpr float MedicCasualtyCrowdRadiusCm = 260.0f;
-	static constexpr float MedicDirectApproachRadiusCm = 900.0f;
+	static constexpr float MedicDirectApproachRadiusCm = 3200.0f;
 	static constexpr float MedicClaimTakeoverMarginCm = 1500.0f;
+	// BHAV 262 treats a failed walk to the patient exactly like an empty search: rec[22]'s false
+	// edge reaches rec[41], "no victim in area". A medic blocked on the way to a patient it has
+	// already found keeps trying (autoturn on) for this long before the program is told.
+	static constexpr float MedicBlockedPatienceSeconds = 12.0f;
+	// Eight tiles: the range of BHAV 262's patient search.
+	static constexpr float MedicClaimHolderRangeCm = 3200.0f;
+	double MedicBlockedSinceSeconds = -1.0;
+	TWeakObjectPtr<AActor> MedicBlockedTarget;
 	ASimCopterMissionSystemActor* GetFireSafetyMissionSystem();
 	TWeakObjectPtr<ASimCopterMissionSystemActor> FireSafetyMissionSystem;
 	// A dead medevac patient remains the same physical person. When they die in the cabin this
@@ -1032,6 +1040,9 @@ public:
 	// Initial person state (0 = ambient pedestrian; see FPeopleBehaviorModel state table).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimCopter|Behavior", meta = (ClampMin = "0", ClampMax = "20"))
 	int32 InitialPersonState = 0;
+	// Remake police stop of a burglar's car (not saved): whether this car's stop outcome - held
+	// for arrest, or the burglar bailing out on foot - has already been decided.
+	bool bPoliceStopResolved = false;
 
 	// Initial behavior class at original person+0x146. Ambient city spawning chooses this from
 	// DAT_0058ec00/FUN_004c2450 while state remains 0; it also selects the figure (FUN_004c71c0).

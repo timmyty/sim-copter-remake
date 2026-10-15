@@ -130,9 +130,13 @@ bool FSimCopterEquipmentInteractionTest::RunTest(const FString&)
 	Menu->SelectedControl=Menu->ControllerFocusableWidgets[5];
 	Key(EKeys::Gamepad_FaceButton_Bottom);
 	TestTrue(TEXT("A on owned equipment moves to Sell"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[3+SimCopterHangarShop::UpgradeRowCount]);
+	// B in Upgrades steps back to the helicopter list; B again would close the catalog.
 	Key(EKeys::Gamepad_FaceButton_Right);
-	if (!TestTrue(TEXT("B from the action row stays in equipment"),Menu->Page==SSimCopterHangarMenu::EPage::Catalog && Menu->CatalogRow==INDEX_NONE)) return false;
-	TestTrue(TEXT("B returns to the selected equipment item"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[5]);
+	if (!TestTrue(TEXT("B from Upgrades returns to the helicopter list"),Menu->Page==SSimCopterHangarMenu::EPage::Catalog && Menu->CatalogRow!=INDEX_NONE)) return false;
+	Key(EKeys::Gamepad_FaceButton_Right);
+	TestTrue(TEXT("A second B closes the catalog"),Menu->Page==SSimCopterHangarMenu::EPage::Hangar);
+	Menu->ShowPage(SSimCopterHangarMenu::EPage::Catalog);
+	Menu->HandleSelectCatalogRow(INDEX_NONE); Arrange();
 	Missions->AddSessionCash(-Missions->GetSessionCash());
 	Menu->HandleSelectUpgradeRow(4); Menu->SelectedControl=Menu->ControllerFocusableWidgets[6];
 	Key(EKeys::Gamepad_FaceButton_Bottom);
