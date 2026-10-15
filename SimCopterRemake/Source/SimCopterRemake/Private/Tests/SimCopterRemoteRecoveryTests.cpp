@@ -581,6 +581,8 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 				RescueHeli->UpdateControllerRadialSelection();
 				RescueHeli->ControllerRightX(0); RescueHeli->ControllerRightY(0);
 				WinchKey(EKeys::Gamepad_RightThumbstick,IE_Released);
+				WinchKey(EKeys::Gamepad_FaceButton_Bottom);
+				WinchKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released);
 				TestTrue(TEXT("Controller confirms the requested attachment"),RescueHeli->GetActiveTool()==Tool);
 			};
 			const auto DriveWinch=[&](FKey Direction)

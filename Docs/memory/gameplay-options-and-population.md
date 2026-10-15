@@ -2,7 +2,7 @@
 
 User-requested departures from original behavior, implemented in the shared Unreal project:
 
-- Hold **R3** for Tools; release equips the last highlighted option, including after the stick returns to center. X switches Tools/Dispatch while held. A still confirms, B cancels. R3 map/help/radio shortcuts cancel the wheel before acting. Camera adjustment moves to held X; X+A toggles the spotlight. Keyboard controls remain separate.
+- **Updated October 15:** click **R3** for persistent Tools; a second click switches to Dispatch and further clicks alternate. Releasing R3 never confirms or closes either menu. A confirms the last highlight (including after recentering); B cancels. X remains an alternate page switch. R3 map/help/radio shortcuts still use the physical hold and cancel the wheel before acting. Camera adjustment uses held X; X+A toggles the spotlight. See [controller click behavior](controller-radial-click.md).
 - Settings → Graphics → Interface → **Cockpit Decorations: Off** collapses the whole decorative frame: side wiring, bottom sill and retract button. Dashboard, map and functional tool flaps remain. Settings cancellation restores the entered value; normal config persistence saves it.
 - Building-window lighting follows the evaluated primary atmospheric sun's elevation (+5° to −3° smooth fade), with the clock curve retained as fallback. The world subsystem ticks while paused, including Photo Mode. Keeping the day/night edge across time seeks prevents continuous nightly window-pattern rerolls.
 - A locally controlled aircraft with 0–10% fuel plays the low-fuel cue immediately and every 20 simulation seconds. Refueling above 10% resets the warning interval; empty fuel stops reminders.

@@ -72,7 +72,12 @@ bool FSimCopterGameplayOptionsTest::RunTest(const FString&)
 	Heli->ControllerRightX(Direction.X); Heli->ControllerRightY(Direction.Y); Heli->UpdateControllerRadialSelection();
 	Heli->ControllerRightX(0); Heli->ControllerRightY(0);
 	Key(EKeys::Gamepad_RightThumbstick, IE_Released);
-	TestEqual(TEXT("Release equips last highlight after recentering"), Heli->GetActiveTool(), ESimCopterHelicopterTool::Megaphone);
+	TestEqual(TEXT("Release preserves the tool wheel"), Heli->GetControllerMode(), ESimCopterControllerMode::ToolWheel);
+	TestEqual(TEXT("Release does not equip the highlighted tool"), Heli->GetActiveTool(), Heli->ControllerToolWheelOriginal);
+	Key(EKeys::Gamepad_FaceButton_Bottom, IE_Pressed);
+	TestEqual(TEXT("A equips last highlight after recentering"), Heli->GetActiveTool(), ESimCopterHelicopterTool::Megaphone);
+	TestEqual(TEXT("A closes the confirmed tool wheel"), Heli->GetControllerMode(), ESimCopterControllerMode::None);
+	Key(EKeys::Gamepad_FaceButton_Bottom, IE_Released);
 	Key(EKeys::Gamepad_RightThumbstick, IE_Pressed); Heli->CancelControllerRadialForShortcut();
 	Key(EKeys::Gamepad_RightThumbstick, IE_Released);
 	TestEqual(TEXT("Shortcut cancellation never equips something else"), Heli->GetActiveTool(), ESimCopterHelicopterTool::Megaphone);

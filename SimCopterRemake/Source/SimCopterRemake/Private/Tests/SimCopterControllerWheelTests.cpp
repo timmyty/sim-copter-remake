@@ -26,8 +26,8 @@ bool FSimCopterControllerWheelPresentationTest::RunTest(const FString& Parameter
 			: TArray<FString>{TEXT("Fire Truck"), TEXT("Police"), TEXT("Ambulance"), TEXT("Police (Chase)"), TEXT("Air: Map Mission"), TEXT("Recall All")};
 		TSharedRef<SSimCopterRadialWheel> Widget = SNew(SSimCopterRadialWheel)
 			.Labels(Labels).Title(FText::FromString(bTools ? TEXT("SELECT TOOL") : TEXT("DISPATCH")))
-			.Instructions(FText::FromString(bTools ? TEXT("RELEASE R3: EQUIP   X: DISPATCH\nB: CANCEL")
-				: TEXT("RELEASE R3: CONFIRM   X: TOOLS\nB: CANCEL")))
+			.Instructions(FText::FromString(bTools ? TEXT("A: EQUIP   R3: DISPATCH\nB: CANCEL")
+				: TEXT("A: CONFIRM   R3: TOOLS\nB: CANCEL")))
 			.SelectedIndex(1);
 		Widget->SlatePrepass();
 		TestTrue(TEXT("Wheel cannot steal flight focus"), !Widget->SupportsKeyboardFocus());

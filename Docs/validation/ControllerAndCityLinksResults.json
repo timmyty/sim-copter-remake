@@ -1,0 +1,191 @@
+{
+  "version": "v1.0.16",
+  "update_date": "2026-10-15",
+  "changes": [
+    "Persistent R3 Tools/Dispatch menu switching; A confirms and B cancels.",
+    "Both requested city websites require an in-game third-party warning and explicit confirmation."
+  ],
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log_sha256": "aba055275960ff39943c4c0713def600fa4327995acd17bfb11ca6ce046d5bf3"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "e36af161e601b5ef985df31f1135369639fb7ba3f2c350d7c88d16534b7d0f57"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "90897bbf52e3d44ea21453ae625b451723fbc817e81e9ed40ebb8c7442caaee4"
+    }
+  },
+  "publication_tests": {
+    "succeeded": 28,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 6.737946510314941
+  },
+  "cases": [
+    {
+      "name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.Contexts",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.ContextualHelp",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.FlightRouting",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.HelpDeviceStyle",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.HelpPresentation",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.MenuConfirmCancel",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.MenuOutlineArt",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.MenuRoutedInput",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.MenuSpatialNavigation",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.RadialSelection",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.SteeringResponse",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.TurboMode",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Controller.WheelPresentation",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.CareerProgression",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.CareerSelectLayout",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.CareerSelectNavigation",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.IntroInput",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.MainMenuLayout",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.MainMenuNavigation",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.MainMenuUpscaledArt",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.MenuSkyLayout",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.SaveBrowseMenus",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.UserCityDisplayNames",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.FrontEnd.UserCityWebsites",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.GameplayOptions.Integration",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.Radio.MenuLifecycle",
+      "state": "Success"
+    },
+    {
+      "name": "SimCopter.RemoteRecovery.TaserExitAndRescue",
+      "state": "Success"
+    }
+  ],
+  "offscreen": {
+    "passed": true,
+    "screens_inspected": [
+      "city picker",
+      "third-party warning",
+      "missing-art picker and warning"
+    ]
+  },
+  "startup": [
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "launcher_pid": 64052,
+      "mode": "shipping",
+      "seconds": 30.6673052,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\radial-click-2026-10-15\\smoke-shipping",
+      "child_pids": [
+        73008
+      ],
+      "survived": true
+    },
+    {
+      "survived": true,
+      "seconds": 30.7030509,
+      "launcher_pid": 47156,
+      "mode": "development",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\radial-click-2026-10-15\\smoke-development",
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "child_pids": [
+        null
+      ]
+    }
+  ],
+  "source_manifest_sha256": "acc3f1c2adffcd71a515e76e86cf22c99c5f7c51ce6a024ee27b0d4ee5f99ed7",
+  "binary_sha256": {
+    "SimCopterRemake-Win64-Shipping.exe": "2d68489156630050cc3f56c2d230cee33f91ddc8643d9fb393fd25fe1a74bfcd",
+    "SimCopterRemake.exe": "0a415d5a86b6e8fcd65dad0e24121275b055f8c01b37328fd3071e8894bd5fd4"
+  },
+  "reused_cooked_content": {
+    "version": "v1.0.16",
+    "reused_cooked_content": true,
+    "reason": "Only C++ controller/menu code and documentation changed; both executables freshly rebuilt from publication.",
+    "base_release_commit": "b85fdbb2c0d01d75b2f3f517b8723a721d73ce03"
+  },
+  "limitations": [
+    "No interactive playthrough or physical-controller test.",
+    "Browser launch callback was captured in tests; no browser was opened.",
+    "The original full-suite results remain historical; this update ran the focused cases listed here."
+  ]
+}

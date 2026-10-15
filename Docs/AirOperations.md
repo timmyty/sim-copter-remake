@@ -7,17 +7,17 @@ Implemented 2026-10-05. These are user-requested additions to the original SimCo
 | Action | Controller | Keyboard / mouse |
 | --- | --- | --- |
 | Rotate helicopter left / right | LB / RB individually | Existing flight controls |
-| Open Tools | Hold **R3** | Existing tool panel |
-| Switch Tools / Dispatch | Press **X** while holding R3 | Click the corresponding panel |
-| Select and confirm | Right stick, then release **R3** | Click selection |
+| Open Tools | Click **R3** | Existing tool panel |
+| Switch Tools / Dispatch | Click **R3** again (X also switches) | Click the corresponding panel |
+| Select and confirm | Right stick, then press **A** | Click selection |
 | Cancel wheel | B | Existing panel controls |
-| Passenger menu | Select Passengers in Tools, then release R3 | Click a seat portrait |
-| Recall ground services and helper | Select Recall All in Dispatch, then release R3 | Recall from Dispatch |
+| Passenger menu | Select Passengers in Tools, then A | Click a seat portrait |
+| Recall ground services and helper | Select Recall All in Dispatch, then A | Recall from Dispatch |
 | Select capture cage | Tools wheel | V |
 | Use selected tool / dump bucket / deploy cage | A | R or left click |
 | Raise / lower sling | D-pad up / down | Page Up / Page Down |
 | Open cage / deliver over active recovery ring | D-pad left | G or OPEN |
-| Enter / leave remote taser mode | X opens Tools; select Remote Taser / Fly Helicopter, then A | N or cockpit AIM TASER / FLY HELICOPTER button |
+| Enter / leave remote taser mode | R3 opens Tools; select Remote Taser / Fly Helicopter, then A | N or cockpit AIM TASER / FLY HELICOPTER button |
 | Aim / fire in remote taser mode | Right stick / A or RT | Move mouse / left click; hold right mouse for cockpit cursor |
 | Remote taser scope zoom | Hold LT for 4x; release to restore zoom | Mouse wheel adjusts 1x–4x |
 | Aim / fire taser on foot | LT / RT | Right mouse / left mouse |
@@ -29,7 +29,7 @@ Implemented 2026-10-05. These are user-requested additions to the original SimCo
 | Toggle parachute while falling | B | P |
 | Put carried person down | X | G |
 
-X opens Tools and toggles between Tools and Dispatch. Outside a menu, A uses the selected tool; hold A for continuous actions such as dumping a bucket or spraying water. RT handles climb/start independently of A. The menu stays open without holding any button; A confirms and B cancels. Both bumpers together remain an optional hold-and-release shortcut. They suppress helicopter turning while the wheel is open; the remaining held bumper stays suppressed until both have been released, preventing an accidental turn. Y enters/exits the aircraft, and walking close still boards automatically. Remote Taser / Fly Helicopter and Passengers are Tools options; Recall All is in Dispatch.
+The first R3 click opens Tools; the second opens Dispatch, with further clicks alternating between them. X also switches pages while a wheel is open and adjusts the camera when held outside a menu. Outside a menu, A uses the selected tool; hold A for continuous actions such as dumping a bucket or spraying water. RT handles climb/start independently of A. The menu stays open without holding any button; A confirms and B cancels. Both bumpers remain steering controls. Y enters/exits the aircraft, and walking close still boards automatically. Remote Taser / Fly Helicopter and Passengers are Tools options; Recall All is in Dispatch.
 
 ## Recovery
 
@@ -59,7 +59,7 @@ Each new city, including a career cheat warp, requires graduation again before t
 
 Click **L3** to toggle Turbo Mode, or tap either **Shift** key, for 30% faster horizontal helicopter travel with a steeper flight tilt. On foot, L3 toggles the existing doubled running speed and animation. **R3+L3** shows or hides controller help; the minimap Turbo indicator remains visible while flying. Boarding, exiting and loading clear the toggle. With `superpowermultiply` active, either input retains its existing turbo/dog behavior without stacking multipliers. See [Turbo Mode and GPU diagnostics](GpuCrashAndSprint.md) and [traffic and flight pacing](TrafficFlowAndFlightPacing.md).
 
-The Remote Taser is a $2,500 hangar equipment purchase. Its nose mount, cockpit panel and wheel option appear only after purchase. Once airborne, click **AIM TASER** on its cockpit panel press **N**, or hold **R3**, select **Remote Taser**, and release **R3**. No officer is required. Autopilot holds a steady hover while the suspect is in range with a clear shot, following again when range or sustained cover requires it. Move the mouse or right stick to aim; roll the mouse wheel for 1x–4x zoom, or hold LT for the 4x scope. Aiming sensitivity reduces with magnification. Left click, A or RT fires. Hold right mouse for the cockpit cursor. Click **FLY HELICOPTER**, press N, or select **Fly Helicopter** through R3 selection and release to return. Successful 60-meter taser shots preserve health and immobilize living suspects for retrieval, handcuffing and police delivery. Recharge takes 1.25 seconds. The former police passenger view has been removed.
+The Remote Taser is a $2,500 hangar equipment purchase. Its nose mount, cockpit panel and wheel option appear only after purchase. Once airborne, click **AIM TASER** on its cockpit panel press **N**, or click **R3**, select **Remote Taser**, and press **A**. No officer is required. Autopilot holds a steady hover while the suspect is in range with a clear shot, following again when range or sustained cover requires it. Move the mouse or right stick to aim; roll the mouse wheel for 1x–4x zoom, or hold LT for the 4x scope. Aiming sensitivity reduces with magnification. Left click, A or RT fires. Hold right mouse for the cockpit cursor. Click **FLY HELICOPTER**, press N, or click R3, select **Fly Helicopter**, and press A to return. Successful 60-meter taser shots preserve health and immobilize living suspects for retrieval, handcuffing and police delivery. Recharge takes 1.25 seconds. The former police passenger view has been removed.
 
 Each helicopter discharge leaves two continuous white electrical trails for 0.3 seconds and plays the original laser cue. Successful disables add a separate impact cue; blocked shots and misses do not. Vehicle hits also animate electricity around the car's oriented body for 0.7 seconds. The car remains disabled for 16 seconds.
 
