@@ -178,6 +178,35 @@ bool FSimCopterCatalogNavigationTest::RunTest(const FString&)
 	Menu->OnNavigation(Menu->GetCachedGeometry(),FNavigationEvent(FModifierKeysState(),0,EUINavigation::Left,ENavigationGenesis::Controller));
 	Key(EKeys::Gamepad_FaceButton_Bottom); Arrange();
 	TestEqual(TEXT("Stick navigation can return directly to previous aircraft"),Menu->CatalogRow,2);
+	for (const FKey K : {EKeys::Gamepad_DPad_Left,EKeys::Gamepad_DPad_Right,EKeys::Left,EKeys::Right})
+	{
+		for (int32 Row=0;Row<8;++Row)
+		{
+			Menu->SetControllerSelection(Tab(Row));
+			for (int32 Step=0;Step<12;++Step)
+			{
+				Key(K);
+				const int32 Selected=Menu->CatalogTabWidgets.IndexOfByKey(Menu->GetControllerSelection());
+				TestTrue(TEXT("Horizontal browsing stays in the eight-aircraft row, including its edges"),Selected>=0 && Selected<8);
+			}
+		}
+	}
+	for (EUINavigation Direction : {EUINavigation::Left,EUINavigation::Right})
+	{
+		Menu->SetControllerSelection(Tab(Direction==EUINavigation::Left ? 0 : 7));
+		for (int32 I=0;I<12;++I)
+			Menu->OnNavigation(Menu->GetCachedGeometry(),FNavigationEvent(FModifierKeysState(),0,Direction,ENavigationGenesis::Controller));
+		TestTrue(TEXT("Analog navigation does not fall into lower links at row ends"),Menu->CatalogTabWidgets.IndexOfByKey(Menu->GetControllerSelection())<8);
+	}
+	for (const int32 Row : {1,6})
+	{
+		Menu->SetControllerSelection(Tab(Row)); Key(EKeys::Gamepad_DPad_Down);
+		const int32 Lower=Menu->CatalogTabWidgets.IndexOfByKey(Menu->GetControllerSelection());
+		TestEqual(TEXT("Down deliberately reaches the appropriate lower link"),Lower,Row==1?9:8);
+		Key(EKeys::Gamepad_DPad_Up);
+		const int32 Upper=Menu->CatalogTabWidgets.IndexOfByKey(Menu->GetControllerSelection());
+		TestTrue(TEXT("Up returns to aircraft tabs"),Upper>=0 && Upper<8);
+	}
 	return true;
 }
 #endif

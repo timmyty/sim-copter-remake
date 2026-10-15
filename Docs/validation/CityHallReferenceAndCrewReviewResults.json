@@ -1,0 +1,209 @@
+{
+  "date": "2026-10-15",
+  "status": "Local review only; not published",
+  "changes": [
+    "Stepped drums, shallow ribbed crown and narrow lantern follow the supplied SC2000 reference",
+    "Six low AC housings, two roof structures and four raised clipped hedge runs",
+    "Repeated facade columns, openings, crown ribs, fan grilles, louvers and foliage use material relief",
+    "Manual police/medic ejections impose a strict 15-second gameplay boarding cooldown"
+  ],
+  "geometry": {
+    "vertices": 3622,
+    "front_triangles": 1682,
+    "finish_tags": 8,
+    "previous_vertices": 11918,
+    "previous_front_triangles": 5778,
+    "triangle_reduction_percent": 70.89,
+    "added_material_slots": 0,
+    "added_draw_calls": 0,
+    "added_bitmap_textures": 0
+  },
+  "builds": {
+    "Editor": "Succeeded",
+    "Shipping": "Succeeded"
+  },
+  "cook": "Succeeded",
+  "automation": {
+    "landmarks": {
+      "succeeded": 4,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 7.790956497192383
+    },
+    "regression": {
+      "succeeded": 12,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 17.769149780273438
+    },
+    "boarding-related": {
+      "succeeded": 15,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 4.318111896514893
+    }
+  },
+  "tests": [
+    "SimCopter.Behavior.VM.ActionDelegation",
+    "SimCopter.Behavior.VM.HospitalMedicRetire",
+    "SimCopter.Behavior.VM.LateOpcodes",
+    "SimCopter.Behavior.VM.Opcode22PlayerTileProbe",
+    "SimCopter.Behavior.VM.PoliceReturnBudget",
+    "SimCopter.Behavior.VM.PoliceReturnInterrupt",
+    "SimCopter.Behavior.VM.Reference",
+    "SimCopter.Behavior.VM.SelectionContact",
+    "SimCopter.Civic.CityIntegration",
+    "SimCopter.Civic.GeometryAndPierHeight",
+    "SimCopter.Dispatch.EmergencyCrewStates",
+    "SimCopter.Dispatch.PoliceRoofBoarding",
+    "SimCopter.Flight.PassengerTransferClearance",
+    "SimCopter.MedicalNavigation.DeployedMedicRiot",
+    "SimCopter.MedicalNavigation.DroppedMedics",
+    "SimCopter.MedicalNavigation.MedicDeploymentPriorities",
+    "SimCopter.MedicalNavigation.MedicReboardingDelay",
+    "SimCopter.MedicalNavigation.MovingTargetRepathBudget",
+    "SimCopter.MedicalNavigation.PatientMarkers",
+    "SimCopter.MedicalNavigation.SlicedSearchPreservesRoutes",
+    "SimCopter.MedicalNavigation.SteepHillReturn",
+    "SimCopter.Passengers.FaceProgram",
+    "SimCopter.Passengers.FallGravity",
+    "SimCopter.Passengers.HeadImages",
+    "SimCopter.Passengers.PortraitRendering",
+    "SimCopter.Passengers.VoiceRates",
+    "SimCopter.PoliceRecovery.DeployedOfficerRetrievesTasedSuspect",
+    "SimCopter.PoliceRecovery.NearestStationMapRoute",
+    "SimCopter.RescuePilot.PassengerIdentity",
+    "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+    "SimCopter.WaterTowers.CityIntegration",
+    "SimCopter.WaterTowers.GeometryAndNames"
+  ],
+  "warning_cases": {
+    "SimCopter.MedicalNavigation.MovingTargetRepathBudget": [
+      "LogHttp: HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204"
+    ]
+  },
+  "crew_baseline_failures": [
+    "Expected 'Even the final patient cannot shorten the fifteen-second crew delay' to be false.",
+    "Expected 'Completed handoff cannot bypass the crew delay' to be false.",
+    "Expected 'Ejected officer cannot immediately reboard' to be false.",
+    "Expected 'Harness cannot bypass police delay' to be false.",
+    "Expected 'Officer still waits at 14.9 seconds' to be false.",
+    "Expected 'Repeated police drop restarts cooldown' to be false.",
+    "Expected 'Ejected officer cannot immediately reboard' to be false.",
+    "Expected 'Harness cannot bypass police delay' to be false.",
+    "Expected 'Officer still waits at 14.9 seconds' to be false.",
+    "Expected 'Repeated police drop restarts cooldown' to be false.",
+    "Expected 'Ejected officer cannot immediately reboard' to be false.",
+    "Expected 'Harness cannot bypass police delay' to be false.",
+    "Expected 'Officer still waits at 14.9 seconds' to be false.",
+    "Expected 'Repeated police drop restarts cooldown' to be false."
+  ],
+  "window_emission_pixels": {
+    "off": 0,
+    "night": 25770,
+    "brightness_disabled": 0
+  },
+  "rendering": "D3D12 offscreen captures inspected; final material compiled without fallback",
+  "source": [
+    {
+      "path": "Tools/Unreal/BakeCivicPresentation.py",
+      "sha256": "b6ad3c9e7a19e58fac88b53275ea10a57ab5ff599c5834c9594e59c37a6b35ec"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterCivicLandmarks.cpp",
+      "sha256": "785d72038c0621da0ddf985e836d261395d4bfe6949f6e04289f07fa10d79465"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCivicLandmarkTests.cpp",
+      "sha256": "aae8f519d61547ae28a2d1fa07f8cb0fbd8fb72dab1d05e15b3ab4fdfd966c96"
+    },
+    {
+      "path": "Docs/CivicAndWaterfrontReview.md",
+      "sha256": "6bc4428b5fd36a7531f094ba2baa1a7d149bb47db7a257537ebcfed7e44dd783"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp",
+      "sha256": "b8fc3762b1832f8d2484b19e4642c1f314a29e25da826109af27044d060a95f8"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h",
+      "sha256": "bd420fe9e63a9f024005dfd623c2b0cc01ec548f2b97ecf614838bc7632cc757"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp",
+      "sha256": "e0f7009c8c177fff29cf032c1d519284fa390c989de515a4745e1d2037f7eda2"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMedicRouteTests.cpp",
+      "sha256": "521f91e68b7a91d6d71361e0872935b9fcfa320a5bfed6f5369c1c2dc7c47a38"
+    },
+    {
+      "path": "Docs/RadioAndMedicUpdate.md",
+      "sha256": "dcead4be19b4777c66ad150ce114c59b1c093e82aaffb27f8e9a5e1f34c01d77"
+    }
+  ],
+  "material_assets": {
+    "M_CityHall": "9cfbf3e64c17fe057da0eb9c2f5b91315fa049574fb214111b20b1cdc9093988",
+    "M_WaterTower": "989c8fdaa1ed9bdb5a9414d6dc43ff05ba3c16baac8fdd595ae47f6c0a782cd7"
+  },
+  "screenshots": [
+    {
+      "path": "Docs/screenshots/civic-city-hall.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 384596,
+      "sha256": "9385a1dcf7673676dbed9b644a1543e12e69b06987c1ce96f43995ae66a5382b"
+    },
+    {
+      "path": "Docs/screenshots/civic-city-hall-detail.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 375752,
+      "sha256": "8e5bf84ee303756e72cf3e31fa640853ecd265de2dd96763026a4671cadc25a2"
+    },
+    {
+      "path": "Docs/screenshots/civic-closed-water-tower.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 387742,
+      "sha256": "b1e2a09f0c14cb7731d5fe4a91bbea18932084ffea076880ee59046d58604b46"
+    },
+    {
+      "path": "Docs/screenshots/civic-low-piers.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 316824,
+      "sha256": "0e7f566a6ff901a9f260c64300b19a9b2aecc42dc4cd713fa2b414a8ae04e5bb"
+    }
+  ],
+  "shipping_binary_sha256": "fe1f81769b79797e337e9bce85e19477fa76d1ef05bd5e005afa66da1158c5ba",
+  "logs": {
+    "build-editor-night.log": "29031fd205731e3b6452d6b8bdd3019778892f12713ee5f1ec36dea18f855f6d",
+    "build-shipping.log": "786893aeb1685c4a0f63bc7c63c0cbba864715da56c734c1bd737a20bc839ecc",
+    "bake-engine.log": "83e166e6a184dee2d9dbcbb805a9e7c5ab64cf75a74322f790b6345b62e48ed5",
+    "reference-final-engine.log": "efa4a84b21a4be1dc6f070b7b73e63725a39bffef1fb1554e34ddc7fe00d1e58",
+    "cook.log": "71dbc07c6c4b24edb1a806ea2ad4a8c6ee1e0df1d19ae72ab9e345333730f77c"
+  },
+  "crew_logs": {
+    "build-editor.log": "b0fca6b35e98a4bfc8fa9f9ca5795eceaf494a8f43d633fd686e5f8b76ea32b2",
+    "baseline-engine.log": "c269a5107b1f05c557003d7ff96861614de3e55ac5c0d1cad99ec9398a578377",
+    "regression-engine.log": "ddf50df0e42cfdbe42c6f81189f824fca859d6a80cf786a98552d3efc699f432",
+    "boarding-related-engine.log": "93edda13795922fc30eff57aa42dfeef51849db6bff625c2919fa75c0373d543"
+  },
+  "local_package": "Docs/scratchpad/cityhall-reference-2026-10-15/ReviewPackage/Windows/SimCopterRemake.exe",
+  "limitations": [
+    "Offscreen fixture inspected; no interactive flight or physical-controller test.",
+    "The local Shipping package was cooked and its manifests/binary verified, but not launched interactively."
+  ]
+}

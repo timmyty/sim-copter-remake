@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.17 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.17.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.18 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.18.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [Quick summary](#quick-summary-added-or-expanded) · [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -55,7 +55,7 @@ such as custom MP4 playback.
 
 ## Start playing
 
-1. Download **`SimCopterRemake-v1.0.17-Windows-x64.7z`** from the latest release.
+1. Download **`SimCopterRemake-v1.0.18-Windows-x64.7z`** from the latest release.
 2. Extract the **entire archive** and run **`SimCopterRemake.exe`** in the extracted folder.
 3. Choose **New Career Game** or **New User Game**, then select a city.
 
@@ -63,11 +63,11 @@ Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the lau
 Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 `Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
 
-## New in v1.0.17: water towers and city names
+## New in v1.0.18: water towers and city names
 
 Water towers have ivory paint, blue trim, metal detail and large city lettering on
 opposite sides. They retain the same geometry and share one small lettering texture
-per city, with no new per-frame updates. [Release notes](Docs/Releases/v1.0.17.md).
+per city, with no new per-frame updates. [Release notes](Docs/Releases/v1.0.18.md).
 
 ## Also included from v1.0.16: smoother flight and gameplay updates
 
@@ -105,11 +105,11 @@ from 849 MiB to 72.65 MiB. The original-game lossless FLAC soundtrack is preserv
 Saved KINV positions, song order, pause and seeking remain supported.
 
 The normal game download contains Shipping only. For GPU/performance diagnostics,
-download **`SimCopterRemake-v1.0.17-Optional-Development-Windows-x64.7z`** from the same
+download **`SimCopterRemake-v1.0.18-Optional-Development-Windows-x64.7z`** from the same
 release and extract its contents **inside the extracted game folder**, beside the
 root `SimCopterRemake.exe`. This adds the matching Development executable and both
 diagnostic launchers. It requires the full game download and is optional for play.
-[Release notes](Docs/Releases/v1.0.17.md) · [Music details](Docs/InvokeRadio.md)
+[Release notes](Docs/Releases/v1.0.18.md) · [Music details](Docs/InvokeRadio.md)
 
 ## Also included from v1.0.12: controller navigation, medical crew and cockpit improvements
 
@@ -150,7 +150,7 @@ order for each mission. [Release notes](Docs/Releases/v1.0.10.md)
 
 ## Also included from v1.0.9: baseball, city life and clearer drive-in audio
 
-[![A live Canyon baseball game with red visitors, blue defenders and a fixed stadium scoreboard](Docs/screenshots/baseball-stadium-v1.0.9.png)](Docs/screenshots/baseball-stadium-v1.0.9.png)
+[![A live Canyon baseball game with red visitors, blue defenders and a fixed stadium scoreboard](Docs/screenshots/baseball-stadium-v1.0.9.webp)](Docs/screenshots/baseball-stadium-v1.0.9.webp)
 
 Nearby baseball fields now host complete nine-inning games with base running,
 counts, scoring and a fixed stadium scoreboard. Only active players are spawned,
@@ -169,7 +169,7 @@ fault remain under investigation. [Diagnostics](Docs/WitnessPhotoStutterInvestig
 
 ## A rebuilt hangar and a fleet that stays yours
 
-[![Revamped hangar: skylights, steel trusses, workshop, office and parked aircraft](Docs/screenshots/hangar-v1.0.8.png)](Docs/screenshots/hangar-v1.0.8.png)
+[![Revamped hangar: skylights, steel trusses, workshop, office and parked aircraft](Docs/screenshots/hangar-v1.0.8.webp)](Docs/screenshots/hangar-v1.0.8.webp)
 
 Walk into the airport's rebuilt hangar, with tall gridded windows, roof trusses,
 skylights, a rear office and stairs, workshop furniture and parked aircraft.
@@ -180,7 +180,7 @@ to the next city's airport. The victory band stays around the hangar base.
 
 ## Trap and recover a car with the capture cage
 
-[![A helicopter's deployed capture cage holds a car above its sealed floor](Docs/screenshots/capture-cage-car-v1.0.8.png)](Docs/screenshots/capture-cage-car-v1.0.8.png)
+[![A helicopter's deployed capture cage holds a car above its sealed floor](Docs/screenshots/capture-cage-car-v1.0.8.webp)](Docs/screenshots/capture-cage-car-v1.0.8.webp)
 
 The cage replaces the tow clamp and can recover a stalled, fleeing or taser-disabled
 car, or an eligible boat hull after its passengers are rescued. Lower it over the
@@ -197,7 +197,7 @@ retains its four-person capacity; one vehicle or hull occupies it by itself.
 
 | Find the guide in the pause menu | Browse the codes and their effects |
 | --- | --- |
-| [![Pause menu with the Cheat Codes entry highlighted](Docs/screenshots/cheat-menu-v1.0.8.png)](Docs/screenshots/cheat-menu-v1.0.8.png) | [![Cheat Codes guide showing code names, effects and navigation](Docs/screenshots/cheat-guide-v1.0.8.png)](Docs/screenshots/cheat-guide-v1.0.8.png) |
+| [![Pause menu with the Cheat Codes entry highlighted](Docs/screenshots/cheat-menu-v1.0.8.webp)](Docs/screenshots/cheat-menu-v1.0.8.webp) | [![Cheat Codes guide showing code names, effects and navigation](Docs/screenshots/cheat-guide-v1.0.8.webp)](Docs/screenshots/cheat-guide-v1.0.8.webp) |
 
 Highlight the blank plate above **Continue** to reveal **Cheat Codes**. The guide
 covers 20 commands with scrolling, keyboard and controller navigation. Resume
@@ -267,15 +267,15 @@ Several _SimCity 2000_ cities, including Cape Wells, Tokyo, and Rio, are include
 
 |                    Flight & City Exploration                     |                      Firefighting Operations                      |
 | :--------------------------------------------------------------: | :---------------------------------------------------------------: |
-| [![City Flight](Docs/screenshots/1.png)](Docs/screenshots/1.png) | [![Firefighting](Docs/screenshots/2.png)](Docs/screenshots/2.png) |
+| [![City Flight](Docs/screenshots/1.webp)](Docs/screenshots/1.webp) | [![Firefighting](Docs/screenshots/2.webp)](Docs/screenshots/2.webp) |
 
 |                     Maritime Rescue Operations                     |                        Winch & Passenger Pickup                         |
 | :----------------------------------------------------------------: | :---------------------------------------------------------------------: |
-| [![Sunset Rescue](Docs/screenshots/3.png)](Docs/screenshots/3.png) | [![Rescuing Survivors](Docs/screenshots/4.png)](Docs/screenshots/4.png) |
+| [![Sunset Rescue](Docs/screenshots/3.webp)](Docs/screenshots/3.webp) | [![Rescuing Survivors](Docs/screenshots/4.webp)](Docs/screenshots/4.webp) |
 
 |                        Cockpit Camera View                         |                   Night Flight & City Skyline                   |
 | :----------------------------------------------------------------: | :-------------------------------------------------------------: |
-| [![Rescue Camera](Docs/screenshots/5.png)](Docs/screenshots/5.png) | [![Night City](Docs/screenshots/6.png)](Docs/screenshots/6.png) |
+| [![Rescue Camera](Docs/screenshots/5.webp)](Docs/screenshots/5.webp) | [![Night City](Docs/screenshots/6.webp)](Docs/screenshots/6.webp) |
 
 ## Recreating the Original Game
 

@@ -28,7 +28,8 @@ if (Kind > 0.25) // Steel cap, with radial sheet joints.
     float a = atan2(p.y,p.x)*1.591549;
     float seam = 1-smoothstep(0.008,0.025+fwidth(a),min(frac(a),1-frac(a)));
     float rim = smoothstep(0.44,0.48,length(p));
-    return float4(lerp(float3(0.26,0.34,0.37),blue,rim)-seam*0.025+grain*0.016,0.58);
+    // Neutral galvanized steel across the entire lid, including its perimeter: no blue pool.
+    return float4(lerp(float3(0.51,0.50,0.46),float3(0.35,0.34,0.31),rim)-seam*0.045+grain*0.016,0.72);
 }
 float v = UV.y;
 float band = 1-smoothstep(0.055-aa.y,0.055+aa.y,v);
@@ -54,6 +55,16 @@ float lettering = Texture2DSample(Lettering,LetteringSampler,saturate(labelUV)).
 color = lerp(color,blue*0.66,lettering);
 return float4(color,lerp(0.58,0.46,band)+weather);
 '''
+
+
+def preserve_mesh_normals(mat):
+    # The legacy city pipeline supplies outward normals but also emits reversed triangles.
+    # Cancel the two-sided shader's automatic normal flip, which otherwise makes roofs black.
+    lib = unreal.MaterialEditingLibrary
+    sign = lib.create_material_expression(mat, unreal.MaterialExpressionTwoSidedSign)
+    normal = custom(mat, 'KeepAuthoredNormals', 'return float3(0,0,Sign);', ['Sign'], unreal.CustomMaterialOutputType.CMOT_FLOAT3)
+    connect(sign, '', normal, 'Sign')
+    lib.connect_material_property(normal, '', unreal.MaterialProperty.MP_NORMAL)
 
 
 def main():
@@ -88,6 +99,7 @@ def main():
     spec = lib.create_material_expression(mat, unreal.MaterialExpressionConstant)
     spec.set_editor_property('r', 0.25)
     lib.connect_material_property(spec, '', unreal.MaterialProperty.MP_SPECULAR)
+    preserve_mesh_normals(mat)
     lib.layout_material_expressions(mat)
     lib.recompile_material(mat)
     if not unreal.EditorAssetLibrary.save_loaded_asset(mat, only_if_is_dirty=False):

@@ -3136,7 +3136,7 @@ bool ASimCopterHelicopterPawn::DropPassengerAtSlot(int32 SlotIndex)
 		// Manual drops also need room at ground level. Airborne releases have no walking queue.
 		// Take the patient while the medic is still at the cabin; a clear exit may place
 		// them farther from the fuselage than the ordinary walking handoff can reach.
-		Aboard->PrepareMedicDeployment(this, CanTransferMissionPassengers());
+		Aboard->PrepareEmergencyCrewDeployment(this, CanTransferMissionPassengers());
 		Aboard->AlightFromCarrier(true, false);
 		Aboard->SetActorLocation(DropLocation, false);
 		Aboard->SetMissionPickupCounted(false);
@@ -4774,10 +4774,17 @@ void ASimCopterHelicopterPawn::ControllerBackPressed()
 		if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->SimRadioMenu();
 		return;
 	}
-	if (ControllerMode == ESimCopterControllerMode::None)
+	// Released R3 leaves a persistent panel open. A plain Select still means camera,
+	// and cancels that panel without activating its highlighted tool/passenger action.
+	if (ControllerMode != ESimCopterControllerMode::None)
 	{
-		CycleCameraMode();
+		CloseControllerMode();
+		RefreshControllerOverlayRadials();
+		RefreshDashboardSeats();
 	}
+	// The remote sight owns a separate view target; changing CameraMode alone is invisible.
+	if (AirOperations->IsRemoteTaserActive()) ToggleRemoteTaser();
+	CycleCameraMode();
 }
 
 void ASimCopterHelicopterPawn::ControllerDPadUpPressed()

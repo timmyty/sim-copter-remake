@@ -47,7 +47,7 @@ frame, 60% blend, light `hqdn3d` cleanup, Lanczos final scaling.
 
 | Previous prepared movie | Restored movie on the same theater |
 | --- | --- |
-| ![Small picture inside fixed padding](screenshots/drive-in-original-before-restoration.png) | ![Restored picture fills the projection](screenshots/drive-in-original-restored.png) |
+| ![Small picture inside fixed padding](screenshots/drive-in-original-before-restoration.webp) | ![Restored picture fills the projection](screenshots/drive-in-original-restored.webp) |
 
 These are offscreen scene captures from the same parking-lot viewpoint, at nearby
 points in the opening scene. The physical screen dimensions are unchanged.

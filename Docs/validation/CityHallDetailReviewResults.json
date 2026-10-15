@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-15",
+  "status": "Local review only; not published",
+  "changes": [
+    "Gray lead-sheet roofs with staggered panels, fine seams, coping and gutters",
+    "Stone block joints, carved cornice grooves, subtle weathering and shallow normal relief",
+    "Reused existing wing cornice top faces for the visible roof surface"
+  ],
+  "geometry": {
+    "vertices": 11918,
+    "front_triangles": 5778,
+    "finish_tags": 7,
+    "added_vertices": 0,
+    "added_triangles": 0,
+    "added_material_slots": 0,
+    "added_draw_calls": 0,
+    "added_bitmap_textures": 0
+  },
+  "builds": {
+    "Editor": "Succeeded",
+    "Shipping": "Succeeded"
+  },
+  "cook": "Succeeded",
+  "automation": {
+    "succeeded": 4,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 7.9853291511535645
+  },
+  "tests": [
+    "SimCopter.Civic.CityIntegration",
+    "SimCopter.Civic.GeometryAndPierHeight",
+    "SimCopter.WaterTowers.CityIntegration",
+    "SimCopter.WaterTowers.GeometryAndNames"
+  ],
+  "rendering": "D3D12 offscreen captures inspected; final material compiled without fallback",
+  "source": [
+    {
+      "path": "Tools/Unreal/BakeCivicPresentation.py",
+      "sha256": "9881f5bb0e9cc14f0f5c6f071aa81d1ab5e99a20404607a1e74a2e5bcba4bcf6"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterCivicLandmarks.cpp",
+      "sha256": "09089270400ba52b4887359e3ea8e7a9bdd34ff6a6fcd2a3020b9f74011b98aa"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterLandmarkGeometry.h",
+      "sha256": "93b032f7fc211bc3352267e746c2a41ec815ec7fad0f3561d1c3c82af1d3233b"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCivicLandmarkTests.cpp",
+      "sha256": "f4782eb02ab6642949339d9d6e9d84e3ca3e74eaaa884a1dbd4d8fc5287d2a1c"
+    }
+  ],
+  "material_assets": {
+    "M_CityHall": "b95b50071eb147fdc091c853fb366c2daa1683dc55c5222bdd7caeeba59342f4",
+    "M_WaterTower": "8b87d20d4baa98d3de0ba3cb8292b86c58daa7ecdc7a2c0976b18af65b64d1d4"
+  },
+  "screenshots": [
+    {
+      "path": "Docs/screenshots/civic-city-hall.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 385722,
+      "sha256": "675dd003def341674d72abc34330cc085a0ecf0b5051ce6f3d49b02895abd260"
+    },
+    {
+      "path": "Docs/screenshots/civic-city-hall-detail.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 373612,
+      "sha256": "01ad519145159faf98184f27be2a922c3ebc98d4c0466ab71583015a7aa27d39"
+    },
+    {
+      "path": "Docs/screenshots/civic-closed-water-tower.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 388148,
+      "sha256": "dedae7c12ea991e336f83deb08313dc4efcc2a53fa8e740faa1846009ce6b9d1"
+    },
+    {
+      "path": "Docs/screenshots/civic-low-piers.webp",
+      "dimensions": [
+        1600,
+        1200
+      ],
+      "bytes": 316824,
+      "sha256": "0e7f566a6ff901a9f260c64300b19a9b2aecc42dc4cd713fa2b414a8ae04e5bb"
+    }
+  ],
+  "shipping_binary_sha256": "82d4899a1913e1c35b292c2cba9a38c6135dd7bf066019a314133ed5af134bdc",
+  "logs": {
+    "build-editor.log": "d51797ce6bb1e267391afce2062e410a69ef1d13c4d79c849db789e1bcdda835",
+    "build-shipping.log": "ec51557eebcc18f8fcbf0bee388a20faaec279985a410ab1f27d4d2634c96293",
+    "bake-final-engine.log": "d5ed0faa975333f1c77974ccd58cc5085e75533d4c83ec49dc1dc52cddc96533",
+    "detail-verified-engine.log": "7af8c13e0ea6bd0eca8156cea46f9145d59f2bcffa09ccb3539737a6fd47b4b4",
+    "cook.log": "12e29a3989e9b7732b377eb4d349cc1a0fb9fa84aa78479be892404d3d72ec5a"
+  },
+  "local_package": "Docs/scratchpad/cityhall-detail-2026-10-15/ReviewPackage/Windows/SimCopterRemake.exe",
+  "limitations": [
+    "Offscreen fixture inspected; no interactive flight or physical-controller test.",
+    "The local Shipping package was cooked and its manifests/binary verified, but not launched interactively."
+  ]
+}

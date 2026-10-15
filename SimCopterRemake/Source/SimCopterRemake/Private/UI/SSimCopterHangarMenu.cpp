@@ -866,6 +866,17 @@ FReply SSimCopterHangarMenu::CycleEquipmentHelicopter(int32 Direction)
 
 FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
 {
+	if (Page == EPage::Catalog && CatalogRow != INDEX_NONE)
+	{
+		const FKey Key=Event.GetKey();
+		const EUINavigation Direction=Key==EKeys::Left ? EUINavigation::Left : Key==EKeys::Right ? EUINavigation::Right :
+			Key==EKeys::Up ? EUINavigation::Up : Key==EKeys::Down ? EUINavigation::Down : EUINavigation::Invalid;
+		if (Direction != EUINavigation::Invalid)
+		{
+			SSimCopterNavigableMenu::OnNavigation(Geometry,FNavigationEvent(FModifierKeysState(),Event.GetUserIndex(),Direction,ENavigationGenesis::Controller));
+			return FReply::Handled();
+		}
+	}
 	if (Page == EPage::Catalog && CatalogRow == INDEX_NONE)
 	{
 		const FKey Key=Event.GetKey();
@@ -884,6 +895,20 @@ FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const F
 			return HandleSelectUpgradeRow((UpgradeRow+(Key==EKeys::Up ? -1 : 1)+SimCopterHangarShop::UpgradeRowCount)%SimCopterHangarShop::UpgradeRowCount);
 	}
 	return SSimCopterNavigableMenu::OnPreviewKeyDown(Geometry,Event);
+}
+
+bool SSimCopterHangarMenu::IsControllerNavigationCandidate(const TSharedPtr<SWidget>& From,
+	const TSharedRef<SWidget>& To, FVector2D Direction) const
+{
+	if (Page != EPage::Catalog) return true;
+	const int32 FromTab = CatalogTabWidgets.IndexOfByKey(From);
+	const int32 ToTab = CatalogTabWidgets.IndexOfByKey(To);
+	// Aircraft occupy one row; the two links underneath are reached deliberately with Down.
+	// Apply this before the shared spatial search, for both D-pad and stick navigation.
+	if (ToTab >= CivilianCatalogTabCount && Direction.Y <= 0) return false;
+	if (FromTab >= 0 && FromTab < CivilianCatalogTabCount && Direction.X != 0)
+		return ToTab >= 0 && ToTab < CivilianCatalogTabCount;
+	return true;
 }
 
 void SSimCopterHangarMenu::OnControllerSelectionChanged(int32 Index)

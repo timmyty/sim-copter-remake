@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-15",
+  "status": "Local review only; not published",
+  "builds": {
+    "Editor": "Succeeded",
+    "Shipping": "Succeeded"
+  },
+  "cook": "Succeeded",
+  "automation": {
+    "regression": {
+      "succeeded": 72,
+      "succeededWithWarnings": 3,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 47.181785583496094
+    },
+    "final-render": {
+      "succeeded": 4,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 10.98249340057373
+    },
+    "landmark-preview": {
+      "succeeded": 2,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 7.5927019119262695
+    },
+    "select-final": {
+      "succeeded": 1,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 0.29811111092567444
+    }
+  },
+  "distinct_tests": 75,
+  "failed": 0,
+  "warning_cases": {
+    "SimCopter.City.BuildingDemolition": [
+      "PIE"
+    ],
+    "SimCopter.Hangar.DismountMenuInput": [
+      "LogTemp"
+    ]
+  },
+  "screenshots": {
+    "original_count": 20,
+    "before_bytes": 48045343,
+    "after_bytes": 4520116,
+    "saved_percent": 90.59,
+    "dimensions": "unchanged"
+  },
+  "packaged_materials": [
+    "M_CityHall",
+    "M_WaterTower"
+  ],
+  "runtime_data_directories": [
+    "bmp",
+    "cities",
+    "geo",
+    "sound",
+    "tweak",
+    "x"
+  ],
+  "shipping_binary_sha256": "b71ac052e053202d7284611b735c861bc2df1db01e655fc4a4e4b46038c5341e",
+  "source": [
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCity2000CityActor.cpp",
+      "sha256": "ed0a066e7a189040931cf971bd267d3e4327f1a6e75f3845eb36e63e6d13fa62"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCity2000CityActor.h",
+      "sha256": "30d83ffde0b5d9d2966ba6d415556069d5b9ce4015c346a4404c35c745bf2ccc"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterWaterTowers.cpp",
+      "sha256": "8bf8a973bc813f698c3d30b0a6e8006d0dd8cbff3d90243795d9da298b03fac3"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterWaterTowers.h",
+      "sha256": "6f0f22d277569a4f21e0959c8957667948801cce3a810342150987503fcdcaac"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterHangarMenu.cpp",
+      "sha256": "8d25c2a2762f2d88a5d2d9837f1036a9505e5d75f217a92dc481e23c3f088dd5"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterHangarMenu.h",
+      "sha256": "d5e4af5fb3dcaa4ff642c8c4a3e4d872c7df946a3fbd99f5c4b9893a7f575d00"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterNavigableMenu.cpp",
+      "sha256": "ba91e1868cfa72ed8bcf9a87d79d6b0ac382247dde41c6d310cecd15e3bb1475"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/UI/SSimCopterNavigableMenu.h",
+      "sha256": "46631e9d4d5551408a358eb031030759699f6b4d8cf1d77b12b9f406974a6b7d"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterEquipmentPageTests.cpp",
+      "sha256": "fadfdb03aa1ec86564dd3a3f2f774bc7113f255908e7a1a4f967f1c996552998"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterWaterTowerTests.cpp",
+      "sha256": "4eadea64302b30bb18e08a8228984ced8602b78cae7f1b0d7271aae1107af48c"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterControllerContextsTests.cpp",
+      "sha256": "086110dc97902f3c61cac660b8cdc3107b32d344a9a627dedebafe357d042081"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Flight/SimCopterHelicopterPawn.cpp",
+      "sha256": "e0b570a41435e0ab1559cf7b3d645fedb148f3e3777cd922611f00e6d55cacde"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterCivicLandmarks.h",
+      "sha256": "03f5be48e63ce7f1083bde79e98cae17e9aa8f7d7222b18dd9831f6671dfdda4"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterCivicLandmarks.cpp",
+      "sha256": "ed9a08b95336e7c5c821ca7dab02d74cb612fe8995e663805cda02a48e8a3de0"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterLandmarkGeometry.h",
+      "sha256": "8dcaf04250b09eb368efd4dc896c43d152df9b8733abbfa975d6d238123c1622"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterCivicLandmarkTests.cpp",
+      "sha256": "9e9d3467ae44db5f01048f066744677018245c0d0464044e900aa9b104d977b1"
+    },
+    {
+      "path": "Tools/Unreal/BakeCivicPresentation.py",
+      "sha256": "82b956ed27a43d57b3be970576e451b07b891e7f3e3c0bdd8c1551a968b90462"
+    },
+    {
+      "path": "Tools/Unreal/BakeWaterTowerPresentation.py",
+      "sha256": "80aafdc01ae06a2ae76a4e4dcf94986a458e2312a77d5913f87116a31f358d6b"
+    },
+    {
+      "path": "Tools/CompressDocScreenshots.py",
+      "sha256": "73a44b6ec34310c6fac12790bf0d0156d5c3730b1435c6a83cd89dfbd84a765d"
+    }
+  ],
+  "material_assets": {
+    "M_CityHall": "c0e2292bbb66deff87ce0b42c24b28b6de7eba8749fd49113888cbb9a6fdf6c7",
+    "M_WaterTower": "33633cafa663669838cdb8e5bc427f622edbe8a17025da2426d66de932c24f5f"
+  },
+  "logs": {
+    "build-finish-tags.log": "e7c9e9c10a1b4f3683f91eb578090406b92bdce1c7ab2305fac6dffaea0be7f4",
+    "build-shipping.log": "b83e4eb25e357041e870d5785fb7cddc38eba9059b150a04bdea517bf4358953",
+    "build-test-cleanup.log": "20089212c5bb0711a69c58445fdb799168be1e2c9529c3e28e6633461a3e0869",
+    "cook.log": "67af0026781a98b20c9bc18d99834bd7063699891284bdf1bd5867d5a8c36784",
+    "bake-validated.log": "fff44cec2b80e5f61511e68203615875b817bff9c7573918325f2c72015e3499"
+  },
+  "limitations": [
+    "Offscreen rendering and automated input were verified; no interactive flight or physical-controller test.",
+    "The local Shipping package was cooked and its manifest/binary verified, but not launched interactively."
+  ]
+}

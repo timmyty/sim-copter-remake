@@ -1,10 +1,78 @@
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Engine/World.h"
+#include "Engine/Engine.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "GameFramework/InputSettings.h"
 #include "Components/InputComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Flight/SimCopterControllerInput.h"
+#include "Flight/SimCopterAirOperations.h"
 #include "Misc/AutomationTest.h"
+#include "Game/SimCopterPlayerController.h"
+#include "GameFramework/PlayerInput.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterSelectCameraInputTest, "SimCopter.Controller.SelectCyclesViews",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterSelectCameraInputTest::RunTest(const FString&)
+{
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(false)
+		.CreateNavigation(false).CreateAISystem(false);
+	auto* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+	auto* PC = World->SpawnActor<ASimCopterPlayerController>();
+	PC->PlayerCameraManager = World->SpawnActor<APlayerCameraManager>();
+	PC->PlayerCameraManager->InitializeFor(PC);
+	PC->PlayerInput = NewObject<UPlayerInput>(PC);
+	PC->SetupInputComponent();
+	auto* Pawn = World->SpawnActor<ASimCopterHelicopterPawn>();
+	PC->Possess(Pawn);
+	auto* Input = NewObject<UInputComponent>(Pawn);
+	Pawn->SetupPlayerInputComponent(Input);
+	// PlayerInput processes from the end: the controller runs before its possessed pawn.
+	TArray<UInputComponent*> Stack{Input, PC->InputComponent};
+	Pawn->SetCameraMode(ESimCopterCameraMode::Chase);
+	for (const auto Expected : {ESimCopterCameraMode::Orbit, ESimCopterCameraMode::Rescue,
+		ESimCopterCameraMode::Cockpit, ESimCopterCameraMode::Spotlight, ESimCopterCameraMode::Chase})
+	{
+		PC->PlayerInput->InputKey(FInputKeyParams(EKeys::Gamepad_Special_Left, IE_Pressed, 1.0, false));
+		PC->PlayerInput->ProcessInputStack(Stack, 1.f / 60, false);
+		TestEqual(TEXT("Select reaches the pawn through the actual input stack"), Pawn->GetCameraMode(), Expected);
+		PC->PlayerInput->InputKey(FInputKeyParams(EKeys::Gamepad_Special_Left, IE_Released, 0.0, false));
+		PC->PlayerInput->ProcessInputStack(Stack, 1.f / 60, false);
+	}
+	const auto Click = [&](FKey Key)
+	{
+		PC->PlayerInput->InputKey(FInputKeyParams(Key, IE_Pressed, 1.0, false));
+		PC->PlayerInput->ProcessInputStack(Stack, 1.f/60, false);
+		PC->PlayerInput->InputKey(FInputKeyParams(Key, IE_Released, 0.0, false));
+		PC->PlayerInput->ProcessInputStack(Stack, 1.f/60, false);
+	};
+	for (int32 Clicks : {1,2})
+	{
+		Pawn->SetCameraMode(ESimCopterCameraMode::Chase);
+		for (int32 I=0;I<Clicks;++I) Click(EKeys::Gamepad_RightThumbstick);
+		TestEqual(TEXT("Persistent menu opens through real input"),Pawn->GetControllerMode(),
+			Clicks==1?ESimCopterControllerMode::ToolWheel:ESimCopterControllerMode::DispatchWheel);
+		Click(EKeys::Gamepad_Special_Left);
+		TestEqual(TEXT("Plain Select changes view with a persistent radial open"),Pawn->GetCameraMode(),ESimCopterCameraMode::Orbit);
+		TestEqual(TEXT("View change cancels the radial without confirming its selection"),Pawn->GetControllerMode(),ESimCopterControllerMode::None);
+		// A held/repeated button must not skip cameras; only a fresh press advances.
+		PC->PlayerInput->InputKey(FInputKeyParams(EKeys::Gamepad_Special_Left,IE_Repeat,1.0,false));
+		PC->PlayerInput->ProcessInputStack(Stack,1.f/60,false);
+		TestEqual(TEXT("Select repeat cannot skip views"),Pawn->GetCameraMode(),ESimCopterCameraMode::Orbit);
+	}
+	Pawn->SetCameraMode(ESimCopterCameraMode::Chase);
+	Pawn->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RemoteTaser,true);
+	Pawn->ToggleRemoteTaser();
+	TestTrue(TEXT("Remote sight owns a separate camera"),Pawn->GetAirOperations()->IsRemoteTaserActive() && PC->GetViewTarget() && PC->GetViewTarget()!=Pawn);
+	Click(EKeys::Gamepad_Special_Left);
+	TestFalse(TEXT("Select exits the remote sight"),Pawn->GetAirOperations()->IsRemoteTaserActive());
+	TestEqual(TEXT("Select restores the aircraft view target"),PC->GetViewTarget(),static_cast<AActor*>(Pawn));
+	TestEqual(TEXT("Select advances the visible flight camera"),Pawn->GetCameraMode(),ESimCopterCameraMode::Orbit);
+	GEngine->DestroyWorldContext(World);
+	World->DestroyWorld(false);
+	return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterControllerContextsTest, "SimCopter.Controller.Contexts",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)

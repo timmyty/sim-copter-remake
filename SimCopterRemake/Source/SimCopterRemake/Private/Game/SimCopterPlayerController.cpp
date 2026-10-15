@@ -445,7 +445,9 @@ void ASimCopterPlayerController::SetupInputComponent()
 	BindReplayInput(*InputComponent, *this);
 	InputComponent->BindKey(EKeys::F1, IE_Pressed, this, &ASimCopterPlayerController::ToggleControllerHelp).bExecuteWhenPaused = true;
 	InputComponent->BindKey(FInputChord(EKeys::R, false, true, false, false), IE_Pressed, this, &ASimCopterPlayerController::SimRadioMenu).bExecuteWhenPaused = true;
-	InputComponent->BindKey(EKeys::Gamepad_Special_Left, IE_Pressed, this, &ASimCopterPlayerController::OnFootRadioShortcut);
+	// The controller runs before its pawn. On-foot radio must let Select/View reach the
+	// helicopter too, where a plain press cycles views and R3+Select opens the radio.
+	InputComponent->BindKey(EKeys::Gamepad_Special_Left, IE_Pressed, this, &ASimCopterPlayerController::OnFootRadioShortcut).bConsumeInput = false;
 	InputComponent->BindKey(FInputChord(EKeys::P, false, true, false, false), IE_Pressed, this, &ASimCopterPlayerController::SimPhotoMode).bExecuteWhenPaused = true;
 	InputComponent->BindKey(EKeys::F12, IE_Pressed, this, &ASimCopterPlayerController::CapturePhoto).bExecuteWhenPaused = true;
 }

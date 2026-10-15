@@ -1,4 +1,5 @@
 #include "City/SimCopterWaterTowers.h"
+#include "City/SimCopterLandmarkGeometry.h"
 
 #include "Engine/Canvas.h"
 #include "CanvasItem.h"
@@ -54,6 +55,34 @@ FMaxisMeshObject PrepareModel(const FMaxisMeshObject& Original)
 				Face.RawUVs.Add(FIntPoint(FMath::RoundToInt(U * 65536.0), FMath::RoundToInt(Height * 65536.0)));
 		}
 	}
+	// A shallow pitched steel lid reads as a sealed tank from the air. Its original
+	// flat cap remains underneath; the tank footprint and support locations stay intact.
+	SimCopterLandmarkGeometry::FBuilder Builder{Result};
+	const double RoofY=double(Top)/65536.;
+	const int32 FirstRoofFace=Result.Faces.Num();
+	Builder.Ring({0,RoofY,0},47.52,0,7,1,10);
+	Builder.Ring({0,RoofY+6.5,0},2,2,3,1,10,true);
+	for (int32 I=FirstRoofFace; I<Result.Faces.Num(); ++I)
+	{
+		auto& Face=Result.Faces[I]; Face.RawUVs.Reset();
+		for (uint16 Index:Face.VertexIndices)
+		{
+			const auto& V=Result.Vertices[Index];
+			Face.RawUVs.Add(FIntPoint(FMath::RoundToInt(double(V.X)/96.+32768.),FMath::RoundToInt(double(V.Z)/96.+32768.)));
+		}
+	}
+	// Cross ties and an access ladder give the original utilitarian frame readable scale.
+	const FVector Corners[]={{22.176,0,-28.512},{22.176,0,31.68},{-19.008,0,31.68},{-19.008,0,-28.512}};
+	for (int32 I=0; I<4; ++I)
+	{
+		const FVector P=Corners[I], Q=Corners[(I+1)%4];
+		Builder.Beam(P+FVector(0,17,0),Q+FVector(0,77,0),.65,2);
+		Builder.Beam(Q+FVector(0,17,0),P+FVector(0,77,0),.65,2);
+		Builder.Beam(P+FVector(0,47,0),Q+FVector(0,47,0),.8,2);
+	}
+	for (double X:{-2.5,2.5}) Builder.Beam({X,2,49},{X,RoofY,49},.45,2);
+	for (double Y=5; Y<RoofY; Y+=5) Builder.Beam({-2.5,Y,49},{2.5,Y,49},.35,2);
+	Builder.Finish();
 	return Result;
 }
 
