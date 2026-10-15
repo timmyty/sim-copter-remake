@@ -41,10 +41,14 @@ void RefreshInteriorFill(UProceduralMeshComponent* Interior, UProceduralMeshComp
 	// lighting used to bleach every object as the outdoor camera adapted.
 	if (auto* Material=Cast<UMaterialInstanceDynamic>(Interior->GetMaterial(0)))
 		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,true,.85f,2.0f);
+	// The shell and its frosted glazing are seen from the apron, so they follow the sun model
+	// only. As light sources they also took the measured-scene floor, and that loop - a brighter
+	// hangar raising the measured luminance raising its own emissive - made the pale glazing bands
+	// and columns on the outside shimmer from frame to frame.
 	if (auto* Material=Cast<UMaterialInstanceDynamic>(Shell->GetMaterial(0)))
-		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,true,.65f,1.0f);
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,false,.65f,1.0f);
 	if (auto* Material=Cast<UMaterialInstanceDynamic>(Glazing->GetMaterial(0)))
-		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,true,1.25f,3.0f);
+		USimCopterEffectExposureSubsystem::ApplyEmissiveNits(Material,World,false,1.25f,3.0f);
 	// Window bounce adds actual directional shading, instead of flattening the room with
 	// an exposure-independent lamp or an entirely emissive material.
 	USimCopterEffectExposureSubsystem::ApplyLightIntensity(Light,World,12.0f,250.0f);

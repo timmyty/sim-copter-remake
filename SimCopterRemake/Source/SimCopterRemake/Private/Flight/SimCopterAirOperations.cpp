@@ -42,7 +42,10 @@ struct FRecoveryMesh
 			const int32 Base=V.Num();
 			const FVector Normal=FVector::CrossProduct(P[Face[1]]-P[Face[0]],P[Face[2]]-P[Face[0]]).GetSafeNormal();
 			for (int32 J=0; J<4; ++J) { V.Add(P[Face[J]]); N.Add(Normal); UV.Add(FVector2D(J==1||J==2,J>=2)); C.Add(Color); }
-			I.Append({Base,Base+1,Base+2,Base,Base+2,Base+3});
+			// UE draws the clockwise side, the opposite of the (P1-P0)x(P2-P0) normal above (see
+			// SimCopterHangarGeometry::FProp::Quad). The old order showed every box inside out: the
+			// far inner faces, shaded as if facing away, which is why the cage read as black.
+			I.Append({Base,Base+2,Base+1,Base,Base+3,Base+2});
 		}
 	}
 	void Bar(const FVector& A, const FVector& B, float Radius, const FLinearColor& Color)
@@ -64,7 +67,10 @@ struct FRecoveryMesh
 			const int32 Base=V.Num();
 			const FVector Normal=FVector::CrossProduct(P[Face[1]]-P[Face[0]],P[Face[2]]-P[Face[0]]).GetSafeNormal();
 			for (int32 J=0; J<4; ++J) { V.Add(P[Face[J]]); N.Add(Normal); UV.Add(FVector2D(.5,.5)); C.Add(Color); }
-			I.Append({Base,Base+1,Base+2,Base,Base+2,Base+3});
+			// UE draws the clockwise side, the opposite of the (P1-P0)x(P2-P0) normal above (see
+			// SimCopterHangarGeometry::FProp::Quad). The old order showed every box inside out: the
+			// far inner faces, shaded as if facing away, which is why the cage read as black.
+			I.Append({Base,Base+2,Base+1,Base,Base+3,Base+2});
 		}
 	}
 	void Apply(UProceduralMeshComponent* Mesh, bool bCollision=false)
@@ -318,7 +324,7 @@ void USimCopterAirOperationsComponent::UpdateCageMount()
 		CageMountMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CageMountMesh->SetMaterial(0, Material);
 		FRecoveryMesh Shape;
-		const FLinearColor Steel(0.3f,0.35f,0.4f), Yellow(0.95f,0.65f,0.06f);
+		const FLinearColor Steel(0.5f,0.54f,0.58f), Yellow(0.95f,0.65f,0.06f);
 		for (float End : {-75.0f, 75.0f}) Shape.Box(FVector(End,0,0), FVector(5,75,5), Steel);
 		for (float Side : {-75.0f, 75.0f})
 		{
@@ -566,9 +572,14 @@ void USimCopterAirOperationsComponent::DrawCargo()
 {
 	if (!CargoMesh || !Helicopter()) return;
 	CargoMesh->SetVisibility(bDeployed || (bCage && CageFormation > 0));
+	// The Rescue view's eye hangs 4.4 m under the belly - inside the deployed cage - so its bars
+	// filled that first-person view. Hide them from the pilot's own view there only; the chase,
+	// orbit and cockpit views and any other viewer still see the cage.
+	CargoMesh->SetOwnerNoSee(bCage && Helicopter()->GetCameraMode() == ESimCopterCameraMode::Rescue);
 	if (!bDeployed && (!bCage || CageFormation <= 0)) return;
 	FRecoveryMesh Shape;
-	const FLinearColor Steel(0.3f,0.35f,0.4f), Yellow(0.95f,0.65f,0.06f);
+	// A lighter galvanized steel than the former 0.3 grey, which read as near-black.
+	const FLinearColor Steel(0.5f,0.54f,0.58f), Yellow(0.95f,0.65f,0.06f);
 	if (bCage)
 	{
 		const FTransform Mount = Helicopter()->GetCaptureCageMountTransform();

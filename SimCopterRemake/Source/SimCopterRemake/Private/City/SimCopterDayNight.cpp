@@ -450,7 +450,9 @@ void USimCopterDayNightSubsystem::Refresh()
 
 	// The edge, not the state: the seed has to be drawn once as the sun goes down, not re-drawn
 	// every frame it stays down (which would make the whole skyline flicker).
-	const bool bIsNightNow = NightAlpha >= WindowRerollNightAlpha;
+	// With hysteresis: the sun-elevation reading can dither around the threshold for a while at
+	// dusk, and every rising edge re-rolled the whole skyline's lit windows.
+	const bool bIsNightNow = bWasNight ? NightAlpha >= WindowRerollNightAlpha * 0.25f : NightAlpha >= WindowRerollNightAlpha;
 	if (bIsNightNow && !bWasNight)
 	{
 		RerollNightWindows();

@@ -3210,6 +3210,15 @@ void FSimCopterMissionSystem::PromoteRecordType(int32 EventId, int32 TypeBits)
 
 void FSimCopterMissionSystem::CompleteMission(FSimCopterMissionRecord& Rec)
 {
+	// DELIBERATE DIVERGENCE (user request): FUN_004a7a10 restarts the 380 s EasyInterval only when
+	// a job is created, so finishing one could leave the city quiet for minutes. A completion now
+	// brings the next scheduled job due within CompletionFollowUpDelay. The concurrency cap in
+	// UpdateSchedulerCadence still applies, because the countdown only runs below it.
+	if ((Rec.TypeMask & TYPE_BaseLocation) == 0)
+	{
+		SpawnCountdown = FMath::Min(SpawnCountdown, Tuning.CompletionFollowUpDelay);
+	}
+
 	int32 EarnedPoints = 0;
 	int32 EarnedCash = 0;
 	if ((Rec.TypeMask & (TYPE_VehicleTow | TYPE_BoatTow)) != 0 && Rec.CarsCleared >= Rec.CarsCrashed)

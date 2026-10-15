@@ -200,7 +200,10 @@ void FSimCopterFlightModel::Step(float DeltaSeconds, const FSimCopterFlightInput
 	// Master tick preamble (FUN_00484d20): load factor from the weight budget
 	// of seats*120 lb + max cargo + 30 lb versus what is actually aboard.
 	const int32 CapacityPounds = Tuning.PassengerSeats * 120 + Tuning.MaxLoadPounds + 30;
-	const int32 CarriedPounds = Passengers * 120 + LoadPounds;
+	// DELIBERATE DIVERGENCE (user request): cargo - bucket water, or a car/boat in the capture
+	// cage - counts at a quarter of its weight. At full weight a full bucket cut the load factor to
+	// about 0.15, which made a loaded helicopter crawl; passengers keep FUN_00484d20's 120 lb.
+	const int32 CarriedPounds = Passengers * 120 + LoadPounds / CargoLoadPenaltyDivisor;
 	LoadFactor = Div((CapacityPounds - CarriedPounds) * One, CapacityPounds * One);
 
 	if (State == ESimCopterFlightState::Dead)

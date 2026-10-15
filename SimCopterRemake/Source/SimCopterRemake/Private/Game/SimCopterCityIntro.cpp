@@ -23,6 +23,29 @@
 #include "Widgets/SLeafWidget.h"
 #include "SceneView.h"
 #include "SceneViewExtension.h"
+#include "Components/VolumetricCloudComponent.h"
+#include "HAL/IConsoleManager.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "UObject/UObjectIterator.h"
+
+namespace
+{
+// CelestialVault's m_SimpleVolumetricCloud_TOD exposes "Cloud_GlobalCoverage", which its day
+// sequence animates through a material track. Tours hold 1 PM, often a clear sky.
+const FName TourCloudCoverageParameter(TEXT("Cloud_GlobalCoverage"));
+float GTourCloudCoverage = 0.4f;
+FAutoConsoleVariableRef CVarTourCloudCoverage(
+	TEXT("SimCopter.Tour.CloudCoverage"),
+	GTourCloudCoverage,
+	TEXT("Minimum Cloud_GlobalCoverage during city tours (light cloud cover). <= 0 disables the override."),
+	ECVF_Default);
+float GTourDesertFraction = 0.5f;
+FAutoConsoleVariableRef CVarTourDesertFraction(
+	TEXT("SimCopter.Tour.DesertFraction"),
+	GTourDesertFraction,
+	TEXT("Maps whose land is at least this fraction sandy/bare ground keep a clear sky on their tour."),
+	ECVF_Default);
+}
 
 // Keep shader-driven water/clouds moving without consuming mission time during
 // the showcase. This changes rendering time only, in this world only.
@@ -126,6 +149,7 @@ bool USimCopterCityIntro::Start()
 	PC->FlushPressedKeys();
 	PC->PushPause();
 	BeginTourLighting();
+	BeginTourClouds();
 	PC->SetIgnoreMoveInput(true); PC->SetIgnoreLookInput(true);
 	PresentationClock=FSceneViewExtensions::NewExtension<FSimCopterTourViewExtension>(World);
 	for (TActorIterator<ASimCopterAmbientVehiclesActor> It(World); It; ++It)
@@ -179,6 +203,81 @@ void USimCopterCityIntro::RestoreLighting()
 			if (PreviousLiveHour>=0) Day->RestoreSavedTimeOfDay(PreviousLiveHour);
 		}
 	}
+}
+
+void USimCopterCityIntro::BeginTourClouds()
+{
+	if (bCloudOverride || GTourCloudCoverage <= 0.0f) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
+	for (TActorIterator<ASimCity2000CityActor> It(World); It; ++It)
+	{
+		if (It->GetDesertTerrainFraction() >= GTourDesertFraction) return; // desert: keep it clear
+		break;
+	}
+	UVolumetricCloudComponent* Cloud = nullptr;
+	for (TObjectIterator<UVolumetricCloudComponent> It; It; ++It)
+	{
+		if (It->GetWorld() == World && !It->IsBeingDestroyed()) { Cloud = *It; break; }
+	}
+	if (!Cloud || !Cloud->GetMaterial()) return;
+	bCloudOverride = true;
+	TourCloud = Cloud;
+	PreviousCloudMaterial = Cloud->GetMaterial();
+	PreviousCloudCoverage = -1;
+	PreviousCloudMaterial->GetScalarParameterValue(FHashedMaterialParameterInfo(TourCloudCoverageParameter), PreviousCloudCoverage);
+	// The day sequence animates a dynamic instance; reuse it, or make one for the tour only.
+	TourCloudMaterial = Cast<UMaterialInstanceDynamic>(PreviousCloudMaterial);
+	if (!TourCloudMaterial)
+	{
+		TourCloudMaterial = UMaterialInstanceDynamic::Create(PreviousCloudMaterial, Cloud);
+		Cloud->SetMaterial(TourCloudMaterial);
+	}
+	// Low Power Graphics switches the cloud layer off entirely; a flyover can afford it.
+	if (IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VolumetricCloud")))
+	{
+		PreviousVolumetricCloudCVar = CVar->GetInt();
+		if (PreviousVolumetricCloudCVar == 0) CVar->Set(1, ECVF_SetByGameOverride); // Low Power's own priority
+	}
+	ApplyTourClouds();
+}
+
+void USimCopterCityIntro::ApplyTourClouds()
+{
+	if (!bCloudOverride || !TourCloudMaterial) return;
+	const float Coverage = FMath::Max(PreviousCloudCoverage, GTourCloudCoverage);
+	float Current = -1;
+	if (!TourCloudMaterial->GetScalarParameterValue(FHashedMaterialParameterInfo(TourCloudCoverageParameter), Current) ||
+		!FMath::IsNearlyEqual(Current, Coverage))
+	{
+		TourCloudMaterial->SetScalarParameterValue(TourCloudCoverageParameter, Coverage);
+	}
+}
+
+void USimCopterCityIntro::RestoreTourClouds()
+{
+	if (!bCloudOverride) return;
+	bCloudOverride = false;
+	if (UVolumetricCloudComponent* Cloud = TourCloud.Get())
+	{
+		if (TourCloudMaterial && TourCloudMaterial != PreviousCloudMaterial)
+		{
+			Cloud->SetMaterial(PreviousCloudMaterial);
+		}
+		else if (TourCloudMaterial && PreviousCloudCoverage >= 0)
+		{
+			TourCloudMaterial->SetScalarParameterValue(TourCloudCoverageParameter, PreviousCloudCoverage);
+		}
+	}
+	if (PreviousVolumetricCloudCVar == 0)
+	{
+		if (IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VolumetricCloud")))
+			CVar->Set(0, ECVF_SetByGameOverride);
+	}
+	PreviousVolumetricCloudCVar = -1;
+	TourCloud.Reset();
+	TourCloudMaterial = nullptr;
+	PreviousCloudMaterial = nullptr;
 }
 
 void USimCopterCityIntro::StartMusic()
@@ -250,6 +349,7 @@ void USimCopterCityIntro::TickComponent(float DeltaTime,ELevelTick TickType,FAct
 	Elapsed+=Step;
 	for (TActorIterator<ASimCity2000CityActor> It(GetWorld()); It; ++It) It->AdvanceWindTurbines(Step);
 	if (PresentationClock) { PresentationClock->Elapsed=Elapsed; PresentationClock->Delta=Step; }
+	ApplyTourClouds();
 	LastTickSeconds=Now;
 	if (bSkipRequested || Elapsed>=FSimCopterCityIntroRoute::Duration || !Controller.IsValid() || !IsValid(Camera)) Finish();
 	else UpdateCamera();
@@ -258,6 +358,7 @@ void USimCopterCityIntro::TickComponent(float DeltaTime,ELevelTick TickType,FAct
 void USimCopterCityIntro::Finish()
 {
 	StopMusic();
+	RestoreTourClouds();
 	RestoreLighting();
 	if (!bPlaying) return;
 	bPlaying=false;

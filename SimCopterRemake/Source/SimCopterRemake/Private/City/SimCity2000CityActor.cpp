@@ -3887,6 +3887,18 @@ void ASimCity2000CityActor::RebuildCity()
 	}
 	USimCopterLoadingSubsystem::SetStage(this, 5);
 	const TArray<uint8> TerrainTypeGrid = BuildTerrainTextureTypeGrid(City, ConditionedTerrainCorners);
+	{
+		// Types below 10 are water and shoreline; everything else is land.
+		int32 LandTiles = 0;
+		int32 DesertTiles = 0;
+		for (const uint8 Type : TerrainTypeGrid)
+		{
+			if (Type < 10) continue;
+			++LandTiles;
+			if (Type == 0x10 || Type == 10 || Type == 11) ++DesertTiles;
+		}
+		DesertTerrainFraction = LandTiles > 0 ? float(DesertTiles) / float(LandTiles) : 0.0f;
+	}
 
 	// SCHOOK: SampleWaterGameplaySurface 0x004ae7a0
 	// The bucket fill and water-particle landing tests read these conditioned grids too. Keep a
@@ -6247,7 +6259,7 @@ FSimCopterBuildingPart* ASimCity2000CityActor::FindBuildingPartInComponent(int32
 	return nullptr;
 }
 
-FSimCopterBuildingPart ASimCity2000CityActor::AddBuildingInstance(int32 ComponentIndex, int32 BuildingId, const FVector& Origin)
+FSimCopterBuildingPart ASimCity2000CityActor::AddBuildingInstance(int32 ComponentIndex, int32 BuildingId, const FVector& Origin, bool bWindowHashNudge)
 {
 	FSimCopterBuildingPart Part;
 	if (!BuildingInstanceComponents.IsValidIndex(ComponentIndex))
@@ -6262,7 +6274,14 @@ FSimCopterBuildingPart ASimCity2000CityActor::AddBuildingInstance(int32 Componen
 	}
 
 	Part.ComponentIndex = ComponentIndex;
-	Part.InstanceIndex = Component->AddInstance(FTransform(Origin), /*bWorldSpace*/ false);
+	// The atlas material rolls each building's night windows from floor(ObjectPositionWS.xy * 0.01),
+	// and every instance origin sits on the tile grid - an exact multiple of 100 cm - so that floor
+	// landed precisely on an integer. Camera-relative (LWC) reconstruction then rounded it either
+	// way from frame to frame, re-rolling the building and switching its windows on and off as the
+	// helicopter moved. A sub-centimetre nudge keeps every origin clear of the boundary.
+	const double WindowHashOriginNudgeCm = bWindowHashNudge ? 0.37 : 0.0;
+	Part.InstanceIndex = Component->AddInstance(
+		FTransform(Origin + FVector(WindowHashOriginNudgeCm, WindowHashOriginNudgeCm, 0.0)), /*bWorldSpace*/ false);
 	ComponentInstanceBuildings[ComponentIndex].Add(BuildingId);
 	checkf(
 		ComponentInstanceBuildings[ComponentIndex].Num() == Component->GetInstanceCount(),

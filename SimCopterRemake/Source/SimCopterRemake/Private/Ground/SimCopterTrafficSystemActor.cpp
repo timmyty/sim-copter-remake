@@ -2638,6 +2638,8 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindPoliceRecoveryTarget(co
 {
 	ASimCopterGroundAgent* Best = nullptr;
 	float BestDistance = FMath::Square(ActiveTileSize * 30.f); // BHAV 1053's search radius.
+	ASimCopterGroundAgent* Stakeout = nullptr;
+	float StakeoutDistance = BestDistance;
 	const auto Consider = [&](ASimCopterGroundAgent* Agent)
 	{
 		if (!Agent || Agent->IsActorBeingDestroyed() || Agent->IsHidden() || Agent->HasMissionResolutionReported() ||
@@ -2650,18 +2652,29 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindPoliceRecoveryTarget(co
 			(Agent->IsInPoliceCustody() || bUncaught);
 		const bool bCar = Agent->IsCriminalCar() && Agent->IsVehicleImmobilized() && !Agent->IsVehicleTowed() &&
 			!Agent->IsVehicleTipped() && Agent->GetCriminalState() != uint8(SimCopterCriminalCar::EState::BurglarOutside);
-		if (!bPerson && !bCar) return;
-		if (bCar)
+		// Remake addition: while the burglar is away from a stopped getaway car (for example
+		// inside the building it is robbing, where BHAV 1053's search cannot see them), the
+		// officer stakes out the car instead of reporting that there is no suspect. A visible
+		// burglar is always preferred; reaching the car arrests them on the same mission path.
+		const bool bStakeout = Agent->IsCriminalCar() && !Agent->IsVehicleTowed() && !Agent->IsVehicleTipped() &&
+			Agent->GetCriminalState() == uint8(SimCopterCriminalCar::EState::BurglarOutside);
+		if (!bPerson && !bCar && !bStakeout) return;
+		if (bCar || bStakeout)
 		{
 			const auto* Missions = ResolveMissionSystem();
 			if (!Missions || !Missions->IsMissionEventActive(Agent->GetCriminalEventId())) return;
 		}
 		const float Distance = FVector::DistSquared(Officer.GetActorLocation(), Agent->GetActorLocation());
+		if (bStakeout)
+		{
+			if (Distance < StakeoutDistance) { StakeoutDistance = Distance; Stakeout = Agent; }
+			return;
+		}
 		if (Distance < BestDistance) { BestDistance = Distance; Best = Agent; }
 	};
 	for (auto Agent : PedestrianAgents) Consider(Agent.Get());
 	for (auto Car : CriminalCars) Consider(Car.Get());
-	return Best;
+	return Best ? Best : Stakeout;
 }
 
 ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(ASimCopterGroundAgent& Medic) const
@@ -5722,6 +5735,7 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 			Vehicle.State = ESimCopterDispatchVehicleState::OnScene;
 			Vehicle.StayTimerSeconds = SimCopterDispatch::OnSceneStaySeconds;
 			Vehicle.ActionTimerSeconds = 0.0f;
+			Vehicle.IdleOnSceneSeconds = 0.0f;
 			if (ASimCopterGroundAgent* Agent = Vehicle.Agent.Get())
 			{
 				Agent->ClearMoveTarget();
@@ -5842,6 +5856,20 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 				(Paramedic->IsActorBeingDestroyed() || Paramedic->IsHidden()))
 			{
 				Vehicle.DeployedParamedic.Reset();
+				RecallDispatchVehicle(Vehicle);
+				break;
+			}
+		}
+
+		// A fire truck's only job is hosing something alight. RunDispatchOnSceneAction re-scans
+		// every JetRetargetSeconds; once nothing has been in range for a few seconds (the fire is
+		// out, or it was put out before the truck arrived) it heads home.
+		if (Service == SimCopterDispatch::EService::FireTruck)
+		{
+			Vehicle.IdleOnSceneSeconds = Vehicle.bHasJetTarget ? 0.0f : Vehicle.IdleOnSceneSeconds + DeltaSeconds;
+			if (Vehicle.IdleOnSceneSeconds >= SimCopterDispatch::FireTruckIdleRecallSeconds)
+			{
+				Vehicle.IdleOnSceneSeconds = 0.0f;
 				RecallDispatchVehicle(Vehicle);
 				break;
 			}
@@ -7039,6 +7067,7 @@ void ASimCopterTrafficSystemActor::PruneAgentArray(TArray<TWeakObjectPtr<ASimCop
 void ASimCopterTrafficSystemActor::UpdateTrafficInteractions(float DeltaSeconds)
 {
 	SyncVehicleTrafficStates(DeltaSeconds);
+	RecycleStuckAmbientVehicles();
 
 	for (TWeakObjectPtr<ASimCopterGroundAgent>& AgentPtr : VehicleAgents)
 	{
@@ -8685,6 +8714,73 @@ bool ASimCopterTrafficSystemActor::IsVehicleSpawnLocationClear(const FVector& Sp
 	return true;
 }
 
+bool ASimCopterTrafficSystemActor::IsAmbientVehicleSpawnUncongested(const FVector& SpawnLocation) const
+{
+	// A parked aircraft holds every car that reaches it (ApplyAircraftRoadBlocking), so a car
+	// materialized beside one only lengthens the queue. Keep a tile and a half of road clear.
+	const float AircraftMarginCm = ActiveTileSize * 1.5f;
+	for (TActorIterator<ASimCopterHelicopterPawn> It(GetWorld()); It; ++It)
+	{
+		if (It->IsActorBeingDestroyed() || It->IsHidden()) continue;
+		const FBox Bounds = It->GetParkingWorldBounds();
+		if (Bounds.IsValid && Bounds.ExpandBy(FVector(AircraftMarginCm, AircraftMarginCm, 1000.0f)).IsInside(SpawnLocation))
+		{
+			return false;
+		}
+	}
+	// Nor at the tail of a stationary line: those cars cannot make room for another.
+	const float QueueRadiusSq = FMath::Square(ActiveTileSize * 1.25f);
+	for (const TWeakObjectPtr<ASimCopterGroundAgent>& AgentPtr : VehicleAgents)
+	{
+		const ASimCopterGroundAgent* Vehicle = AgentPtr.Get();
+		if (Vehicle == nullptr || FVector::DistSquared2D(Vehicle->GetActorLocation(), SpawnLocation) >= QueueRadiusSq) continue;
+		if (Vehicle->IsAircraftTrafficBlocked()) return false;
+		const FSimCopterVehicleTrafficState* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(Vehicle));
+		if (State != nullptr && State->BlockedSeconds > 2.0f) return false;
+	}
+	return true;
+}
+
+bool ASimCopterTrafficSystemActor::TryClaimAmbientChatVoice()
+{
+	const UWorld* World = GetWorld();
+	if (World == nullptr) return false;
+	const double Now = World->GetTimeSeconds();
+	if (Now < AmbientChatStartupQuietSeconds || Now - LastAmbientChatVoiceSeconds < AmbientChatMinIntervalSeconds)
+	{
+		return false;
+	}
+	LastAmbientChatVoiceSeconds = Now;
+	return true;
+}
+
+void ASimCopterTrafficSystemActor::RecycleStuckAmbientVehicles()
+{
+	for (int32 Index = VehicleAgents.Num() - 1; Index >= 0; --Index)
+	{
+		ASimCopterGroundAgent* Vehicle = VehicleAgents[Index].Get();
+		if (Vehicle == nullptr || Vehicle->IsActorBeingDestroyed() || Vehicle->IsHidden()) continue;
+		// Only ordinary street population. Mission, criminal, emergency, jammed, burning,
+		// towed and deliberately stopped cars all belong to something that will release them.
+		if (Vehicle->MissionEventId != INDEX_NONE || Vehicle->IsCriminalCar() || IsDispatchVehicle(*Vehicle) ||
+			Vehicle->IsVehicleImmobilized() || Vehicle->IsVehicleTowed() || Vehicle->IsVehicleTipped() ||
+			Vehicle->HasVehicleExploded() || Vehicle->IsVehicleTaserDisabled() || Vehicle->IsStopOrdered() ||
+			Vehicle->HasMegaphoneStop() || IsVehicleHeldInTrafficJam(*Vehicle)) continue;
+		const FSimCopterVehicleTrafficState* State = VehicleTrafficStates.Find(TObjectKey<ASimCopterGroundAgent>(Vehicle));
+		if (State == nullptr || State->bMissionOnFire || State->bMissionJammed || State->bInTrafficLightLine) continue;
+		const float Stuck = State->BlockedSeconds;
+		// Out of view after a short wait; in view only after a long one, so ordinary stoplight
+		// and junction waits never make a car vanish in front of the player.
+		if (Stuck < AmbientStuckRecycleSeconds ||
+			(Stuck < AmbientStuckRecycleVisibleSeconds && Vehicle->WasRecentlyRendered(0.5f))) continue;
+		UE_LOG(LogSimCopterTrafficSystem, Verbose, TEXT("Recycling ambient car '%s' after %.0fs without progress."),
+			*Vehicle->GetName(), Stuck);
+		VehicleTrafficStates.Remove(TObjectKey<ASimCopterGroundAgent>(Vehicle));
+		VehicleAgents.RemoveAtSwap(Index);
+		Vehicle->Destroy();
+	}
+}
+
 bool ASimCopterTrafficSystemActor::TryFindPedestrianEscapeTarget(
 	const FVector& PedestrianLocation,
 	const FVector& EscapeDirection,
@@ -10004,7 +10100,8 @@ bool ASimCopterTrafficSystemActor::TrySpawnAgent(bool bVehicle, const FVector& F
 		{
 			continue;
 		}
-		if (!bVehicle || IsVehicleSpawnLocationClear(CandidateSpawnBaseLocation))
+		if (!bVehicle || (IsVehicleSpawnLocationClear(CandidateSpawnBaseLocation) &&
+			IsAmbientVehicleSpawnUncongested(CandidateSpawnBaseLocation)))
 		{
 			NodeIndex = CandidateNodeIndex;
 			InitialNextIndex = CandidateNextIndex;

@@ -110,6 +110,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SimCopter|City")
 	float GetTileSize() const;
 	const FString& GetCityName() const { return LastLoadedCityName; }
+	// Share of the map's land tiles drawn with the sandy low-ground (0x10) or bare rubble (10/11)
+	// terrain types. City tours use it to keep desert-looking maps under a clear sky.
+	float GetDesertTerrainFraction() const { return DesertTerrainFraction; }
 
 	// Debug tuning for the buildings' blink markers. The scale multiplies whatever this city's
 	// beacons were tuned to, so it stays in balance with the helicopter's own markers.
@@ -235,6 +238,7 @@ public:
 	bool IsInsideStandingBuildingBounds(const FVector& WorldLocation, float ClearanceCm = 0.0f, bool bHorizontalOnly = false) const;
 
 private:
+	float DesertTerrainFraction = 0.0f;
 	friend class FSimCopterCityBuildingDemolitionTest;
 	friend class FSimCopterConstructionLotTest;
 	friend class FSimCopterPatientPlacementTest;
@@ -654,7 +658,7 @@ private:
 	// RemoveAtSwap, so exactly one other instance moves - the last one into the freed slot.
 	void RemoveBuildingInstance(FSimCopterBuildingPart& Part);
 	// Adds an instance of a model component and records which building owns it.
-	FSimCopterBuildingPart AddBuildingInstance(int32 ComponentIndex, int32 BuildingId, const FVector& Origin);
+	FSimCopterBuildingPart AddBuildingInstance(int32 ComponentIndex, int32 BuildingId, const FVector& Origin, bool bWindowHashNudge = true);
 
 	FString ResolveCityPath() const;
 	FString ResolveOriginalGameRoot() const;

@@ -874,7 +874,14 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 void ASimCopterGroundAgent::ApplyBehaviorFacingRotation()
 {
 	const int32 Facing = int32(BehaviorContext.Attributes[EBhavAttr::Facing]) & 7;
-	if (Facing == LastAppliedBehaviorFacing)
+	// The cached octant alone is not enough. Guidance walks, car dodges, curiosity visits,
+	// escorts and baseball all turn the actor directly, and when they hand control back the
+	// stored facing is often unchanged - so the figure kept that other yaw while MoveStep
+	// walked it along the octant, which is what showed as people running backwards. While the
+	// VM owns movement, re-snap whenever the actor's yaw has drifted from the stored octant.
+	const bool bVmOwnsYaw = AgentKind == ESimCopterGroundAgentKind::Pedestrian && !IsAvoidanceMoveActive() &&
+		!IsGuidanceMoveTargetActive() && !bBandFormationActive && !BehaviorCarrier.IsValid();
+	if (Facing == LastAppliedBehaviorFacing && !bVmOwnsYaw)
 	{
 		return;
 	}
@@ -883,8 +890,14 @@ void ASimCopterGroundAgent::ApplyBehaviorFacingRotation()
 		const FVector WorldDirection = TrafficSystem->GetPeopleFacingWorldDirection(Facing);
 		if (!WorldDirection.IsNearlyZero())
 		{
+			const float DesiredYaw = WorldDirection.Rotation().Yaw;
+			if (Facing == LastAppliedBehaviorFacing &&
+				FMath::Abs(FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw, DesiredYaw)) < 1.0f)
+			{
+				return;
+			}
 			// The original snaps to the 45-degree heading instantly - no turn interpolation.
-			SetActorRotation(FRotator(0.0f, WorldDirection.Rotation().Yaw, 0.0f));
+			SetActorRotation(FRotator(0.0f, DesiredYaw, 0.0f));
 			LastAppliedBehaviorFacing = Facing;
 		}
 	}
@@ -2480,6 +2493,13 @@ void ASimCopterGroundAgent::PlayCivilianConversation(FSimCopterPersonContext& Co
 	Context.PendingAnimMnemonic = Context.RandomBounded(2) == 0 ? TEXT("2Gab") : TEXT("HipH");
 	static constexpr int32 ChatVoiceEvents[9] = { 10, 1, 4, 11, 2, 18, 6, 7, 3 };
 	const int32 Roll = FMath::Clamp(int32(Context.RandomBounded(9)), 0, 8);
+	// The roll is always taken, so the VM's random stream is unchanged; only the clip is gated.
+	// A new city spawns its whole crowd at once and every meeting used to speak immediately.
+	auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+	if (Traffic != nullptr && !Traffic->TryClaimAmbientChatVoice())
+	{
+		return;
+	}
 	PlayPersonVoiceEvent(ChatVoiceEvents[Roll], /*bAllocateSlot=*/true, /*bNonPositional=*/false, /*bForce=*/false);
 }
 
@@ -2683,9 +2703,22 @@ ESimCopterBehaviorStepResult ASimCopterGroundAgent::StepTowardSelectedObject(FSi
 			Context.PendingAnimMnemonic = TEXT("NoMo");
 			if (MedicPathSearch.IsPending() || MedicPathTarget.Get() != Context.SelectedObject.Get())
 				return ESimCopterBehaviorStepResult::Moving;
-			if (auto* Patient = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get()); Patient && Patient->HospitalPatientClaim.Get() == this)
-				Patient->HospitalPatientClaim.Reset(); // Another medic may have a reachable approach.
-			return ESimCopterBehaviorStepResult::Blocked;
+			auto* Patient = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get());
+			// The bounded search found no checked route, but the patient is close by. Fall back to
+			// FUN_004ca940's original straight bearing rather than abandoning a casualty the
+			// player has just landed beside; MoveStep still refuses solid cells and bodies.
+			if (Patient && Patient->IsMedevacVictim() && FMath::Abs(Patient->GetActorLocation().Z - GetActorLocation().Z) <
+				GetCapsuleHalfHeightCm() * 2 && FVector::DistSquared2D(Patient->GetActorLocation(), GetActorLocation()) <
+				FMath::Square(MedicDirectApproachRadiusCm))
+			{
+				Waypoint = Context.SelectedLocation;
+			}
+			else
+			{
+				if (Patient && Patient->HospitalPatientClaim.Get() == this)
+					Patient->HospitalPatientClaim.Reset(); // Another medic may have a reachable approach.
+				return ESimCopterBehaviorStepResult::Blocked;
+			}
 		}
 		if (TryGetBehaviorFacingOctantToward(Waypoint, Facing)) Context.Attributes[EBhavAttr::Facing] = uint16(Facing);
 	}
@@ -4837,7 +4870,17 @@ bool ASimCopterGroundAgent::TryClaimHospitalPatient(ASimCopterGroundAgent* Medic
 		(Existing->BehaviorContext.GetStateIndex() == 5 ||
 		 (Existing->BehaviorContext.GetStateIndex() == 7 && !Existing->bHasHospitalRoofPost &&
 		  !Existing->BehaviorCarrier.IsValid() && !Existing->IsInPoliceCustody())) && Now < HospitalPatientClaimUntil)
-		return false;
+	{
+		// A reservation must not strand a patient: a responder still riding in or walking from
+		// a distant vehicle could hold one indefinitely while a medic the player dropped right
+		// beside them found "no victim". A much closer free-handed responder takes it over; the
+		// previous holder's next approach step sees the lost claim and searches again.
+		const FVector Here = GetActorLocation();
+		const bool bMuchCloser = !Medic->IsCarryingPerson() &&
+			FVector::Dist(Medic->GetActorLocation(), Here) + MedicClaimTakeoverMarginCm <
+			FVector::Dist(Existing->GetActorLocation(), Here);
+		if (!bMuchCloser || Existing->IsCarryingPerson()) return false;
+	}
 	HospitalPatientClaim = Medic;
 	HospitalPatientClaimUntil = Now + 20.0f;
 	return true;
@@ -7943,6 +7986,11 @@ bool ASimCopterGroundAgent::CanWalkMedicSegment(const FVector& From, const FVect
 		if (!Other || Other == Target || Other->IsActorBeingDestroyed() || Other->IsHidden() ||
 			Other->GetBehaviorCarrier() ||
 			FMath::Abs(Other->GetActorLocation().Z - From.Z) > GetCapsuleHalfHeightCm() * 2) continue;
+		// Gawkers (FindNearestGawkCasualty) ring a casualty within a couple of metres. Treating
+		// that crowd as walls left no route to the patient, so a medic delivered right beside
+		// them reported "no victim in area". The step itself still resolves body contact.
+		if (Target && FVector::DistSquared2D(Other->GetActorLocation(), Target->GetActorLocation()) <
+			FMath::Square(MedicCasualtyCrowdRadiusCm)) continue;
 		if (!SimCopterBandNavigation::KeepsDistance(From, To, Other->GetActorLocation(),
 			GetCollisionRadiusCm() + Other->GetCollisionRadiusCm() + 12.0f)) return false;
 	}
@@ -8243,6 +8291,12 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 
 	const FRotator DesiredRotation(0.0f, DesiredDirection.Rotation().Yaw, 0.0f);
 	FRotator NewRotation = FMath::RInterpConstantTo(CurrentRotation, DesiredRotation, DeltaSeconds, TurnRateDegPerSec);
+	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian)
+	{
+		// People snap to their heading like the original figures. Interpolating a dodge or a
+		// guided reversal at the vehicle turn rate showed them running backwards for most of it.
+		NewRotation.Yaw = DesiredRotation.Yaw;
+	}
 	
 	if (AgentKind == ESimCopterGroundAgentKind::Vehicle)
 	{

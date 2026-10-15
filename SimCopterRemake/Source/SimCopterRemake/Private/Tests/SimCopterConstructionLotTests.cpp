@@ -57,12 +57,14 @@ bool FSimCopterConstructionLotTest::RunTest(const FString&)
 			if (bSolid)
 			{
 				++PadTriangles;
-				TestTrue(TEXT("Every gray floor triangle stays clear of the textured base"),MinZ>=1.9);
+				// The back-facing copy of each two-sided face sits 0.25 cm behind it (see
+				// SimCopterRuntimeStaticMesh::Build), still well clear of the textured base.
+				TestTrue(TEXT("Every gray floor triangle stays clear of the textured base"),MinZ>=1.6);
 			}
 			else
 			{
 				++BaseTriangles;
-				TestTrue(TEXT("The textured lot base retains its authored elevation"),FMath::Abs(MinZ)<0.01 && FMath::Abs(MaxZ)<0.01);
+				TestTrue(TEXT("The textured lot base retains its authored elevation"),FMath::Abs(MinZ)<0.3 && FMath::Abs(MaxZ)<0.3);
 			}
 		}
 	}

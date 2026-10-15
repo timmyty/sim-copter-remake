@@ -135,6 +135,9 @@ constexpr int32 FireTargetScanRadius = 5;
 // FUN_004b9e40 uses 0x780000 (120.0s) for the post-action hold and 0x1e0000 (30.0s)
 // for the retry gap.
 constexpr float OnSceneStaySeconds = 180.0f;
+// Remake addition: a fire truck with no fire left within FireTargetScanRadius returns to its
+// station after this long, rather than waiting out OnSceneStaySeconds (user request).
+constexpr float FireTruckIdleRecallSeconds = 8.0f;
 constexpr float OnSceneHoldSeconds = 120.0f;
 constexpr float OnSceneRetrySeconds = 30.0f;
 
