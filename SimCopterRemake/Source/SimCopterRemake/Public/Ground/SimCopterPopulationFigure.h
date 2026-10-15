@@ -142,6 +142,8 @@ public:
 	//   section Frame*2     = body primitives (vertex-colored)
 	//   section Frame*2 + 1 = head ellipsoid (textured; empty if the figure has no head part)
 	// Only frame 0 is left visible. Returns false when the clip/figure mismatch.
+	// Population actors can append a bounded set of prepared clips at FirstSectionIndex;
+	// standalone previews keep the default replacement behavior.
 	static bool BuildClipSections(
 		UProceduralMeshComponent* MeshComponent,
 		const FPrivAnimFigure& Figure,
@@ -149,8 +151,11 @@ public:
 		const TArray<FColor>& Palette,
 		const FBuildParams& Params,
 		const FCalibration& Calibration,
-		bool& bOutHasHeadSection);
+		bool& bOutHasHeadSection,
+		int32 FirstSectionIndex = 0,
+		bool bClearExistingSections = true);
 
 	// Shows exactly one frame of a clip built by BuildClipSections.
-	static void ShowFrame(UProceduralMeshComponent* MeshComponent, int32 FrameCount, int32 FrameIndex, bool bHasHeadSection);
+	static void ShowFrame(UProceduralMeshComponent* MeshComponent, int32 FrameCount, int32 FrameIndex, bool bHasHeadSection,
+		int32 FirstSectionIndex = 0);
 };

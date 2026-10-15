@@ -7,6 +7,7 @@
 #include "SimCopterMoonDisc.generated.h"
 
 class UMaterialInstanceDynamic;
+class UMaterialInterface;
 class UStaticMeshComponent;
 
 /**
@@ -35,17 +36,28 @@ class SIMCOPTERREMAKE_API USimCopterMoonDiscComponent : public UActorComponent
 public:
 	USimCopterMoonDiscComponent();
 
+	/** Larger sky discs, independent of moonlight/sunlight intensity. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sky Discs", meta = (ClampMin = "0.1", ClampMax = "10.0"))
+	float SunDiscAngle = 3.0f;
+
+	/** Multiplier of the astronomical moon diameter (the shipped map previously used 7.69). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sky Discs", meta = (ClampMin = "0.1", ClampMax = "30.0"))
+	float MoonSize = 14.0f;
+
+	/** Project-owned material retains the plugin's phase shader and detailed lunar maps. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Moon Disc")
+	TObjectPtr<UMaterialInterface> MoonMaterial;
+
 	/** Off leaves the disc on whatever `MI_Moon` authored. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Moon Disc")
 	bool bOverrideBrightness = true;
 
 	/**
-	 * Emissive brightness of the moon disc. The engine's `MI_Moon` default is 2000, which is what
-	 * this ships at so adding the component changes nothing until you move it. Lower it until the
-	 * maria are readable at your night exposure - a few hundred is usually the interesting range.
+	 * Emissive brightness of the moon disc. Ten matches the city's night exposure while retaining
+	 * the maria and crater detail; the stock plugin's 2000 clips them away.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Moon Disc", meta = (EditCondition = "bOverrideBrightness", ClampMin = "0.0", UIMin = "0.0", UIMax = "2000.0"))
-	float Brightness = 2000.0f;
+	float Brightness = 10.0f;
 
 	/** The value last pushed at the disc's material, for reading off the details panel. */
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "Moon Disc")
@@ -63,6 +75,7 @@ public:
 #endif
 
 private:
+	void ApplyDiscSizes();
 	/** The owning celestial actor's moon disc material, creating the MID if it is not one yet. */
 	UMaterialInstanceDynamic* ResolveMoonDiscMaterial();
 

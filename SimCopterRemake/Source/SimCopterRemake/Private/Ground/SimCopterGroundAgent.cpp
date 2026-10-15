@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterWalkSupport.h"
@@ -897,7 +897,7 @@ void ASimCopterGroundAgent::AdvanceBehaviorFigureFrames(int32 TickCount)
 		return;
 	}
 	FigureCurrentFrame = (FigureCurrentFrame + TickCount) % FigureFrameCount;
-	FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent, FigureFrameCount, FigureCurrentFrame, bFigureHasHeadSection);
+	ShowFigureFrame(FigureCurrentFrame);
 }
 
 int32 ASimCopterGroundAgent::GetCurrentTileClass() const
@@ -959,6 +959,7 @@ void ASimCopterGroundAgent::SetPedestrianFigureClothesOffset(int32 NewClothesOff
 	FigureClothesOffset = ForcedFigureClothesOffset;
 	if (bUsingPedestrianFigure)
 	{
+		ResetFigureClipCache();
 		RebuildFigureClip(FigureMnemonic.IsEmpty() ? TEXT("NoMo") : FigureMnemonic);
 	}
 }
@@ -3400,7 +3401,7 @@ void ASimCopterGroundAgent::AdvanceForcedFigureFrames(const float DeltaSeconds)
 	if (DesiredFrame != FigureCurrentFrame)
 	{
 		FigureCurrentFrame = DesiredFrame;
-		FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent, FigureFrameCount, FigureCurrentFrame, bFigureHasHeadSection);
+		ShowFigureFrame(FigureCurrentFrame);
 	}
 }
 
@@ -4089,6 +4090,34 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	ASimCopterHelicopterPawn* Helicopter = Cast<ASimCopterHelicopterPawn>(NewCarrier);
 	if (Helicopter && (!Helicopter->CanAcceptPassenger(GetMissionPassengerKind(), this) ||
 		(Helicopter->IsFixedWingAircraft() && bAsHarnessRider))) return false;
+	ASimCopterGroundAgent* FinalCarriedPatient = nullptr;
+	if (Helicopter && BehaviorContext.GetStateIndex() == 5 && GetWorld()->GetTimeSeconds() < MedicReboardAfterTime)
+	{
+		// Requested departure from BHAV 269: a manually deployed medic cannot immediately
+		// undo the drop. BHAV 275 hands its patient over before it boards, so remember that
+		// exact handoff as well as a patient still in the medic's arms.
+		const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
+		FinalCarriedPatient = Traffic ? Traffic->FindPersonCarriedBy(*this) : nullptr;
+		const auto* Patient = FinalCarriedPatient ? FinalCarriedPatient : MedicReboardPatient.Get();
+		if (bAsHarnessRider || !Patient || !Patient->IsMedevacVictim() || Patient->IsMissionPatientDead() ||
+			Patient->HasMissionResolutionReported() ||
+			(!FinalCarriedPatient && Patient->GetBehaviorCarrier() != Helicopter) ||
+			Helicopter->GetAvailablePassengerSeats() < (FinalCarriedPatient ? 2 : 1)) return false;
+		for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+		{
+			const auto* Other = *It;
+			if (Other == Patient || Other->IsActorBeingDestroyed() || !Other->IsMedevacVictim() ||
+				Other->IsMissionPatientDead() || Other->HasMissionResolutionReported() ||
+				Other->GetBehaviorCarrier() == Helicopter) continue;
+			const auto* Carrier = Cast<ASimCopterGroundAgent>(Other->GetBehaviorCarrier());
+			int32 HeliX, HeliY, OtherX, OtherY;
+			const bool bNearby = Traffic && Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Helicopter->GetActorLocation(), HeliX, HeliY) &&
+				Other->TryGetTileCoordinate(OtherX, OtherY) && FMath::Max(FMath::Abs(HeliX - OtherX), FMath::Abs(HeliY - OtherY)) <= 8;
+			if ((Carrier && Carrier->BehaviorStartingVehicle.Get() == Helicopter) ||
+				bNearby)
+				return false;
+		}
+	}
 	if (Helicopter != nullptr && bAsHarnessRider)
 	{
 		// A harness pickup is only useful when winding the rider in can actually claim a cabin
@@ -4171,6 +4200,9 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	// door cue below - the "get in sound over and over" while boarding with a patient.
 	const bool bAlreadyInThisCabin =
 		BehaviorCarrier.Get() == NewCarrier && !bRidingHarness && bClaimedPassengerSeat;
+	if (FinalCarriedPatient && !FinalCarriedPatient->BoardCarrier(Helicopter, false)) return false;
+	auto* HandoffMedic = Helicopter && !bAsHarnessRider && IsMedevacVictim()
+		? Cast<ASimCopterGroundAgent>(BehaviorCarrier.Get()) : nullptr;
 
 	ClearRescueDeck();
 	// Relinquish the old carrier before taking the new one. This is deliberately attachment-only:
@@ -4233,6 +4265,8 @@ bool ASimCopterGroundAgent::BoardCarrier(
 	}
 
 	BehaviorCarrier = NewCarrier;
+	if (HandoffMedic && HandoffMedic->BehaviorContext.GetStateIndex() == 5)
+		HandoffMedic->MedicReboardPatient = this;
 	bRidingHarness = bAsHarnessRider;
 	// `!bAlreadyInThisCabin`, because the cue belongs to the TRANSITION into the cabin: somebody who
 	// was already sitting in it has not opened a door, however many times a caller re-runs this.
@@ -5910,13 +5944,18 @@ void ASimCopterGroundAgent::ConfigureAgent(
 	ESimCopterGroundAgentKind NewAgentKind,
 	const FString& NewMeshTableName,
 	const FString& NewOriginalGameRoot,
-	float NewMovementSpeedCmPerSec)
+	float NewMovementSpeedCmPerSec,
+	bool bDeferInitialization)
 {
 	AgentKind = NewAgentKind;
 	MeshTableName = NewMeshTableName;
 	OriginalGameRoot.Path = NewOriginalGameRoot;
 	MovementSpeedCmPerSec = FMath::Max(1.0f, NewMovementSpeedCmPerSec);
 	AnimationPhase = FMath::FRandRange(0.0f, UE_TWO_PI);
+	// A deferred population spawn supplies its final kind/appearance before BeginPlay.
+	// Do not build a temporary pedestrian (including both prepared clips) only to
+	// discard it when the car or scripted person's real configuration arrives.
+	if (bDeferInitialization) return;
 	// BeginPlay already ran with the default (pedestrian) kind; stop that behavior VM before
 	// retyping. The pedestrian branch below restarts it cleanly.
 	bBehaviorActive = false;
@@ -6322,7 +6361,7 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		RebuildFigureClip(FigureMnemonic);
 		FigureCurrentFrame = FMath::Clamp(SavedFrame, 0, FMath::Max(0, FigureFrameCount - 1));
 		FigureFrameTime = SavedFrameTime;
-		FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent, FigureFrameCount, FigureCurrentFrame, bFigureHasHeadSection);
+		ShowFigureFrame(FigureCurrentFrame);
 	}
 	// The tumble is a VisualRoot transform, which no clip rebuild restores: put a body that was
 	// saved mid-flight or lying in the road back the way up it was.
@@ -6406,7 +6445,7 @@ bool ASimCopterGroundAgent::LoadOriginalMeshFromOriginalGameRoot()
 	}
 
 	LastMeshLoadError.Reset();
-	OriginalMeshComponent->ClearAllMeshSections();
+	ResetFigureClipCache();
 	bUsingPedestrianSprite = false;
 	// BeginPlay may have built a pedestrian figure before ConfigureAgent retyped this agent
 	// (SpawnActor runs BeginPlay with the default kind); drop that state or the behavior VM
@@ -6511,7 +6550,7 @@ bool ASimCopterGroundAgent::LoadOriginalPedestrianSpriteFromOriginalGameRoot()
 	bUsingPedestrianFigure = false;
 	PedestrianSpriteTexture = nullptr;
 	SpriteMaterialInstance = nullptr;
-	OriginalMeshComponent->ClearAllMeshSections();
+	ResetFigureClipCache();
 
 	const FString RootPath = ResolveOriginalGameRoot();
 	if (RootPath.IsEmpty())
@@ -6578,6 +6617,7 @@ bool ASimCopterGroundAgent::BuildPedestrianBody()
 bool ASimCopterGroundAgent::BuildPedestrianFigure()
 {
 	LastMeshLoadError.Reset();
+	ResetFigureClipCache();
 	bUsingPedestrianSprite = false;
 	bUsingPedestrianBody = false;
 	bUsingPedestrianFigure = false;
@@ -6659,6 +6699,10 @@ bool ASimCopterGroundAgent::BuildPedestrianFigure()
 		bUsingPedestrianFigure = false;
 		return false;
 	}
+	// Prepare the ordinary walk/idle pair while spawning, before a whole population's
+	// synchronized behavior updates start switching between them during play.
+	RebuildFigureClip(TEXT("1Wal"));
+	RebuildFigureClip(TEXT("NoMo"));
 
 	// Feet sit at the capsule bottom; the figure is built from Z=0 (feet) upward. RebuildFigureClip
 	// has already placed the component, including this pose's own ground lift.
@@ -6707,8 +6751,23 @@ void ASimCopterGroundAgent::RefreshHeadImageIndex()
 	}
 }
 
+void ASimCopterGroundAgent::ResetFigureClipCache()
+{
+	FigureClipCache.Reset();
+	FigureFirstSection = 0;
+	FigureClipCacheHeightCm = 0.0f;
+	if (OriginalMeshComponent) OriginalMeshComponent->ClearAllMeshSections();
+}
+
+void ASimCopterGroundAgent::ShowFigureFrame(const int32 Frame)
+{
+	FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent, FigureFrameCount, Frame,
+		bFigureHasHeadSection, FigureFirstSection);
+}
+
 bool ASimCopterGroundAgent::RebuildFigureClip(const FString& Mnemonic)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(SimCopterFigureClipBind);
 	if (!bUsingPedestrianFigure || !FigureShared.IsValid() || !FigureShared->Model.Figures.IsValidIndex(FigureIndex))
 	{
 		return false;
@@ -6743,6 +6802,11 @@ bool ASimCopterGroundAgent::RebuildFigureClip(const FString& Mnemonic)
 	// User-requested animal scale; calibrate every clip identically so animations never grow it.
 	const float HeightCm = PedestrianBodyHeightCm * PopulationWorldScale *
 		(Figure.Name.StartsWith(TEXT("2DOG")) ? (1.0f / 3.0f) : 1.0f);
+	if (FigureClipCacheHeightCm != HeightCm)
+	{
+		ResetFigureClipCache();
+		FigureClipCacheHeightCm = HeightCm;
+	}
 	// Calibrate model units from the standing walk clip so poses like "Dead" keep their scale.
 	const FPrivAnimClip* StandingClip = FigureShared->Model.FindClip(Figure, TEXT("1Wal"));
 	const FPrivAnimClip& CalibrationClip = StandingClip != nullptr ? *StandingClip : *Clip;
@@ -6753,37 +6817,52 @@ bool ASimCopterGroundAgent::RebuildFigureClip(const FString& Mnemonic)
 	Params.ClothesOffset = FigureClothesOffset;
 	Params.bTexturedHead = FigureHeadMaterialInstance != nullptr;
 
-	if (!FSimCopterPopulationFigure::BuildClipSections(
-			OriginalMeshComponent, Figure, *Clip, FigureShared->Palette, Params, FigureCalibration, bFigureHasHeadSection))
+	// PersonBindAnim 0x004c68f0 changes a clip binding; it does not rebuild the figure.
+	// Keep prepared sections for frequently revisited clips. Rare clips can evict the cache,
+	// keeping memory bounded instead of retaining every animation this actor ever plays.
+	FCachedFigureClip* Cached = FigureClipCache.Find(Clip->Name);
+	if (Cached == nullptr)
 	{
-		LastMeshLoadError = FString::Printf(TEXT("Failed to build figure '%s' clip '%s'."), *Figure.Name, *Clip->Name);
-		return false;
-	}
-
-	for (int32 Frame = 0; Frame < Clip->FrameCount; ++Frame)
-	{
-		if (VertexColorMaterial != nullptr)
+		TRACE_CPUPROFILER_EVENT_SCOPE(SimCopterFigureClipBuild);
+		if (OriginalMeshComponent->GetNumSections() + Clip->FrameCount * 2 > MaxCachedFigureSections)
 		{
-			OriginalMeshComponent->SetMaterial(Frame * 2, VertexColorMaterial);
+			ResetFigureClipCache();
+			FigureClipCacheHeightCm = HeightCm;
 		}
-		OriginalMeshComponent->SetMaterial(
-			Frame * 2 + 1,
-			FigureHeadMaterialInstance != nullptr ? static_cast<UMaterialInterface*>(FigureHeadMaterialInstance) : VertexColorMaterial.Get());
+		FCachedFigureClip Prepared;
+		Prepared.FirstSection = OriginalMeshComponent->GetNumSections();
+		Prepared.FrameCount = Clip->FrameCount;
+		Prepared.GroundLiftCm = Figure.Name == TEXT("Coww") ? 0.0f :
+			FSimCopterPopulationFigure::ComputeClipGroundLiftCm(*Clip, CalibrationClip, FigureCalibration);
+		if (!FSimCopterPopulationFigure::BuildClipSections(OriginalMeshComponent, Figure, *Clip,
+			FigureShared->Palette, Params, FigureCalibration, Prepared.bHasHead, Prepared.FirstSection, false))
+		{
+			LastMeshLoadError = FString::Printf(TEXT("Failed to build figure '%s' clip '%s'."), *Figure.Name, *Clip->Name);
+			return false;
+		}
+		for (int32 Frame = 0; Frame < Clip->FrameCount; ++Frame)
+		{
+			const int32 Section = Prepared.FirstSection + Frame * 2;
+			if (VertexColorMaterial != nullptr) OriginalMeshComponent->SetMaterial(Section, VertexColorMaterial);
+			OriginalMeshComponent->SetMaterial(Section + 1,
+				FigureHeadMaterialInstance != nullptr ? static_cast<UMaterialInterface*>(FigureHeadMaterialInstance) : VertexColorMaterial.Get());
+		}
+		Cached = &FigureClipCache.Add(Clip->Name, Prepared);
 	}
 
+	FigureFirstSection = Cached->FirstSection;
+	bFigureHasHeadSection = Cached->bHasHead;
 	FigureMnemonic = Mnemonic;
-	FigureFrameCount = Clip->FrameCount;
+	FigureFrameCount = Cached->FrameCount;
 	FigureCurrentFrame = 0;
 	FigureFrameTime = 0.0f;
 	// Keep this pose out of the ground. Nothing holds a clip other than the calibration one above
 	// the feet plane, and the lying poses are drawn well below it - which is why a casualty was
 	// buried to the shoulders. Measured against the walk cycle's own lowest point, so binding an
 	// ordinary walk or idle moves the figure by nothing.
-	FigureClipGroundLiftCm =
-		Figure.Name == TEXT("Coww") ? 0.0f :
-		FSimCopterPopulationFigure::ComputeClipGroundLiftCm(*Clip, CalibrationClip, FigureCalibration);
+	FigureClipGroundLiftCm = Cached->GroundLiftCm;
 	ApplyFigureGroundOffset();
-	FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent, FigureFrameCount, 0, bFigureHasHeadSection);
+	ShowFigureFrame(0);
 	return true;
 }
 
@@ -6845,7 +6924,7 @@ void ASimCopterGroundAgent::UpdateFigureAnimation(float DeltaSeconds, float Spee
 	if (DesiredFrame != FigureCurrentFrame)
 	{
 		FigureCurrentFrame = DesiredFrame;
-		FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent, FigureFrameCount, FigureCurrentFrame, bFigureHasHeadSection);
+		ShowFigureFrame(FigureCurrentFrame);
 	}
 }
 
@@ -7334,8 +7413,7 @@ void ASimCopterGroundAgent::ApplyReplayState(
 	if (FigureFrameCount > 0)
 	{
 		FigureCurrentFrame = FMath::Clamp(static_cast<int32>(State.ClipFrame), 0, FigureFrameCount - 1);
-		FSimCopterPopulationFigure::ShowFrame(
-			OriginalMeshComponent, FigureFrameCount, FigureCurrentFrame, bFigureHasHeadSection);
+		ShowFigureFrame(FigureCurrentFrame);
 	}
 }
 
@@ -7618,6 +7696,8 @@ void ASimCopterGroundAgent::PrepareMedicDeployment(ASimCopterHelicopterPawn* Hel
 {
 	if (!Helicopter || BehaviorContext.GetStateIndex() != 5 || bMissionPatientDead) return;
 	SetBehaviorStartingVehicle(Helicopter);
+	MedicReboardAfterTime = GetWorld()->GetTimeSeconds() + 15.0;
+	MedicReboardPatient.Reset();
 	if (!bTakeCabinPatient) return;
 	const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
 	auto* Patient = Traffic ? Traffic->FindMedevacPassengerAboard(Helicopter, this) : nullptr;

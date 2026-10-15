@@ -42,4 +42,5 @@ private:
 	void SelectStation(int32 Index);
 	FReply PlaySelection();
 	FReply TuneStation();
+	FReply ToggleShuffle();
 };

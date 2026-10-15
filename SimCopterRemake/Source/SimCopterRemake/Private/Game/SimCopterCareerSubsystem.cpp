@@ -151,7 +151,7 @@ int32 USimCopterCareerSubsystem::GetHelicopterPrice(const int32 TypeIndex) const
 			if (!HelicopterPrices.IsValidIndex(Index) || HelicopterPrices[Index] <= 0) return 0;
 			Highest = FMath::Max(Highest, HelicopterPrices[Index]);
 		}
-		return Highest <= MAX_int32 / 3 ? Highest * 3 : 0;
+		return Highest <= MAX_int32 / 3 ? (Highest * 3) / 2 : 0;
 	}
 	return HelicopterPrices.IsValidIndex(TypeIndex) ? HelicopterPrices[TypeIndex] : 0;
 }

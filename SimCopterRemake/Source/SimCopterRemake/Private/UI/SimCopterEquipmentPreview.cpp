@@ -20,7 +20,8 @@ const TCHAR* GetFittingDescription(int32 Row)
 		TEXT("Twin canister launcher fitted beside the cabin."),
 		TEXT("Forward water nozzle fitted below the nose."),
 		TEXT("Side winch and rescue sling ready to deploy."),
-		TEXT("Skid-mounted capture cage lowered for recovery.")
+		TEXT("Skid-mounted capture cage lowered for recovery."),
+		TEXT("Nose-mounted taser and aiming scope.")
 	};
 	return Row >= 0 && Row < UE_ARRAY_COUNT(Descriptions) ? Descriptions[Row] : TEXT("");
 }
@@ -109,6 +110,10 @@ FModel Build(int32 TypeIndex, int32 OwnedMask, int32 HighlightRow)
 			Fitting.Bar(Sling+FVector(-.3f,0,-.45f),Sling+FVector(.3f,0,-.45f),.055f,Orange);
 			break;
 		}
+		case 6:
+			Fitting.Box({Body.Max.X+.15f,0,Bottom+.25f},{.45f,.22f,.22f},Steel);
+			Fitting.Cylinder({Body.Max.X+.5f,0,Bottom+.25f},FVector::XAxisVector,.12f,.5f,Accent);
+			break;
 		case 5:
 		{
 			const float Z = Bottom - (bHighlighted ? 1.8f : .4f);
@@ -225,6 +230,7 @@ int32 SSimCopterEquipmentIcon::OnPaint(const FPaintArgs&,const FGeometry& Geomet
 	case 2: Line({{7,12},{26,12},{26,17},{7,17},{7,12}},Ink); Line({{7,20},{26,20},{26,25},{7,25},{7,20}},Ink); break;
 	case 3: Line({{6,25},{6,19},{18,19},{18,12},{27,12}},Ink); Line({{6,28},{12,28}},Ink); Line({{23,8},{29,8},{29,16},{23,16}},Ink); break;
 	case 4: Line({{8,9},{24,9},{24,14},{16,14},{16,20},{9,28},{24,28},{16,20}},Ink); Line({{8,7},{8,17}},Ink); break;
+	case 6: Line({{5,13},{23,13},{23,20},{5,20},{5,13}},Ink); Line({{23,15},{30,15},{30,18},{23,18}},Ink); Line({{10,10},{19,10}},Ink); break;
 	case 5: Line({{7,12},{27,12},{27,28},{7,28},{7,12},{16,5},{27,12}},Ink); Line({{13,12},{13,28}},Ink); Line({{21,12},{21,28}},Ink); Line({{7,21},{27,21}},Ink); break;
 	}
 	if (Owned.Get())

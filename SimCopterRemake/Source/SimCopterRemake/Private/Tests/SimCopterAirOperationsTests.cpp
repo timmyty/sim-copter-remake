@@ -48,7 +48,7 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  Traffic->ActiveTileSize=400;
  auto* Missions=World->SpawnActor<ASimCopterMissionSystemActor>();
  Missions->MissionSystem.Initialize(nullptr,1); Missions->MissionSystem.BeginSession();
- auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>();
+ auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>(); Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RemoteTaser, true);
  TestTrue(TEXT("Schweizer mesh and two-seat cabin load"),Heli->SwitchHelicopterModel(4));
  Heli->bEngineRunning=true;
  auto* Ops=Heli->GetAirOperations();
@@ -127,11 +127,11 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestTrue(TEXT("Reverse press order also leaves wheels closed"),Heli->ControllerMode==ESimCopterControllerMode::None);
  Heli->ControllerRightBumperReleased();
  TestTrue(TEXT("Remaining LB resumes turning"),Heli->BuildFlightInputs().bTurnLeftKey);
- Heli->ControllerLeftBumperReleased(); Heli->ControllerOptionsPressed();
- TestTrue(TEXT("X opens Tools"),Heli->ControllerMode==ESimCopterControllerMode::ToolWheel);
+ Heli->ControllerLeftBumperReleased(); Heli->ControllerRadialPressed();
+ TestTrue(TEXT("R3 opens Tools"),Heli->ControllerMode==ESimCopterControllerMode::ToolWheel);
  Heli->ControllerOptionsPressed();
  TestTrue(TEXT("X switches to Dispatch"),Heli->ControllerMode==ESimCopterControllerMode::DispatchWheel);
- Heli->ControllerCancelPressed();
+ Heli->ControllerCancelPressed(); Heli->ControllerRadialReleased();
  TestTrue(TEXT("B closes the wheel"),Heli->ControllerMode==ESimCopterControllerMode::None);
  TestEqual(TEXT("Map mission helper dispatch entry"),SimCopterControllerInput::GetDispatchSelection(4).ServiceIndex,100);
  TestFalse(TEXT("Helper locked before a passed level"),System->OrderSupport(1));
@@ -418,8 +418,11 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  WalkingCivilian->SetDroppedInjuredOnGround(FVector(14030,14000,24)); Pilot->UpdateAirOperations(0.01f);
  TestTrue(TEXT("Walking up automatically carries an injured civilian"),Pilot->CarriedMissionPerson.Get()==WalkingCivilian);
  Pilot->DropCarriedMissionPerson();
- Pilot->FallPeakZ=1600; Pilot->Landed(FHitResult());
- TestTrue(TEXT("Pilot suffers actual health loss after high exit"),Pilot->GetPilotHealth()<100);
+ Pilot->FallPeakZ=Pilot->GetActorLocation().Z+1600; Pilot->Landed(FHitResult());
+ TestEqual(TEXT("Hard landing does not accumulate pilot health damage"),Pilot->GetPilotHealth(),100.f);
+ TestTrue(TEXT("Hard landing still causes an injury response"),Pilot->InjurySeconds>0);
+ Pilot->FallPeakZ=Pilot->GetActorLocation().Z+2000; Pilot->Landed(FHitResult());
+ TestEqual(TEXT("Unprotected fatal fall incapacitates the pilot"),Pilot->GetPilotHealth(),0.f);
  const float Health=Pilot->GetPilotHealth(); City->WaterGameplayTerrainClasses.Init(0,128*128);
  Pilot->FallPeakZ=9000; Pilot->Landed(FHitResult());
  TestEqual(TEXT("Pilot water landing preserves health"),Pilot->GetPilotHealth(),Health);

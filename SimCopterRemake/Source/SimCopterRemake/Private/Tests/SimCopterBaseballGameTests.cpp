@@ -219,6 +219,14 @@ bool FSimCopterBaseballGameTest::RunTest(const FString& Case)
 		TestEqual(TEXT("No distant simulation"),Traffic->BaseballGames.Num(),0);
 		H->SetActorLocation(Node.Location+FVector(500,0,1000)); Traffic->UpdateAgentPool(1);
 		TestEqual(TEXT("Helicopter arrival activates game"),Traffic->BaseballGames.Num(),1);
+		TestEqual(TEXT("Arrival starts the roster without a full-team spawn burst"),Traffic->PedestrianAgents.Num(),1);
+		for (int32 I=0; I<12; ++I)
+		{
+			const int32 Before = Traffic->PedestrianAgents.Num();
+			Traffic->UpdateAgentPool(1.f/60);
+			for (auto Pair : Traffic->BaseballGames) if (auto* Game=Pair.Value.Get()) Game->Tick(1.f/60);
+			TestTrue(TEXT("Traffic and baseball ticks admit at most one initial player per frame"),Traffic->PedestrianAgents.Num()-Before<=1);
+		}
 		TestEqual(TEXT("Only ten active actors at first pitch"),Traffic->PedestrianAgents.Num(),10);
 		for (int32 I=0; I<10; ++I) Traffic->UpdateAgentPool(.1f);
 		TestEqual(TEXT("No duplicates during stationary observation"),Traffic->PedestrianAgents.Num(),10);

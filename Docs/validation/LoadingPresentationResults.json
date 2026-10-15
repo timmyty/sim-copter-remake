@@ -1,0 +1,427 @@
+{
+  "verified_at_utc": "2026-10-14T17:50:23.129100+00:00",
+  "tour_hour": 13,
+  "scope": [
+    "Remove stale Pilot 100% and START RESUME from the playable copy by installing the already-corrected UI source.",
+    "Stabilize helicopter chase-camera obstruction response and settle it before the startup reveal.",
+    "Refresh smoke/beacon geometry after every paused intro camera update and after returning to the player.",
+    "Cull far effect depths before 16.16 conversion can overflow.",
+    "Keep a usable beacon projection when the viewport is absent/minimized, and rebuild on viewport/FOV changes.",
+    "Hide all gameplay waypoints throughout city tours and restore them afterward.",
+    "Use 1 PM lighting for all tours; restore Dynamic/Static/Real Time settings on finish, skip or level teardown."
+  ],
+  "builds": [
+    {
+      "target": "editor",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/loading-presentation-fixes/build-editor-final.log",
+      "sha256": "fd5b261c2c1e1e4fd145e2469b679b9df00152ccd0f0d856d77cebaf9921acd7"
+    },
+    {
+      "target": "shipping",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/loading-presentation-fixes/build-shipping-final.log",
+      "sha256": "4ec37538bc366feaadd64dea292e4ea5cd0c36d3230bf6687996f5fb8e7f1607"
+    },
+    {
+      "target": "development",
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/loading-presentation-fixes/build-development-final.log",
+      "sha256": "84797b9b13f08a75363f6ee605441fd145cb02dfb2ee38233dc2561a6412f099"
+    }
+  ],
+  "runs": [
+    {
+      "report": "Docs/scratchpad/loading-presentation-fixes/complete-tests/index.json",
+      "sha256": "28188571b860cb6930054d6056f71149365adc799613e34333c119c4187fd0e1",
+      "mode": "NullRHI",
+      "counts": {
+        "succeeded": 37,
+        "succeededWithWarnings": 2,
+        "failed": 0,
+        "notRun": 0
+      },
+      "tests": [
+        {
+          "name": "SimCopter.Camera.StartupPlacement",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Camera.StationaryObstacleStability",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.CityIntro.CameraFacingEffects",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.CityIntro.LightingRestoration",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.CityIntro.RouteAndControlRestoration",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.CustomCities.PhotoModeLifecycle",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.ApacheMissionBlastDefaults",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.DistantCameraCulling",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.FireMarkerAssets",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.OriginalRasterizerParity",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.PoolParity",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.PrimitiveParity",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.RotorWashParity",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Effects.RuntimeSaveRoundTrip",
+          "state": "Success",
+          "warnings": [
+            "LogSimCopterTearGas: Tear gas canister mesh unavailable, firing without one: No original game root is configured.",
+            "LogSimCopterTearGas: Tear gas canister mesh unavailable, firing without one: No original game root is configured."
+          ],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.GameplayOptions.Integration",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Missions.MessageLogVisibility",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Population.UserCities.arcocity",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/arcocity.sc2: 8 civilian appearances; civilian population 2 -> 18 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.cancer",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/cancer.sc2: 11 civilian appearances; civilian population 8 -> 24 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.cape wells",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/CAPE WELLS.sc2: 10 civilian appearances; civilian population 9 -> 25 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.egypt falls",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/EGYPT FALLS.SC2: 11 civilian appearances; civilian population 10 -> 26 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.glorioso",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/glorioso.sc2: 11 civilian appearances; civilian population 9 -> 25 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.happylnd",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/happylnd.sc2: 9 civilian appearances; civilian population 5 -> 21 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.hawaii",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/hawaii.sc2: 10 civilian appearances; civilian population 10 -> 26 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.heven (new)",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/heven (new).sc2: 11 civilian appearances; civilian population 8 -> 24 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.kathy's retreat",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/KATHY'S RETREAT.SC2: 11 civilian appearances; civilian population 8 -> 24 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.la-isla",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/la-isla.sc2: 10 civilian appearances; civilian population 10 -> 26 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.lakeland",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/lakeland.sc2: 9 civilian appearances; civilian population 10 -> 26 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.rio",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/rio.sc2: 10 civilian appearances; civilian population 6 -> 22 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.stchrisc",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/stchrisc.sc2: 11 civilian appearances; civilian population 6 -> 22 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.the bahamas",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/THE BAHAMAS.SC2: 10 civilian appearances; civilian population 6 -> 22 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.tokyo",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/TOKYO.SC2: 11 civilian appearances; civilian population 10 -> 26 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.Population.UserCities.volcano",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": [
+            "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopter/cities/volcano.sc2: 5 civilian appearances; civilian population 4 -> 20 with stationary refill"
+          ]
+        },
+        {
+          "name": "SimCopter.SaveGame.ArchiveRoundTrip",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.SaveGame.ExternalFiles",
+          "state": "Success",
+          "warnings": [
+            "LogStreaming: Failed to read file 'C:/SimCopterRemake/sim-copter-remake-main/Docs/scratchpad/open-save-browser/files/4E6ECB7945228E5FE5F554ABF3621F9F/Missing.sav' error."
+          ],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.SaveGame.FleetEquipmentRepair",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.SaveGame.Names",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.SaveGame.QuickSavePersistence",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.SaveGame.RestoreState",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        },
+        {
+          "name": "SimCopter.Spotlight.DedicatedCamera",
+          "state": "Success",
+          "warnings": [],
+          "population_evidence": []
+        }
+      ]
+    },
+    {
+      "report": "Docs/scratchpad/loading-presentation-fixes/canyon-render/index.json",
+      "sha256": "021fb7c11c496d6d2e63bb01a9f75eb96299b2ae9a30fbeadc8fd48995b8c9b5",
+      "mode": "D3D12 RenderOffscreen",
+      "counts": {
+        "succeeded": 0,
+        "succeededWithWarnings": 1,
+        "failed": 0,
+        "notRun": 0
+      },
+      "tests": [
+        {
+          "name": "SimCopter.CityIntro.AuthoredRendering.City20",
+          "state": "Success",
+          "warnings": [
+            "LogRenderer: [VSM] One Pass Projection max lights overflow. If you see shadow artifacts, decrease the amount of local lights per pixel, or increase r.Shadow.Virtual.OnePassProjection.MaxLightsPerPixel."
+          ],
+          "population_evidence": []
+        }
+      ]
+    }
+  ],
+  "passed_distinct_cases": 40,
+  "remaining_failures": 0,
+  "reproduction": {
+    "camera": "Before correction, a stationary obstacle at X=-400 cm, height=100 cm produced 14.999 cm vertical camera motion after 12 seconds. Final test covers 12 placements and startup drift.",
+    "distant_effects": "Before correction, 205000, 500000 and 1e12 cm camera depths returned full-size 65536 scale instead of culling.",
+    "stale_geometry": "Final regression verifies the evaluated camera turns away while old smoke cards persist, then verifies the intro refresh removes them.",
+    "missing_viewport": "The first Canyon render was covered by giant white/blue beacon cards: a missing viewport was clamped to one pixel. Fixed by retaining the last valid projection/default 560 pixels; actual mesh-size and FOV-change assertions plus a pale-sheet image regression cover this.",
+    "fixture_corrections": "Initial smoke fixture lacked a local player; initial lighting teardown called EndPlay without BeginPlay. Both fixtures were corrected before final validation."
+  },
+  "visual_evidence": [
+    "Docs/scratchpad/original-city-intros/city20-aircraft-after.png",
+    "Docs/scratchpad/original-city-intros/city20-aircraft-before.png",
+    "Docs/scratchpad/original-city-intros/city20-aircraft-pass.png",
+    "Docs/scratchpad/original-city-intros/city20-aircraft-warmup.png",
+    "Docs/scratchpad/original-city-intros/city20-buildings.png",
+    "Docs/scratchpad/original-city-intros/city20-descent.png",
+    "Docs/scratchpad/original-city-intros/city20-finale.png",
+    "Docs/scratchpad/original-city-intros/city20-start.png",
+    "Docs/scratchpad/original-city-intros/city20-sweep.png",
+    "Docs/scratchpad/original-city-intros/city20-warmup.png"
+  ],
+  "visual_scope": "Canyon geometry and camera-facing effects rendered offscreen with the existing synthetic daylight rig. Actual day-sequence clock seeks/restoration are verified separately by LightingRestoration.",
+  "prior_gameplay_validation": "Docs/validation/GameplayOptionsResults.json",
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T17:49:10.2676932Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "A951C11E03C9578FBF2AB6831F6B2661C0B6EEF69181E174AD3A33AC249C3304",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\loading-presentation-fixes/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "B25D4972812C7688A9374EB19F8B72E70F59600A2917B5B843956C963A82C991",
+        "ReplacedSHA256": "69345190FA74987584780053AE11A2E69135764376325AD9F5F5406CA3749601"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "97D1D048DEC5B158D234A90ADBC144319524AC2B636925F8BB97F500F8E3C87C",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\loading-presentation-fixes/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "6CD2E35899D5D0D8C4EB94FC614EF3C250751826C3942157ED226790A646E076",
+        "ReplacedSHA256": "5C3EDEB05A98E56C77327087C44737D2C0A7B873A768A1AC3992D2BA07CC98C1"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "886EF3F9C9500E513EA7A9D504D67836089C0522E338564BE4882FCD5F1B4437",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\loading-presentation-fixes/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "FCCEE09FA4F0AFF33143F62B7A36701FCFDFE54001A30024915380F042A8C5DD",
+        "ReplacedSHA256": "26AF0E16066BB8BB26FCC8B506CD2CAE8E22FC576F9C9892C8D3E193D6941BC8"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "7995C0AFD97875BE9D3595CDF4F3351F03273424214DA1EA9F5919C3FA74EABD",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\loading-presentation-fixes/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "DDFF5E8E90B69AD34EAC3ECDC5821CC0C6AE62F1F2977322332C3C79999F8782",
+        "ReplacedSHA256": "D062744C1174A7ACA74A0733983C8677AA1706FCD857B4A14C091EFD29FCC5E9"
+      }
+    ],
+    "InteractiveGameplayChecked": false
+  },
+  "packaged_startup": [
+    {
+      "limitation": "Headless startup only; no interactive gameplay or listening check.",
+      "seconds": 30.4426242,
+      "child_pids": [
+        null
+      ],
+      "survived": true,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\loading-presentation-fixes\\smoke-development",
+      "launcher_pid": 54564,
+      "mode": "development"
+    },
+    {
+      "survived": true,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\loading-presentation-fixes\\smoke-shipping",
+      "seconds": 30.4589128,
+      "child_pids": [
+        54252
+      ],
+      "mode": "shipping",
+      "launcher_pid": 42852,
+      "limitation": "Headless startup only; no interactive gameplay or listening check."
+    }
+  ],
+  "interactive_gameplay_verified": false,
+  "publication_updated": false
+}

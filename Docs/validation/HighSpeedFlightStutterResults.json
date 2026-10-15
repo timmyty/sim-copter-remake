@@ -1,0 +1,193 @@
+{
+  "date": "2026-10-14",
+  "capture": "Witness-Performance_20261014_201846.utrace",
+  "log_sha256": "a01506bfdea66707a17c54c128685b9c0cb6610cf071f1552e9421a3e552a2ab",
+  "confirmed_mechanism": "Population creation rebuilds figure geometry and render proxies in bursts while the player crosses city tiles.",
+  "changes": [
+    "Configure deferred population actors before BeginPlay to avoid throwaway pedestrian geometry.",
+    "Drain ambient refill batches across frames; retain queued exposed tiles and existing population caps.",
+    "Reuse bounded cow pose geometry and share coat vertices without dropping triangles or changing markings."
+  ],
+  "baseline_spawn": {
+    "succeeded": 0,
+    "succeededWithWarnings": 0,
+    "failed": 1,
+    "notRun": 0,
+    "totalDuration": 0.8767567276954651
+  },
+  "baseline_route": {
+    "actors": 243,
+    "frames_with_spawns": 20,
+    "total_ms": 1662.315,
+    "worst_ms": 244.101
+  },
+  "final_route": {
+    "actors": 230,
+    "frames_with_spawns": 115,
+    "total_ms": 1458.197,
+    "worst_ms": 26.242
+  },
+  "focused_offscreen": {
+    "succeeded": 20,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 12.609721183776855
+  },
+  "full_suite_initial": {
+    "succeeded": 520,
+    "succeededWithWarnings": 36,
+    "failed": 3,
+    "notRun": 0,
+    "totalDuration": 436.2743225097656
+  },
+  "roster_focused": {
+    "succeeded": 45,
+    "succeededWithWarnings": 2,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 38.40940856933594
+  },
+  "final_test_summary": {
+    "distinct_tests": 559,
+    "failed": 0,
+    "not_run": 0
+  },
+  "cow_benchmark": {
+    "before_ms": 287.129,
+    "after_ms": 58.212,
+    "actors": 4,
+    "before_vertices_per_actor": 238400,
+    "after_vertices_per_actor": 85130,
+    "after_pose_cache": "warm"
+  },
+  "cow_geometry": [
+    {
+      "frame": "DgRn-0.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "079066dfd22d2e02a858c174a4a1ac0ba0fb93fae5a45c6081a994d8f070ac38"
+    },
+    {
+      "frame": "DgRn-1.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "1ec5ea048faf016d329c6455565c3f33beb9ccb41810d8898e71d45c3083f5a9"
+    },
+    {
+      "frame": "DgRn-2.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "537c413f143d6e19ecdabac7e31464ff9c266b1621d44a32be17e857f7651f02"
+    },
+    {
+      "frame": "DgRn-3.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "42a985059ede545d3d10ff48eea1a760315624159972f415e5766194dcf71ee0"
+    },
+    {
+      "frame": "DgRn-4.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "80c413d3cd1fa0a0b2f80d5725a1efc07d57d8c096b32cdd3c0f5bcb53aef880"
+    },
+    {
+      "frame": "DgRn-5.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "c0baa79fcf929b4109ba955a6c64fb2bb621dc883d57f10565d164eec17d4802"
+    },
+    {
+      "frame": "DgRn-6.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "b7328e63bf6ac084daeb5c80f889171b69714cd4d210021f47156411dd0731a6"
+    },
+    {
+      "frame": "DgRn-7.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "36437f8511145af434b3cc09c570b6bf85547e7c15887316a566cd7df1ad80c4"
+    },
+    {
+      "frame": "DgSt-0.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "544f5367d0001418e26b58fff965802d77b73881884c3df9254c3e0233ff787f"
+    },
+    {
+      "frame": "DgSt-1.ply",
+      "before_vertices": 23840,
+      "after_vertices": 8513,
+      "triangles": 11160,
+      "expanded_positions_and_colors_match": true,
+      "sha256": "60a5b1b68db7d8656cc77bcf171520a5b4acc009995323c9ee2a60c228e2b381"
+    }
+  ],
+  "builds": {
+    "final-editor-build": true,
+    "shipping-build": true,
+    "development-build": true
+  },
+  "limitations": [
+    "No interactive replay of the exact airplane route; benchmark measures construction/refill and render flushing, not complete flight FPS.",
+    "Mission and scripted spawning outside the ambient refill pass remains immediate; other CPU/GPU work can still affect frame pacing.",
+    "Startup texture-streaming metadata ensures and dynamic-light costs were not changed.",
+    "The initial baseline-route attempt reused a cached binary; only original-route, with verified compilation, is the baseline.",
+    "The broad run found three baseball roster cases expecting immediate full-team creation. The roster continuation was corrected, and those tests now verify bounded assembly plus the original final counts and cleanup. All affected baseball, performance and population cases were rerun.",
+    "Full-suite visual tests may be no-ops under NullRHI; the 20 focused cases and final 47 related cases ran with D3D12 offscreen rendering."
+  ],
+  "evidence_directory": "Docs\\scratchpad\\fast-flight-2026-10-14",
+  "source_manifest": "Docs\\scratchpad\\fast-flight-2026-10-14\\source-manifest.json",
+  "worst_refill_reduction_percent": 89.24953195603459,
+  "installation": {
+    "InstalledAtUtc": "2026-10-15T02:01:29.3813053Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "2117043CC42490419D62F05159524579E12DFD9FCD34AA68C5DA8DB6394295CE",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fast-flight-2026-10-14/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "5EDAA15C65C3E13D19AE1B2A32A6F753E4A0A6AE6A6788F9161943525E19B5A4"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "83CAB4D193D7FA416C4DB3217A59F43C23A612CA762A4C91ECA3A8D66CC59668",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fast-flight-2026-10-14/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "0B5942ACD14A74AA79DD543D8064A1EEAFEE5AD674C0A84A311E49A1005808D4"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "579459B81CDBB988CFCBE496DC2FC4B8D6D17B687C3682E0C6421566799C4660",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fast-flight-2026-10-14/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "6E4FAFFC5EBE448587C862E73788AE09490CA8DE34B0A9AC71C7AB53C4121560"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "5C83EA606465056A1475136E0D96418745F67359B54ECDD7065C1AFF567070D8",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fast-flight-2026-10-14/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "A50EA37A081C068C82CF50F4707F4674C855AE55BF0E509AA2C078A4503B1853"
+      }
+    ],
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false
+  }
+}

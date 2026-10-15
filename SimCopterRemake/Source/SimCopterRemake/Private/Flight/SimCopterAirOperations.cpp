@@ -692,8 +692,9 @@ void USimCopterAirOperationsComponent::UpdateRemoteTaserMount()
 {
 	auto* Heli = Helicopter();
 	if (!Heli) return;
-	if (Heli->IsFixedWingAircraft())
+	if (!Heli->IsToolAvailable(ESimCopterHelicopterTool::RemoteTaser))
 	{
+		if (bRemoteTaserActive) EndRemoteTaser();
 		if (RemoteTaserMount) RemoteTaserMount->SetVisibility(false, true);
 		return;
 	}
@@ -790,6 +791,8 @@ void USimCopterAirOperationsComponent::ToggleRemoteTaser()
 		}
 		EndRemoteTaser(); return;
 	}
+	if (Heli && !Heli->IsToolAvailable(ESimCopterHelicopterTool::RemoteTaser))
+	{ Status=TEXT("Purchase the Remote Taser in the hangar equipment catalog."); Heli->SetAirOperationsStatus(Status); return; }
 	if (!Heli || Heli->IsFixedWingAircraft() || Heli->bIsLanded || Heli->FlightModel.State==ESimCopterFlightState::Dying)
 	{ Status=TEXT("Take off to use the remote taser."); if(Heli) Heli->SetAirOperationsStatus(Status); return; }
 	auto* PC=Cast<APlayerController>(Heli->GetController()); if (!PC) return;

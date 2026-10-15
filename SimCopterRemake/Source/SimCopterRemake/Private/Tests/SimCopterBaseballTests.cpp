@@ -84,6 +84,15 @@ bool FSimCopterBaseballTest::RunTest(const FString& Case)
 			if (P.IsValid() && (P->InitialBehaviorProgramId==1205 || P->InitialBehaviorProgramId==1206)) ++N;
 		return N;
 	};
+	const auto FinishPopulationTeam = [&]()
+	{
+		for (int32 I=0; I<8; ++I)
+		{
+			const int32 Before = CountTeam();
+			Traffic->UpdateAgentPool(1.f/60);
+			TestTrue(TEXT("Population refill admits at most one team member per frame"),CountTeam()-Before<=1);
+		}
+	};
 	if (Case==TEXT("Distance"))
 	{
 		auto* Helicopter=World->SpawnActor<ASimCopterHelicopterPawn>();
@@ -99,6 +108,8 @@ bool FSimCopterBaseballTest::RunTest(const FString& Case)
 		TestEqual(TEXT("Leading-edge path also respects helicopter distance"),Traffic->TrySpawnSpecialBuildingPeople(62,62,Attempts),0);
 		Helicopter->SetActorLocation(Node.Location+FVector(Radius-400,0,1000));
 		Traffic->UpdateAgentPool(1);
+		TestEqual(TEXT("Approach starts a paced team refill"),CountTeam(),1);
+		FinishPopulationTeam();
 		TestEqual(TEXT("Approaching helicopter activates eight players"),CountTeam(),8);
 		for (int32 I=0;I<30;++I) Traffic->UpdateAgentPool(0.1f);
 		TestEqual(TEXT("Repeated nearby updates keep population bounded"),CountTeam(),8);
@@ -107,6 +118,7 @@ bool FSimCopterBaseballTest::RunTest(const FString& Case)
 		TestEqual(TEXT("Flying away removes all eight players"),CountTeam(),0);
 		Helicopter->SetActorLocation(Node.Location+FVector(0,0,1000));
 		Traffic->UpdateAgentPool(1);
+		FinishPopulationTeam();
 		TestEqual(TEXT("Returning recreates exactly one complete team"),CountTeam(),8);
 		return true;
 	}
@@ -124,6 +136,7 @@ bool FSimCopterBaseballTest::RunTest(const FString& Case)
 		Traffic->SetActorLocation(Node.Location);
 		Traffic->LastAmbientScanTileX=63; Traffic->LastAmbientScanTileY=63;
 		Traffic->UpdateAgentPool(1);
+		FinishPopulationTeam();
 		TestEqual(TEXT("Stationary arrival inside scan perimeter works at civilian cap"),CountTeam(),8);
 		Traffic->UpdateAgentPool(1);
 		TestEqual(TEXT("Repeated population think never duplicates the team"),CountTeam(),8);

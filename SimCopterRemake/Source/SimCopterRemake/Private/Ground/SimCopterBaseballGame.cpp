@@ -96,6 +96,7 @@ void ASimCopterBaseballGame::Initialize(ASimCopterTrafficSystemActor* InTraffic,
 	Ball->SetVisibility(false); Bat->SetVisibility(false);
 	InitializeScoreboard();
 	Announcement = TEXT("PLAY BALL");
+	bPopulationRosterPending = InTraffic->bBudgetPopulationSpawns;
 	SyncPlayers(); SetFormation(); UpdateBoard();
 }
 
@@ -148,6 +149,9 @@ bool ASimCopterBaseballGame::SyncPlayers()
 			else Players[I]->BaseballGame = this;
 			continue;
 		}
+		// Do not finish the entire initial roster in this actor's next tick after
+		// the traffic pass admitted only one player. That would recreate the hitch.
+		if (bPopulationRosterPending && !T->bBudgetPopulationSpawns) { bComplete=false; continue; }
 		FVector2D Offset = I/9 != Score.BattingTeam ? Fielders[I%9] : Bases[0]+FVector2D(4,5);
 		for (int32 B=0; B<3; ++B) if (Score.Bases[B]==I) Offset = Bases[B+1];
 		const auto& Node = T->PedestrianNodes[NodeIndex];
@@ -158,6 +162,7 @@ bool ASimCopterBaseballGame::SyncPlayers()
 		P->BaseballTarget = P->GetActorLocation(); P->BaseballFacing = 0;
 		P->AddTickPrerequisiteActor(this);
 	}
+	if (bComplete) bPopulationRosterPending = false;
 	return bComplete;
 }
 

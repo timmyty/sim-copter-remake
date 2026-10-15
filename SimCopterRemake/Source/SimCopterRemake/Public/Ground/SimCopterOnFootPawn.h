@@ -30,9 +30,11 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 {
 	GENERATED_BODY()
 	friend class FSimCopterRescuePilotRuntimeTest;
+	friend class FSimCopterFatalRespawnTest;
 	friend class FSimCopterRooftopSafetyTest;
 	friend class FSimCopterAirOperationsTest;
 	friend class FSimCopterShoulderAimTest;
+	friend class FSimCopterMouseFrameRateTest;
 	friend class FSimCopterNpcAppearanceTest;
 	friend class FSimCopterPilotRunTest;
 	friend class FSimCopterControllerTurboTest;

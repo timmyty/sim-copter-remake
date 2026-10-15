@@ -31,9 +31,18 @@ int32 ASimCopterTrafficSystemActor::EnsureBaseballGame(int32 TileX, int32 TileY,
 	int32 NodeIndex=INDEX_NONE;
 	if (!TryResolvePedestrianNodeForTile(TileX,TileY,NodeIndex)) return 0;
 	const auto& Node=PedestrianNodes[NodeIndex];
-	if (BaseballGames.FindRef(NodeIndex).IsValid() || BaseballGames.Num()>=2 ||
-		FVector::DistSquared2D(Node.Location,GetPopulationFocusLocation())>
+	if (FVector::DistSquared2D(Node.Location,GetPopulationFocusLocation())>
 		FMath::Square(FMath::Max(1,OriginalAmbientScanRadiusTiles)*ActiveTileSize)) return 0;
+	if (auto* Existing = BaseballGames.FindRef(NodeIndex).Get())
+	{
+		if (!Existing->bPopulationRosterPending) return 0;
+		const int32 Before = PedestrianAgents.Num();
+		Existing->SyncPlayers();
+		const int32 Created = PedestrianAgents.Num() - Before;
+		AttemptsRemaining = FMath::Max(0, AttemptsRemaining - FMath::Max(1, Created));
+		return Created;
+	}
+	if (BaseballGames.Num()>=2) return 0;
 	// An old save can contain retail players. Retire only healthy ambient members of this
 	// exact field. Patient/mission identities survive, and defer play while on the diamond.
 	TArray<ASimCopterGroundAgent*> Legacy;

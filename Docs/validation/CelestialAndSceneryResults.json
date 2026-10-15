@@ -1,0 +1,266 @@
+{
+  "date": "2026-10-14",
+  "changes": [
+    "Larger sun and moon discs",
+    "Detailed moon albedo and normal maps with phase shading",
+    "Six deterministic park layouts with one pond variant",
+    "Paved building foundations and gravel park paths"
+  ],
+  "lighting": {
+    "moonIntensityUnchanged": true,
+    "sunIntensityUnchanged": true,
+    "sunDiscAngle": 3,
+    "gameExposureUnchanged": true,
+    "moonScale": 14,
+    "moonDiscBrightness": 10,
+    "sunShadowAngularSizePreserved": 0.5357
+  },
+  "builds": {
+    "shipping": "Succeeded",
+    "editor": "Succeeded",
+    "cookPackageArchive": "Succeeded",
+    "development": "Succeeded"
+  },
+  "tests": {
+    "failed": 0,
+    "warnings": 0,
+    "final": [
+      {
+        "testDisplayName": "DayNightFog",
+        "fullTestPath": "SimCopter.City.DayNightFog",
+        "tags": [],
+        "state": "Success",
+        "deviceInstance": [
+          "925C131E4D3AF5ECFAE9789B629199C3"
+        ],
+        "duration": 0.007608998566865921,
+        "dateTime": "2026.10.14-18.33.01",
+        "entries": [],
+        "warnings": 0,
+        "errors": 0,
+        "artifacts": []
+      },
+      {
+        "testDisplayName": "DayNightLength",
+        "fullTestPath": "SimCopter.City.DayNightLength",
+        "tags": [],
+        "state": "Success",
+        "deviceInstance": [
+          "925C131E4D3AF5ECFAE9789B629199C3"
+        ],
+        "duration": 0.008252199739217758,
+        "dateTime": "2026.10.14-18.33.01",
+        "entries": [],
+        "warnings": 0,
+        "errors": 0,
+        "artifacts": []
+      },
+      {
+        "testDisplayName": "SurfaceShadingDefaults",
+        "fullTestPath": "SimCopter.City.SurfaceShadingDefaults",
+        "tags": [],
+        "state": "Success",
+        "deviceInstance": [
+          "925C131E4D3AF5ECFAE9789B629199C3"
+        ],
+        "duration": 0.007477797567844391,
+        "dateTime": "2026.10.14-18.33.01",
+        "entries": [],
+        "warnings": 0,
+        "errors": 0,
+        "artifacts": []
+      },
+      {
+        "testDisplayName": "TreeGrounding",
+        "fullTestPath": "SimCopter.City.TreeGrounding",
+        "tags": [],
+        "state": "Success",
+        "deviceInstance": [
+          "925C131E4D3AF5ECFAE9789B629199C3"
+        ],
+        "duration": 0.2510094940662384,
+        "dateTime": "2026.10.14-18.33.01",
+        "entries": [],
+        "warnings": 0,
+        "errors": 0,
+        "artifacts": []
+      },
+      {
+        "testDisplayName": "CityIntegration",
+        "fullTestPath": "SimCopter.Scenery.CityIntegration",
+        "tags": [],
+        "state": "Success",
+        "deviceInstance": [
+          "925C131E4D3AF5ECFAE9789B629199C3"
+        ],
+        "duration": 3.100327968597412,
+        "dateTime": "2026.10.14-18.33.01",
+        "entries": [],
+        "warnings": 0,
+        "errors": 0,
+        "artifacts": []
+      },
+      {
+        "testDisplayName": "Variants",
+        "fullTestPath": "SimCopter.Scenery.Variants",
+        "tags": [],
+        "state": "Success",
+        "deviceInstance": [
+          "925C131E4D3AF5ECFAE9789B629199C3"
+        ],
+        "duration": 0.012103401124477386,
+        "dateTime": "2026.10.14-18.33.05",
+        "entries": [],
+        "warnings": 0,
+        "errors": 0,
+        "artifacts": []
+      },
+      {
+        "testDisplayName": "SkyDiscs",
+        "fullTestPath": "SimCopter.Scenery.SkyDiscs",
+        "tags": [],
+        "state": "Success",
+        "deviceInstance": [
+          "977342964531530C72085BBB3F24647F"
+        ],
+        "duration": 0.6036205291748047,
+        "dateTime": "2026.10.14-18.36.32",
+        "entries": [],
+        "warnings": 0,
+        "errors": 0,
+        "artifacts": []
+      }
+    ],
+    "distinct": 7,
+    "reports": [
+      "tests-render/index.json",
+      "tests-moon-final/index.json"
+    ],
+    "passed": 7,
+    "fixtureCorrections": "Persistent rendering/exposure state and shader warmup; moon plane facing camera and neutral overhead atmospheric moonlight."
+  },
+  "stagedAssets": [
+    {
+      "name": "MI_SimCopterMoon",
+      "staged": true
+    },
+    {
+      "name": "M_SceneryPaving",
+      "staged": true
+    },
+    {
+      "name": "M_ParkPath",
+      "staged": true
+    }
+  ],
+  "inspectedRenders": [
+    "parks-and-paving.png",
+    "moon-full.png",
+    "moon-quarter.png",
+    "moon-crescent.png"
+  ],
+  "installation": [
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+      "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+      "SHA256": "884397EB2865054E5ECC946977B38015D183440863F439B5E22819FFB6EB7275",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+      "PreviousSHA256": "A951C11E03C9578FBF2AB6831F6B2661C0B6EEF69181E174AD3A33AC249C3304",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+      "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+      "SHA256": "EE12594FA4675317C8C25595ADC343D8CE5D36CF4038124FF07FAD0EE57B8628",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+      "PreviousSHA256": "97D1D048DEC5B158D234A90ADBC144319524AC2B636925F8BB97F500F8E3C87C",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+      "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+      "SHA256": "D8AEE6DB9E057C04960385256A7EDF9E2CCF6C12CE1F818BB0700D0E9A8FBE32",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+      "PreviousSHA256": "886EF3F9C9500E513EA7A9D504D67836089C0522E338564BE4882FCD5F1B4437",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+      "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+      "SHA256": "B3690CE31BD2B4E1173783289285B3536AF93979CF9A351A65599244585823BD",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+      "PreviousSHA256": "7995C0AFD97875BE9D3595CDF4F3351F03273424214DA1EA9F5919C3FA74EABD",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Content/Paks/global.ucas",
+      "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/Package/Windows/SimCopterRemake/Content/Paks/global.ucas",
+      "SHA256": "E71897B09F44B17899D53A91611173B2C48317BEDDD2A4D86DF826B642CE2EA8",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Content/Paks/global.ucas",
+      "PreviousSHA256": "066B3DF90CDD54A385943951FAD99832AAA392B9678AF0075EACB05344A06527",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Content/Paks/global.utoc",
+      "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/Package/Windows/SimCopterRemake/Content/Paks/global.utoc",
+      "SHA256": "23BB6F056D7282686245F1C488B36B26118253579FAAEA32AD316649B4939BDC",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Content/Paks/global.utoc",
+      "PreviousSHA256": "38BEE16CBCFD102B38BEE5A4EBCB5CB2E14490A75FBDFD4805AC08B33772EC9E",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.pak",
+      "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/Package/Windows/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.pak",
+      "SHA256": "D4E02FBDAEFC578C81925B982AEC65727A7A386D77EC7B03936493044AA297CD",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.pak",
+      "PreviousSHA256": "034D3F65D28616190292EE60E0C5ED83E06C5FE813E90B73087946D582A16E5A",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.ucas",
+      "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/Package/Windows/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.ucas",
+      "SHA256": "76389038F881298108F70CD542E4648E5277ECAE5971AD88EFF25024D72FDBDB",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.ucas",
+      "PreviousSHA256": "766C2A018507CB5FACE5519AC89852065A78A7E38E3F2EAD5566D4DEFC3CEEEA",
+      "Changed": true
+    },
+    {
+      "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.utoc",
+      "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/Package/Windows/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.utoc",
+      "SHA256": "187087BA5D0D9E8836085DE3CAB9CE25FD586212280F9ADC3D6BAE366AAFF53D",
+      "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation/installed-backup/SimCopterRemake/Content/Paks/SimCopterRemake-Windows.utoc",
+      "PreviousSHA256": "8027CFEBE4726D19CFD5ECC82284431DF0025298645A8D3F2786D511E8B69095",
+      "Changed": true
+    }
+  ],
+  "startup": [
+    {
+      "launcher_pid": 58064,
+      "limitation": "Headless startup only; no interactive gameplay or listening check.",
+      "child_pids": [
+        45692
+      ],
+      "mode": "shipping",
+      "survived": true,
+      "seconds": 30.516804,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation\\smoke-shipping"
+    },
+    {
+      "limitation": "Headless startup only; no interactive gameplay or listening check.",
+      "seconds": 30.3843002,
+      "child_pids": [
+        null
+      ],
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\celestial-presentation\\smoke-development",
+      "mode": "development",
+      "launcher_pid": 45360,
+      "survived": true
+    }
+  ],
+  "limitations": [
+    "No interactive gameplay or physical-controller playtest",
+    "Moon screenshots are fixed-exposure close-ups, not gameplay framing",
+    "No publication or release update"
+  ],
+  "baselineDiagnostic": "Development startup repeats the pre-existing CelestialVault CDO missing MI_StarsStar_EnergyConservative diagnostic, confirmed in loading-presentation-fixes/smoke-development/Saved/Logs/SimCopterRemake.log. CityRender has its own stars material override. No new startup failure observed."
+}

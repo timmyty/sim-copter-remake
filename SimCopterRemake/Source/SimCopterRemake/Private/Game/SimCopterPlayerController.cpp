@@ -288,9 +288,10 @@ bool ASimCopterPlayerController::HandleControllerLeftStickPressed(const bool bRe
 	auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
 	const bool bCanTurbo = (Helicopter && !Helicopter->IsFixedWingAircraft()) || GetPawn()->IsA<ASimCopterOnFootPawn>();
 	const bool bHelpChord = IsInputKeyDown(EKeys::Gamepad_RightThumbstick) ||
-		(Helicopter && Helicopter->IsControllerCameraAdjustHeld());
+		(Helicopter && Helicopter->IsControllerRadialHeld());
 	bControllerLeftStickUsed = bHelpChord || !bCanTurbo ||
 		(Helicopter && Helicopter->GetControllerMode() != ESimCopterControllerMode::None);
+	if (bHelpChord && Helicopter) Helicopter->CancelControllerRadialForShortcut();
 	if (bHelpChord || !bCanTurbo) ToggleControllerHelp();
 	return true;
 }
@@ -329,9 +330,10 @@ bool ASimCopterPlayerController::HandleControllerMapKeyPressed(const FKey Key, c
 		Key != EKeys::Gamepad_DPad_Left && Key != EKeys::Gamepad_DPad_Right) return false;
 	auto* Helicopter = Cast<ASimCopterHelicopterPawn>(GetPawn());
 	if (!Helicopter || IsPaused() || IsMoveInputIgnored() ||
-		Helicopter->GetControllerMode() != ESimCopterControllerMode::None) return false;
-	if (!bControllerLeftStickHeld && !Helicopter->IsControllerCameraAdjustHeld() &&
+		(Helicopter->GetControllerMode() != ESimCopterControllerMode::None && !Helicopter->IsControllerRadialHeld())) return false;
+	if (!bControllerLeftStickHeld && !Helicopter->IsControllerRadialHeld() &&
 		!IsInputKeyDown(EKeys::Gamepad_RightThumbstick)) return false;
+	Helicopter->CancelControllerRadialForShortcut();
 	ControllerMapKeys.Add(Key);
 	if (bControllerLeftStickHeld) bControllerLeftStickUsed = true;
 	if (!bRepeat) Helicopter->HandleControllerMapShortcut(Key, bControllerLeftStickHeld);
@@ -443,6 +445,7 @@ void ASimCopterPlayerController::SetupInputComponent()
 	BindReplayInput(*InputComponent, *this);
 	InputComponent->BindKey(EKeys::F1, IE_Pressed, this, &ASimCopterPlayerController::ToggleControllerHelp).bExecuteWhenPaused = true;
 	InputComponent->BindKey(FInputChord(EKeys::R, false, true, false, false), IE_Pressed, this, &ASimCopterPlayerController::SimRadioMenu).bExecuteWhenPaused = true;
+	InputComponent->BindKey(EKeys::Gamepad_Special_Left, IE_Pressed, this, &ASimCopterPlayerController::OnFootRadioShortcut);
 	InputComponent->BindKey(FInputChord(EKeys::P, false, true, false, false), IE_Pressed, this, &ASimCopterPlayerController::SimPhotoMode).bExecuteWhenPaused = true;
 	InputComponent->BindKey(EKeys::F12, IE_Pressed, this, &ASimCopterPlayerController::CapturePhoto).bExecuteWhenPaused = true;
 }
@@ -1048,13 +1051,18 @@ void ASimCopterPlayerController::SimSettings()
 void ASimCopterPlayerController::SimRadioMenu()
 {
 	if (Screen == ESimCopterSettingsScreen::Radio) { CloseScreen(); return; }
-	if (!Cast<ASimCopterHelicopterPawn>(GetPawn()) || IsSettingsOpen() || IsPhotoModeActive() ||
+	if ((!Cast<ASimCopterHelicopterPawn>(GetPawn()) && !Cast<ASimCopterOnFootPawn>(GetPawn())) || IsSettingsOpen() || IsPhotoModeActive() ||
 		IsReplayPanelOpen() || IsPaused() || !GEngine || !GEngine->GameViewport ||
 		GEngine->GameViewport->IgnoreInput()) return;
 	auto* Radio = USimCopterRadioSubsystem::Get(this);
-	if (!Radio || !Radio->IsPlayerInHelicopter()) return;
+	if (!Radio || !Radio->IsLevelPlaybackStarted()) return;
 	PushPause();
 	EnterScreen(ESimCopterSettingsScreen::Radio);
+}
+
+void ASimCopterPlayerController::OnFootRadioShortcut()
+{
+	if (Cast<ASimCopterOnFootPawn>(GetPawn()) && IsInputKeyDown(EKeys::Gamepad_RightThumbstick)) SimRadioMenu();
 }
 
 // ---------------------------------------------------------------------------------------------

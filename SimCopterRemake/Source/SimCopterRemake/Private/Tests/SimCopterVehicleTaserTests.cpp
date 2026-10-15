@@ -24,7 +24,7 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
 	ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
 	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
-	auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
+	auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>(); Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RemoteTaser, true);
 	Heli->SetActorLocation(FVector(0,0,800));
 	auto* PC = World->SpawnActor<ASimCopterPlayerController>();
 	PC->Player = NewObject<ULocalPlayer>(GEngine); World->AddController(PC); PC->Possess(Heli);

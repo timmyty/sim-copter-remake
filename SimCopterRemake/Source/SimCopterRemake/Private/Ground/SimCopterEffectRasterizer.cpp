@@ -190,6 +190,10 @@ namespace
 
 int32 FSimCopterEffectRasterizer::ComputeDepthScale1616(float CameraDepthCm)
 {
+	// Cull in world units before converting to signed 16.16. Far overview cameras
+	// can exceed that format's range; overflow used to become zero depth/full size.
+	constexpr float FarDepthCm = FarDepth1616 * SimCopterEffectFX::Fixed1616ToCm;
+	if (!FMath::IsFinite(CameraDepthCm) || CameraDepthCm >= FarDepthCm) return 0;
 	const int32 Depth1616 = FMath::Max(
 		0,
 		FMath::RoundToInt(CameraDepthCm / SimCopterEffectFX::OriginalUnitToCm * 65536.0f));

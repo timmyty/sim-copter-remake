@@ -11,6 +11,9 @@
 #include "Styling/CoreStyle.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Flight/SimCopterHelicopterPawn.h"
+#include "Ground/SimCopterOnFootPawn.h"
+#include "GameFramework/PlayerController.h"
 
 namespace
 {
@@ -178,6 +181,7 @@ bool FSimCopterMissionMessageVisibilityTest::RunTest(const FString& Parameters)
 	ON_SCOPE_EXIT
 	{
 		Missions->RemoveMessageLogWidget();
+		Missions->RemoveMissionMarkerWidget();
 		World->DestroyWorld(false);
 		GEngine->GameViewport = PreviousViewport;
 	};
@@ -214,6 +218,19 @@ bool FSimCopterMissionMessageVisibilityTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Recreating the panel preserves hidden HUD state"), Missions->MessageLogWidget->GetVisibility() == EVisibility::Collapsed);
 	Missions->SetHudHiddenForReplay(false);
 	TestTrue(TEXT("Recreated panel shows its message when restored"), Missions->MessageLogWidget->GetVisibility() == EVisibility::SelfHitTestInvisible);
+	// All world waypoints share this layer, including the on-foot aircraft and hangar tags.
+	auto* Controller=World->SpawnActor<APlayerController>(); World->AddController(Controller);
+	auto* Pilot=World->SpawnActor<ASimCopterOnFootPawn>();
+	Pilot->SetParkedHelicopter(World->SpawnActor<ASimCopterHelicopterPawn>()); Controller->Possess(Pilot);
+	TArray<FSimCopterMissionWorldMarkerEntry> Markers; Missions->BuildMissionWorldMarkers(Markers);
+	TestTrue(TEXT("Fixture contains a real parked-helicopter waypoint"),Markers.ContainsByPredicate([](const auto& M){return M.Label==TEXT("Your helicopter");}));
+	Missions->SetHudHiddenForReplay(true);
+	Missions->EnsureMissionMarkerWidget();
+	TestTrue(TEXT("Markers created during the intro stay hidden"),Missions->MissionMarkerWidget->GetVisibility()==EVisibility::Collapsed);
+	for (int32 Frame=0;Frame<3;++Frame) Missions->RefreshMissionMarkerWidget();
+	TestTrue(TEXT("Waypoint refresh cannot unhide the intro HUD"),Missions->MissionMarkerWidget->GetVisibility()==EVisibility::Collapsed);
+	Missions->SetHudHiddenForReplay(false); Missions->RefreshMissionMarkerWidget();
+	TestTrue(TEXT("Waypoints return after the intro"),Missions->MissionMarkerWidget->GetVisibility().IsVisible());
 	return true;
 }
 #endif

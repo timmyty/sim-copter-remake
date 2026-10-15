@@ -59,7 +59,10 @@ bool FSimCopterRadioMenuPlaybackTest::RunTest(const FString&)
 	const auto Original = Radio->GetStationPlaylist(0);
 	const int32 FirstAd = Original.IndexOfByPredicate([](const auto& T) { return T.Slot == ESimCopterRadioSlot::Commercial; });
 	TestEqual(TEXT("Commercials follow songs"), FirstAd, Radio->Stations[0].Music.Num());
-	TestFalse(TEXT("On-foot playback rejected"), Radio->PlayStationTrack(0, FirstAd));
+	TestFalse(TEXT("Front-end playback rejected before city starts"), Radio->PlayStationTrack(0, FirstAd));
+	TestTrue(TEXT("Retail defaults to shuffle with commercials enabled"), Radio->IsShuffleEnabled(0) && Radio->IsSlotEnabled(ESimCopterRadioSlot::Commercial));
+	TestFalse(TEXT("KINV defaults to album order"), Radio->IsShuffleEnabled(Artist));
+	Radio->SetShuffleEnabled(0, false);
 	Radio->SetPlayerInHelicopter(true);
 	Radio->SetCityIntroSuspended(true);
 	TestFalse(TEXT("Intro cannot be interrupted"), Radio->PlayStationTrack(0, FirstAd));
@@ -114,7 +117,53 @@ bool FSimCopterRadioMenuPlaybackTest::RunTest(const FString&)
 	TestTrue(TEXT("Reselecting same KINV song restarts it"), Radio->PlayStationTrack(Artist, 5));
 	TestEqual(TEXT("Old saved offset discarded on explicit choice"), Radio->SequentialOffset, 0.0f);
 	Radio->SetPlayerInHelicopter(false);
-	TestFalse(TEXT("Leaving aircraft stops playback"), Audio->IsRadioPlaying());
+	TestTrue(TEXT("Leaving aircraft keeps music playing"), Audio->IsRadioPlaying());
+	TestTrue(TEXT("On-foot controls select a decoded WAV"), Radio->PlayStationTrack(0, FirstAd));
+	Radio->TogglePlaybackPaused();
+	TestTrue(TEXT("On-foot pause works"), Radio->IsPlaybackPaused());
+	TestTrue(TEXT("On-foot seek works"), Radio->SeekPlayback(12.f));
+	Radio->SetPlayerInHelicopter(true);
+	TestTrue(TEXT("Reboarding retains paused playback"), Radio->IsPlaybackPaused());
+	Radio->SetPlayerInHelicopter(false);
+	TestTrue(TEXT("On-foot track selection works"), Radio->PlayStationTrack(0, FirstAd));
+	Radio->SetShuffleEnabled(0, true);
+	TestEqual(TEXT("Shuffle clears manual queue"), Radio->ManualPlaylistIndex, INDEX_NONE);
+	TestEqual(TEXT("Toggle does not interrupt current track"), Radio->GetCurrentTitle(), Original[FirstAd].Title);
+	TestEqual(TEXT("Original constructor has one beat per category"), Radio->Pattern.Num(), 4);
+	Radio->SetSlotEnabled(ESimCopterRadioSlot::Commercial, true);
+	int32 Ads = 0, Songs = 0;
+	FMath::RandInit(168);
+	for (int32 Beat = 0; Beat < 100; ++Beat)
+	{
+		Audio->StopRadio(); Radio->Tick(0);
+		Radio->GapStartTime -= USimCopterRadioSubsystem::GapSeconds;
+		Radio->Tick(0);
+		if (Audio->IsRadioPlaying())
+		{
+			Ads += Radio->GetCurrentSlot() == ESimCopterRadioSlot::Commercial;
+			Songs += Radio->GetCurrentSlot() == ESimCopterRadioSlot::Music;
+		}
+	}
+	TestTrue(TEXT("Commercials recur during normal shuffle playback"), Ads > 10 && Songs > 10);
+	Radio->PlayStationTrack(Artist, 0);
+	Radio->TogglePlaybackPaused();
+	Radio->SetShuffleEnabled(Artist, true);
+	TestTrue(TEXT("KINV order toggle preserves pause"), Radio->IsPlaybackPaused());
+	Radio->StepTrack(1);
+	const int32 ShuffledNext = Radio->SequentialTrack;
+	TestTrue(TEXT("Next in shuffle changes songs"), ShuffledNext != 0);
+	Radio->StepTrack(-1);
+	TestEqual(TEXT("Previous returns through the shuffled order"), Radio->SequentialTrack, 0);
+	Radio->StepTrack(1);
+	TestEqual(TEXT("Next follows the same shuffled order again"), Radio->SequentialTrack, ShuffledNext);
+	Radio->PlayStationTrack(Artist, 0);
+	TSet<int32> ArtistSongs; ArtistSongs.Add(0);
+	for (int32 I = 1; I < 21; ++I) { Audio->StopRadio(); Radio->Tick(0); ArtistSongs.Add(Radio->SequentialTrack); }
+	TestEqual(TEXT("KINV shuffle plays every song before repeating"), ArtistSongs.Num(), 21);
+	Radio->SetShuffleEnabled(Artist, false);
+	const int32 LastArtistTrack = Radio->SequentialTrack;
+	Audio->StopRadio(); Radio->Tick(0);
+	TestEqual(TEXT("Returning KINV to sequential continues album order"), Radio->SequentialTrack, (LastArtistTrack + 1) % 21);
 	Radio->SetStationIndex(0);
 	TestEqual(TEXT("Dial change clears manual queue"), Radio->ManualPlaylistIndex, INDEX_NONE);
 	return true;
@@ -138,6 +187,10 @@ bool FSimCopterRadioMenuWidgetTest::RunTest(const FString&)
 	auto Menu = SNew(SSimCopterRadioMenu).Radio(Radio).OnClosed(FSimpleDelegate::CreateLambda([&] { ++Closed; }));
 	TestEqual(TEXT("All stations shown"), Menu->Stations.Num(), Radio->GetStationCount());
 	TestTrue(TEXT("Current station is initially browsed"), Menu->SelectedStation == Radio->GetStationIndex());
+	const bool BeforeShuffle = Radio->IsShuffleEnabled(Menu->SelectedStation);
+	Menu->ToggleShuffle();
+	TestEqual(TEXT("Order button changes selected station mode"), Radio->IsShuffleEnabled(Menu->SelectedStation), !BeforeShuffle);
+	Menu->ToggleShuffle();
 	// Route input through a real Slate focus path, including the lists' native row navigation.
 	// No OS window or physical controller is needed.
 	{
@@ -210,7 +263,7 @@ bool FSimCopterRadioMenuWidgetTest::RunTest(const FString&)
 		Slate.ProcessAnalogInputEvent(FAnalogInputEvent(EKeys::Gamepad_LeftX,FModifierKeysState(),0,false,0,0,0.f));
 		Press(EKeys::Gamepad_FaceButton_Right);
 		TestEqual(TEXT("B closes radio after leaving the list"),Closed,1);
-		Radio->SetPlayerInHelicopter(false); Radio->SetStationIndex(0); Closed=0;
+		Radio->SetPlayerInHelicopter(false); Radio->bLevelPlaybackStarted=false; Radio->SetStationIndex(0); Closed=0;
 	}
 	const auto Capture = [&](const TCHAR* Name, FVector2D Size)
 	{
@@ -346,7 +399,18 @@ bool FSimCopterRadioMenuLifecycleTest::RunTest(const FString&)
 	TestEqual(TEXT("Shortcut does not replace another menu"), PC->Screen, ESimCopterSettingsScreen::Menu);
 	PC->SimSettings();
 	PC->Possess(World->SpawnActor<ASimCopterOnFootPawn>()); PC->SimRadioMenu();
-	TestFalse(TEXT("Cockpit radio unavailable on foot"), PC->IsSettingsOpen());
+	TestEqual(TEXT("Radio is available on foot"), PC->Screen, ESimCopterSettingsScreen::Radio);
+	TestTrue(TEXT("On-foot radio pauses gameplay"), PC->IsPaused());
+	PC->SimRadioMenu();
+	TestFalse(TEXT("Closing on-foot radio restores game input"), PC->IsPaused() || Viewport->IgnoreInput());
+	PC->PlayerInput->InputKey(FInputKeyParams(EKeys::Gamepad_RightThumbstick, IE_Pressed, 1.0, false));
+	PC->PlayerInput->ProcessInputStack(TArray<UInputComponent*>(), 1.f/60, false);
+	for (auto& Key : PC->InputComponent->KeyBindings)
+		if (Key.Chord.Key == EKeys::Gamepad_Special_Left && Key.KeyEvent == IE_Pressed) Key.KeyDelegate.Execute(EKeys::Gamepad_Special_Left);
+	TestEqual(TEXT("On-foot R3 plus View binding opens Radio"), PC->Screen, ESimCopterSettingsScreen::Radio);
+	PC->SimRadioMenu();
+	PC->PlayerInput->InputKey(FInputKeyParams(EKeys::Gamepad_RightThumbstick, IE_Released, 0.0, false));
+	PC->PlayerInput->ProcessInputStack(TArray<UInputComponent*>(), 1.f/60, false);
 	return true;
 }
 #endif

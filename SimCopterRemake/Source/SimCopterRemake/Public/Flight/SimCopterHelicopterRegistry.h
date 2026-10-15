@@ -34,6 +34,7 @@ enum class ESimCopterHelicopterTool : uint8
 	ApacheMachineGun,
 	TowClamp UMETA(Hidden), // Retired serialized value; loads as CaptureCage.
 	CaptureCage,
+	RemoteTaser, // Appended: preserve all existing saved tool ordinals.
 	Count UMETA(Hidden)
 };
 
@@ -195,7 +196,7 @@ SIMCOPTERREMAKE_API int32 GetEquipmentPrice(ESimCopterHelicopterTool Tool);
 SIMCOPTERREMAKE_API int32 GetEquipmentSellValue(ESimCopterHelicopterTool Tool);
 
 // Career mask of every purchasable tool (0x1f).
-constexpr int32 AllCareerEquipmentBits = 0x5f;
+constexpr int32 AllCareerEquipmentBits = 0xdf;
 
 // Upgrade legacy clamp purchases without shifting saved tool ordinals or other equipment bits.
 constexpr int32 NormalizeEquipmentMask(int32 Mask)

@@ -3,6 +3,7 @@
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Game/SimCopterCheats.h"
+#include "Game/SimCopterLookInput.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Framework/Application/SlateApplication.h"
 
@@ -340,6 +341,8 @@ void ASimCopterOnFootPawn::Tick(float DeltaSeconds)
 	}
 
 	UpdateAirOperations(DeltaSeconds);
+	// Respawn can transfer possession and retire this pawn in the middle of its tick.
+	if (!IsActorTickEnabled() || IsActorBeingDestroyed()) return;
 	UpdateLookYaw(DeltaSeconds);
 	// Reaching the lowered sling with a patient is the handoff; do not wait for an input
 	// or for the helicopter to finish aligning directly overhead before taking the load.
@@ -587,9 +590,7 @@ void ASimCopterOnFootPawn::EnsureControllerOverlayWidget()
 		[SSimCopterControllerHelp::ForPawn(this)]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)
 		[SNew(STextBlock).Text(FText::FromString(TEXT("+"))).Font(FCoreStyle::GetDefaultFontStyle("Bold", 24))
-		.Visibility_Lambda([this]() { return bTaserAiming ? EVisibility::HitTestInvisible : EVisibility::Collapsed; })]
-		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(FMargin(0,0,0,90))
-		[SNew(STextBlock).Text_Lambda([this]() { return FText::FromString(FString::Printf(TEXT("Pilot %.0f%%"), PilotHealth)); })];
+		.Visibility_Lambda([this]() { return bTaserAiming ? EVisibility::HitTestInvisible : EVisibility::Collapsed; })];
 	GEngine->GameViewport->AddViewportWidgetContent(ControllerOverlayWidget.ToSharedRef(), 60);
 }
 
@@ -987,6 +988,7 @@ void ASimCopterOnFootPawn::TryAutoEnterHelicopter()
 
 void ASimCopterOnFootPawn::TryEnterHelicopter(const float ReachCm)
 {
+	if (PilotHealth <= 0) return;
 	// Automatic contact boarding continues to tick beneath the hangar menu. It must
 	// not possess the aircraft and restore cockpit input while that menu owns focus.
 	if (ASimCopterHangar::IsAnyShellOpen(GetWorld())) return;
@@ -1018,8 +1020,8 @@ void ASimCopterOnFootPawn::UpdateLookYaw(float DeltaSeconds)
 	const float MouseSensitivity = Settings != nullptr ? Settings->GetMouseSensitivityX() : 1.0f;
 	const float ControllerSensitivity = Settings != nullptr ? Settings->GetControllerSensitivityX() : 1.0f;
 	const float YawDeltaDeg =
-		(LookYawInput + MouseLookYawInput * MouseSensitivity + ControllerLookYawInput * ControllerSensitivity)
-		* LookYawSpeedDegPerSec * DeltaSeconds;
+		((LookYawInput + ControllerLookYawInput * ControllerSensitivity) * DeltaSeconds +
+			MouseLookYawInput * MouseSensitivity * SimCopterLookInput::MouseReferenceSeconds) * LookYawSpeedDegPerSec;
 	if (!FMath::IsNearlyZero(YawDeltaDeg))
 	{
 		AddActorWorldRotation(FRotator(0.0f, YawDeltaDeg, 0.0f));
@@ -1045,8 +1047,8 @@ void ASimCopterOnFootPawn::UpdateCamera(float DeltaSeconds)
 
 	CameraPitchDeg = FMath::Clamp(
 		CameraPitchDeg -
-			(LookPitchInput + MouseLookPitchInput * MouseSensitivity + ControllerLookPitchInput * ControllerSensitivity)
-			* LookPitchSpeedDegPerSec * DeltaSeconds,
+			((LookPitchInput + ControllerLookPitchInput * ControllerSensitivity) * DeltaSeconds +
+				MouseLookPitchInput * MouseSensitivity * SimCopterLookInput::MouseReferenceSeconds) * LookPitchSpeedDegPerSec,
 		// The shoulder view must reach overhead and the ground while walking or aiming.
 		// Stop short of vertical so the camera and raised arm never invert.
 		-85.0f,

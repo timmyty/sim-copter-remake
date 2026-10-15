@@ -50,7 +50,7 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 		Shape->RegisterComponent(); Actor->SetActorLocation(Location); return Shape;
 	};
 	auto* Floor=Box(FVector(0,0,-20),FVector(10000,10000,20));
-	auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>();
+	auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>(); Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RemoteTaser, true);
 	auto* Ops=Heli->GetAirOperations();
 	auto* PC=World->SpawnActor<ASimCopterPlayerController>(); PC->Player=NewObject<ULocalPlayer>(GEngine); World->AddController(PC);
 	PC->Possess(Heli);
@@ -74,22 +74,22 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	};
 	const auto SelectRemoteOption=[&]()
 	{
-		ControllerKey(EKeys::Gamepad_FaceButton_Left);
+		ControllerKey(EKeys::Gamepad_RightThumbstick);
 		const FVector2D Direction=SimCopterControllerInput::GetRadialSlotDirection(Heli->GetControllerRemoteTaserSlot(),Heli->GetControllerToolWheelSlotCount());
 		Heli->ControllerRightX(Direction.X); Heli->ControllerRightY(Direction.Y);
 		const FRotator BeforeMenuAim=Ops->RemoteTaserAim;
 		Ops->UpdateRemoteTaserControls(0,0,Direction.X,Direction.Y,.1f);
 		TestTrue(TEXT("Tool selection owns the stick without also moving remote aim"),Ops->RemoteTaserAim.Equals(BeforeMenuAim));
 		ControllerKey(EKeys::Gamepad_FaceButton_Bottom);
-		ControllerKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released);
+		ControllerKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released); ControllerKey(EKeys::Gamepad_RightThumbstick,IE_Released);
 		Heli->ControllerRightX(0); Heli->ControllerRightY(0);
 	};
 	SelectRemoteOption();
-	TestTrue(TEXT("Empty helicopter enters remote aim without officer or purchase"),Ops->IsRemoteTaserActive());
+	TestTrue(TEXT("Empty helicopter enters remote aim with purchased taser and no officer"),Ops->IsRemoteTaserActive());
 	TestEqual(TEXT("Selecting Remote Taser does not also fire"),Ops->ShotCooldown,0.0f);
 	ControllerKey(EKeys::Gamepad_FaceButton_Bottom);
 	TestTrue(TEXT("A fires the active remote taser"),Ops->ShotCooldown>0);
-	ControllerKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released);
+	ControllerKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released); ControllerKey(EKeys::Gamepad_RightThumbstick,IE_Released);
 	Ops->Update(.05f);
 	TestTrue(TEXT("Weapon gimbal and sight share the firing direction"),Ops->RemoteTaserWeapon->GetForwardVector().Equals(Ops->GetRemoteTaserDirection(),.001));
 	TestTrue(TEXT("Readout announces a steady hover and magnification"),Ops->GetRemoteTaserReadout().Contains(TEXT("HOLD")) && Ops->GetRemoteTaserReadout().Contains(TEXT("1.0x")));
@@ -166,10 +166,10 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 	TestTrue(TEXT("Holding LT engages four-times scope"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),4.f,.001f));
 	Heli->ControllerLeftTrigger(0); SettleScope();
 	TestTrue(TEXT("Releasing LT restores wheel-selected zoom"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),2.f,.001f));
-	ControllerKey(EKeys::Gamepad_FaceButton_Left);
+	ControllerKey(EKeys::Gamepad_RightThumbstick);
 	ZoomAxis(3); Heli->ControllerLeftTrigger(1); SettleScope();
 	TestTrue(TEXT("Tool menu blocks both scope inputs"),FMath::IsNearlyEqual(Ops->GetRemoteTaserZoom(),2.f,.001f) && Ops->RemoteScopeZoomTarget==2.f);
-	ControllerKey(EKeys::Gamepad_FaceButton_Right); Heli->ControllerLeftTrigger(0);
+	ControllerKey(EKeys::Gamepad_FaceButton_Right); ControllerKey(EKeys::Gamepad_RightThumbstick,IE_Released); Heli->ControllerLeftTrigger(0);
 	float ZoomAt30=0;
 	for (int32 Rate : {30,60,120})
 	{
@@ -573,14 +573,14 @@ bool FSimCopterRemoteRecoveryTest::RunTest(const FString&)
 			};
 			const auto SelectTool=[&](ESimCopterHelicopterTool Tool)
 			{
-				WinchKey(EKeys::Gamepad_FaceButton_Left);
+				WinchKey(EKeys::Gamepad_RightThumbstick);
 				const int32 Slot=RescueHeli->ControllerToolWheelTools.IndexOfByKey(Tool);
 				TestTrue(TEXT("Requested installed attachment is in the controller wheel"),Slot!=INDEX_NONE);
 				const FVector2D Direction=SimCopterControllerInput::GetRadialSlotDirection(Slot,RescueHeli->GetControllerToolWheelSlotCount());
 				RescueHeli->ControllerRightX(Direction.X); RescueHeli->ControllerRightY(Direction.Y);
 				RescueHeli->UpdateControllerRadialSelection();
 				RescueHeli->ControllerRightX(0); RescueHeli->ControllerRightY(0);
-				WinchKey(EKeys::Gamepad_FaceButton_Bottom); WinchKey(EKeys::Gamepad_FaceButton_Bottom,IE_Released);
+				WinchKey(EKeys::Gamepad_RightThumbstick,IE_Released);
 				TestTrue(TEXT("Controller confirms the requested attachment"),RescueHeli->GetActiveTool()==Tool);
 			};
 			const auto DriveWinch=[&](FKey Direction)

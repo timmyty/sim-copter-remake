@@ -202,8 +202,9 @@ bool FSimCopterHangarCatalogTest::RunTest(const FString& Parameters)
 			ESimCopterHelicopterTool::WaterCannon,
 			ESimCopterHelicopterTool::RescueHarness,
 			ESimCopterHelicopterTool::CaptureCage,
+			ESimCopterHelicopterTool::RemoteTaser,
 		};
-		const int32 ExpectedIndices[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 6 };
+		const int32 ExpectedIndices[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 6, 7 };
 
 		for (int32 Row = 0; Row < SimCopterHangarShop::UpgradeRowCount; ++Row)
 		{

@@ -11,7 +11,8 @@ the existing keyboard and mouse controls.
 | Left stick | Analog equivalent of `WASD`: forward/back pitch and coordinated left/right turn |
 | Right stick | Pan/orbit the camera like holding the right mouse button |
 | `RT` / `LT` or `B` | Climb / descend; on the ground these also hold engine start / shutdown |
-| `X` | Open Tools / switch to Dispatch |
+| Hold `R3` | Open Tools; release to equip the last highlighted option |
+| `X` while a radial is open | Switch Tools / Dispatch |
 | `A` | Use the selected tool / confirm a menu choice |
 | `LB` / `RB` | Turn left / right |
 | `Y` | Exit the helicopter, including deliberate airborne exits |
@@ -19,7 +20,7 @@ the existing keyboard and mouse controls.
 | Menu / Start | Pause or resume |
 | `L3` | Toggle Turbo Mode |
 | `R3` + `L3` | Show / hide contextual button help |
-| `R3` + left-stick X | Dedicated lateral slide, equivalent to `Q` / `E` |
+| `X` + left-stick X | Dedicated lateral slide, equivalent to `Q` / `E` |
 | `R3` + D-pad up/down | Minimap zoom in/out |
 | `R3` + D-pad left/right | Previous/next map mission |
 | `L3` + D-pad up | Toggle mission markers |
@@ -31,25 +32,25 @@ so they do not also operate a winch or change megaphone messages.
 
 LB and RB remain dedicated to turning. Holding both cancels their turn input;
 releasing either immediately restores the other direction, including at cruise.
-The retired LB+RB tool-wheel shortcut no longer latches steering off. Use X for Tools.
+The retired LB+RB tool-wheel shortcut no longer latches steering off. Hold R3 for Tools.
 
 ### Camera adjustment
 
-Hold `R3` to enter camera-adjust mode:
+Hold `X` to enter camera-adjust mode:
 
-| Control while `R3` is held | Action |
+| Control while `X` is held | Action |
 | --- | --- |
 | Right-stick Y | Zoom in/out |
 | `RT` / `LT` | Move the helicopter up/down in the framing of exterior camera views |
-| `X` (Square on PlayStation) | Toggle the spotlight |
+| `A` | Toggle the spotlight |
 
-Flight collective is suppressed while `R3` is held so camera framing cannot accidentally change
+Flight collective is suppressed while `X` is held so camera framing cannot accidentally change
 altitude. Left-stick forward/back remains analog flight input; left/right becomes the lateral
 slide described above.
 
 ## Dispatch radial
 
-Press `X` to open Tools, then `X` again to switch to Dispatch. Select a service
+Hold `R3` to open Tools, then press `X` to switch to Dispatch. Select a service
 with the right stick, including ground services and **Air: Map Mission**. Air support
 unlocks after passing the current level and waits for an order. Select the mission
 on the map, then confirm **Air: Map Mission** to assign that one job. The helper
@@ -58,9 +59,9 @@ returns to standby afterward; each further mission requires another order.
 | Control in Dispatch | Action |
 | --- | --- |
 | `B` | Cancel and close without dispatching |
-| Select Recall All, then `A` | Recall every active dispatch and chase vehicle, then close |
+| Select Recall All, then release `R3` | Recall every active dispatch and chase vehicle, then close |
 | `X` | Switch back to Tools |
-| `A` | Dispatch the highlighted service |
+| Release `R3` (or press `A`) | Dispatch the highlighted service |
 
 The spotlight determines the dispatch and chase tile. Recall All is immediate and does not require
 a valid spotlight target; the original Shift+F2-F5 bindings retain their selected-service,
@@ -68,23 +69,24 @@ spotlight-local release behavior.
 
 ## Tool radial and use
 
-Press `X` to open the tool radial, navigate with the right stick, and press `A` to
-equip the highlighted installed tool. Press `B` to cancel without changing tools.
+Hold `R3` to open the tool radial and navigate with the right stick. Release `R3` to
+equip the last highlighted installed tool, even if the stick has returned to center.
+Press `B` to cancel without changing tools. `A` also confirms while the wheel is open.
 
 | Control | Action |
 | --- | --- |
 | `A` | Activate the equipped tool; held tools remain active until `A` is released |
-| Select Passengers in Tools, then `A` | Open passenger selection |
-| Select Remote Taser in Tools, then `A` | Activate the remote sight while airborne |
+| Select Passengers in Tools, then release `R3` | Open passenger selection |
+| Select purchased Remote Taser in Tools, then release `R3` | Activate the remote sight while airborne |
 | D-pad up/down with bucket selected | Raise/lower the bucket |
 | D-pad up/down with rescue harness selected | Raise/lower the harness |
 | D-pad left/right with megaphone selected | Select the previous/next message |
 
-The radial contains installed tools plus Remote Taser on helicopters and Passengers when the cabin is occupied. In remote mode, right stick aims, hold LT for 4x scope zoom, and A or RT fires. Release LT to return to the previous zoom. The mouse wheel adjusts zoom from 1x to 4x. The helicopter holds a steady firing position until range or sustained cover requires following again. Open Tools with X, select Fly Helicopter, and press A to return. Selecting an ordinary tool also returns to manual flight. Confirming an option does not perform a tool action on the same press. These menu options do not change equipment or save formats.
+The radial contains installed tools, the purchased Remote Taser, and Passengers when the cabin is occupied. In remote mode, right stick aims, hold LT for 4x scope zoom, and A or RT fires. Release LT to return to the previous zoom. The mouse wheel adjusts zoom from 1x to 4x. The helicopter holds a steady firing position until range or sustained cover requires following again. Hold R3, select Fly Helicopter, and release R3 to return. Selecting an ordinary tool also returns to manual flight. Confirming an option does not perform a tool action on the same press.
 
 ## Passengers
 
-Open Tools with `X`, select Passengers with the right stick, then press `A`. The selected
+Hold `R3`, select Passengers with the right stick, then release `R3`. The selected
 seat is highlighted on the dashboard.
 
 | Control in passenger-selection mode | Action |
@@ -94,7 +96,7 @@ seat is highlighted on the dashboard.
 | D-pad left/up or right/down | Select Drop or Cancel |
 | `A` | Confirm the highlighted choice |
 | `B` | Back out one level; press again to leave passenger mode |
-| `X` | Return to Tools |
+| Hold `R3` | Return to Tools |
 
 ## On foot
 

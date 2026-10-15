@@ -5,6 +5,7 @@
 #include "City/SimCopterDayNightLength.h"
 #include "City/SimCopterEffectExposure.h"
 #include "DaySequenceActor.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Game/SimCopterLowPowerMode.h"
@@ -329,8 +330,15 @@ ADaySequenceActor* USimCopterDayNightSubsystem::GetDaySequenceActor() const
 
 bool USimCopterDayNightSubsystem::TryGetLiveTimeOfDayHours(float& OutHours)
 {
+	// Explicit snapshots (save/photo/tour) must see a newly spawned sky even before
+	// the ordinary tick's throttled actor rescan. A cached actor still returns immediately.
+	LastActorScanSeconds = -1;
 	if (const ADaySequenceActor* DaySequenceActor = ResolveDaySequenceActor())
 	{
+		// A save can arrive before the sky. Consume that queued restoration before
+		// another snapshot or temporary presentation override captures the live hour.
+		ApplyTimeOfDaySettings();
+		ApplyPendingSavedTimeOfDay();
 		OutHours = DaySequenceActor->GetTimeOfDay();
 		return FMath::IsFinite(OutHours);
 	}
@@ -425,6 +433,20 @@ void USimCopterDayNightSubsystem::Refresh()
 		FadeDurationHours,
 		DayLengthHours,
 		/*bSmoothFade=*/true);
+
+	// The authored sky can set at a different hour from the fallback 18:00 curve.
+	// Read the evaluated primary atmospheric sun, never the secondary moon light.
+	TInlineComponentArray<UDirectionalLightComponent*> Lights;
+	DaySequenceActor->GetComponents(Lights);
+	for (const auto* Light : Lights)
+	{
+		if (Light->bAtmosphereSunLight && Light->AtmosphereSunLightIndex == 0)
+		{
+			const float Elevation = FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(-float(Light->GetForwardVector().Z), -1.0f, 1.0f)));
+			NightAlpha = SimCopterDayNight::NightAlphaForSunElevation(Elevation);
+			break;
+		}
+	}
 
 	// The edge, not the state: the seed has to be drawn once as the sun goes down, not re-drawn
 	// every frame it stays down (which would make the whole skyline flicker).
@@ -639,22 +661,10 @@ void USimCopterDayNightSubsystem::ApplyTimeOfDaySettings()
 		DaySequenceActor->Play();
 	}
 
-	// A Real Time re-pin is the clock moving on, not a jump: keep the night edge state so the
-	// windows are not re-rolled every ten seconds after dark. A mode change still counts as a jump.
-	const bool bContinuousRealTimeStep = Mode == ESimCopterTimeOfDayMode::RealTime && bModeUnchanged &&
-		FMath::Abs(StaticHours - AppliedStaticTimeOfDayHours) < 2.0f * RealTimeRepinHours;
-
 	AppliedTimeOfDayMode = ModeValue;
 	AppliedStaticTimeOfDayHours = StaticHours;
 
-	// A seek is a discontinuity, so the day->night edge Refresh() watches for cannot be trusted
-	// across it: dragging the Static Time slider from noon to midnight arrives at night without ever
-	// passing through a rising fade. Forget the previous state and let Refresh() re-detect it, which
-	// is what makes "the user activates night from the options" roll a fresh set of windows.
-	if (!bContinuousRealTimeStep)
-	{
-		bWasNight = false;
-	}
+	// Retain the current night edge across seeks; Refresh detects actual day/night changes.
 
 	// The seek moved the clock; publish the new blend now rather than one frame late.
 	Refresh();

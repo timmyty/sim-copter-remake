@@ -51,19 +51,19 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			Add(TEXT("rs"), TEXT("Up / down: zoom camera"));
 			Add(TEXT("rt"), TEXT("Raise aircraft in camera framing"));
 			Add(TEXT("lt"), TEXT("Lower aircraft in camera framing"));
-			Add(TEXT("x"), TEXT("Toggle spotlight"));
+			Add(TEXT("a"), TEXT("Toggle spotlight"));
 			if (State.bCanExit) Add(TEXT("y"), TEXT("Exit helicopter"));
-			Add(TEXT("r3"), TEXT("Release to return to tools"));
+			Add(TEXT("x"), TEXT("Release to return to flight"));
 			break;
 		case EContext::ToolWheel:
 			Add(TEXT("rs"), TEXT("Select tool / remote taser / passengers"));
-			Add(TEXT("a"), TEXT("Activate selected option"));
+			Add(TEXT("r3"), TEXT("Release to equip highlighted option"));
 			Add(TEXT("x"), TEXT("Switch to Dispatch"));
 			Add(TEXT("b"), TEXT("Cancel"));
 			break;
 		case EContext::DispatchWheel:
 			Add(TEXT("rs"), TEXT("Select service / Recall All"));
-			Add(TEXT("a"), TEXT("Confirm selected option"));
+			Add(TEXT("r3"), TEXT("Release to dispatch highlighted option"));
 			Add(TEXT("x"), TEXT("Switch to Tools"));
 			Add(TEXT("b"), TEXT("Cancel"));
 			break;
@@ -92,7 +92,7 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			Add(TEXT("lt"), TEXT("Hold for 4x scope zoom"));
 			Add(TEXT("a"), TEXT("Fire remote taser"));
 			Add(TEXT("rt"), TEXT("Fire remote taser"));
-			Add(TEXT("x"), TEXT("Options / select Fly Helicopter"));
+			Add(TEXT("r3"), TEXT("Hold Tools / select Fly Helicopter"));
 			if (State.bCanExit) Add(TEXT("y"), TEXT("Exit helicopter"));
 			break;
 		default:
@@ -100,14 +100,14 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			Add(TEXT("rs"), TEXT("Look / orbit camera"));
 			Add(TEXT("rt"), TEXT("Climb / start engine"));
 			Add(TEXT("lt"), TEXT("Descend / stop engine (B also)"));
-			Add(TEXT("r3"), TEXT("Hold for camera adjustments"));
+			Add(TEXT("x"), TEXT("Hold for camera adjustments"));
 			if (State.bHasTool)
 			{
 				Add(TEXT("a"), State.bMegaphone ? FString(TEXT("Broadcast: ")) + State.Message : State.ToolAction);
 				if (State.bMegaphone) Add(TEXT("horizontal"), TEXT("Change message"));
 				else if (State.bRope) Add(TEXT("vertical"), TEXT("Raise / lower"));
 			}
-			Add(TEXT("x"), TEXT("Open Tools / switch Dispatch"));
+			Add(TEXT("r3"), TEXT("Hold Tools; release to equip | X: Dispatch"));
 			Add(TEXT("lb"), TEXT("LB / RB: turn left / right"));
 			if (State.bCanExit) Add(TEXT("y"), TEXT("Exit helicopter"));
 			break;

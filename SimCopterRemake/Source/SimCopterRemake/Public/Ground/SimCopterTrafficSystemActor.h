@@ -193,6 +193,9 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterTrafficSystemActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterGameplayOptionsTest;
+	friend class FSimCopterUserCityPopulationTest;
+	friend class FSimCopterFastFlightPopulationTest;
 	friend class FSimCopterPlaneControlsTest;
 	friend class FSimCopterWeaponDamageTest;
 	friend class FSimCopterCityWeaponTest;
@@ -831,6 +834,7 @@ private:
 	friend class FSimCopterAmbientDispatchTest;
 	friend class FSimCopterDeployedMedicRiotTest;
 	friend class FSimCopterMedicDeploymentTest;
+	friend class FSimCopterMedicReboardingTest;
 	friend class FSimCopterResponderRepathTest;
 	friend class FSimCopterMedicHillTest;
 	friend class FSimCopterPatientMarkerTest;
@@ -924,6 +928,12 @@ private:
 	FString ActiveOriginalGameRootPath;
 	float ActiveTileSize = 400.0f;
 	float SpawnThinkAccumulatorSeconds = 0.0f;
+	// Drain population refill batches across frames; mission spawns outside this pass stay immediate.
+	int32 PendingSpawnPasses = 0;
+	bool bBudgetPopulationSpawns = false;
+	int32 PopulationPedestriansSpawnedThisPass = 0;
+	int32 PopulationVehiclesSpawnedThisPass = 0;
+	TArray<FIntPoint> PendingAmbientSpawnTiles;
 	int32 LastAmbientScanTileX = INDEX_NONE;
 	int32 LastAmbientScanTileY = INDEX_NONE;
 	bool bLoggedMissingPedestrianMeshes = false;

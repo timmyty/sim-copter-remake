@@ -612,4 +612,84 @@ bool FSimCopterMedicDeploymentTest::RunTest(const FString&)
 	}
 	return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMedicReboardingTest,"SimCopter.MedicalNavigation.MedicReboardingDelay",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterMedicReboardingTest::RunTest(const FString&)
+{
+	for (int32 Scenario = 0; Scenario < 6; ++Scenario)
+	{
+		auto* World = CreateMedicalWorld();
+		ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
+		MedicalBox(World, FVector(0,0,-10), FVector(10000,10000,10));
+		auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+		Traffic->ActiveTileSize = 400;
+		Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
+		Traffic->TileCenterWorldZ.Init(0, FSimCity2000City::TileCount);
+		auto* Heli = World->SpawnActor<ASimCopterHelicopterPawn>();
+		TestTrue(TEXT("Two-seat starter loads"), Heli->SwitchHelicopterModel(4));
+		Heli->SetActorLocation(FVector(0,0,Heli->GetSimpleCollisionHalfHeight()+1));
+		const auto Person = [&](int32 State)
+		{
+			auto* Agent = World->SpawnActor<ASimCopterGroundAgent>(); Agent->SetOwner(Traffic);
+			Agent->InitialPersonState = State; Agent->BehaviorContext.ResetToState(State);
+			Agent->BehaviorContext.Attributes[EBhavAttr::MedevacHealth] = 100;
+			Agent->SetActorLocation(FVector(500,0,100)); Traffic->PedestrianAgents.Add(Agent);
+			return Agent;
+		};
+		auto* Medic = Person(5);
+		TestTrue(TEXT("Medic initially boards"), Medic->BoardCarrier(Heli, false));
+		TestTrue(TEXT("Passenger action deploys the real medic"), Heli->DropPassengerAtSlot(0));
+		TestFalse(TEXT("Empty-handed medic cannot immediately undo deployment"), Medic->BoardCarrier(Heli, false));
+		TestFalse(TEXT("Harness cannot bypass deployment delay"), Medic->BoardCarrier(Heli, true));
+		if (Scenario == 0)
+		{
+			for (int32 Frame = 0; Frame < 149; ++Frame) World->Tick(LEVELTICK_TimeOnly, .1f);
+			TestFalse(TEXT("Empty-handed medic still waits before fifteen seconds"), Medic->BoardCarrier(Heli, false));
+			World->Tick(LEVELTICK_TimeOnly, .2f);
+			AddInfo(FString::Printf(TEXT("Medic return time %.2f, deadline %.2f"), World->GetTimeSeconds(), Medic->MedicReboardAfterTime));
+			TestTrue(TEXT("Empty-handed medic can return after fifteen seconds"), Medic->BoardCarrier(Heli, false));
+			TestTrue(TEXT("Medic can be deployed again"), Heli->DropPassengerAtSlot(0));
+			TestFalse(TEXT("A second drop restarts the delay"), Medic->BoardCarrier(Heli, false));
+			continue;
+		}
+		auto* Patient = Person(6);
+		TestTrue(TEXT("Medic carries patient"), Patient->BoardCarrier(Medic, false, false, true));
+		if (Scenario == 1)
+		{
+			TestTrue(TEXT("Final carried patient allows early return"), Medic->BoardCarrier(Heli, false));
+			TestTrue(TEXT("Patient and medic occupy their own seats"), Patient->GetBehaviorCarrier() == Heli && Heli->GetAvailablePassengerSeats() == 0);
+		}
+		else if (Scenario == 2)
+		{
+			ISimCopterBehaviorWorld& Actions = *Medic;
+			FSimCopterPersonContext Context; Context.SelectedObject = Heli; Context.bHasSelection = true;
+			TestTrue(TEXT("Actual opcode hands patient to cabin first"), Actions.SelectCarriedPerson(Context, false));
+			Context.SelectedObject = Heli;
+			TestTrue(TEXT("Medic may follow their completed final handoff before timer expires"), Actions.BoardSelection(Context));
+		}
+		else if (Scenario == 3)
+		{
+			auto* Other = Person(6);
+			TestFalse(TEXT("Another waiting patient blocks early medic boarding"), Medic->BoardCarrier(Heli, false));
+			TestTrue(TEXT("Refused return keeps the patient carried"), Patient->GetBehaviorCarrier() == Medic);
+			TestTrue(TEXT("Patients can still load during the medic cooldown"), Patient->BoardCarrier(Heli, false));
+			TestFalse(TEXT("Loading own patient does not bypass the other patient's reservation"), Medic->BoardCarrier(Heli, false));
+			TestTrue(TEXT("Other patient can use the remaining seat"), Other->BoardCarrier(Heli, false));
+			TestFalse(TEXT("No early return into a full cabin"), Medic->BoardCarrier(Heli, false));
+		}
+		else if (Scenario == 4)
+		{
+			Heli->AddMissionPassengersForMission(1, INDEX_NONE, ESimCopterMissionPassengerKind::Transport);
+			TestFalse(TEXT("A carried patient requires space for both patient and medic"), Medic->BoardCarrier(Heli, false));
+			TestTrue(TEXT("Lack of room does not drop the patient"), Patient->GetBehaviorCarrier() == Medic);
+		}
+		else
+		{
+			Patient->BoardCarrier(Heli, false);
+			auto* Idle = Person(5); Idle->PrepareMedicDeployment(Heli, false);
+			TestFalse(TEXT("Another medic cannot borrow the final handoff exception"), Idle->BoardCarrier(Heli, false));
+		}
+	}
+	return true;
+}
 #endif

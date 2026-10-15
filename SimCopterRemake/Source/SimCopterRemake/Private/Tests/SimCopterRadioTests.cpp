@@ -341,7 +341,8 @@ bool FSimCopterRadioPossessionGateTest::RunTest(const FString& Parameters)
 
 	Radio->SetPowered(false);
 	Radio->SetPlayerInHelicopter(false);
-	TestFalse(TEXT("leaving disables radio playback"), Radio->IsPlayerInHelicopter());
+	TestFalse(TEXT("leaving records on-foot state"), Radio->IsPlayerInHelicopter());
+	TestTrue(TEXT("leaving keeps city playback enabled"), Radio->IsLevelPlaybackStarted());
 	Radio->SetPlayerInHelicopter(true);
 	TestFalse(TEXT("re-entering preserves the player's off setting"), Radio->IsPowered());
 	Radio->SetVolume(0.35f);

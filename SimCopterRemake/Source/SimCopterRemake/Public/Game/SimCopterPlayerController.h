@@ -76,6 +76,7 @@ public:
 	/** Ctrl+R or double-clicking the cockpit radio. */
 	UFUNCTION(Exec)
 	void SimRadioMenu();
+	void OnFootRadioShortcut();
 	void CapturePhoto();
 	void ClosePhotoMode();
 	void UpdatePhotoMode();

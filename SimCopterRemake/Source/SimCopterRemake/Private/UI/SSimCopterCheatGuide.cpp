@@ -32,6 +32,7 @@ TConstArrayView<SSimCopterCheatGuide::FEntry> SSimCopterCheatGuide::GetEntries()
 		{ TEXT("HSI"), TEXT("HSI or hsi toggles the Humanist Superintelligence music video on the city's drive-in screens, with the usual cheat on/off sound.") },
 		{ TEXT("Lights, Camera, Action!"), TEXT("Toggle the supplied original SimCopter movie on the city's drive-in screens.") },
 		{ TEXT("Play video: My Movie.mp4"), TEXT("Play an MP4 from the DriveInVideos folder beside the game launcher. Replace My Movie.mp4 with the file name.") },
+		{ TEXT("Unlock Apache"), TEXT("Reveal the mystery helicopter for purchase in the hangar. Also unlocked by reaching 3,000 points in a user city; the purchase still costs money.") },
 		{ TEXT("Stop video"), TEXT("Stop the drive-in picture and sound.") },
 	};
 	return MakeArrayView(Entries);

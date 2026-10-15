@@ -11,6 +11,7 @@
 #include "Game/SimCopterLoadingSubsystem.h"
 #include "City/SimCopterTunnel.h"
 #include "City/SimCopterTreeGrounding.h"
+#include "City/SimCopterScenery.h"
 #include "City/SimCopterPowerLinePlacement.h"
 
 #include "Algo/Count.h"
@@ -3199,7 +3200,11 @@ int32 AppendMaxisMeshObject(
 			(Face.FaceType == 18 && Face.TextureAtlasIndex == 39 ? -201 :
 			 Face.FaceType == 18 && Face.TextureAtlasIndex == 2 && Face.MaterialIndex == 9 ? -202 :
 			 Face.FaceType == 15 ? -203 : INDEX_NONE);
-		const int32 SectionKey = HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
+		// The commercial bases repeat a helipad-crosshair cell into a yellow grid. Give only
+		// these separate foundation objects paving; actual roads, roofs and helipads keep their art.
+		const int32 ScenerySection = SimCopterScenery::IsBuildingBase(MeshObject.Header.Id) ? SimCopterScenery::PavingSection :
+			(MeshObject.Header.Id == 0x143 && Face.FaceType == 15 ? SimCopterScenery::ParkPathSection : INDEX_NONE);
+		const int32 SectionKey = ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
 			? MakeBakedAtlasPageSectionKey(Face.TextureAtlasIndex)
 			: (bBakedDirectTexturedFace ? MakeBakedDirectImageSectionKey(Face.MaterialIndex) : (bRuntimeTexturedFace ? TextureKey : (bTranslucentDiscFace ? TranslucentDiscSectionKeyFlag : INDEX_NONE)));
 		FOriginalMeshSectionData& Section = Sections.FindOrAdd(SectionKey);
@@ -4180,7 +4185,12 @@ void ASimCity2000CityActor::RebuildCity()
 		}
 
 		UMaterialInterface* Resolved = nullptr;
-		if (SectionKey >= -203 && SectionKey <= -201)
+		if (SectionKey == SimCopterScenery::PavingSection || SectionKey == SimCopterScenery::ParkPathSection)
+		{
+			Resolved = LoadGeneratedCityAtlasMaterial(SectionKey == SimCopterScenery::PavingSection ? TEXT("M_SceneryPaving") : TEXT("M_ParkPath"));
+			if (!Resolved) Resolved = VertexColorMaterial;
+		}
+		else if (SectionKey >= -203 && SectionKey <= -201)
 		{
 			Resolved = LoadGeneratedCityAtlasMaterial(SectionKey == -201 ? TEXT("M_HospitalFacade") :
 				SectionKey == -202 ? TEXT("M_HospitalHelipad") : TEXT("M_HospitalRoof"));
@@ -4386,6 +4396,7 @@ void ASimCity2000CityActor::RebuildCity()
 		int32 Key = 0;
 	};
 	TMap<int32, TArray<FTreeModel>> TreeModels;
+	TMap<int32, FMaxisMeshObject> ParkModels;
 	struct FPendingTreeGrounding
 	{
 		FVector Origin;
@@ -4681,6 +4692,13 @@ void ASimCity2000CityActor::RebuildCity()
 						? MeshLibrary.FindObjectByObjectId(PrimaryObjectId, &ColorMap)
 						: MeshLibrary.FindObjectByTileId(MeshTileId, &ColorMap);
 					MeshObject = ResolveTerrainRelativePowerLineMesh(MeshObject);
+					const int32 ParkVariant = SimCopterScenery::ParkVariantForTile(FileX, FileY);
+					if (MeshObject && IsOriginalParkTile(Tile.Building))
+					{
+						if (!ParkModels.Contains(ParkVariant))
+							ParkModels.Add(ParkVariant, SimCopterScenery::MakeParkVariant(*MeshObject, ParkVariant));
+						MeshObject = &ParkModels[ParkVariant];
+					}
 					if (MeshObject != nullptr)
 					{
 						const float MeshWorldX = GetWorldTileCenterCoordinate(static_cast<float>(FileX) + (static_cast<float>(Footprint.X) - 1.0f) * 0.5f, TileSize, HalfMapSize);
@@ -4944,7 +4962,7 @@ void ASimCity2000CityActor::RebuildCity()
 						if (!bGroundTrees && bUseInstancedNaturalObjects && bNaturalObjectTile && NaturalObjectId != INDEX_NONE)
 						{
 							NaturalComponentIndex = ResolveNaturalObjectComponent(
-								NaturalObjectId,
+								IsOriginalParkTile(Tile.Building) ? 0x200000 + ParkVariant : NaturalObjectId,
 								*MeshObject,
 								ColorMap,
 								bRenderOriginalMeshBackfaces,
@@ -5629,7 +5647,7 @@ void ASimCity2000CityActor::RebuildCity()
 
 		UMaterialInterface* SectionMaterial = nullptr;
 		UTexture2D* RuntimeTexture = nullptr;
-		if (TextureKey >= -203 && TextureKey <= -201)
+		if (TextureKey >= SimCopterScenery::ParkPathSection && TextureKey <= -201)
 		{
 			SectionMaterial = ResolveBuildingSectionMaterial(TextureKey);
 		}
@@ -5784,13 +5802,17 @@ void ASimCity2000CityActor::Tick(float DeltaSeconds)
 		CloudTuningCheckSeconds = 1.0f;
 		SimCopterCloudTuning::Apply(GetWorld());
 	}
+	RefreshCameraFacingEffects(GetWorld()->GetTimeSeconds());
+}
 
+void ASimCity2000CityActor::RefreshCameraFacingEffects(float PresentationTimeSeconds)
+{
 	// The blink phase is global and time-based, so the component decides whether anything actually
 	// needs rebuilding; a city with no lit objects never allocates a mesh section at all.
 	if (FlashingLightsComponent != nullptr && FlashingLightsComponent->HasLightPoints() && GetWorld() != nullptr)
 	{
 		CSV_SCOPED_TIMING_STAT_EXCLUSIVE(SimCopterCity_FlashingLights);
-		FlashingLightsComponent->SyncLightsFromPlayerCamera(GetWorld()->GetTimeSeconds());
+		FlashingLightsComponent->SyncLightsFromPlayerCamera(PresentationTimeSeconds);
 	}
 
 	// Same shape: the chimney kernels are camera-facing and re-jittered on the original's own 20 Hz
@@ -5798,7 +5820,7 @@ void ASimCity2000CityActor::Tick(float DeltaSeconds)
 	if (SmokeStacksComponent != nullptr && SmokeStacksComponent->GetSmokeMarkerCount() > 0 && GetWorld() != nullptr)
 	{
 		CSV_SCOPED_TIMING_STAT_EXCLUSIVE(SimCopterCity_SmokeStacks);
-		SmokeStacksComponent->SyncSmokeFromPlayerCamera(GetWorld()->GetTimeSeconds());
+		SmokeStacksComponent->SyncSmokeFromPlayerCamera(PresentationTimeSeconds);
 	}
 }
 

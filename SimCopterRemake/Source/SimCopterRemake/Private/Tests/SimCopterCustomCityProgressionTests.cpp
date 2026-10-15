@@ -12,6 +12,8 @@
 #include "Engine/World.h"
 #include "City/SimCity2000CityActor.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Ground/SimCopterOnFootPawn.h"
+#include "Engine/LocalPlayer.h"
 #include "UObject/UnrealType.h"
 #include "Serialization/MemoryReader.h"
 
@@ -61,6 +63,10 @@ bool FSimCopterCustomCityRulesTest::RunTest(const FString&)
 		if (Seats <= 1) TestEqual(TEXT("No medical mission without patient plus medic space"), Medical, INDEX_NONE);
 		else if (TestNotNull(TEXT("Medical mission creates"), System.FindRecord(Medical)))
 			TestTrue(TEXT("All patients and one medic fit"), System.FindRecord(Medical)->MedevacVictims <= Seats - 1);
+		const int32 Incident = System.CreateIncidentMedevacAt(21, 21);
+		const int32 PlayerInjury = System.CreatePlayerCausedMedevacAt(22, 22);
+		TestEqual(TEXT("Incident-created mission also needs a medic seat"), Incident != INDEX_NONE, Seats > 1);
+		TestEqual(TEXT("Player-caused mission also needs a medic seat"), PlayerInjury != INDEX_NONE, Seats > 1);
 		const int32 Roof = System.CreateEventAt(25, 25, TYPE_RooftopRescue);
 		if (!Seats) TestEqual(TEXT("No zero-seat rescue"), Roof, INDEX_NONE);
 		else if (TestNotNull(TEXT("Roof rescue creates"), System.FindRecord(Roof)))
@@ -69,6 +75,26 @@ bool FSimCopterCustomCityRulesTest::RunTest(const FString&)
 		if (!Seats) TestEqual(TEXT("No zero-seat transport"), Transport, INDEX_NONE);
 		else if (TestNotNull(TEXT("Transport creates"), System.FindRecord(Transport)))
 			TestTrue(TEXT("Transport party fits"), System.FindRecord(Transport)->TransportPassengers <= Seats);
+	}
+	{
+		const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(false).CreateNavigation(false).CreateAISystem(false);
+		auto* ActualWorld = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+		GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(ActualWorld);
+		ON_SCOPE_EXIT { GEngine->DestroyWorldContext(ActualWorld); ActualWorld->DestroyWorld(false); };
+		auto* PC = ActualWorld->SpawnActor<ASimCopterPlayerController>(); ActualWorld->AddController(PC);
+		PC->Player = NewObject<ULocalPlayer>(GEngine); PC->ChangeState(NAME_Playing);
+		auto* Aircraft = ActualWorld->SpawnActor<ASimCopterHelicopterPawn>(); PC->Possess(Aircraft);
+		auto* Parked = ActualWorld->SpawnActor<ASimCopterHelicopterPawn>(); Parked->SwitchHelicopterModel(5);
+		auto* Missions = ActualWorld->SpawnActor<ASimCopterMissionSystemActor>();
+		for (int32 Type : {4, 0, 5})
+		{
+			TestTrue(TEXT("Real helicopter model loads"), Aircraft->SwitchHelicopterModel(Type));
+			TestEqual(TEXT("Medical cap follows current helicopter, not another fleet member"),
+				Missions->GetMissionPassengerLimit(true), FMath::Max(0, Aircraft->GetPassengerSeatCount() - 1));
+		}
+		auto* Pilot = ActualWorld->SpawnActor<ASimCopterOnFootPawn>(); Pilot->SetParkedHelicopter(Aircraft); PC->Possess(Pilot);
+		TestEqual(TEXT("On-foot missions retain the current helicopter's medic reservation"),
+			Missions->GetMissionPassengerLimit(true), Aircraft->GetPassengerSeatCount() - 1);
 	}
 	FCapacityWorld World; World.bCustom = true;
 	FSimCopterMissionSystem System; System.Initialize(&World, 42);

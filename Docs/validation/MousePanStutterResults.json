@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-14",
+  "scope": "On-foot mouse jumps and repeated NPC animation mesh stalls identified in the 17:33 performance capture.",
+  "changes": [
+    "On-foot yaw/pitch and helicopter mouse dragging use displacement directly, calibrated to previous 60 FPS sensitivity; keyboard/controller input remains a rate.",
+    "NPCs prepare idle/walk sections at spawn and reuse bounded cached clips. Cache holds at most 32 poses, except one larger authored clip alone; appearance/species/height changes invalidate it.",
+    "All gameplay, forced-animation, baseball, replay and save-restoration frame selection uses the active cached-section offset.",
+    "Section visibility only enqueues a render command when it changes. Clip-bind and clip-build CPU trace scopes make future captures attributable."
+  ],
+  "original_behavior_reference": [
+    ".ghidra-exports/004c68f0.json",
+    ".ghidra-exports/004c6450.json"
+  ],
+  "baseline": {
+    "succeeded": 0,
+    "succeededWithWarnings": 0,
+    "failed": 2,
+    "notRun": 0,
+    "totalDuration": 2.406266689300537
+  },
+  "focused": {
+    "succeeded": 2,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 0.8279304504394531
+  },
+  "offscreen": {
+    "succeeded": 2,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 0.907190203666687
+  },
+  "full_suite": {
+    "succeeded": 521,
+    "succeededWithWarnings": 35,
+    "failed": 1,
+    "notRun": 0,
+    "totalDuration": 426.9793701171875
+  },
+  "config_write_rerun": {
+    "succeeded": 1,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 0.0410161018371582
+  },
+  "final_test_summary": {
+    "distinct_tests": 557,
+    "failed": 0,
+    "not_run": 0,
+    "reports": [
+      "full-tests",
+      "settings-persistence",
+      "rendered-tests"
+    ],
+    "validation_note": "The full sweep used Multiprocess, which disables config writes in UE. Its sole failing persistence test was rerun with MultiprocessSaveConfig. No game code changed between these runs."
+  },
+  "builds": {
+    "editor-final": true,
+    "shipping": true,
+    "development": true
+  },
+  "offscreen_benchmark": {
+    "actors": 32,
+    "transitions_per_actor": 12,
+    "before_ms": 1243.13,
+    "after_ms": 3.015,
+    "reduction_percent": 99.75746703884549,
+    "scope": "Controlled D3D12 offscreen animation-transition benchmark including deferred render updates and command flushing; not live-city FPS."
+  },
+  "coverage": [
+    "Same total mouse travel at 30, 60 and 144 FPS plus uneven frames up to 300 ms; yaw/pitch on foot and in helicopter, controller-rate preservation.",
+    "Prepared mesh vertex allocations and render proxies survive repeated idle/walk transitions.",
+    "Cached geometry matches independent original-builder vertex positions, normals, colors, UVs and indices across human/dog/cow clips, clothing changes and cache eviction.",
+    "Only the selected body/head pose is visible; clip and frame identity survive save/restore."
+  ],
+  "remaining_light_workload": {
+    "trace_status": "High aggregate light-transform time is measured, but the trace does not identify individual lights.",
+    "source_review": "Vehicle headlights follow moving actors; static street-lamp intensity updates already return when their value is unchanged. This review did not establish an equivalent redundant-update bug.",
+    "action": "Retained illumination behavior; a fresh attributed capture is needed to isolate the remaining light cost."
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-14T23:04:52.1929856Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "5EDAA15C65C3E13D19AE1B2A32A6F753E4A0A6AE6A6788F9161943525E19B5A4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\mouse-pan-2026-10-14/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "879E95DF24CEA7446E1C8063E66039E1C4DF15C1474AF7DD7F38686EDE354755"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "0B5942ACD14A74AA79DD543D8064A1EEAFEE5AD674C0A84A311E49A1005808D4",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\mouse-pan-2026-10-14/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "CEF83D845AD3A7E4543792E3298C1012912E225636A2BCCF931642E53A23D9EE"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "6E4FAFFC5EBE448587C862E73788AE09490CA8DE34B0A9AC71C7AB53C4121560",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\mouse-pan-2026-10-14/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "666E163BF81C17B6BD32AF09763437B482E1B56F15154D3704F813721430C766"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "A50EA37A081C068C82CF50F4707F4674C855AE55BF0E509AA2C078A4503B1853",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\mouse-pan-2026-10-14/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "C9AC7D98D4FE3CCF71E791164D8981F1016F45AA51D6794FC67F3A382D9FE211"
+      }
+    ],
+    "IncludesDiagnostics": true,
+    "InteractiveGameplayChecked": false
+  },
+  "limitations": [
+    "The exact HEVEN2026 mouse-pan route has not been replayed interactively; end-to-end frame pacing still needs a fresh user capture.",
+    "The measured ongoing light-transform workload and startup texture-streaming ensures from the earlier investigation are separate remaining issues.",
+    "Rare uncached clips may still build geometry; finite cache eviction limits retained memory.",
+    "Initial validation hit a sandbox-derived-data-cache denial, then stale UnrealBuildTool source discovery. Both were resolved before the recorded baseline tests. A test fixture compile error was corrected before final builds.",
+    "Baseline uses the original mouse and NPC clip-binding paths with the behavior-preserving section-visibility guard already present.",
+    "The broad sweep used Multiprocess, which disables config writes in UE ConfigCacheIni.cpp. Its only failing case, SoundVolumePersistence, was rerun with MultiprocessSaveConfig without code changes."
+  ],
+  "evidence_directory": "Docs/scratchpad/mouse-pan-2026-10-14",
+  "source_manifest": "Docs/scratchpad/mouse-pan-2026-10-14/source-manifest.json"
+}

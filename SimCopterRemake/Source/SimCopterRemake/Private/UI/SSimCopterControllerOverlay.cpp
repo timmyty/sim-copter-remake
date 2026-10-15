@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/SSimCopterControllerOverlay.h"
-#include "Game/SimCopterGameMode.h"
 #include "UI/SSimCopterRadialWheel.h"
 #include "Widgets/Layout/SScaleBox.h"
 
@@ -12,6 +11,7 @@
 #include "Flight/SimCopterControllerInput.h"
 #include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterRegistry.h"
+#include "Game/SimCopterGameMode.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -59,7 +59,7 @@ void SSimCopterControllerOverlay::Construct(const FArguments& InArgs)
 			auto* Ops=H->GetAirOperations(); FString Text;
 			if(Ops->IsRemoteTaserActive() || Ops->IsDeployed()) Text=Ops->GetStatus();
 			if(Ops->IsRemoteTaserActive()) Text=FString(Ops->IsAutopilotEnabled()?TEXT("REMOTE TASER  |  Autopilot ON: follows when needed"):TEXT("REMOTE TASER  |  Autopilot OFF: steady hover; automatic pickup disabled"))+
-				TEXT("\nMouse / right stick: aim   |   Wheel: zoom   |   Hold LT: 4x scope   |   Left click / A / RT: fire\nHold RMB: cockpit cursor   |   N / X then Fly Helicopter: return\n")+Ops->GetRemoteTaserReadout();
+				TEXT("\nMouse / right stick: aim   |   Wheel: zoom   |   Hold LT: 4x scope   |   Left click / A / RT: fire\nHold RMB: cockpit cursor   |   N / R3 then Fly Helicopter: return\n")+Ops->GetRemoteTaserReadout();
 			if(Ops->IsDeployed())
 			{
 				Text+=FString::Printf(TEXT("\nCable %.1fm | PgUp/PgDn or D-pad up/down winch | A / click grab | G / D-pad left release"),Ops->GetCableLength()/100);
@@ -188,7 +188,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildDispatchWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"DispatchInstructions",
-			"A: CONFIRM   X: TOOLS\nB: CANCEL"), DispatchWheel);
+			"RELEASE R3: CONFIRM   X: TOOLS\nB: CANCEL"), DispatchWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
@@ -216,7 +216,7 @@ TSharedRef<SWidget> SSimCopterControllerOverlay::BuildToolWheel()
 		NSLOCTEXT(
 			"SimCopterController",
 			"ToolInstructions",
-			"A: SELECT   X: DISPATCH\nB: CANCEL"), ToolWheel);
+			"RELEASE R3: EQUIP   X: DISPATCH\nB: CANCEL"), ToolWheel);
 }
 
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildRadialWheel(
@@ -285,8 +285,9 @@ EVisibility SSimCopterControllerOverlay::GetPauseVisibility() const
 		GEngine != nullptr && GEngine->GameViewport != nullptr
 			? GEngine->GameViewport->GetWorld()
 			: nullptr;
-	const ASimCopterGameMode* CityMode = World != nullptr ? World->GetAuthGameMode<ASimCopterGameMode>() : nullptr;
-	return World != nullptr && World->IsPaused() && !(CityMode != nullptr && CityMode->IsCityIntroPlaying())
+	const auto* CityMode = World != nullptr ? World->GetAuthGameMode<ASimCopterGameMode>() : nullptr;
+	// City tours pause simulation without displaying the gameplay pause overlay.
+	return World != nullptr && World->IsPaused() && !(CityMode && CityMode->IsCityIntroPlaying())
 		? EVisibility::Visible
 		: EVisibility::Collapsed;
 }
@@ -341,5 +342,5 @@ FText SSimCopterControllerOverlay::GetPassengerBody() const
 
 FText SSimCopterControllerOverlay::GetPauseText() const
 {
-	return NSLOCTEXT("SimCopterController", "Paused", "PAUSED\n\nSTART  RESUME");
+	return NSLOCTEXT("SimCopterController", "Paused", "PAUSED");
 }

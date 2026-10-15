@@ -54,6 +54,7 @@ const FSimCopterEquipmentDefinition EquipmentRows[] = {
 	{ ESimCopterHelicopterTool::TearGas,       0x08, 3, 2500, TEXT("Tear Gas Launcher"),   0x2ac },
 	{ ESimCopterHelicopterTool::WaterCannon,   0x10, 4, 1500, TEXT("Water Cannon"),        0x2a9 },
 	{ ESimCopterHelicopterTool::CaptureCage, 0x40, 6, 1800, TEXT("Capture Cage"), 0 },
+	{ ESimCopterHelicopterTool::RemoteTaser, 0x80, 7, 2500, TEXT("Remote Taser"), 0 },
 };
 
 const TCHAR* const MegaphoneMessageNames[] = {
@@ -74,6 +75,7 @@ const TCHAR* const ToolNames[] = {
 	TEXT("Apache Machine Gun"),
 	TEXT("Capture Cage"), // Legacy saved selection.
 	TEXT("Capture Cage"),
+	TEXT("Remote Taser"),
 };
 
 static_assert(UE_ARRAY_COUNT(ToolNames) == static_cast<int32>(ESimCopterHelicopterTool::Count),

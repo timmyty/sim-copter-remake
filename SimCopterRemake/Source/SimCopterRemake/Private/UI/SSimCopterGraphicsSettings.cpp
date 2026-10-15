@@ -1102,6 +1102,12 @@ void SSimCopterGraphicsSettings::PopulateRows(const TSharedRef<SVerticalBox>& Ro
 	// ---------------------------------------------------------------------------------------
 
 	AddRow(BuildHeading(LOCTEXT("HeadingInterface", "Interface")));
+	FRowBinding Decorations;
+	Decorations.GetCount = [] { return 2; };
+	Decorations.GetOptionLabel = [](int32 Index) { return FText::FromString(Index ? TEXT("On") : TEXT("Off")); };
+	Decorations.GetIndex = [this] { const auto* Settings = GetSettings(this); return Settings && Settings->AreCockpitDecorationsVisible() ? 1 : 0; };
+	Decorations.SetIndex = [this](int32 Index) { if (auto* Settings = GetSettings(this)) Settings->SetCockpitDecorationsVisible(Index != 0); };
+	AddRow(BuildDropdownRow(LOCTEXT("CockpitDecorations", "Cockpit Decorations"), Decorations));
 
 	AddRow(BuildSliderRow(
 		LOCTEXT("HudScale", "HUD Scale"),
@@ -1424,6 +1430,7 @@ void SSimCopterGraphicsSettings::CaptureEnteredState()
 		Entered.DayRealMinutes = Settings->GetDayRealMinutes();
 		Entered.NightRealMinutes = Settings->GetNightRealMinutes();
 		Entered.HudScale = Settings->GetHudScale();
+		Entered.bCockpitDecorationsVisible = Settings->AreCockpitDecorationsVisible();
 		Entered.bMissionMarkersOnScreen = Settings->IsMissionMarkersOnScreenEnabled();
 		Entered.bMuffleOutsideSounds = Settings->IsMuffleOutsideSoundsEnabled();
 		Entered.OnFootFov = Settings->GetOnFootFov();
@@ -1479,6 +1486,7 @@ void SSimCopterGraphicsSettings::RestoreEnteredState()
 		Settings->SetDayRealMinutes(Entered.DayRealMinutes);
 		Settings->SetNightRealMinutes(Entered.NightRealMinutes);
 		Settings->SetHudScale(Entered.HudScale);
+		Settings->SetCockpitDecorationsVisible(Entered.bCockpitDecorationsVisible);
 		Settings->SetMissionMarkersOnScreenEnabled(Entered.bMissionMarkersOnScreen);
 		Settings->SetMuffleOutsideSoundsEnabled(Entered.bMuffleOutsideSounds);
 		Settings->SetOnFootFov(Entered.OnFootFov);

@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Game/SimCopterLookInput.h"
 #include "Flight/SimCopterHelicopterParking.h"
 #include "Flight/SimCopterPlaneParts.h"
 #include "Game/SimCopterCheats.h"
@@ -1091,17 +1092,18 @@ void ASimCopterHelicopterPawn::SetupPlayerInputComponent(UInputComponent* Player
 	PlayerInputComponent->BindKey(EKeys::Equals, IE_Pressed, this, &ASimCopterHelicopterPawn::MapZoomIn);
 	PlayerInputComponent->BindKey(EKeys::Hyphen, IE_Pressed, this, &ASimCopterHelicopterPawn::MapZoomOut);
 
-	// A performs/confirms, X opens options, Y enters/exits. Menu contexts own the face buttons.
+	// Hold R3 for the wheel; release commits. X adjusts the camera or switches wheel pages.
 	PlayerInputComponent->BindKey(EKeys::Gamepad_RightShoulder, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerRightBumperPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_RightShoulder, IE_Released, this, &ASimCopterHelicopterPawn::ControllerRightBumperReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerLeftBumperPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_LeftShoulder, IE_Released, this, &ASimCopterHelicopterPawn::ControllerLeftBumperReleased);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_RightThumbstick, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerCameraAdjustPressed);
-	PlayerInputComponent->BindKey(EKeys::Gamepad_RightThumbstick, IE_Released, this, &ASimCopterHelicopterPawn::ControllerCameraAdjustReleased);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_RightThumbstick, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerRadialPressed);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_RightThumbstick, IE_Released, this, &ASimCopterHelicopterPawn::ControllerRadialReleased);
 
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerPrimaryPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Released, this, &ASimCopterHelicopterPawn::ControllerPrimaryReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerOptionsPressed);
+	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Left, IE_Released, this, &ASimCopterHelicopterPawn::ControllerCameraAdjustReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Right, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerCancelPressed);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Right, IE_Released, this, &ASimCopterHelicopterPawn::ControllerCancelReleased);
 	PlayerInputComponent->BindKey(EKeys::Gamepad_FaceButton_Top, IE_Pressed, this, &ASimCopterHelicopterPawn::ControllerEnterExitPressed);
@@ -1990,6 +1992,7 @@ void ASimCopterHelicopterPawn::ResetAircraft()
 	bControllerClimbHeld = false;
 	bControllerDescendHeld = false;
 	bControllerCameraAdjustHeld = false;
+	bControllerRadialHeld = false;
 	bControllerDPadUpHeld = false;
 	bControllerDPadDownHeld = false;
 	bControllerDPadLeftHeld = false;
@@ -2056,7 +2059,7 @@ void ASimCopterHelicopterPawn::PlaceOnHelipad(const FVector& PadSurfaceWorldLoca
 bool ASimCopterHelicopterPawn::ReturnToAirportAfterCrash()
 {
 	StopCrashSiren();
-	bLowFuelWarningPlayed = false;
+	LowFuelWarningSeconds = 0.0f;
 	bAudioWasFuelStarved = false;
 	// SCHOOK: HelicopterCrashRespawn 0x0048a8b0
 	// The wreck goes back to the airport, which is where the player's next flight starts from and
@@ -4642,6 +4645,22 @@ void ASimCopterHelicopterPawn::ControllerToolWheelReleased()
 	RefreshDashboardSeats();
 }
 
+void ASimCopterHelicopterPawn::ControllerRadialPressed()
+{
+	if (bControllerRadialHeld) return;
+	bControllerRadialHeld = true;
+	bControllerCameraAdjustHeld = false;
+	ControllerToolWheelPressed();
+}
+
+void ASimCopterHelicopterPawn::ControllerRadialReleased()
+{
+	if (!bControllerRadialHeld) return;
+	bControllerRadialHeld = false;
+	if (ControllerMode == ESimCopterControllerMode::ToolWheel) ControllerToolWheelReleased();
+	else if (ControllerMode == ESimCopterControllerMode::DispatchWheel) ControllerDispatchWheelReleased();
+}
+
 void ASimCopterHelicopterPawn::ControllerCameraAdjustPressed()
 {
 	bControllerCameraAdjustHeld = true;
@@ -4654,6 +4673,11 @@ void ASimCopterHelicopterPawn::ControllerCameraAdjustReleased()
 
 void ASimCopterHelicopterPawn::ControllerPrimaryPressed()
 {
+	if (ControllerMode == ESimCopterControllerMode::None && bControllerCameraAdjustHeld)
+	{
+		ToggleSearchLight();
+		return;
+	}
 	switch (ControllerMode)
 	{
 	case ESimCopterControllerMode::DispatchWheel:
@@ -4687,12 +4711,6 @@ void ASimCopterHelicopterPawn::ControllerPrimaryReleased()
 
 void ASimCopterHelicopterPawn::ControllerOptionsPressed()
 {
-	if (ControllerMode == ESimCopterControllerMode::None && bControllerCameraAdjustHeld)
-	{
-		ToggleSearchLight();
-		return;
-	}
-
 	if (ControllerMode == ESimCopterControllerMode::DispatchWheel)
 	{
 		ControllerToolWheelPressed();
@@ -4704,7 +4722,7 @@ void ASimCopterHelicopterPawn::ControllerOptionsPressed()
 		return;
 	}
 
-	ControllerToolWheelPressed();
+	ControllerCameraAdjustPressed();
 }
 
 void ASimCopterHelicopterPawn::ControllerCancelPressed()
@@ -4751,8 +4769,9 @@ void ASimCopterHelicopterPawn::ControllerEnterExitPressed()
 
 void ASimCopterHelicopterPawn::ControllerBackPressed()
 {
-	if (bControllerCameraAdjustHeld)
+	if (bControllerRadialHeld || bControllerCameraAdjustHeld)
 	{
+		CancelControllerRadialForShortcut();
 		if (auto* PC = Cast<ASimCopterPlayerController>(GetController())) PC->SimRadioMenu();
 		return;
 	}
@@ -5055,6 +5074,7 @@ void ASimCopterHelicopterPawn::ToggleGamePause()
 		bControllerClimbHeld = false;
 		bControllerDescendHeld = false;
 		bControllerCameraAdjustHeld = false;
+		bControllerRadialHeld = false;
 		bControllerDPadUpHeld = false;
 		bControllerDPadDownHeld = false;
 		bControllerDPadLeftHeld = false;
@@ -5068,7 +5088,7 @@ void ASimCopterHelicopterPawn::ToggleGamePause()
 		ControllerLeftTriggerInput = PlayerController->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis);
 		ControllerRightTriggerInput = PlayerController->GetInputAnalogKeyState(EKeys::Gamepad_RightTriggerAxis);
 		bControllerCameraAdjustHeld =
-			PlayerController->IsInputKeyDown(EKeys::Gamepad_RightThumbstick);
+			PlayerController->IsInputKeyDown(EKeys::Gamepad_FaceButton_Left);
 	}
 	PlayerController->SetPause(bShouldPause);
 }
@@ -5204,7 +5224,8 @@ bool ASimCopterHelicopterPawn::IsToolSelectable(ESimCopterHelicopterTool Tool) c
 	{
 		return GetModelCapabilityMask() != 0;
 	}
-	return Tool != ESimCopterHelicopterTool::Count && Tool != ESimCopterHelicopterTool::TowClamp;
+	return Tool != ESimCopterHelicopterTool::Count && Tool != ESimCopterHelicopterTool::TowClamp &&
+		Tool != ESimCopterHelicopterTool::RemoteTaser; // Separate remote-camera action in the wheel.
 }
 
 ESimCopterToolAvailability ASimCopterHelicopterPawn::GetToolAvailability(ESimCopterHelicopterTool Tool) const
@@ -8764,12 +8785,12 @@ void ASimCopterHelicopterPawn::UpdateHelicopterAudio(float DeltaSeconds)
 		return;
 	}
 
-	// Warn once per low-fuel episode; refuelling above 12% rearms without threshold chatter.
 	const float FuelFraction = GetFuelFraction();
-	if (FuelFraction > 0.12f) bLowFuelWarningPlayed = false;
-	if (FuelFraction > 0.0f && FuelFraction <= 0.10f && !bLowFuelWarningPlayed)
+	if (FuelFraction > 0.10f || FuelFraction <= 0.0f) LowFuelWarningSeconds = 0.0f;
+	else LowFuelWarningSeconds = FMath::Max(0.0f, LowFuelWarningSeconds - DeltaSeconds);
+	if (FuelFraction > 0.0f && FuelFraction <= 0.10f && LowFuelWarningSeconds <= 0.0f)
 	{
-		bLowFuelWarningPlayed = true;
+		LowFuelWarningSeconds = 20.0f;
 		const FString WarningPath = FPaths::ConvertRelativePathToFull(
 			FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Audio/LowFuel.wav")));
 		if (!Audio->PlayFile2D(WarningPath, SimCopterSound::ESoundDir::Root))
@@ -9718,18 +9739,20 @@ void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 	float YawLookInput =
 		bFirstPersonView ? 0.0f : CameraYawInput + ControllerYawLookInput;
 	float PitchLookInput = CameraPitchInput + ControllerPitchLookInput;
+	float MouseYawDelta = 0.0f;
+	float MousePitchDelta = 0.0f;
 	if (bCameraDragActive)
 	{
 		if (!bFirstPersonView)
 		{
-			YawLookInput += MouseLookYawInput * MouseSensitivityX;
+			MouseYawDelta = MouseLookYawInput * MouseSensitivityX * SimCopterLookInput::MouseReferenceSeconds;
 		}
 		// A middle-drag in progress owns vertical mouse travel, so holding both buttons pans
 		// instead of doing both at once - except in the cockpit, where there is no pan for it
 		// to own and the look should keep working.
 		if (!bCameraPanDragActive || bFirstPersonView)
 		{
-			PitchLookInput += MouseLookPitchInput * MouseSensitivityY;
+			MousePitchDelta = MouseLookPitchInput * MouseSensitivityY * SimCopterLookInput::MouseReferenceSeconds;
 		}
 		CameraRecenterDelayRemaining = CameraRecenterDelaySeconds;
 	}
@@ -9755,14 +9778,14 @@ void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 	// cockpit staring off the nose.
 	CameraYawOffsetDeg = bFirstPersonView
 		? 0.0f
-		: CameraYawOffsetDeg + YawLookInput * CameraYawSpeedDegPerSec * DeltaSeconds;
+		: CameraYawOffsetDeg + (YawLookInput * DeltaSeconds + MouseYawDelta) * CameraYawSpeedDegPerSec;
 	// The boom views drag the world: pulling the mouse up swings the camera down over the
 	// helicopter. From inside the cockpit that reads backwards - you are turning your head,
 	// not the scene - so the vertical sense is inverted for that view only.
 	const float PitchLookSign = CameraModeIsFirstPerson(CameraMode) ? -1.0f : 1.0f;
 	const float MinPitchLookDeg = bFirstPersonView ? -89.0f : -28.0f;
 	CameraPitchOffsetDeg = FMath::Clamp(
-		CameraPitchOffsetDeg + PitchLookSign * PitchLookInput * CameraPitchSpeedDegPerSec * DeltaSeconds,
+		CameraPitchOffsetDeg + PitchLookSign * (PitchLookInput * DeltaSeconds + MousePitchDelta) * CameraPitchSpeedDegPerSec,
 		MinPitchLookDeg,
 		18.0f);
 
@@ -9940,6 +9963,7 @@ void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 	// helicopter that is already moving reads as the aircraft sliding around the view. The only
 	// softening the cockpit gets is the attitude stabilization, which is already baked into the
 	// target here and consumed by the cockpit presentation props, so they stay locked.
+	const float ObstructionDeltaSeconds = !bCameraViewSmoothingInitialized ? 1.0f : DeltaSeconds;
 	if (!bCameraViewSmoothingInitialized || bFirstPersonView)
 	{
 		SmoothedCameraArmLengthCm = ArmLength;
@@ -9984,16 +10008,10 @@ void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 			ArmLength,
 			DesiredCameraWorldRotation);
 	const float PreviousGroundLiftCm = CurrentCameraGroundLiftCm;
-	const float PreliminaryGroundLiftCm = bFirstPersonView
-		? 0.0f
-		: FMath::FInterpTo(
-			CurrentCameraGroundLiftCm,
-			DesiredGroundLiftCm,
-			DeltaSeconds,
-			CameraGroundLiftLerpSpeed);
-	CameraTranslationWorld.Z += PreliminaryGroundLiftCm;
-
-	const FVector BoomOrigin = CameraAnchorWorld + CameraTranslationWorld;
+	// Solve avoidance from the unmodified view's required lift, independently of
+	// last frame's response. Feeding the previously avoided lift back into this
+	// probe made a stationary camera repeatedly climb and fall beside roof edges.
+	const FVector BoomOrigin = UnliftedBoomOrigin + FVector::UpVector * DesiredGroundLiftCm;
 	const FRotator TargetAvoidanceOffset =
 		FindCameraAvoidanceOffset(BoomOrigin, ArmLength, DesiredCameraWorldRotation);
 	const bool bAvoiding =
@@ -10003,12 +10021,12 @@ void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 	CurrentCameraAvoidanceOffsetDeg.Pitch = FMath::FInterpTo(
 		CurrentCameraAvoidanceOffsetDeg.Pitch,
 		TargetAvoidanceOffset.Pitch,
-		DeltaSeconds,
+		ObstructionDeltaSeconds,
 		AvoidanceLerpSpeed);
 	CurrentCameraAvoidanceOffsetDeg.Yaw = FMath::FInterpTo(
 		CurrentCameraAvoidanceOffsetDeg.Yaw,
 		TargetAvoidanceOffset.Yaw,
-		DeltaSeconds,
+		ObstructionDeltaSeconds,
 		AvoidanceLerpSpeed);
 	CurrentCameraAvoidanceOffsetDeg.Roll = 0.0f;
 
@@ -10036,7 +10054,7 @@ void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 		: FMath::FInterpTo(
 			PreviousGroundLiftCm,
 			AvoidedDesiredGroundLiftCm,
-			DeltaSeconds,
+			ObstructionDeltaSeconds,
 			CameraGroundLiftLerpSpeed);
 	CameraTranslationWorld.Z =
 		UnliftedBoomOrigin.Z - CameraAnchorWorld.Z + CurrentCameraGroundLiftCm;
@@ -10060,7 +10078,7 @@ void ASimCopterHelicopterPawn::UpdateCamera(float DeltaSeconds)
 		: FMath::FInterpTo(
 			CurrentCameraPullInAlpha,
 			TargetPullInAlpha,
-			DeltaSeconds,
+			ObstructionDeltaSeconds,
 			PullInLerpSpeed);
 
 	const FVector PulledInTranslation =

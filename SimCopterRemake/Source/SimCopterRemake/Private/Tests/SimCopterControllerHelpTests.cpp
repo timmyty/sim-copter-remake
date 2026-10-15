@@ -55,11 +55,11 @@ bool FSimCopterHelpContextsTest::RunTest(const FString&)
 	State.bCanExit = true;
 	Rows = BuildPrompts(State);
 	TestTrue(TEXT("Available exit uses Y"), Rows.ContainsByPredicate([](const FPrompt& Row) { return Row.Icon == TEXT("y") && Row.Label == TEXT("Exit helicopter"); }));
-	TestTrue(TEXT("X opens Tools without a bumper chord"), Rows.ContainsByPredicate([](const FPrompt& Row) { return Row.Icon == TEXT("x") && Row.Label == TEXT("Open Tools / switch Dispatch"); }));
+	TestTrue(TEXT("R3 holds Tools and releases to equip"), Rows.ContainsByPredicate([](const FPrompt& Row) { return Row.Icon == TEXT("r3") && Row.Label == TEXT("Hold Tools; release to equip | X: Dispatch"); }));
 	State.bCanExit = false;
 	State.Context = EContext::DispatchWheel;
 	Rows = BuildPrompts(State);
-	TestTrue(TEXT("Dispatch can be confirmed with A"), Rows.ContainsByPredicate([](const FPrompt& Row) { return Row.Icon == TEXT("a") && Row.Label == TEXT("Confirm selected option"); }));
+	TestTrue(TEXT("Dispatch commits on R3 release"), Rows.ContainsByPredicate([](const FPrompt& Row) { return Row.Icon == TEXT("r3") && Row.Label == TEXT("Release to dispatch highlighted option"); }));
 	TestTrue(TEXT("Dispatch X switches back to Tools"), Rows.ContainsByPredicate([](const FPrompt& Row) { return Row.Icon == TEXT("x") && Row.Label == TEXT("Switch to Tools"); }));
 	State.Context = EContext::Camera;
 	Rows = BuildPrompts(State);

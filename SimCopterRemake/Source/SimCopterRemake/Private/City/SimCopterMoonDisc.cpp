@@ -4,7 +4,9 @@
 
 #include "CelestialVaultDaySequenceActor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSimCopterMoonDisc, Log, All);
 
@@ -20,6 +22,11 @@ USimCopterMoonDiscComponent::USimCopterMoonDiscComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
+	PrimaryComponentTick.bTickEvenWhenPaused = true;
+	PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Material(
+		TEXT("/Game/Generated/CityAtlas/MI_SimCopterMoon.MI_SimCopterMoon"));
+	MoonMaterial = Material.Object;
 	// The override has to be re-asserted, not set once: the celestial actor calls
 	// CreateAndSetMaterialInstanceDynamic on the disc whenever it reconstructs, which throws away
 	// every parameter it does not itself re-apply (it only re-applies MoonAge). Ticking in the
@@ -41,6 +48,7 @@ void USimCopterMoonDiscComponent::TickComponent(float DeltaTime, ELevelTick Tick
 
 void USimCopterMoonDiscComponent::ApplyBrightness()
 {
+	ApplyDiscSizes();
 	if (!bOverrideBrightness)
 	{
 		return;
@@ -75,6 +83,28 @@ void USimCopterMoonDiscComponent::ApplyBrightness()
 	AppliedBrightness = Brightness;
 }
 
+void USimCopterMoonDiscComponent::ApplyDiscSizes()
+{
+	auto* Sky = Cast<ACelestialVaultDaySequenceActor>(GetOwner());
+	if (!Sky) return;
+	const float Angle = FMath::Clamp(SunDiscAngle, 0.1f, 10.0f);
+	if (Sky->SunLightComponent)
+	{
+		Sky->SunLightComponent->SetLightSourceAngle(Angle);
+		// The artistic disc enlargement must not turn all city shadows soft.
+		Sky->SunLightComponent->SetShadowSourceAngleFactor(0.5357f / Angle);
+	}
+	const float Scale = FMath::Clamp(MoonSize, 0.1f, 30.0f);
+	if (!FMath::IsNearlyEqual(Sky->MoonScale, Scale))
+	{
+		Sky->MoonScale = Scale;
+		// Motion caches refresh only periodically. Update scale now, and future cache keys
+		// use the same MoonScale; multiplying the previous mesh scale would grow every tick.
+		if (Sky->MoonDiscComponent)
+			Sky->MoonDiscComponent->SetRelativeScale3D(Sky->ComputeCurrentMoonInfo().UELocalTransform.GetScale3D());
+	}
+}
+
 UMaterialInstanceDynamic* USimCopterMoonDiscComponent::ResolveMoonDiscMaterial()
 {
 	// Resolved through the typed actor rather than FindComponentByClass: the celestial actor carries
@@ -96,6 +126,14 @@ UMaterialInstanceDynamic* USimCopterMoonDiscComponent::ResolveMoonDiscMaterial()
 
 	UStaticMeshComponent* MoonDisc = CelestialActor->MoonDiscComponent;
 	UMaterialInstanceDynamic* MoonDiscMaterial = Cast<UMaterialInstanceDynamic>(MoonDisc->GetMaterial(0));
+	if (MoonMaterial && (!MoonDiscMaterial || MoonDiscMaterial->Parent != MoonMaterial))
+	{
+		float Age = CelestialActor->ComputeCurrentMoonInfo().Age;
+		if (MoonDiscMaterial) MoonDiscMaterial->GetScalarParameterValue(FMaterialParameterInfo(TEXT("MoonAge")), Age);
+		MoonDiscMaterial = UMaterialInstanceDynamic::Create(MoonMaterial, MoonDisc);
+		MoonDiscMaterial->SetScalarParameterValue(TEXT("MoonAge"), Age);
+		MoonDisc->SetMaterial(0, MoonDiscMaterial);
+	}
 	if (MoonDiscMaterial == nullptr)
 	{
 		// Same call the actor makes for MoonAge. Reached when this component ticks before the actor

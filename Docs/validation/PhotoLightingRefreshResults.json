@@ -1,0 +1,69 @@
+{
+  "CompletedAtUtc": "2026-10-14T19:08:51.1133351Z",
+  "Builds": [
+    "Editor: Succeeded",
+    "Shipping: Succeeded",
+    "Development: Succeeded"
+  ],
+  "Reports": {
+    "baseline-tests": {
+      "Succeeded": 0,
+      "SucceededWithWarnings": 0,
+      "Failed": 1,
+      "NotRun": 0,
+      "InProcess": 0
+    },
+    "final-tests": {
+      "Succeeded": 40,
+      "SucceededWithWarnings": 2,
+      "Failed": 0,
+      "NotRun": 0,
+      "InProcess": 0
+    },
+    "render-final-tests": {
+      "Succeeded": 1,
+      "SucceededWithWarnings": 0,
+      "Failed": 0,
+      "NotRun": 0,
+      "InProcess": 0
+    }
+  },
+  "Installed": {
+    "InstalledAtUtc": "2026-10-14T19:08:11.3811343Z",
+    "Files": [
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.exe",
+        "SHA256": "7EB75398C8AC649BD9D34E75A983DA0915D2C12E250DBEA61C9149753493A79A",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\photo-lighting-refresh/installed-backup/SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "884397EB2865054E5ECC946977B38015D183440863F439B5E22819FFB6EB7275"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake-Win64-Shipping.pdb",
+        "SHA256": "4093E4304C7C9728B3135CB3FABC5953926D965F0A43D41EF6E434B6849B0467",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\photo-lighting-refresh/installed-backup/SimCopterRemake-Win64-Shipping.pdb",
+        "PreviousSHA256": "EE12594FA4675317C8C25595ADC343D8CE5D36CF4038124FF07FAD0EE57B8628"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.exe",
+        "SHA256": "F9F1408005CD995CF5318901DDC2445C8A415A45F8CC7556422CC3BBA5B05E28",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\photo-lighting-refresh/installed-backup/SimCopterRemake.exe",
+        "PreviousSHA256": "D8AEE6DB9E057C04960385256A7EDF9E2CCF6C12CE1F818BB0700D0E9A8FBE32"
+      },
+      {
+        "Path": "C:/SimCopterRemake/SimCopter Remake v1.0.1/Windows/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "Source": "C:/SimCopterRemake/sim-copter-remake-main/SimCopterRemake/Binaries/Win64/SimCopterRemake.pdb",
+        "SHA256": "B7876E32B504A26544C4171554FB59BF312896A217B9C421A364586B972DFD6B",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\photo-lighting-refresh/installed-backup/SimCopterRemake.pdb",
+        "PreviousSHA256": "B3690CE31BD2B4E1173783289285B3536AF93979CF9A351A65599244585823BD"
+      }
+    ],
+    "InteractiveGameplayChecked": false
+  },
+  "Render": "Docs/scratchpad/photo-lighting-refresh/paused-night.png",
+  "RenderInspected": true,
+  "InteractivePlaytest": false,
+  "OriginalUserCityReproduced": false
+}

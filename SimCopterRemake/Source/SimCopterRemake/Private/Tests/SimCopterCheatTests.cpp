@@ -107,7 +107,7 @@ bool FSimCopterCheatGuideTest::RunTest(const FString&)
 		if (TestEqual(Entry.Code, Parsed.Num(), 1)) Covered.Add(Parsed[0].Code);
 		TestTrue(TEXT("Each code explains its effect"), FCString::Strlen(Entry.Effect) > 0);
 	}
-	TestEqual(TEXT("Guide covers every supported command"), Covered.Num(), static_cast<int32>(ECode::StopVideo) + 1);
+	TestEqual(TEXT("Guide covers every supported command"), Covered.Num(), static_cast<int32>(ECode::UnlockApache) + 1);
 	TestEqual(TEXT("Unused top plate opens the guide"), SSimCopterSettingsMenu::GetItemForRow(-1, false), ESimCopterSettingsItem::CheatCodes);
 	TestEqual(TEXT("Guide uses the original blank plate"), SimCopterSettingsMenuLayout::GetRowTop(-1, false), SimCopterSettingsMenuLayout::FirstItemYWithCitySettings);
 

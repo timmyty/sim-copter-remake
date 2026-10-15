@@ -42,7 +42,7 @@ bool FSimCopterEquipmentPageTest::RunTest(const FString&)
 			Shapes.AddUnique(FCrc::MemCrc32(Fitted.Mesh.Vertices.GetData(),Fitted.Mesh.Vertices.Num()*sizeof(FVector)));
 			if (Row==4) TestTrue(TEXT("Harness hangs below the helicopter ready to deploy"),Fitted.Bounds.Min.Z<Bare.Bounds.Min.Z);
 		}
-		TestEqual(TEXT("All six attachments have distinct geometry"),Shapes.Num(),6);
+		TestEqual(TEXT("All attachments have distinct geometry"),Shapes.Num(),SimCopterHangarShop::UpgradeRowCount);
 	}
 	TestTrue(TEXT("Missing model fails gracefully"),!Build(INDEX_NONE,0,0).Error.IsEmpty());
 	auto* Instance=NewObject<UGameInstance>(GEngine); Instance->InitializeStandalone();
@@ -62,7 +62,7 @@ bool FSimCopterEquipmentPageTest::RunTest(const FString&)
 	Key(EKeys::Right); TestEqual(TEXT("Right wraps to first helicopter"),Menu->EquipmentPreviewType,4);
 	Key(EKeys::Right); TestEqual(TEXT("Right follows catalog order"),Menu->EquipmentPreviewType,0);
 	Key(EKeys::Gamepad_LeftShoulder); TestEqual(TEXT("Controller bumper browses helicopters"),Menu->EquipmentPreviewType,4);
-	Key(EKeys::Up); TestEqual(TEXT("Equipment selection wraps upward"),Menu->UpgradeRow,5);
+	Key(EKeys::Up); TestEqual(TEXT("Equipment selection wraps upward"),Menu->UpgradeRow,SimCopterHangarShop::UpgradeRowCount-1);
 	Key(EKeys::Down); TestEqual(TEXT("Equipment selection wraps downward"),Menu->UpgradeRow,0);
 	TestEqual(TEXT("Browsing never changes the active aircraft"),Heli->GetHelicopterTypeIndex(),Active);
 	TestEqual(TEXT("Preview never grants equipment"),Menu->GetOwnedEquipmentMask(),Mask);
@@ -74,7 +74,7 @@ bool FSimCopterEquipmentPageTest::RunTest(const FString&)
 	{
 		Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::WaterBucket,true);
 		Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RescueHarness,true);
-		for (int32 Row=0; Row<6; ++Row)
+		for (int32 Row=0; Row<SimCopterHangarShop::UpgradeRowCount; ++Row)
 		{
 			Menu->HandleSelectUpgradeRow(Row);
 			FWidgetRenderer Renderer(false); const FVector2D Size(1280,960);
@@ -119,7 +119,7 @@ bool FSimCopterEquipmentInteractionTest::RunTest(const FString&)
 	Menu->HandleSelectUpgradeRow(3);
 	Menu->SelectedControl=Menu->ControllerFocusableWidgets[5];
 	Key(EKeys::Gamepad_FaceButton_Bottom);
-	TestTrue(TEXT("A on equipment moves to Buy"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[8]);
+	TestTrue(TEXT("A on equipment moves to Buy"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[2+SimCopterHangarShop::UpgradeRowCount]);
 	TestEqual(TEXT("Selecting the purchase controls does not spend funds"),Missions->GetSessionCash(),10000);
 	Key(EKeys::Gamepad_FaceButton_Bottom,true);
 	TestEqual(TEXT("A repeat cannot purchase"),Missions->GetSessionCash(),10000);
@@ -129,14 +129,14 @@ bool FSimCopterEquipmentInteractionTest::RunTest(const FString&)
 	TestEqual(TEXT("Purchase charges exactly once"),Missions->GetSessionCash(),8500);
 	Menu->SelectedControl=Menu->ControllerFocusableWidgets[5];
 	Key(EKeys::Gamepad_FaceButton_Bottom);
-	TestTrue(TEXT("A on owned equipment moves to Sell"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[9]);
+	TestTrue(TEXT("A on owned equipment moves to Sell"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[3+SimCopterHangarShop::UpgradeRowCount]);
 	Key(EKeys::Gamepad_FaceButton_Right);
 	if (!TestTrue(TEXT("B from the action row stays in equipment"),Menu->Page==SSimCopterHangarMenu::EPage::Catalog && Menu->CatalogRow==INDEX_NONE)) return false;
 	TestTrue(TEXT("B returns to the selected equipment item"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[5]);
 	Missions->AddSessionCash(-Missions->GetSessionCash());
 	Menu->HandleSelectUpgradeRow(4); Menu->SelectedControl=Menu->ControllerFocusableWidgets[6];
 	Key(EKeys::Gamepad_FaceButton_Bottom);
-	TestTrue(TEXT("A with no available transaction moves to Done"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[10]);
+	TestTrue(TEXT("A with no available transaction moves to Done"),Menu->SelectedControl.Pin()==Menu->ControllerFocusableWidgets[4+SimCopterHangarShop::UpgradeRowCount]);
 	return true;
 }
 

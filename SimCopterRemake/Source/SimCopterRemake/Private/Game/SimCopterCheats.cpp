@@ -22,6 +22,7 @@ TArray<FCommand> Parse(const FString& Text)
 	// cheat phrase must never also trigger that cheat (especially Radioactivity).
 	const FString Trimmed = Text.TrimStartAndEnd();
 	if (Trimmed.Equals(TEXT("HSI"), ESearchCase::IgnoreCase)) return {{ECode::HSI}};
+	if (Trimmed.Equals(TEXT("Unlock Apache"), ESearchCase::IgnoreCase)) return {{ECode::UnlockApache}};
 	if (Trimmed == TEXT("Stop video")) return {{ECode::StopVideo}};
 	if (Trimmed.StartsWith(TEXT("Play video:"), ESearchCase::CaseSensitive))
 		return {{ECode::PlayVideo, 0, Trimmed.Mid(11).TrimStartAndEnd()}};

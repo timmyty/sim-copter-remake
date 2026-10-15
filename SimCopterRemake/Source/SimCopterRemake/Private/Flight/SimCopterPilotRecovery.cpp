@@ -203,6 +203,13 @@ void USimCopterAirOperationsComponent::UpdatePilotRecovery(float DeltaSeconds)
 	if (!Pilot || Pilot->IsActorBeingDestroyed() || Cast<APlayerController>(Heli->GetController()) || Pilot->GetParkedHelicopter()!=Heli ||
 		Heli->FlightModel.State==ESimCopterFlightState::Dying || Heli->FlightModel.HitPoints<=0)
 	{ EndPilotRecovery(); return; }
+	if (Pilot->GetPilotHealth() <= 0)
+	{
+		// The fatal-accident timer owns this transition. Hold the surviving aircraft
+		// for cockpit respawn instead of landing or lifting the dead pilot early.
+		Heli->SetAutopilotTransform(Heli->GetActorLocation(),Heli->GetActorRotation(),DeltaSeconds);
+		return;
+	}
 	if (RecoveryHoldSeconds>0)
 	{
 		RecoveryHoldSeconds=FMath::Max(0.f,RecoveryHoldSeconds-DeltaSeconds);

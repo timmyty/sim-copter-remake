@@ -457,15 +457,17 @@ bool FSimCopterPopulationFigure::BuildClipSections(
 	const TArray<FColor>& Palette,
 	const FBuildParams& Params,
 	const FCalibration& Calibration,
-	bool& bOutHasHeadSection)
+	bool& bOutHasHeadSection,
+	int32 FirstSectionIndex,
+	bool bClearExistingSections)
 {
 	bOutHasHeadSection = false;
-	if (MeshComponent == nullptr || Clip.PartCount != Figure.Parts.Num() || Clip.FrameCount <= 0)
+	if (MeshComponent == nullptr || Clip.PartCount != Figure.Parts.Num() || Clip.FrameCount <= 0 || FirstSectionIndex < 0)
 	{
 		return false;
 	}
 
-	MeshComponent->ClearAllMeshSections();
+	if (bClearExistingSections) MeshComponent->ClearAllMeshSections();
 	const auto* FigureAdjustments = FSimCopterFigureAdjustments::Get().Figures.Find(Figure.Name);
 
 	// Model units -> world, with the global chunkiness dial folded in. Every primitive below is
@@ -635,32 +637,36 @@ bool FSimCopterPopulationFigure::BuildClipSections(
 		}
 
 		const int32 OutputFrame = Frame - FirstFrame;
+		const int32 BodySection = FirstSectionIndex + OutputFrame * 2;
 		const bool bVisible = OutputFrame == 0;
 		MeshComponent->CreateMeshSection_LinearColor(
-			OutputFrame * 2, Body.Vertices, Body.Triangles, Body.Normals, Body.UVs, Body.VertexColors, Body.Tangents, false);
-		MeshComponent->SetMeshSectionVisible(OutputFrame * 2, bVisible);
+			BodySection, Body.Vertices, Body.Triangles, Body.Normals, Body.UVs, Body.VertexColors, Body.Tangents, false);
+		MeshComponent->SetMeshSectionVisible(BodySection, bVisible);
 		MeshComponent->CreateMeshSection_LinearColor(
-			OutputFrame * 2 + 1, Head.Vertices, Head.Triangles, Head.Normals, Head.UVs, Head.VertexColors, Head.Tangents, false);
-		MeshComponent->SetMeshSectionVisible(OutputFrame * 2 + 1, bVisible);
+			BodySection + 1, Head.Vertices, Head.Triangles, Head.Normals, Head.UVs, Head.VertexColors, Head.Tangents, false);
+		MeshComponent->SetMeshSectionVisible(BodySection + 1, bVisible);
 	}
 
 	return true;
 }
 
-void FSimCopterPopulationFigure::ShowFrame(UProceduralMeshComponent* MeshComponent, int32 FrameCount, int32 FrameIndex, bool bHasHeadSection)
+void FSimCopterPopulationFigure::ShowFrame(UProceduralMeshComponent* MeshComponent, int32 FrameCount, int32 FrameIndex,
+	bool bHasHeadSection, int32 FirstSectionIndex)
 {
 	if (MeshComponent == nullptr || FrameCount <= 0)
 	{
 		return;
 	}
 	const int32 Wrapped = ((FrameIndex % FrameCount) + FrameCount) % FrameCount;
-	for (int32 Frame = 0; Frame < FrameCount; ++Frame)
+	const int32 BodySection = FirstSectionIndex + Wrapped * 2;
+	for (int32 Section = 0; Section < MeshComponent->GetNumSections(); ++Section)
 	{
-		const bool bVisible = Frame == Wrapped;
-		MeshComponent->SetMeshSectionVisible(Frame * 2, bVisible);
-		if (bHasHeadSection)
+		const bool bVisible = Section == BodySection || (bHasHeadSection && Section == BodySection + 1);
+		// UE enqueues a render command even when visibility is unchanged. Touch only the
+		// outgoing/incoming pose, including when other prepared clips share this component.
+		if (MeshComponent->IsMeshSectionVisible(Section) != bVisible)
 		{
-			MeshComponent->SetMeshSectionVisible(Frame * 2 + 1, bVisible);
+			MeshComponent->SetMeshSectionVisible(Section, bVisible);
 		}
 	}
 }

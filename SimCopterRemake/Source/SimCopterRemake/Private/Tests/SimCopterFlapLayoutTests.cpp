@@ -51,8 +51,8 @@ bool FSimCopterFlapLayoutTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("The separate cage panel uses its own equipment bit"), CageMask, 0x40);
 		TestEqual(TEXT("The cage is not gated by an original flap"), UnionMask & CageMask, 0);
 		TestEqual(
-			TEXT("Original flaps plus the cage panel cover every current career equipment bit"),
-			UnionMask | CageMask,
+			TEXT("Original flaps plus cage and remote taser panels cover every current career equipment bit"),
+			UnionMask | CageMask | SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::RemoteTaser),
 			SimCopterHelicopterRegistry::AllCareerEquipmentBits);
 	}
 

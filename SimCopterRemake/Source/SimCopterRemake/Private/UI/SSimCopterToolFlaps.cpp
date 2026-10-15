@@ -1630,11 +1630,11 @@ TSharedRef<SWidget> SSimCopterToolFlaps::BuildRemoteTaserFlap()
 			]
 		]);
 	AddTextAtPage(*Canvas,67,47,220,14,SNew(STextBlock)
-		.Text_Lambda([this] { return FText::FromString(GetPawn()?GetPawn()->GetAirOperations()->GetRemoteTaserReadout(true):TEXT("N / X: Tools")); })
+		.Text_Lambda([this] { return FText::FromString(GetPawn()?GetPawn()->GetAirOperations()->GetRemoteTaserReadout(true):TEXT("N / R3: Tools")); })
 		.Visibility(EVisibility::HitTestInvisible).Justification(ETextJustify::Center)
 		.ColorAndOpacity(FlapReadout).Font(FlapFont(GetScaledFontSize(8))));
 	return SNew(SBox).Visibility_Lambda([this]
-	{ return GetPawn() && !GetPawn()->IsFixedWingAircraft()?EVisibility::SelfHitTestInvisible:EVisibility::Collapsed; })
+	{ return GetPawn() && !GetPawn()->IsFixedWingAircraft() && GetPawn()->IsToolAvailable(ESimCopterHelicopterTool::RemoteTaser)?EVisibility::SelfHitTestInvisible:EVisibility::Collapsed; })
 		[SNew(SSimCopterToolGlow).Active_Lambda([this] { return GetPawn() && GetPawn()->GetAirOperations()->IsRemoteTaserActive(); })[MakePanel(PageWidth,Canvas)]];
 }
 

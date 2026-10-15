@@ -36,7 +36,7 @@ bool ASimCopterGroundAgent::UpdateBaseball(float DeltaSeconds)
 		if (Frame!=FigureCurrentFrame)
 		{
 			FigureCurrentFrame=Frame;
-			FSimCopterPopulationFigure::ShowFrame(OriginalMeshComponent,FigureFrameCount,Frame,bFigureHasHeadSection);
+			ShowFigureFrame(Frame);
 		}
 	}
 	VisualRoot->SetRelativeRotation(FRotator::ZeroRotator);

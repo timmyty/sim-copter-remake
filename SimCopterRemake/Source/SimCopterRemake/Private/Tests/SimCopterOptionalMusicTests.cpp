@@ -66,6 +66,9 @@ bool FSimCopterOptionalMusicTest::RunTest(const FString&)
 	TestEqual(TEXT("No ads, unsupported files or duplicate encodings"), Radio->GetStationPlaylist(First).Num(), 2);
 	TestTrue(TEXT("Ogg preferred to legacy WAV"), Radio->Stations[First].Music[0].EndsWith(TEXT(".ogg")));
 	Radio->SetPlayerInHelicopter(true);
+	TestTrue(TEXT("Optional collections default to shuffle"), Radio->IsShuffleEnabled(First) && Radio->IsShuffleEnabled(Second));
+	Radio->SetShuffleEnabled(First, false);
+	Radio->SetShuffleEnabled(Second, false);
 	Radio->SetPowered(true);
 	Radio->SetStationIndex(First);
 	Radio->Tick(0); FinishDecode();

@@ -30,7 +30,7 @@ bool FSimCopterRemoteAutopilotTest::RunTest(const FString&)
 	auto* Floor=World->SpawnActor<AActor>(); auto* Box=NewObject<UBoxComponent>(Floor);
 	Floor->SetRootComponent(Box); Box->SetBoxExtent(FVector(10000,10000,20));
 	Box->SetCollisionResponseToAllChannels(ECR_Block); Box->RegisterComponent(); Floor->SetActorLocation(FVector(0,0,-20));
-	auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>(); auto* Ops=Heli->GetAirOperations();
+	auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>(); Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RemoteTaser, true); auto* Ops=Heli->GetAirOperations();
 	auto* PC=World->SpawnActor<ASimCopterPlayerController>(); PC->Player=NewObject<ULocalPlayer>(GEngine); World->AddController(PC); PC->Possess(Heli);
 	Heli->SetActorLocation(FVector(0,0,1800)); Heli->SeedFlightModelFromActor(); Heli->bEngineRunning=true; Heli->bIsLanded=false;
 	Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RescueHarness,true);

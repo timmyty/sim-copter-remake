@@ -34,7 +34,7 @@ bool FSimCopterTaserVisualTest::RunTest(const FString&)
 	ADD_LATENT_AUTOMATION_COMMAND(FDelayedFunctionLatentCommand([this,Instance,World]()
 	{
 		ON_SCOPE_EXIT { Instance->Shutdown(); GEngine->DestroyWorldContext(World); World->DestroyWorld(false); };
-		auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>(); Heli->SetActorHiddenInGame(true);
+		auto* Heli=World->SpawnActor<ASimCopterHelicopterPawn>(); Heli->SetCareerEquipmentOwned(ESimCopterHelicopterTool::RemoteTaser, true); Heli->SetActorHiddenInGame(true);
 		auto* Car=World->SpawnActor<ASimCopterGroundAgent>();
 		Car->ConfigureAgent(ESimCopterGroundAgentKind::Vehicle,TEXT("AUTO"),SimCopterOriginalGame::ResolveRoot(),0);
 		Car->SetActorLocationAndRotation(FVector(650,0,55),FRotator(0,25,0));

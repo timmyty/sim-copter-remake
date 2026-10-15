@@ -3,6 +3,7 @@
 #include "Misc/ScopeExit.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
+#include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Camera/CameraActor.h"
@@ -239,6 +240,7 @@ public:
 	ASimCopterAmbientVehiclesActor* Ambient;
 	USceneCaptureComponent2D* Capture;
 	UTextureRenderTarget2D* Target;
+	ACameraActor* EffectsCamera;
 	TArray<UPrimitiveComponent*> Aircraft;
 	FSimCopterCityIntroRoute Route;
 	FString Evidence;
@@ -345,9 +347,19 @@ private:
 	TArray<FColor> Read(float Time,float CameraTime,const TCHAR* Label)
 	{
 		City->AdvanceWindTurbines(.15f); Ambient->UpdateCityTour(Time); Capture->SetWorldTransform(CloseCamera.IsSet() ? CloseCamera.GetValue() : Route.Evaluate(CameraTime/Route.Duration));
+		EffectsCamera->SetActorTransform(Capture->GetComponentTransform());
+		World->GetFirstPlayerController()->PlayerCameraManager->UpdateCamera(0);
+		City->RefreshCameraFacingEffects(Time);
 		World->SendAllEndOfFrameUpdates(); Capture->CaptureScene(); FlushRenderingCommands();
 		TArray<FColor> Pixels; Target->GameThread_GetRenderTargetResource()->ReadPixels(Pixels);
 		for (auto& Pixel:Pixels) Pixel.A=255;
+		if (CityIndex==20 && FCString::Strcmp(Label,TEXT("descent"))==0)
+		{
+			int32 PalePixels=0;
+			for (const auto& Pixel:Pixels)
+				if (FMath::Min3(Pixel.R,Pixel.G,Pixel.B)>200 && FMath::Max3(Pixel.R,Pixel.G,Pixel.B)-FMath::Min3(Pixel.R,Pixel.G,Pixel.B)<5) ++PalePixels;
+			Test->TestTrue(TEXT("Canyon descent is not covered by oversized pale effect cards"),PalePixels<Pixels.Num()*.8f);
+		}
 		FImageUtils::SaveImageByExtension(*(Evidence/FString::Printf(TEXT("city%d-%s.png"),CityIndex,Label)),FImageView(Pixels.GetData(),1280,720));
 		return Pixels;
 	}
@@ -368,6 +380,11 @@ bool FSimCopterCityTourRenderTest::RunTest(const FString& Parameters)
 		auto* Instance=NewObject<UGameInstance>(GEngine);
 		Instance->InitializeStandalone();
 		auto* World=Instance->GetWorld(); World->InitializeActorsForPlay(FURL());
+		auto* EffectsController=World->SpawnActor<APlayerController>(); World->AddController(EffectsController);
+		EffectsController->Player=NewObject<ULocalPlayer>(GEngine);
+		EffectsController->PlayerCameraManager=World->SpawnActor<APlayerCameraManager>();
+		EffectsController->PlayerCameraManager->InitializeFor(EffectsController);
+		auto* EffectsCamera=World->SpawnActor<ACameraActor>(); EffectsController->SetViewTarget(EffectsCamera);
 		auto* City=World->SpawnActorDeferred<ASimCity2000CityActor>(ASimCity2000CityActor::StaticClass(),FTransform::Identity);
 		City->bLoadOnConstruction=false; City->bLoadOnBeginPlay=false;
 		City->GetRootComponent()->SetMobility(EComponentMobility::Static);
@@ -453,6 +470,7 @@ bool FSimCopterCityTourRenderTest::RunTest(const FString& Parameters)
 		auto Command=MakeShared<FSimCopterTourCaptureCommand>();
 		Command->Test=this; Command->Instance=Instance; Command->World=World; Command->City=City;
 		Command->Ambient=Ambient; Command->Capture=Capture; Command->Target=Target;
+		Command->EffectsCamera=EffectsCamera;
 		for (const auto& Mesh:Ambient->CityTourPlanes) Command->Aircraft.Add(Mesh);
 		Command->Route=Route; Command->Evidence=Evidence; Command->CityIndex=CityIndex;
 		FAutomationTestFramework::Get().EnqueueLatentCommand(Command);

@@ -18,11 +18,11 @@ namespace
 using namespace SimCopterMissions;
 
 // FUN_0042d840's equipment permutation: upgrades page row -> equipment bit index.
-constexpr int32 UpgradeRowToEquipmentIndex[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 6 };
+constexpr int32 UpgradeRowToEquipmentIndex[SimCopterHangarShop::UpgradeRowCount] = { 0, 1, 3, 4, 2, 6, 7 };
 
 // The tool each equipment bit index stands for (registry order: bucket, megaphone, harness,
 // tear gas, cannon - the same order FSimCopterEquipmentDefinition::EquipmentIndex numbers).
-constexpr ESimCopterHelicopterTool EquipmentIndexToTool[7] = {
+constexpr ESimCopterHelicopterTool EquipmentIndexToTool[8] = {
 	ESimCopterHelicopterTool::WaterBucket,
 	ESimCopterHelicopterTool::Megaphone,
 	ESimCopterHelicopterTool::RescueHarness,
@@ -30,6 +30,7 @@ constexpr ESimCopterHelicopterTool EquipmentIndexToTool[7] = {
 	ESimCopterHelicopterTool::WaterCannon,
 	ESimCopterHelicopterTool::Count, // Retired clamp bit index.
 	ESimCopterHelicopterTool::CaptureCage,
+	ESimCopterHelicopterTool::RemoteTaser,
 };
 
 // Strings 490..494, in upgrades page row order.
@@ -40,6 +41,7 @@ const TCHAR* const UpgradeDescriptions[SimCopterHangarShop::UpgradeRowCount] = {
 	TEXT("Water Cannon - Basically a giant squirt gun. Eliminates need to fly directly over fires. You'll need the bucket for refills. The high pressure causes significant recoil."),
 	TEXT("Rescue Harness - Used for picking up people in emergency situations. When you need to rescue people and you can't land then the rescue harness is the right tool for the job."),
 	TEXT("Capture Cage - Automatically seals around people, stalled or fleeing cars, taser-disabled cars and rescued boat hulls. Take cars to the active JUNKYARD ring and boats to HARBOR; lower gently, then OPEN / G to deliver. Hold Page Up at the top to board people. Page Down lowers."),
+	TEXT("Remote Taser - Nose-mounted nonlethal weapon with a scope and optional pursuit autopilot. Purchase fits every owned helicopter. Take off, then select Remote Taser in the Tools wheel."),
 };
 
 // Strings 410..414: the inventory's five tick columns, left to right.
@@ -193,7 +195,7 @@ const TCHAR* GetCatalogSpecialties(const int32 CatalogRow)
 
 const TCHAR* GetCatalogDescription(const int32 CatalogRow)
 {
-	if (CatalogRow == SimCopterHangarLayout::ApacheCatalogRow) return TEXT("The Apache is flyable with the same flight controls as the civilian fleet. Its missile launcher and machine gun are included; no equipment purchase is needed. It has no passenger seats.\n\nPurchase price: three times the most expensive civilian helicopter. Find and board the hidden aircraft for the original discovery route, or buy hangar delivery.");
+	if (CatalogRow == SimCopterHangarLayout::ApacheCatalogRow) return TEXT("The Apache is flyable with the same flight controls as the civilian fleet. Its missile launcher and machine gun are included; no equipment purchase is needed. It has no passenger seats.\n\nPurchase price: 1.5 times the most expensive civilian helicopter. Earn 3,000 points in a user city or enter Unlock Apache to reveal it. Find and board the hidden aircraft for the original discovery route, or buy hangar delivery.");
 	return (CatalogRow >= 0 && CatalogRow < SimCopterHangarLayout::CatalogTabCount) ? CatalogDescriptions[CatalogRow] : TEXT("");
 }
 
@@ -276,11 +278,12 @@ FRowState GetHelicopterRowState(const FContext& Context, const int32 CatalogRow)
 		FVector Surface;
 		const auto* Traffic = Context.Missions.IsValid() ? Cast<ASimCopterTrafficSystemActor>(
 			UGameplayStatics::GetActorOfClass(Context.Missions.Get(), ASimCopterTrafficSystemActor::StaticClass())) : nullptr;
-		State.bMystery = !Career->HasSpawnedApacheEncounter() &&
+		const bool bCustomCityUnlocked = Context.Missions.IsValid() && Context.Missions->UsesCitywideMissionPlacement() && Context.Missions->GetCustomCityProgressionTier() >= 4;
+		State.bMystery = !bCustomCityUnlocked && !Career->HasSpawnedApacheEncounter() &&
 			!SimCopterHelicopterParking::TryGetApacheSpawnSurface(Traffic, Surface);
 		if (State.bMystery)
 		{
-			State.Reason = TEXT("This mystery helicopter is revealed only in its special city.");
+			State.Reason = TEXT("Reach 3,000 points in a user city, find the secret aircraft in a late career city, or enter Unlock Apache.");
 			return State; // Gate the transaction too, not just the card's presentation.
 		}
 	}
