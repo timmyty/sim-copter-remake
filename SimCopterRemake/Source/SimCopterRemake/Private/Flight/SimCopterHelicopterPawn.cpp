@@ -7356,6 +7356,12 @@ void ASimCopterHelicopterPawn::SimulateFlightStep(float DeltaSeconds)
 	// SCHOOK: HelicopterWaterLoad 0x00484d20
 	// heli[0x74] is the actual number of pounds in the attachment, not a normalized fill amount.
 	FlightModel.LoadPounds = BucketWaterPounds;
+	// Remake addition: a car or boat hanging in the capture cage weighs on the helicopter like a
+	// full bucket, so both cargoes slow it by the same amount.
+	if (AirOperations && (AirOperations->GetTowVehicle() != nullptr || AirOperations->HasBoat()))
+	{
+		FlightModel.LoadPounds = FMath::Max(FlightModel.LoadPounds, FMath::Max(0, HelicopterTuning.MaxLoadPounds));
+	}
 	// FUN_00485f50 action 0x10: firing the cannon kicks the pitch target by one frame of
 	// SlideRate * load, i.e. the recoil pushes the nose up.
 	if ((bWaterCannonHeld ||

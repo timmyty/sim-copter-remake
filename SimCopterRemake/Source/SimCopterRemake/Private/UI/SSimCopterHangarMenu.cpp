@@ -27,6 +27,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SConstraintCanvas.h"
 #include "Widgets/Layout/SScaleBox.h"
+#include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/Text/STextBlock.h"
@@ -308,6 +309,50 @@ TSharedRef<SWidget> SSimCopterHangarMenu::MakeArtButton(
 	return Button;
 }
 
+TSharedRef<SWidget> SSimCopterHangarMenu::MakeReadingPanel(const TSharedRef<SScrollBox>& Scroll, const FString& Name)
+{
+	TSharedRef<FButtonStyle> Style = MakeShared<FButtonStyle>();
+	Style->SetNormal(FSlateNoResource());
+	Style->SetHovered(FSlateNoResource());
+	Style->SetPressed(FSlateNoResource());
+	Style->SetDisabled(FSlateNoResource());
+	Style->SetNormalPadding(FMargin(0.0f));
+	Style->SetPressedPadding(FMargin(0.0f));
+	ButtonStyles.Add(Style);
+	// The scroll box is the button's content, so the mouse wheel and scroll bar still reach it.
+	TSharedRef<SButton> Panel = SNew(SButton)
+		.IsFocusable(false)
+		.ButtonStyle(&Style.Get())
+		.ContentPadding(FMargin(0.0f))
+		.ToolTipText(FText::FromString(Name))
+		[
+			Scroll
+		];
+	Panel->AddMetadata(MakeShared<FSimCopterMenuFocusOutline>(FSlateRect(0, 0, 1, 1), FSlateRect(0, 0, 1, 1), 0.04f));
+	(Name == TEXT("History") ? HistoryPanel : DescriptionPanel) = Panel;
+	return Panel;
+}
+
+bool SSimCopterHangarMenu::TryScrollReadingPanel(const FKey& Key)
+{
+	const TSharedPtr<SWidget> Selected = GetControllerSelection();
+	const TSharedPtr<SScrollBox> Scroll = Selected.IsValid() && Selected == HistoryPanel ? HistoryScroll
+		: Selected.IsValid() && Selected == DescriptionPanel ? DescriptionScroll : nullptr;
+	if (!Scroll.IsValid()) return false;
+	const bool bStick = Key == EKeys::Gamepad_RightStick_Up || Key == EKeys::Gamepad_RightStick_Down;
+	const bool bUp = Key == EKeys::Up || Key == EKeys::Gamepad_DPad_Up || Key == EKeys::Gamepad_RightStick_Up;
+	const bool bDown = Key == EKeys::Down || Key == EKeys::Gamepad_DPad_Down || Key == EKeys::Gamepad_RightStick_Down;
+	if (!bUp && !bDown) return false;
+	constexpr float StepPixels = 24.0f;
+	const float Offset = Scroll->GetScrollOffset();
+	const float End = Scroll->GetScrollOffsetOfEnd();
+	// At either end the D-pad leaves the panel, so the rest of the page stays reachable.
+	if (bUp && Offset <= 0.5f) return bStick;
+	if (bDown && Offset >= End - 0.5f) return bStick;
+	Scroll->SetScrollOffset(FMath::Clamp(Offset + (bUp ? -StepPixels : StepPixels), 0.0f, End));
+	return true;
+}
+
 TSharedRef<SWidget> SSimCopterHangarMenu::MakeHotspot(FOnClicked OnClicked, const FString& ToolTip)
 {
 	TSharedRef<FButtonStyle> Style = MakeShared<FButtonStyle>();
@@ -499,7 +544,7 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 
 	// Expanded details retain the catalog layout and scroll inside their paper panels.
 	AddAt(Canvas, CatalogHistoryX + 6.0f, CatalogHistoryY + 3.0f, CatalogHistoryWidth - 12.0f, 101.0f,
-		SNew(SScrollBox).ScrollBarAlwaysVisible(true)
+		MakeReadingPanel(SAssignNew(HistoryScroll, SScrollBox).ScrollBarAlwaysVisible(true)
 		+ SScrollBox::Slot()
 		[
 			SNew(SVerticalBox)
@@ -507,13 +552,13 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 			+ SVerticalBox::Slot().AutoHeight().Padding(0, 4, 12, 8)[MakePageText(State.bMystery ? TEXT("Identity classified. Visit the city where this helicopter is hidden to uncover its card.") : SimCopterHangarShop::GetCatalogHistory(CatalogRow), 10, PaperInkDim, ETextJustify::Left, false, true, CatalogHistoryWidth - 36)]
 			+ SVerticalBox::Slot().AutoHeight()[MakePageText(TEXT("Specialties"), 11, PaperInk, ETextJustify::Left, true, false)]
 			+ SVerticalBox::Slot().AutoHeight().Padding(0, 4, 12, 4)[MakePageText(State.bMystery ? TEXT("Details unlock with the aircraft.") : SimCopterHangarShop::GetCatalogSpecialties(CatalogRow), 10, PaperInkDim, ETextJustify::Left, false, true, CatalogHistoryWidth - 36)]
-		]);
+		], TEXT("History")));
 	AddAt(Canvas, CatalogDescriptionX + 6.0f, CatalogDescriptionY + 3.0f, CatalogDescriptionWidth - 12.0f, 16.0f,
 		MakePageText(TEXT("Description"), 11, PaperInk, ETextJustify::Left, true, false));
 	AddAt(Canvas, CatalogDescriptionX + 8.0f, CatalogDescriptionY + 22.0f, CatalogDescriptionWidth - 16.0f, 82.0f,
-		SNew(SScrollBox).ScrollBarAlwaysVisible(true)
+		MakeReadingPanel(SAssignNew(DescriptionScroll, SScrollBox).ScrollBarAlwaysVisible(true)
 		+ SScrollBox::Slot().Padding(0, 0, 12, 4)
-		[MakePageText(State.bMystery ? TEXT("The model, equipment and purchase price remain hidden until you reach its special city.") : SimCopterHangarShop::GetCatalogDescription(CatalogRow), 10, PaperInkDim, ETextJustify::Left, false, true, CatalogDescriptionWidth - 40)]);
+		[MakePageText(State.bMystery ? TEXT("The model, equipment and purchase price remain hidden until you reach its special city.") : SimCopterHangarShop::GetCatalogDescription(CatalogRow), 10, PaperInkDim, ETextJustify::Left, false, true, CatalogDescriptionWidth - 40)], TEXT("Description")));
 
 	// Funds and value readouts (strings 433 / 434).
 	AddAt(Canvas, CatalogPanelX, CatalogFundsLabelY, CatalogPanelWidth, 32.0f,
@@ -866,6 +911,10 @@ FReply SSimCopterHangarMenu::CycleEquipmentHelicopter(int32 Direction)
 
 FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
 {
+	if (Page == EPage::Catalog && CatalogRow != INDEX_NONE && TryScrollReadingPanel(Event.GetKey()))
+	{
+		return FReply::Handled();
+	}
 	if (Page == EPage::Catalog && CatalogRow != INDEX_NONE)
 	{
 		const FKey Key=Event.GetKey();

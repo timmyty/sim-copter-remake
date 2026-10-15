@@ -388,6 +388,25 @@ bool FMaxisMeshLibrary::LoadFromOriginalGameRoot(const FString& OriginalGameRoot
 		RegisterMeshFile(MeshFileIndex);
 	}
 
+	// DELIBERATE PRESENTATION DIVERGENCE (user request): the fire station, FS211 (object 0xE3,
+	// XBLD 0xD3), is 8.97M original units tall against the police station's 11.44M (PO210) and
+	// the hospital's 13.95M (HO209). Stretch it vertically so the three emergency buildings read
+	// as a set. Done once on the shared source data, so render, collision, its light markers and
+	// every later lookup agree; footprints and roads are untouched.
+	constexpr int32 FireStationObjectId = 0x0E3;
+	constexpr int32 FireStationHeightPercent = 135;
+	for (FMaxisMeshFile& File : MeshFiles)
+	{
+		for (FMaxisMeshObject& Object : File.Objects)
+		{
+			if (Object.Header.Id != FireStationObjectId) continue;
+			for (FMaxisMeshVertex& Vertex : Object.Vertices)
+			{
+				Vertex.Y = int32(int64(Vertex.Y) * FireStationHeightPercent / 100);
+			}
+		}
+	}
+
 	return true;
 }
 

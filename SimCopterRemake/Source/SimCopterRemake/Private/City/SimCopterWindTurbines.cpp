@@ -81,7 +81,7 @@ void ASimCity2000CityActor::BuildWindTurbines(const FMaxisMeshObject& OriginalMo
 	{
 		auto& Building=Buildings[Id];
 		if (Building.XbldId==200 && !Building.bDemolished)
-			Building.Parts.Add(AddBuildingInstance(WindTurbineComponentIndex,Id,Building.PlacementOrigin+WindTurbineHub));
+			Building.Parts.Add(AddBuildingInstance(WindTurbineComponentIndex,Id,Building.PlacementOrigin+WindTurbineHub,/*bWindowHashNudge*/false));
 	}
 	AdvanceWindTurbines(0);
 }

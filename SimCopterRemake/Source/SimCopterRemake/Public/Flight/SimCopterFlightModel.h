@@ -253,6 +253,8 @@ struct SIMCOPTERREMAKE_API FSimCopterFlightModel
 	int32 Fuel = SimCopterFixed::FromFloat(91.2f); // [0xcc] gallons 16.16
 	int32 FlightSeconds = 0;    // [0xcd] 16.16
 	int32 LoadPounds = 0;       // [0x74] cargo/bucket water weight
+	// Remake handling: cargo weighs 1/4 as much in the load factor (75% less slowdown).
+	static constexpr int32 CargoLoadPenaltyDivisor = 4;
 	int32 Passengers = 0;       // [0x77] each weighs 120 lb
 	int32 LoadFactor = SimCopterFixed::One; // [0xce] scales rates/climb
 	int32 BounceTimer = 0;      // [0x44] 16.16 s; controls cut while active

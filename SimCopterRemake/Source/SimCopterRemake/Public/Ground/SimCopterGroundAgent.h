@@ -381,6 +381,12 @@ public:
 	bool TryClaimHospitalPatient(ASimCopterGroundAgent* Medic);
 	TWeakObjectPtr<ASimCopterGroundAgent> HospitalPatientClaim;
 	float HospitalPatientClaimUntil = 0.0f;
+	// Remake responder tuning (v1.0.19): a casualty's onlooker ring is not an obstacle for route
+	// planning, a nearby patient falls back to the original straight bearing, and a responder
+	// this much closer may take over another responder's patient reservation.
+	static constexpr float MedicCasualtyCrowdRadiusCm = 260.0f;
+	static constexpr float MedicDirectApproachRadiusCm = 900.0f;
+	static constexpr float MedicClaimTakeoverMarginCm = 1500.0f;
 	ASimCopterMissionSystemActor* GetFireSafetyMissionSystem();
 	TWeakObjectPtr<ASimCopterMissionSystemActor> FireSafetyMissionSystem;
 	// A dead medevac patient remains the same physical person. When they die in the cabin this

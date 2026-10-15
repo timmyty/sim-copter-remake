@@ -53,6 +53,12 @@ and multiple-aircraft ownership also already exist in JamesIV4's remake. The
 [cheat guide](Docs/CheatCodes.md) distinguishes restored cheats from extensions
 such as custom MP4 playback.
 
+## Credits
+
+- **Playtester:** Daimo (Discord)
+- Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
+  and [wyozi's fork](https://github.com/wyozi/sim-copter-remake).
+
 ## Start playing
 
 1. Download **`SimCopterRemake-v1.0.18-Windows-x64.7z`** from the latest release.
@@ -163,8 +169,8 @@ roofs. Drive-in music now honors Music Volume, Game Volume and Auto-Quiet: HSI i
 about 6.35 dB stronger at 135% music with full game volume and Auto-Quiet off.
 [Release notes](Docs/Releases/v1.0.9.md)
 
-The optional `Launch-With-Performance-Diagnostics.cmd` records timing traces and
-GPU crash evidence together. The reported witness-photo slowdown and GPU compute
+The optional `Launch-With-Diagnostics.cmd` (one launcher since v1.0.19) records
+timing traces and GPU crash evidence together. The reported witness-photo slowdown and GPU compute
 fault remain under investigation. [Diagnostics](Docs/WitnessPhotoStutterInvestigation.md)
 
 ## A rebuilt hangar and a fleet that stays yours
@@ -221,7 +227,7 @@ it shows an actual captured car and sealed cage state.
 | **Rendering and diagnostics** | Clearer taser effects, corrected construction-lot surfaces and a separate GPU diagnostic launcher. The reported GPU compute fault remains under investigation. |
 
 [Detailed release notes](Docs/Releases/v1.0.9.md) explain the changes and their
-validation. For GPU crash investigation, `Launch-With-GPU-Diagnostics.cmd` starts
+validation. For GPU crash investigation, `Launch-With-Diagnostics.cmd` starts
 the separately downloaded optional Development executable with extra diagnostics; the normal launcher
 continues to use Shipping. [Diagnostic guide](Docs/GpuCrashAndSprint.md)
 

@@ -73,6 +73,16 @@ private:
 	void UpdateCamera();
 	void BeginTourLighting();
 	void RestoreLighting();
+	// Light cloud cover for the flyover (user request, v1.0.19), skipped on desert-looking maps.
+	void BeginTourClouds();
+	void ApplyTourClouds();
+	void RestoreTourClouds();
+	bool bCloudOverride = false;
+	float PreviousCloudCoverage = -1;
+	int32 PreviousVolumetricCloudCVar = -1;
+	TWeakObjectPtr<class UVolumetricCloudComponent> TourCloud;
+	UPROPERTY(Transient) TObjectPtr<class UMaterialInterface> PreviousCloudMaterial;
+	UPROPERTY(Transient) TObjectPtr<class UMaterialInstanceDynamic> TourCloudMaterial;
 	bool bLightingOverride = false;
 	uint8 PreviousTimeMode = 0;
 	float PreviousStaticHour = 12;

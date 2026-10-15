@@ -96,6 +96,16 @@ private:
 	TArray<TSharedPtr<SWidget>> ControllerFocusableWidgets;
 	TArray<TSharedPtr<SWidget>> CatalogTabWidgets;
 
+	// The catalog's History and Description text panels. Each scroll box sits inside a
+	// transparent, controller-selectable button so a gamepad can highlight the panel and then
+	// scroll it with the D-pad (or right stick); at either end of the text the D-pad moves on.
+	TSharedPtr<SWidget> HistoryPanel;
+	TSharedPtr<SWidget> DescriptionPanel;
+	TSharedPtr<class SScrollBox> HistoryScroll;
+	TSharedPtr<class SScrollBox> DescriptionScroll;
+	TSharedRef<SWidget> MakeReadingPanel(const TSharedRef<class SScrollBox>& Scroll, const FString& Name);
+	bool TryScrollReadingPanel(const FKey& Key);
+
 	TSharedPtr<SConstraintCanvas> PageCanvas;
 	TSharedPtr<class SOverlay> Backdrop;
 	TSharedPtr<SWidget> InitialFocusWidget;

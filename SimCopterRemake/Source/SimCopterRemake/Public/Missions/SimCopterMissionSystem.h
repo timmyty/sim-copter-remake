@@ -213,6 +213,9 @@ struct SIMCOPTERREMAKE_API FSimCopterMissionTuning
 	int32 MaxEasy = 2;
 	int32 EasyInterval = 380 << 16;      // (16.16 seconds)
 	int32 IntervalAdj = 13107;           // 0.2 (16.16)
+	// Remake addition: after a job is completed, the next scheduled job is due within this time
+	// instead of waiting out the rest of EasyInterval (user request, v1.0.19).
+	int32 CompletionFollowUpDelay = 10 << 16; // (16.16 seconds)
 	int32 UfoMoney = 2000;
 	int32 UfoPoints = 1000;
 

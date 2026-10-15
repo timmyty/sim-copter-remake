@@ -159,6 +159,10 @@ struct FSimCopterDispatchVehicle
 	// own position, not its tile centre - see FServiceFireTarget.
 	FVector TargetWorld = FVector::ZeroVector;
 	bool bHasJetTarget = false;
+	// Remake addition (not saved): how long a parked fire truck has had nothing alight in range.
+	// Past SimCopterDispatch::FireTruckIdleRecallSeconds it goes home instead of sitting out the
+	// whole 180 s stay at a fire that is already out (or never reached it).
+	float IdleOnSceneSeconds = 0.0f;
 	// True once the vehicle has acted at the scene at least once (original flag 0x08).
 	bool bActedAtScene = false;
 	// The officer this unit put on the ground. BHAV 1150/1152 walk them back to the car and end
@@ -1258,6 +1262,22 @@ public:
 	// bVehiclesKnockDownPedestrians.
 	void UpdatePedestrianVehicleImpacts(float DeltaSeconds);
 	bool IsVehicleSpawnLocationClear(const FVector& SpawnLocation) const;
+	// Remake addition (v1.0.19): ambient refill skips road points beside a parked aircraft or an
+	// existing queue of stopped cars, and RecycleStuckAmbientVehicles retires ordinary ambient
+	// cars that have been unable to move for a long time. Together they stop the endless pile of
+	// cars that formed beside the career hangar, where a parked helicopter holds the road.
+	bool IsAmbientVehicleSpawnUncongested(const FVector& SpawnLocation) const;
+	// Remake addition (v1.0.19): civilian Simlish chatter is held back for the first
+	// AmbientChatStartupQuietSeconds of a city - the freshly spawned crowd and the visitors at the
+	// parked helicopter all used to talk at once - and thereafter limited to one clip per
+	// AmbientChatMinIntervalSeconds city-wide. Returns whether a chat line may play now.
+	bool TryClaimAmbientChatVoice();
+	float AmbientChatStartupQuietSeconds = 25.0f;
+	float AmbientChatMinIntervalSeconds = 2.5f;
+	double LastAmbientChatVoiceSeconds = -1000.0;
+	void RecycleStuckAmbientVehicles();
+	float AmbientStuckRecycleSeconds = 12.0f;
+	float AmbientStuckRecycleVisibleSeconds = 40.0f;
 	bool IsPedestrianSpawnLocationOpen(const FVector& SpawnLocation) const;
 	// A mission victim may stand here only if it is not buried inside a building mesh, unless the
 	// tile is a road (a car-accident victim can legitimately lie on the road surface).

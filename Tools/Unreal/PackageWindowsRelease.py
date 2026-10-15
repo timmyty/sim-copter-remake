@@ -39,7 +39,8 @@ def main():
     optional_name = f'SimCopterRemake-{args.version}-Optional-Development-Windows-x64.7z'
     developer = 'SimCopterRemake/Binaries/Win64/SimCopterRemake.exe'
     pix = 'Engine/Binaries/ThirdParty/Windows/WinPixEventRuntime/x64/WinPixEventRuntime.dll'
-    launchers = ['Launch-With-GPU-Diagnostics.cmd', 'Launch-With-Performance-Diagnostics.cmd']
+    # One combined launcher (GPU crash evidence + performance traces) since v1.0.19.
+    launchers = ['Launch-With-Diagnostics.cmd']
     if not args.archive:
         assert not base.exists() and not optional.exists(), 'Use a fresh destination'
         args.output.mkdir(parents=True, exist_ok=True)
@@ -98,11 +99,11 @@ def main():
             'beside the root SimCopterRemake.exe. Merge the Engine and SimCopterRemake folders.\n'
             'This adds SimCopterRemake/Binaries/Win64/SimCopterRemake.exe; it does not replace\n'
             'the root launcher or the normal Shipping executable.\n\n'
-            'Launch-With-GPU-Diagnostics.cmd collects GPU crash evidence.\n'
-            'Launch-With-Performance-Diagnostics.cmd also records performance traces.\n'
+            'Launch-With-Diagnostics.cmd collects GPU crash evidence and records\n'
+            'performance traces in one run.\n'
             'Normal play continues to use the root SimCopterRemake.exe.\n\n'
             'Diagnostic text logs: %LOCALAPPDATA%/SimCopterRemake/Saved/Logs/\n'
-            '  GPU-Diagnostics.log or Performance-Diagnostics.log, depending on the launcher.\n'
+            '  Diagnostics.log\n'
             'Crash reports and dumps, when generated: %LOCALAPPDATA%/SimCopterRemake/Saved/Crashes/\n'
             'Performance traces: %LOCALAPPDATA%/SimCopterRemake/Saved/Profiling/\n'
             'For a crash report, include the diagnostic log and the newest crash folder.\n')

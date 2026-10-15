@@ -3,6 +3,9 @@
 #include "City/SimCopterRuntimeStaticMesh.h"
 
 #include "Engine/StaticMesh.h"
+#include "MeshCardBuild.h"
+#include "MeshCardRepresentation.h"
+#include "StaticMeshResources.h"
 #include "MeshDescription.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "StaticMeshAttributes.h"
@@ -114,6 +117,35 @@ UStaticMesh* Build(
 			SectionInstances.Add(InstanceID);
 		}
 
+		// The city builder draws most faces from both sides by emitting each triangle twice, once
+		// per winding, over the SAME corners. The rasterizer culls one of the pair, but a ray tracer
+		// does not: Lumen's hardware rays hit whichever coplanar copy the BVH reports first, and when
+		// that is the back-facing copy the hit is discarded as black. That is the black patches on
+		// buildings that come and go as the camera moves (screen traces cover them only while they are
+		// on screen). Push the copy that faces away from the vertex normal a few millimetres behind the
+		// surface: from either side the nearer triangle is now the one facing the viewer, and nothing
+		// changes visually. UE draws the clockwise side, i.e. the side opposite (B-A)x(C-A).
+		constexpr float BackCopyInsetCm = 0.25f;
+		TArray<FVertexInstanceID> InsetInstances;
+		InsetInstances.Init(FVertexInstanceID(INDEX_NONE), Section.Vertices.Num());
+		auto GetInsetInstance = [&](const int32 VertexIndex) -> FVertexInstanceID
+		{
+			if (InsetInstances[VertexIndex] != FVertexInstanceID(INDEX_NONE)) return InsetInstances[VertexIndex];
+			const FVertexInstanceID Source = SectionInstances[VertexIndex];
+			const FVector3f Normal = InstanceNormals[Source];
+			const FVertexID VertexID = MeshDescription.CreateVertex();
+			VertexPositions[VertexID] = FVector3f(Section.Vertices[VertexIndex]) - Normal.GetSafeNormal() * BackCopyInsetCm;
+			const FVertexInstanceID InstanceID = MeshDescription.CreateVertexInstance(VertexID);
+			InstanceNormals[InstanceID] = Normal;
+			InstanceTangents[InstanceID] = InstanceTangents[Source];
+			InstanceBinormalSigns[InstanceID] = InstanceBinormalSigns[Source];
+			InstanceColors[InstanceID] = InstanceColors[Source];
+			InstanceUVs.Set(InstanceID, 0, InstanceUVs.Get(Source, 0));
+			InstanceUVs.Set(InstanceID, 1, InstanceUVs.Get(Source, 1));
+			InsetInstances[VertexIndex] = InstanceID;
+			return InstanceID;
+		};
+
 		for (int32 Index = 0; Index + 2 < Section.Triangles.Num(); Index += 3)
 		{
 			const int32 A = Section.Triangles[Index];
@@ -127,6 +159,15 @@ UStaticMesh* Build(
 			// same corners; skip only genuinely degenerate ones.
 			if (A == B || B == C || A == C)
 			{
+				continue;
+			}
+			const FVector3f PA(Section.Vertices[A]), PB(Section.Vertices[B]), PC(Section.Vertices[C]);
+			const FVector3f AverageNormal = InstanceNormals[SectionInstances[A]] + InstanceNormals[SectionInstances[B]] +
+				InstanceNormals[SectionInstances[C]];
+			const bool bFacesAwayFromNormal = FVector3f::DotProduct(FVector3f::CrossProduct(PB - PA, PC - PA), AverageNormal) > 0.0f;
+			if (bFacesAwayFromNormal)
+			{
+				MeshDescription.CreateTriangle(PolygonGroup, { GetInsetInstance(A), GetInsetInstance(B), GetInsetInstance(C) });
 				continue;
 			}
 			MeshDescription.CreateTriangle(
@@ -168,6 +209,26 @@ UStaticMesh* Build(
 	if (!Mesh->BuildFromMeshDescriptions(MeshDescriptions, BuildParams))
 	{
 		return nullptr;
+	}
+
+	// Lumen's surface cache only lights meshes that carry a card representation, and the editor
+	// is what normally generates one - a runtime-built mesh has none, so every Lumen ray that
+	// left screen space and hit a building came back black. Six cards fitted to the bounds is
+	// the engine's own runtime fallback (MeshCardRepresentation::SetCardsFromBounds) and is a
+	// good fit for the city's box-like models. Owned and deleted by the LOD resources.
+	if (FStaticMeshRenderData* RenderData = Mesh->GetRenderData())
+	{
+		const FBox Bounds = Mesh->GetBoundingBox();
+		for (FStaticMeshLODResources& LOD : RenderData->LODResources)
+		{
+			if (LOD.CardRepresentationData != nullptr || !Bounds.IsValid) continue;
+			FCardRepresentationData* Cards = new FCardRepresentationData();
+			Cards->MeshCardsBuildData.Bounds = Bounds;
+			// Every face is emitted for both sides (see the inset copies above).
+			Cards->MeshCardsBuildData.bMostlyTwoSided = true;
+			MeshCardRepresentation::SetCardsFromBounds(Cards->MeshCardsBuildData);
+			LOD.CardRepresentationData = Cards;
+		}
 	}
 
 	if (bWithComplexCollision)
