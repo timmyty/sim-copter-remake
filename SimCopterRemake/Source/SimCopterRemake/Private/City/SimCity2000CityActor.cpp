@@ -3196,19 +3196,10 @@ int32 AppendMaxisMeshObject(
 		// a separate animated blade mesh, retaining this original tower/nacelle.
 		if (bAnimatedWindTurbine && MeshObject.Header.Id == 0x0db && Face.FaceType == 11) continue;
 		const bool bTranslucentDiscFace = !bTexturedFace && FMaxisProceduralMeshBuilder::IsTranslucentFaceType(Face.FaceType);
-		// Remake presentation (v1.0.19): the police (PO210) and fire (FS211) stations' flat upper roofs
-		// are drawn as light concrete. Their atlas cells are near-black (police) or dull brown, so
-		// the roofs read as holes beside the hospital. Geometry and collision are unchanged.
-		bool bStationRoof = false;
-		if ((MeshObject.Header.Id == 0x000 || MeshObject.Header.Id == 0x0E3) && Face.VertexIndices.Num() >= 3 &&
-			AutoSmoothCornerNormals.IsValidIndex(FaceIndex) && AutoSmoothCornerNormals[FaceIndex].Num() > 0 &&
-			AutoSmoothCornerNormals[FaceIndex][0].Z > 0.85f)
-		{
-			float MinZ = TNumericLimits<float>::Max(), TopZ = -TNumericLimits<float>::Max(), FaceZ = 0;
-			for (const FVector& P : LocalVertexPositions) { MinZ = FMath::Min(MinZ, float(P.Z)); TopZ = FMath::Max(TopZ, float(P.Z)); }
-			for (const uint16 V : Face.VertexIndices) if (LocalVertexPositions.IsValidIndex(V)) FaceZ = FMath::Max(FaceZ, float(LocalVertexPositions[V].Z));
-			bStationRoof = TopZ > MinZ && FaceZ > MinZ + (TopZ - MinZ) * 0.5f;
-		}
+		// The police (PO210) and fire (FS211) stations are stretched to the hospital's height in
+		// FMaxisMeshLibrary, but their roofs keep the original atlas art (v1.0.19's light-concrete
+		// roof override was reverted at the user's request). Stretching only moves vertices
+		// vertically, so the horizontal roof faces and their texture mapping are unchanged.
 		// HO209-only presentation override; no vertex, triangulation or collision changes.
 		const bool bHospital = MeshObject.Header.Id == 0x016;
 		const int32 HospitalSection = !bHospital ? INDEX_NONE :
@@ -3223,7 +3214,7 @@ int32 AppendMaxisMeshObject(
 		const bool bCityHall = MeshObject.Header.Id == SimCopterCivicLandmarks::CityHallObjectId;
 		// The authored timber dock (SimCopterCivicLandmarks::MakePier) carries its finish in MaterialIndex.
 		const bool bWoodenPier = SimCopterCivicLandmarks::IsPier(MeshObject.Header.Id) && MeshObject.Header.bConsistentWinding;
-		const int32 SectionKey = (bStationRoof || bWoodenPier) ? INDEX_NONE : bCityHall ? SimCopterCivicLandmarks::CityHallSectionKey : bWaterTower ? SimCopterWaterTowers::SectionKey : ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
+		const int32 SectionKey = bWoodenPier ? INDEX_NONE : bCityHall ? SimCopterCivicLandmarks::CityHallSectionKey : bWaterTower ? SimCopterWaterTowers::SectionKey : ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
 			? MakeBakedAtlasPageSectionKey(Face.TextureAtlasIndex)
 			: (bBakedDirectTexturedFace ? MakeBakedDirectImageSectionKey(Face.MaterialIndex) : (bRuntimeTexturedFace ? TextureKey : (bTranslucentDiscFace ? TranslucentDiscSectionKeyFlag : INDEX_NONE)));
 		FOriginalMeshSectionData& Section = Sections.FindOrAdd(SectionKey);
@@ -3231,7 +3222,7 @@ int32 AppendMaxisMeshObject(
 		// Binary finish bits survive both static-mesh sRGB packing and the merged mesh's
 		// linear vertex-color packing; fractional tags would select different finishes.
 		const FLinearColor FaceColor = bWoodenPier ? SimCopterCivicLandmarks::PierFinishColor(uint8(Face.MaterialIndex)) :
-			bStationRoof ? FLinearColor(0.47f, 0.47f, 0.45f) : bCityHall ? FLinearColor(Face.MaterialIndex & 1, (Face.MaterialIndex >> 1) & 1, (Face.MaterialIndex >> 2) & 1) : bWaterTower ? FLinearColor(Face.MaterialIndex * 0.5f, 0, 0) : bTexturedFace
+			bCityHall ? FLinearColor(Face.MaterialIndex & 1, (Face.MaterialIndex >> 1) & 1, (Face.MaterialIndex >> 2) & 1) : bWaterTower ? FLinearColor(Face.MaterialIndex * 0.5f, 0, 0) : bTexturedFace
 			? FLinearColor::White
 			: ResolveMaxisFaceColor(ColorMap, Face.FaceType, Face.MaterialIndex, TexturedFaceFallbackColor);
 

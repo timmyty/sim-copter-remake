@@ -744,6 +744,8 @@ ASimCopterHelicopterPawn::ASimCopterHelicopterPawn()
 	// Set on the property for the same reason as the line above - the setter no-ops on an
 	// unregistered default subobject. See SearchLightIndirectLightingIntensity for why it is not 1.
 	SearchLightComponent->IndirectLightingIntensity = SearchLightIndirectLightingIntensity;
+	// Property, not setter, for the same reason. See bSearchLightCastsShadows.
+	SearchLightComponent->CastShadows = bSearchLightCastsShadows;
 	SearchLightComponent->SetVisibility(bSearchLightStartsEnabled);
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -7296,6 +7298,9 @@ void ASimCopterHelicopterPawn::UpdateSearchLightEffect()
 
 	SearchLightComponent->SetIntensity(SearchLightIntensity);
 	SearchLightComponent->SetInverseExposureBlend(SearchLightExposureCompensation);
+	// Setter (registered component): no-op unless the value changes, so this is free per frame
+	// and also corrects a pawn whose shadow flag was serialized before the default changed.
+	SearchLightComponent->SetCastShadows(bSearchLightCastsShadows);
 	SearchLightComponent->AttenuationRadius = FMath::Max(SearchLightRangeCm, BeamLength);
 	SearchLightComponent->OuterConeAngle = OuterConeAngleDeg;
 	SearchLightComponent->InnerConeAngle = FMath::Clamp(OuterConeAngleDeg * 0.45f, 1.0f, OuterConeAngleDeg);

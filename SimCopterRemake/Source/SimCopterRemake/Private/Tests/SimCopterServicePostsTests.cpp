@@ -59,9 +59,23 @@ bool FSimCopterServicePostsTest::RunTest(const FString& Parameters)
 	TestNotNull(TEXT("Hospital roof supports eight-person team"),RoofMedic);
 	TestNotNull(TEXT("Ground medic exists independently"),Traffic->EnsureBuildingEntranceCrew(64,64));
 	TestNotNull(TEXT("Police roof crew"),Traffic->EnsureServiceRoofCrew(69,64,3));
-	TestNotNull(TEXT("Ground police exists independently"),Traffic->EnsureBuildingEntranceCrew(69,64));
+	TestNull(TEXT("No street-level officer is posted at the police station"),Traffic->EnsureBuildingEntranceCrew(69,64));
 	const int32 Count=Traffic->PedestrianAgents.Num();
-	TestEqual(TEXT("Eight roof medics, three roof police, two ground staff"),Count,13);
+	TestEqual(TEXT("Eight roof medics, three roof police, one ground medic"),Count,12);
+	{
+		// An older save's street officer is retired; a posted officer never stops a burglar's car.
+		FVector PoliceEntrance;
+		if (TestTrue(TEXT("Police ground entrance still resolves"),Traffic->TryGetBuildingEntrancePost(69,64,PoliceEntrance)))
+		{
+			auto* Legacy=World->SpawnActor<ASimCopterGroundAgent>(); Legacy->SetOwner(Traffic);
+			Legacy->BehaviorContext.ResetToState(7); Legacy->SetHospitalRoofPost(PoliceEntrance+FVector(60,0,0),280);
+			Legacy->SetActorLocation(PoliceEntrance+FVector(60,0,90)); Traffic->PedestrianAgents.Add(Legacy);
+			TestTrue(TEXT("Legacy officer holds a service post"),Legacy->HasServicePost());
+			TestNull(TEXT("Police entrance still posts nobody"),Traffic->EnsureBuildingEntranceCrew(69,64));
+			TestTrue(TEXT("Legacy street-level officer is retired"),!IsValid(Legacy) || Legacy->IsActorBeingDestroyed());
+			Traffic->PedestrianAgents.Remove(TWeakObjectPtr<ASimCopterGroundAgent>(Legacy));
+		}
+	}
 	for(int32 A=0;A<Count;++A) for(int32 B=A+1;B<Count;++B)
 	{
 		const FVector PA=Traffic->PedestrianAgents[A]->GetActorLocation(), PB=Traffic->PedestrianAgents[B]->GetActorLocation();

@@ -411,6 +411,10 @@ public:
 	// may be far across the city while the player collects a patient and still has to be present
 	// when the helicopter reaches the hospital.
 	bool IsPersistentHospitalRoofCrew() const { return bPersistentHospitalRoofCrew; }
+	// Still held by its station post (roof or entrance). Boarding an aircraft clears it, so a
+	// worker the pilot has picked up and set down elsewhere no longer reports a post.
+	bool HasServicePost() const { return bPersistentHospitalRoofCrew && bHasHospitalRoofPost; }
+	const FVector& GetServicePostLocation() const { return HospitalRoofPostWorldLocation; }
 	void SetPersistentHospitalRoofCrew(bool bPersistent);
 
 	// Pins that worker to the roof it was posted on: the square its building covers, and the roof
