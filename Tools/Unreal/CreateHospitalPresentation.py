@@ -10,7 +10,7 @@ lib = unreal.MaterialEditingLibrary
 folder = '/Game/Generated/CityAtlas'
 repo = Path(unreal.Paths.project_dir()).parent
 
-def material(name, code, roughness):
+def material(name, code, roughness, glow_code=None):
     path = folder + '/' + name
     mat = unreal.load_asset(path) or unreal.AssetToolsHelpers.get_asset_tools().create_asset(name, folder, unreal.Material, unreal.MaterialFactoryNew())
     lib.delete_all_material_expressions(mat)
@@ -41,6 +41,30 @@ def material(name, code, roughness):
     assert lib.connect_material_property(alpha,'',unreal.MaterialProperty.MP_ROUGHNESS)
     spec=expr(unreal.MaterialExpressionConstant);spec.set_editor_property('r',.3)
     assert lib.connect_material_property(spec,'',unreal.MaterialProperty.MP_SPECULAR)
+    if glow_code:
+        # The dedicated facade replaced the atlas material, so it must explicitly join the
+        # same live day/night collection. Restrict emission to its analytic glass shapes.
+        glow=expr(unreal.MaterialExpressionCustom)
+        glow.set_editor_property('description','HospitalNightWindows')
+        glow.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
+        glow.set_editor_property('code',glow_code)
+        names=['P','UV','N','BuildingOrigin','Blend','Seed','LitFraction','RowLitFraction','GlowNits']
+        pins=[]
+        for pin_name in names:
+            pin=unreal.CustomInput();pin.set_editor_property('input_name',pin_name);pins.append(pin)
+        glow.set_editor_property('inputs',pins)
+        origin=expr(unreal.MaterialExpressionObjectPositionWS)
+        for node,pin_name in [(local,'P'),(uv,'UV'),(normal,'N'),(origin,'BuildingOrigin')]:
+            assert lib.connect_material_expressions(node,'',glow,pin_name)
+        collection=unreal.load_asset('/Game/Materials/MPC_SimCopterDayNight')
+        assert collection
+        for pin_name,param in [('Blend','NightBlend'),('Seed','WindowSeed'),('LitFraction','WindowLitFraction'),
+                               ('RowLitFraction','WindowRowLitFraction'),('GlowNits','WindowGlowNits')]:
+            node=expr(unreal.MaterialExpressionCollectionParameter)
+            node.set_editor_property('collection',collection)
+            node.set_editor_property('parameter_name',param)
+            assert lib.connect_material_expressions(node,'',glow,pin_name)
+        assert lib.connect_material_property(glow,'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     lib.layout_material_expressions(mat);lib.recompile_material(mat)
     assert unreal.EditorAssetLibrary.save_loaded_asset(mat)
 
@@ -87,37 +111,57 @@ float grain=sin(P.x*1.7)*sin(P.y*2.1)*.014*(1-smoothstep(.5,2,length(fwidth(P)))
 float seam=1-smoothstep(.8,1.6,min(abs(frac(P.x/160)-.5),abs(frac(P.y/160)-.5))*160);
 return float4(float3(.18,.215,.22)+grain-seam*.04,.9);
 '''
-material('M_HospitalFacade',FACADE,.75)
-material('M_HospitalHelipad',HELIPAD,.85)
-material('M_HospitalRoof',ROOF,.9)
+FACADE_GLOW = '''
+// Match the city atlas: bulbs follow the shared night fade, density, nightly seed and nits.
+// Excluding Lumen card capture avoids unstable indirect light from small window patches.
+#ifdef LUMEN_CARD_CAPTURE
+return float3(0,0,0);
+#endif
+if (Blend <= 0) return float3(0,0,0);
+''' + FACADE[:FACADE.index('return float4')] + r'''
+float glassMask = lerp(glass*(1-mullion),1-doorframe,door);
+float2 pane = floor(float2((u+48.0)/96.0,P.z/floorHeight));
+float2 building = floor(BuildingOrigin.xy*.01);
+float buildingId = building.x+building.y*71.0;
+float windowRoll=frac(sin(dot(float3(pane,buildingId)+Seed,float3(12.9898,78.233,37.719)))*43758.5453);
+float rowRoll=frac(sin(dot(float3(0,pane.y,buildingId)+Seed*1.7,float3(39.3468,11.135,83.155)))*24634.6345);
+float lit=max(step(windowRoll,LitFraction),step(rowRoll,RowLitFraction));
+return float3(1.25,.97,.56)*glassMask*lit*saturate(Blend)*max(GlowNits,0);
+'''
 
-# A short original metal crunch: low body thump, inharmonic ringing, granular scrape.
-output=repo/'SimCopterRemake/Content/Audio/HelicopterVehicleImpact.wav'
-output.parent.mkdir(parents=True,exist_ok=True)
-rng=random.Random(2049); rate=48000; duration=.56; samples=[]; low=0
-for i in range(int(rate*duration)):
-    t=i/rate; noise=rng.uniform(-1,1); low=.75*low+.25*noise
-    attack=min(1,t/.0015)
-    body=.5*math.sin(2*math.pi*(95*t-38*t*t))*math.exp(-t*18)
-    ring=sum(math.sin(2*math.pi*f*t)*math.exp(-t*d) for f,d in [(487,17),(913,22),(1573,28),(2317,34)])*.12
-    scrape=(noise-low)*.38*math.exp(-t*12)*(0.65+.35*math.sin(t*630))
-    samples.append((body+ring+scrape)*attack)
-peak=max(abs(x) for x in samples)
-with wave.open(str(output),'wb') as wav:
-    wav.setnchannels(1);wav.setsampwidth(2);wav.setframerate(rate)
-    wav.writeframes(b''.join(struct.pack('<h',int(x/peak*.86*32767)) for x in samples))
-task=unreal.AssetImportTask();task.set_editor_property('filename',str(output));task.set_editor_property('destination_path',folder)
-task.set_editor_property('destination_name','S_HelicopterVehicleImpact');task.set_editor_property('automated',True)
-task.set_editor_property('replace_existing',True);task.set_editor_property('save',True)
-unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
-assert unreal.load_asset(folder+'/S_HelicopterVehicleImpact')
-atten = unreal.load_asset(folder+'/A_VehicleImpact') or unreal.AssetToolsHelpers.get_asset_tools().create_asset(
-    'A_VehicleImpact',folder,unreal.SoundAttenuation,unreal.SoundAttenuationFactory())
-settings=atten.get_editor_property('attenuation')
-settings.set_editor_property('attenuate',True)
-settings.set_editor_property('spatialize',True)
-settings.set_editor_property('attenuation_shape_extents',unreal.Vector(250,0,0))
-settings.set_editor_property('falloff_distance',3000)
-atten.set_editor_property('attenuation',settings)
-assert unreal.EditorAssetLibrary.save_loaded_asset(atten)
-unreal.log('HOSPITAL_ASSETS_READY: facade, preserved roof, analytic helipad H, metal collision cue')
+material('M_HospitalFacade',FACADE,.75,FACADE_GLOW)
+unreal.log('Hospital facade saved with shared day/night window controls.')
+if '-HospitalFacadeOnly' not in unreal.SystemLibrary.get_command_line():
+    material('M_HospitalHelipad',HELIPAD,.85)
+    material('M_HospitalRoof',ROOF,.9)
+
+    # A short original metal crunch: low body thump, inharmonic ringing, granular scrape.
+    output=repo/'SimCopterRemake/Content/Audio/HelicopterVehicleImpact.wav'
+    output.parent.mkdir(parents=True,exist_ok=True)
+    rng=random.Random(2049); rate=48000; duration=.56; samples=[]; low=0
+    for i in range(int(rate*duration)):
+        t=i/rate; noise=rng.uniform(-1,1); low=.75*low+.25*noise
+        attack=min(1,t/.0015)
+        body=.5*math.sin(2*math.pi*(95*t-38*t*t))*math.exp(-t*18)
+        ring=sum(math.sin(2*math.pi*f*t)*math.exp(-t*d) for f,d in [(487,17),(913,22),(1573,28),(2317,34)])*.12
+        scrape=(noise-low)*.38*math.exp(-t*12)*(0.65+.35*math.sin(t*630))
+        samples.append((body+ring+scrape)*attack)
+    peak=max(abs(x) for x in samples)
+    with wave.open(str(output),'wb') as wav:
+        wav.setnchannels(1);wav.setsampwidth(2);wav.setframerate(rate)
+        wav.writeframes(b''.join(struct.pack('<h',int(x/peak*.86*32767)) for x in samples))
+    task=unreal.AssetImportTask();task.set_editor_property('filename',str(output));task.set_editor_property('destination_path',folder)
+    task.set_editor_property('destination_name','S_HelicopterVehicleImpact');task.set_editor_property('automated',True)
+    task.set_editor_property('replace_existing',True);task.set_editor_property('save',True)
+    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+    assert unreal.load_asset(folder+'/S_HelicopterVehicleImpact')
+    atten = unreal.load_asset(folder+'/A_VehicleImpact') or unreal.AssetToolsHelpers.get_asset_tools().create_asset(
+        'A_VehicleImpact',folder,unreal.SoundAttenuation,unreal.SoundAttenuationFactory())
+    settings=atten.get_editor_property('attenuation')
+    settings.set_editor_property('attenuate',True)
+    settings.set_editor_property('spatialize',True)
+    settings.set_editor_property('attenuation_shape_extents',unreal.Vector(250,0,0))
+    settings.set_editor_property('falloff_distance',3000)
+    atten.set_editor_property('attenuation',settings)
+    assert unreal.EditorAssetLibrary.save_loaded_asset(atten)
+    unreal.log('HOSPITAL_ASSETS_READY: facade, preserved roof, analytic helipad H, metal collision cue')

@@ -75,7 +75,7 @@ On pilot exit, the helicopter holds for two seconds, then lands on flat clear gr
 
 ## Vehicle impacts and persistence
 
-The first moving helicopter contact dents, tips and ignites the car, posts the original non-mission accident penalty, and sends its occupants running away. It explodes after four seconds unless extinguished first. Repeated contact cannot restart the fuse or repeat the penalty. An extinguished car can be towed, but player-caused recovery jobs do not award completion money or score. See [City tours and car accidents](CityIntrosAndAccidents.md).
+The first moving helicopter contact tips and ignites the car (its body is never deformed), posts the original non-mission accident penalty, and sends its occupants running away. It explodes after four seconds unless extinguished first. Repeated contact cannot restart the fuse or repeat the penalty. An extinguished car can be towed, but player-caused recovery jobs do not award completion money or score. See [City tours and car accidents](CityIntrosAndAccidents.md).
 
 Runtime saves include the helper's assignment and unlock, slung cargo identities, cable state, custody state, car impacts, boat recovery state, and pilot health. Existing save versions remain readable. Remote taser aiming ends when loading. Automatic pilot recovery reconnects to the saved helicopter, including a pilot attached to its harness. Occupied sling fittings and a helicopter carrying slung cargo cannot be sold.
 
@@ -102,7 +102,7 @@ in [the validation receipt](validation/AirSupportOrdersResults.json).
 
 The Editor and Shipping builds passed through `RebuildUnrealCpp.bat`. The final headless run passed **90 tests**: 88 clean passes and two passes with existing fixture warnings, zero failures or skipped tests. The warnings concern component mobility and a contextless synthetic world in `PlaneDeckRescue` and `SafePassengerLanding`.
 
-The new integration test exercises both bumper press orders, menu switching and release behavior, cable isolation from menu navigation, actual taser/cage capture and cabin capacity, prisoner roof handoff, cargo save relinking, hit-local denting, car recovery and explosions, boat recovery, the helper's complete car delivery, rejection of the Base Location marker as an AI job, police taser firing, pilot health damage, and career unlock persistence. Related controller, equipment, mission, passenger, save, medical, dispatch, and career tests also passed.
+The new integration test exercises both bumper press orders, menu switching and release behavior, cable isolation from menu navigation, actual taser/cage capture and cabin capacity, prisoner roof handoff, cargo save relinking, car recovery and explosions, boat recovery, the helper's complete car delivery, rejection of the Base Location marker as an AI job, police taser firing, pilot health damage, and career unlock persistence. Related controller, equipment, mission, passenger, save, medical, dispatch, and career tests also passed.
 
 The automatic-pickup/Y-controls follow-up also passed all 90 tests. Added assertions exercise Y opening and switching both menus, A confirmation without flight input, R3+B exit routing, automatic suspect and injured-civilian pickup, wall/floor separation, no pickup while falling, ordinary civilian exclusion, and the drop delay. Its evidence is under `Docs/scratchpad/carry-and-y-controls/`.
 

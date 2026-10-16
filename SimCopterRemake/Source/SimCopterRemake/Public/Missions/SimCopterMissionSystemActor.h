@@ -110,10 +110,11 @@ class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public S
 public:	
 	ASimCopterMissionSystemActor();
 	friend class FSimCopterCustomCitySitesTest;
+	friend class FSimCopterUserCityTransportCreationTest;
 private:
 	int32 CustomCityBestScore = 0;
 	bool bCustomCitySitesScanned = false;
-	TArray<FIntPoint> CustomBuildingSites, CustomFireSites, CustomRoadSites, CustomRoofSites, CustomWaterSites;
+	TArray<FIntPoint> CustomBuildingSites, CustomFireSites, CustomRoadSites, CustomRoofSites, CustomWaterSites, CustomTransportSites;
 public:
 
 protected:

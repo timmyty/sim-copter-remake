@@ -6,6 +6,8 @@
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Ground/SimCopterCriminalCar.h"
+#include "Flight/SimCopterHelicopterPawn.h"
+#include "EngineUtils.h"
 #include "Formats/SimCopterOriginalGamePaths.h"
 #include "Misc/Paths.h"
 
@@ -15,6 +17,7 @@ IMPLEMENT_COMPLEX_AUTOMATION_TEST(FSimCopterTrafficFlowTest, "SimCopter.Traffic.
 void FSimCopterTrafficFlowTest::GetTests(TArray<FString>& Names, TArray<FString>& Commands) const
 {
 	for (const TCHAR* Name : {TEXT("Following"), TEXT("Recovery"), TEXT("Routing"), TEXT("Intersection"),
+		TEXT("TurnArrival"), TEXT("HevenHangarRoutes"), TEXT("HevenParkedPlaneRoutes"),
 		TEXT("BurglarSpeed"), TEXT("BurglarRecovery"), TEXT("BurglarSpawn"), TEXT("KeithlyBurglarRoute")})
 	{
 		Names.Add(Name); Commands.Add(Name);
@@ -38,7 +41,78 @@ bool FSimCopterTrafficFlowTest::RunTest(const FString& Parameters)
 		Traffic->VehicleAgents.Add(Agent);
 		return Agent;
 	};
-	if (Parameters == TEXT("Following"))
+	if (Parameters == TEXT("TurnArrival") || Parameters.StartsWith(TEXT("Heven")))
+	{
+		if (Parameters.StartsWith(TEXT("Heven")))
+		{
+			Traffic->CityFile.FilePath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() /
+				TEXT("../../SimCopter Remake v1.0.1/Windows/SimCopter/cities/HEVEN2026.SC2"));
+			if (!TestTrue(TEXT("Reported Heven 2026 city loads"), Traffic->RebuildSpawnData())) return false;
+			if (Parameters == TEXT("HevenParkedPlaneRoutes"))
+			{
+				ASimCopterHelicopterPawn::EnsureTransportPlane(World);
+				for (TActorIterator<ASimCopterHelicopterPawn> It(World); It; ++It)
+					AddInfo(FString::Printf(TEXT("Plane location %s bounds %s"), *It->GetActorLocation().ToString(), *It->GetParkingWorldBounds().ToString()));
+			}
+		}
+		else
+		{
+			Traffic->RoadNodes.SetNum(9);
+			for (int32 Index = 0; Index < 9; ++Index)
+			{
+				auto& Node = Traffic->RoadNodes[Index];
+				Node.FileX = Index % 3; Node.FileY = Index / 3;
+				Node.Location = Node.LocalLocation = FVector(Node.FileX * 400, Node.FileY * 400, 100); Node.BuildingId = 0x2b;
+				for (int32 Other = 0; Other < 9; ++Other)
+					if (FMath::Abs(Other % 3 - Node.FileX) + FMath::Abs(Other / 3 - Node.FileY) == 1) Node.Neighbors.Add(Other);
+			}
+		}
+		int32 Routes = 0, Stalled = 0;
+		for (int32 Target = 0; Target < Traffic->RoadNodes.Num(); ++Target)
+		{
+			const auto& Node = Traffic->RoadNodes[Target];
+			if (Parameters.StartsWith(TEXT("Heven")) &&
+				(FMath::Abs(Node.FileX - Traffic->AirportOriginTile.X) > 8 ||
+				 FMath::Abs(Node.FileY - Traffic->AirportOriginTile.Y) > 8)) continue;
+			for (const int32 Previous : Node.Neighbors)
+			for (const int32 Next : Node.Neighbors)
+			{
+				if (Previous == Next && Node.Neighbors.Num() > 1) continue;
+				TArray<int32> Approaches = Traffic->RoadNodes[Previous].Neighbors;
+				Approaches.Add(INDEX_NONE);
+				for (const int32 Approach : Approaches)
+				{
+				if (Approach == Target && Approaches.Num() > 2) continue;
+				for (const float Step : {0.025f, 0.1f})
+				{
+					const FVector Start = Traffic->MakeRoutePointLocation(Traffic->RoadNodes, Previous, INDEX_NONE, Target, true);
+					const FVector Destination = Traffic->MakeVehicleRouteTargetLocation(Traffic->RoadNodes, Target, Previous, Approach, Next);
+					auto* Agent = Car(Start, Destination);
+					Agent->SetRouteState(Target, Previous, Next);
+					int32 Frame = 0;
+					for (; Frame < FMath::RoundToInt(8 / Step) && Agent->HasMoveTarget() && !Agent->IsNearMoveTarget(); ++Frame)
+					{
+						Traffic->UpdateTrafficInteractions(Step);
+						Agent->Tick(Step);
+					}
+					++Routes;
+					if (Agent->HasMoveTarget() && !Agent->IsNearMoveTarget())
+					{
+						++Stalled;
+						if (Stalled <= 16) AddInfo(FString::Printf(TEXT("Stalled route (%d,%d) -> (%d,%d) -> (%d,%d), step %.3f, remaining %.1f cm, aircraft hold %d, location %s"),
+							Traffic->RoadNodes[Previous].FileX, Traffic->RoadNodes[Previous].FileY, Node.FileX, Node.FileY,
+							Traffic->RoadNodes[Next].FileX, Traffic->RoadNodes[Next].FileY, Step, FVector::Dist2D(Agent->GetActorLocation(), Destination), Agent->IsAircraftTrafficBlocked(), *Agent->GetActorLocation().ToString()));
+					}
+					Traffic->VehicleAgents.Remove(Agent); Traffic->VehicleTrafficStates.Reset(); Agent->Destroy();
+				}
+				}
+			}
+		}
+		AddInfo(FString::Printf(TEXT("%d route arrivals checked; %d stalled"), Routes, Stalled));
+		TestTrue(TEXT("Connected routes were exercised"), Routes > 0);
+		TestEqual(TEXT("Unobstructed cars reach their route waypoint at both update rates"), Stalled, 0);
+	}
+	else if (Parameters == TEXT("Following"))
 	{
 		auto* A = Car(FVector(0,0,100), FVector(2000,0,100));
 		auto* B = Car(FVector(60,0,100), FVector(-2000,0,100));

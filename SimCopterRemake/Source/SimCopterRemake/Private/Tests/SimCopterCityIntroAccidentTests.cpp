@@ -65,6 +65,7 @@ bool FSimCopterCarAccidentTest::RunTest(const FString& Parameters)
 	auto* Car=NewCar(FVector(2000,2000,0));
 	const int32 Score=Missions->MissionSystem.GetScore(), Cash=Missions->MissionSystem.GetCash();
 	Car->ApplyHelicopterVehicleImpact(Car->GetActorLocation()+FVector(0,40,0));
+	TestTrue(TEXT("Helicopter contact never deforms the car mesh"),Car->VehicleDents.IsEmpty());
 	TestTrue(TEXT("First collision tips and immobilizes the car"),Car->IsVehicleTipped() && Car->IsVehicleImmobilized());
 	TestTrue(TEXT("Rendered body lies on its side"),FMath::IsNearlyEqual(FMath::Abs(Car->VisualRoot->GetRelativeRotation().Roll),90.0f));
 	TestTrue(TEXT("First collision immediately burns"),Car->IsVehicleAccidentBurning());

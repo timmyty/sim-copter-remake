@@ -253,10 +253,6 @@ void ASimCopterGroundAgent::ApplyHelicopterVehicleImpact(const FVector& WorldImp
 					3.5f, FLinearColor(1,0.65f,0.12f), FMath::FRandRange(0.18f,0.5f), -650);
 			}
 		}
-	VehicleDents.Add(OriginalMeshComponent
-		? OriginalMeshComponent->GetComponentTransform().InverseTransformPosition(WorldImpact)
-		: GetActorTransform().InverseTransformPosition(WorldImpact));
-	RebuildVehicleDents();
 	// SCHOOK: VehicleHelicopterCollision 0x0049f680, case 0xc: ignite immediately
 	// and queue event 0x34 with event id -1. FUN_0049fd00 rolls the car 900
 	// tenth-degrees. Keep this fork's four-second fuse (retail uses 120 seconds).
@@ -432,43 +428,6 @@ bool ASimCopterGroundAgent::TickVehicleEscape(float DeltaSeconds)
 	UpdateWalkingVoice(CurrentVelocityCmPerSec.IsNearlyZero() ? 0 : 12);
 	if (VehicleEscapeSeconds<=0) { ClearForcedPedestrianFigureClip(); StopWalkingVoice(); }
 	return true;
-}
-
-void ASimCopterGroundAgent::RebuildVehicleDents()
-{
-	if (!OriginalMeshComponent || VehicleDents.IsEmpty() || AgentKind != ESimCopterGroundAgentKind::Vehicle) return;
-	const int32 Count = OriginalMeshComponent->GetNumSections();
-	if (UndamagedVehicleVertices.Num() != Count)
-	{
-		UndamagedVehicleVertices.SetNum(Count);
-		for (int32 S = 0; S < Count; ++S)
-			if (auto* Section = OriginalMeshComponent->GetProcMeshSection(S))
-				for (const auto& Vertex : Section->ProcVertexBuffer) UndamagedVehicleVertices[S].Add(Vertex.Position);
-	}
-	for (int32 S = 0; S < Count; ++S)
-	{
-		auto* Section = OriginalMeshComponent->GetProcMeshSection(S);
-		if (!Section || UndamagedVehicleVertices[S].Num() != Section->ProcVertexBuffer.Num()) continue;
-		TArray<FVector> Vertices = UndamagedVehicleVertices[S], Normals;
-		TArray<FVector2D> UV;
-		TArray<FColor> Colors;
-		TArray<FProcMeshTangent> Tangents;
-		const FVector Center = Section->SectionLocalBox.GetCenter();
-		for (int32 V = 0; V < Vertices.Num(); ++V)
-		{
-			float Damage = 0;
-			for (const FVector& Impact : VehicleDents)
-			{
-				const FVector Before = Vertices[V];
-				Vertices[V] = SimCopterAirOperations::DentVertex(Before, Impact, Center);
-				Damage += FVector::Distance(Before, Vertices[V]);
-			}
-			const auto& Old = Section->ProcVertexBuffer[V];
-			Normals.Add(Old.Normal); UV.Add(Old.UV0); Tangents.Add(Old.Tangent);
-			Colors.Add((FLinearColor(Old.Color) * FMath::Clamp(1.0f - Damage * 0.025f, 0.25f, 1.0f)).ToFColor(false));
-		}
-		OriginalMeshComponent->UpdateMeshSection(S, Vertices, Normals, UV, Colors, Tangents);
-	}
 }
 
 bool ASimCopterGroundAgent::IsCageRecoverableVehicle() const
