@@ -5202,6 +5202,9 @@ void ASimCopterTrafficSystemActor::ApplyPoliceBurglarStops()
 		const ASimCopterGroundAgent* Officer = Weak.Get();
 		if (!Officer || Officer->IsActorBeingDestroyed() || Officer->IsHidden() || Officer->GetBehaviorCarrier() ||
 			Officer->IsMissionCarried() || Officer->IsKnockedDown()) continue;
+		// Officers still held by their station post never stop traffic: only police the pilot
+		// dispatched, or carried and set down, act on a burglary (playtest fix, v1.0.19c).
+		if (Officer->HasServicePost()) continue;
 		const int32 State = Officer->GetBehaviorAttribute(EBhavAttr::State);
 		if (State == 7 || State == SimCopterCriminalCar::OfficerStateDefault || State == SimCopterCriminalCar::OfficerStateAgainstFleeing)
 			Police.Add(Officer->GetActorLocation());

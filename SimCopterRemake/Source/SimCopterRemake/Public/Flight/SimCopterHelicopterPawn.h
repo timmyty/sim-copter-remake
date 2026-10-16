@@ -1286,6 +1286,14 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Search Light", meta = (ClampMin = "0.0"))
 	float SearchLightIntensity = 650000.0f;
 
+	// Off by default (playtest fix, v1.0.19c). The original's spotlight is an unshadowed cone node.
+	// With shadows on, the beam starts a few centimetres from the airframe and cannon carrying it
+	// and was reported visible only while the helicopter was moving: a held light keeps its cached
+	// virtual shadow map pages, and the nearby airframe in those pages can shadow the whole cone.
+	// An unshadowed beam cannot be occluded by its own aircraft whatever the cache holds.
+	UPROPERTY(EditAnywhere, Category = "SimCopter|Search Light")
+	bool bSearchLightCastsShadows = false;
+
 	// How much of the scene's exposure is divided back out of the beam. 1 - the default - makes the
 	// searchlight hold the same presence on screen whatever the sun is doing; 0 is the raw physical
 	// light, which at 650,000 unitless is ~1,000 candelas, a hand torch against the day sequence's

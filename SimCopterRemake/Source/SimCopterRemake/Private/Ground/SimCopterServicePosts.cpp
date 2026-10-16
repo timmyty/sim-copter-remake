@@ -69,6 +69,29 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::EnsureBuildingEntranceCrew(
 	FVector Entrance;
 	if (!TryGetBuildingEntrancePost(TileX, TileY, Entrance)) return nullptr;
 	const int32 State = uint8(GetXbldTileId(TileX, TileY)) == 0xD1 ? 5 : 7;
+	if (State == 7)
+	{
+		// Playtest fix (v1.0.19c): no street-level officer is posted at police stations. Standing
+		// beside the road, that officer stopped and arrested passing burglars with no part played
+		// by the pilot. Roof officers and dispatched or delivered police are unaffected. Officers
+		// posted by older saves are retired here; any that the pilot has collected are kept.
+		TArray<ASimCopterGroundAgent*, TInlineAllocator<2>> Retired;
+		for (auto Weak : PedestrianAgents)
+		{
+			auto* Person = Weak.Get();
+			// The entrance is re-resolved on load and the old officer may itself have pushed the new
+			// point aside, so match any ground-level post near it rather than the exact location.
+			if (Person && !Person->IsActorBeingDestroyed() && Person->HasServicePost() &&
+				FMath::Abs(Person->GetServicePostLocation().Z - Entrance.Z) < 100 &&
+				FVector::DistSquared2D(Person->GetServicePostLocation(), Entrance) < FMath::Square(ActiveTileSize * 2.0f) &&
+				Person->GetBehaviorAttribute(EBhavAttr::State) == 7 && !Person->GetBehaviorCarrier() &&
+				!Person->IsMissionCarried() && Person->MissionEventId == INDEX_NONE && !FindPersonCarriedBy(*Person))
+				Retired.Add(Person);
+		}
+		for (ASimCopterGroundAgent* Person : Retired) Person->Destroy();
+		EntranceCrewLastSeenSeconds.Remove(FIntPoint(TileX, TileY));
+		return nullptr;
+	}
 	for (auto Weak : PedestrianAgents)
 	{
 		auto* Person = Weak.Get();
