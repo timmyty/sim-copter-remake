@@ -1972,7 +1972,8 @@ bool ASimCopterMissionSystemActor::TryResolveTransportSpawnTile(
 	{
 		FVector Origin, Clearing;
 		return TrafficSystem->TryGetTileCenterWorldLocation(OriginX, OriginY, Origin) &&
-			TrafficSystem->TryFindTransportClearing(Origin, Clearing, 275.0f, 3200.0f) &&
+			TrafficSystem->TryFindTransportClearing(Origin, Clearing, 275.0f, 3200.0f, nullptr,
+				/*VarietyCount*/ bTransportPlacementVariety ? 5 : 1) &&
 			TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(Clearing, OutTileX, OutTileY);
 	}
 	return true;

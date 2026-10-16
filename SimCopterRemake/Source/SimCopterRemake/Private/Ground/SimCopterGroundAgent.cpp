@@ -2712,6 +2712,9 @@ ESimCopterBehaviorStepResult ASimCopterGroundAgent::StepTowardSelectedObject(FSi
 				FMath::Square(MedicDirectApproachRadiusCm))
 			{
 				Waypoint = Context.SelectedLocation;
+				// Let the move core step round whatever blocked the route (FUN_004c9300's
+				// clockwise retries) instead of ending the approach at the first obstacle.
+				Context.Attributes[EBhavAttr::AutoTurn] = 1;
 			}
 			else
 			{
@@ -2760,6 +2763,30 @@ ESimCopterBehaviorStepResult ASimCopterGroundAgent::StepTowardSelectedObject(FSi
 	// With autoturn clear, which is the shipped default (BHAV 600 rec[28] even sets it explicitly),
 	// FUN_004c9300 makes exactly ONE attempt along the bearing to the target, so "the first thing
 	// in its path" includes the other person walking to the same car.
+	if (!bStepped && bMedicApproach)
+	{
+		auto* Patient = Cast<ASimCopterGroundAgent>(Context.SelectedObject.Get());
+		if (Patient && Patient->IsMedevacVictim() && GetWorld())
+		{
+			const double Now = GetWorld()->GetTimeSeconds();
+			if (MedicBlockedTarget.Get() != Patient || MedicBlockedSinceSeconds < 0.0)
+			{
+				MedicBlockedTarget = Patient;
+				MedicBlockedSinceSeconds = Now;
+			}
+			if (Now - MedicBlockedSinceSeconds < MedicBlockedPatienceSeconds)
+			{
+				// Turn round the obstacle on the next step and plan a fresh route.
+				Context.Attributes[EBhavAttr::AutoTurn] = 1;
+				MedicPath.Reset();
+				return ESimCopterBehaviorStepResult::Moving;
+			}
+		}
+	}
+	else if (bStepped && bMedicApproach)
+	{
+		MedicBlockedSinceSeconds = -1.0;
+	}
 	if (!bStepped)
 	{
 		// What refused the step. 1 = something solid in front (a wall, a kerb, a parapet), 2 = a
@@ -4879,7 +4906,13 @@ bool ASimCopterGroundAgent::TryClaimHospitalPatient(ASimCopterGroundAgent* Medic
 		const bool bMuchCloser = !Medic->IsCarryingPerson() &&
 			FVector::Dist(Medic->GetActorLocation(), Here) + MedicClaimTakeoverMarginCm <
 			FVector::Dist(Existing->GetActorLocation(), Here);
-		if (!bMuchCloser || Existing->IsCarryingPerson()) return false;
+		// A holder that cannot be walking to this patient right now does not hold it at all:
+		// hidden (riding inside an ambulance or the cabin), on a carrier, already carrying
+		// somebody else, or more than BHAV 262's eight-tile search away.
+		const bool bHolderAway = Existing->IsHidden() || Existing->BehaviorCarrier.IsValid() ||
+			Existing->IsCarryingPerson() ||
+			FVector::Dist2D(Existing->GetActorLocation(), Here) > MedicClaimHolderRangeCm;
+		if (!bMuchCloser && !bHolderAway) return false;
 	}
 	HospitalPatientClaim = Medic;
 	HospitalPatientClaimUntil = Now + 20.0f;

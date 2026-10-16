@@ -2685,8 +2685,11 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(A
 	for (const auto& Weak : PedestrianAgents)
 	{
 		auto* Patient = Weak.Get();
+		// A casualty whose program is suspended (knocked down, stunned, collapsed from an
+		// incident) is still a patient; requiring an active VM hid them from a medic standing
+		// right beside them ("no victim in area"). Dead bodies stay excluded below.
 		if (!Patient || Patient == &Medic || Patient->IsActorBeingDestroyed() ||
-			!Patient->IsBehaviorActive() || !Patient->IsMedevacVictim() ||
+			!Patient->IsMedevacVictim() ||
 			Patient->HasMissionResolutionReported() || Patient->IsMissionPatientDead() ||
 			Patient->GetBehaviorCarrier() || Patient->IsMissionCarried() || Patient->IsPassengerFalling() ||
 			Patient->IsHidden() || Patient->GetBehaviorAttribute(EBhavAttr::Visible) == 0) continue;
@@ -2696,13 +2699,19 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::FindAndClaimGroundPatient(A
 		int32 PatientX, PatientY;
 		if (Medic.GetBehaviorAttribute(EBhavAttr::State) == 5 &&
 			(!Patient->TryGetTileCoordinate(PatientX, PatientY) ||
-			 FMath::Max(FMath::Abs(PatientX - MedicX), FMath::Abs(PatientY - MedicY)) > 8)) continue;
+			 // Strictly inside, as opcode 15 commits only TileDistance < Radius: a patient at exactly
+			 // eight tiles used to be reserved here and then refused by the VM ("no victim in area").
+			 FMath::Max(FMath::Abs(PatientX - MedicX), FMath::Abs(PatientY - MedicY)) >= 8)) continue;
 		if (Medic.GetBehaviorAttribute(EBhavAttr::State) == 7 &&
 			(Patient->IsMissionCarried() || Patient->IsPassengerFalling() || Patient->IsHidden() ||
 			 FVector::DistSquared(Medic.GetActorLocation(),Patient->GetActorLocation()) >= FMath::Square(ActiveTileSize * 30.f))) continue;
+		// A failed route only rules out a distant patient: within the direct-approach radius the
+		// medic falls back to FUN_004ca940's straight bearing (StepTowardSelectedObject).
 		if (Medic.bMedicPathAttempted && !Medic.MedicPathSearch.IsPending() &&
 			Medic.MedicPathTarget.Get() == Patient && Medic.MedicPath.IsEmpty() &&
-			GetWorld()->GetTimeSeconds() < Medic.NextMedicPathTime) continue;
+			GetWorld()->GetTimeSeconds() < Medic.NextMedicPathTime &&
+			FVector::DistSquared2D(Patient->GetActorLocation(), Medic.GetActorLocation()) >=
+				FMath::Square(ASimCopterGroundAgent::MedicDirectApproachRadiusCm)) continue;
 		Candidates.Add(Patient);
 	}
 	const FVector Origin = Medic.GetActorLocation();
@@ -5184,12 +5193,65 @@ void ASimCopterTrafficSystemActor::RunBurglarOutsidePhase(ASimCopterGroundAgent&
 	Car.Destroy();
 }
 
+void ASimCopterTrafficSystemActor::ApplyPoliceBurglarStops()
+{
+	ASimCopterMissionSystemActor* Missions = ResolveMissionSystem();
+	TArray<FVector, TInlineAllocator<16>> Police;
+	for (const auto& Weak : PedestrianAgents)
+	{
+		const ASimCopterGroundAgent* Officer = Weak.Get();
+		if (!Officer || Officer->IsActorBeingDestroyed() || Officer->IsHidden() || Officer->GetBehaviorCarrier() ||
+			Officer->IsMissionCarried() || Officer->IsKnockedDown()) continue;
+		const int32 State = Officer->GetBehaviorAttribute(EBhavAttr::State);
+		if (State == 7 || State == SimCopterCriminalCar::OfficerStateDefault || State == SimCopterCriminalCar::OfficerStateAgainstFleeing)
+			Police.Add(Officer->GetActorLocation());
+	}
+	for (const FSimCopterDispatchVehicle& Unit : DispatchVehicles[static_cast<int32>(SimCopterDispatch::EService::Police)])
+		if (const ASimCopterGroundAgent* Car = Unit.Agent.Get(); Car && !Car->IsHidden()) Police.Add(Car->GetActorLocation());
+	if (Police.IsEmpty()) return;
+
+	const float RadiusSq = FMath::Square(ActiveTileSize * PoliceStopRadiusTiles);
+	for (const auto& Weak : CriminalCars)
+	{
+		ASimCopterGroundAgent* Car = Weak.Get();
+		if (!Car || Car->IsActorBeingDestroyed() || Car->HasMissionResolutionReported() || Car->IsVehicleTowed() ||
+			Car->IsVehicleTipped() || (Missions && !Missions->IsMissionEventActive(Car->GetCriminalEventId()))) continue;
+		const auto State = static_cast<SimCopterCriminalCar::EState>(Car->GetCriminalState());
+		if (State == SimCopterCriminalCar::EState::BurglarOutside || State == SimCopterCriminalCar::EState::Leaving) continue;
+		const FVector Here = Car->GetActorLocation();
+		const FVector* Nearest = nullptr;
+		for (const FVector& Location : Police)
+			if (FVector::DistSquared2D(Here, Location) < RadiusSq && (!Nearest || FVector::DistSquared2D(Here, Location) < FVector::DistSquared2D(Here, *Nearest)))
+				Nearest = &Location;
+		if (!Nearest) continue;
+		// Held for as long as police are beside it; the officer's contact completes the arrest
+		// (UpdatePoliceRecovery's immobilized-car arm).
+		Car->DisableVehicleWithTaser();
+		if (Car->bPoliceStopResolved) continue;
+		Car->bPoliceStopResolved = true;
+		if (FMath::FRand() >= BurglarBailOutChance) continue;
+		// The burglar bails out and runs from the police; an officer gives chase on foot.
+		int32 CarX = 0, CarY = 0;
+		ASimCopterGroundAgent* Burglar = nullptr;
+		if (!Car->TryGetTileCoordinate(CarX, CarY) || !TrySpawnMissionPerson(SimCopterCriminalCar::BurglarPersonState,
+			SimCopterCriminalCar::BurglarBehaviorClass, CarX, CarY, Car->GetCriminalEventId(), FString(), &Burglar) || !Burglar) continue;
+		Burglar->SetBehaviorStartingVehicle(Car);
+		Car->SetCriminalState(static_cast<uint8>(SimCopterCriminalCar::EState::BurglarOutside));
+		Car->SetBurglarOutsideSeconds(SimCopterCriminalCar::BurglarOutsideSeconds);
+		const FVector Away = (Burglar->GetActorLocation() - *Nearest).GetSafeNormal2D();
+		Burglar->SetAvoidanceMoveTarget(Burglar->GetActorLocation() + (Away.IsNearlyZero() ? FVector::ForwardVector : Away) * ActiveTileSize * 4.0f, 6.0f, 1.6f);
+		UE_LOG(LogSimCopterTrafficSystem, Display, TEXT("Burglar of event %d bailed out of the stopped car and is running from the police."),
+			Car->GetCriminalEventId());
+	}
+}
+
 void ASimCopterTrafficSystemActor::UpdateCriminalCars(const float DeltaSeconds)
 {
 	if (CriminalCars.Num() == 0)
 	{
 		return;
 	}
+	ApplyPoliceBurglarStops();
 
 	const float CmPerUnit = GetPeopleWorldCmPerOriginalUnit();
 	const float MarkRadiusCm =
@@ -6462,8 +6524,9 @@ bool ASimCopterTrafficSystemActor::IsTransportClearing(const FVector& Surface, f
 }
 
 bool ASimCopterTrafficSystemActor::TryFindTransportClearing(const FVector& Origin,
-	FVector& OutSurface, float RadiusCm, float MaxDistanceCm, const FVector* WalkFrom) const
+	FVector& OutSurface, float RadiusCm, float MaxDistanceCm, const FVector* WalkFrom, int32 VarietyCount) const
 {
+	TArray<FVector, TInlineAllocator<8>> Valid;
 	int32 TX, TY;
 	if (!TryGetPeopleTileCoordinateAtWorldLocation(Origin, TX, TY)) return false;
 	TArray<FVector> Candidates;
@@ -6507,10 +6570,31 @@ bool ASimCopterTrafficSystemActor::TryFindTransportClearing(const FVector& Origi
 			}
 			if (!bDryRoute) continue;
 		}
-		OutSurface = Point;
+		Valid.Add(Point);
+		if (Valid.Num() >= FMath::Max(1, VarietyCount)) break;
+	}
+	if (Valid.IsEmpty()) return false;
+	if (Valid.Num() == 1 || VarietyCount <= 1)
+	{
+		OutSurface = Valid[0];
 		return true;
 	}
-	return false;
+	TArray<int32, TInlineAllocator<8>> Fresh;
+	for (int32 Index = 0; Index < Valid.Num(); ++Index)
+	{
+		int32 X, Y;
+		if (!TryGetPeopleTileCoordinateAtWorldLocation(Valid[Index], X, Y) || !RecentTransportClearingTiles.Contains(FIntPoint(X, Y)))
+			Fresh.Add(Index);
+	}
+	const int32 Chosen = Fresh.IsEmpty() ? FMath::RandHelper(Valid.Num()) : Fresh[FMath::RandHelper(Fresh.Num())];
+	OutSurface = Valid[Chosen];
+	int32 X, Y;
+	if (TryGetPeopleTileCoordinateAtWorldLocation(OutSurface, X, Y))
+	{
+		RecentTransportClearingTiles.Add(FIntPoint(X, Y));
+		if (RecentTransportClearingTiles.Num() > 12) RecentTransportClearingTiles.RemoveAt(0);
+	}
+	return true;
 }
 
 bool ASimCopterTrafficSystemActor::TryFindNearestTransportLandTile(

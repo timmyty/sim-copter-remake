@@ -293,7 +293,16 @@ void FSimCopterMissionSystem::DispatchWeightedRoll()
 		RebuildCumulativeWeights();
 		uint32 UVar6 = Rand.Rand();
 		PercentRoll = static_cast<int32>(static_cast<int16>((UVar6 >> 15) << 16 | (UVar6 & 0xffff))) % 100;
+		// Remake variety rule: a second Transport in a row gets one re-roll, so back-to-back
+		// shuttles only happen when the city really is mostly Transport work.
+		if (LastScheduledWasTransport && PercentRoll >= CumulativeWeights[6] && PercentRoll < CumulativeWeights[7] &&
+			CumulativeWeights[6] > 0)
+		{
+			const uint32 Again = Rand.Rand();
+			PercentRoll = static_cast<int32>(static_cast<int16>((Again >> 15) << 16 | (Again & 0xffff))) % 100;
+		}
 	}
+	LastScheduledWasTransport = PercentRoll >= CumulativeWeights[6] && PercentRoll < CumulativeWeights[7];
 
 	if (PercentRoll < CumulativeWeights[1]) DispatchScheduledType(1); // Fire
 	else if (PercentRoll < CumulativeWeights[2]) DispatchScheduledType(2); // Crime
@@ -381,6 +390,16 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 			for (int32 Type : Families[Index]) bAvailable |= Type != 0 && World->IsMissionTypeAvailable(Type);
 			if (!bAvailable) Weights[Index] = 0;
 		}
+	}
+	// DELIBERATE DIVERGENCE (user request): early cities read as an endless Transport shuttle.
+	// The first career cities give Fire 10 against Transport/Traffic/MedEvac 30 each, and Traffic
+	// jams often fail to place. Wherever fires are enabled, give them at least Transport's share,
+	// and keep Transport to at most a third of all enabled jobs when anything else is enabled.
+	{
+		if (Weights[0] > 0 && Weights[0] < Weights[6]) Weights[0] = Weights[6];
+		float Others = 0;
+		for (int32 Index = 0; Index < 6; ++Index) Others += Weights[Index];
+		if (Others > 0 && Weights[6] > Others * 0.5f) Weights[6] = Others * 0.5f;
 	}
 	float Sum = 0;
 	for (float Weight : Weights) Sum += Weight;
@@ -1273,13 +1292,13 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 			return -1;
 		}
 		// User-requested adaptation: keep FUN_004a7a10's choice of neighbourhood, but
-		// move both ends into nearby helicopter clearings instead of building centres.
-		if (World && !World->TryResolveTransportSpawnTile(TX, TY, Rec.TileX, Rec.TileY))
-		{
-			ReleaseFailedRecord(RecIndex);
-			return -1;
-		}
-		if (World && !World->TryResolveTransportSpawnTile(PickupX, PickupY, PickupX, PickupY))
+		// move both ends into nearby helicopter clearings instead of building centres - one of
+		// several, preferring clearings recent fares have not used, so routes vary.
+		if (World) World->SetTransportPlacementVariety(true);
+		const bool bDestinationResolved = !World || World->TryResolveTransportSpawnTile(TX, TY, Rec.TileX, Rec.TileY);
+		const bool bPickupResolved = bDestinationResolved && (!World || World->TryResolveTransportSpawnTile(PickupX, PickupY, PickupX, PickupY));
+		if (World) World->SetTransportPlacementVariety(false);
+		if (!bDestinationResolved || !bPickupResolved)
 		{
 			ReleaseFailedRecord(RecIndex);
 			return -1;

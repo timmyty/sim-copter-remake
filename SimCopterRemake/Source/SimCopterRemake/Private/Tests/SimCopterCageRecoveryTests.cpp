@@ -134,7 +134,7 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 	Ops->CargoVelocity=FVector(500,0,0); TestFalse(TEXT("Fast delivery is rejected"),Ops->TryDeliverCargo()); Ops->CargoVelocity=FVector::ZeroVector;
 	PositionCage(Harbor->GetActorLocation()+FVector(0,0,70)); TestFalse(TEXT("Harbor refuses car"),Ops->TryDeliverCargo());
 	PositionCage(Yard->GetActorLocation()+FVector(181,0,70)); TestFalse(TEXT("Outside ring refuses delivery"),Ops->TryDeliverCargo());
-	PositionCage(Yard->GetActorLocation()+FVector(0,0,500)); TestFalse(TEXT("High hover refuses delivery"),Ops->TryDeliverCargo());
+	PositionCage(Yard->GetActorLocation()+FVector(0,0,1300)); TestFalse(TEXT("High hover refuses delivery"),Ops->TryDeliverCargo());
 	PositionCage(Yard->GetActorLocation()+FVector(0,0,70)); Ops->OpenCargo();
 	TestTrue(TEXT("OPEN over junkyard completes car job"),Car->HasMissionResolutionReported() && !Ops->HasCargo() && Ops->bCageOpen);
 	TestFalse(TEXT("Delivery removes junkyard world tag"),HasJunkyardMarker());
@@ -228,12 +228,13 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 	};
 	PositionHull(Harbor->GetActorLocation()+FVector(320,0,250));
 	TestFalse(TEXT("A hull outside the lit ring is rejected"),Ops->TryDeliverCargo());
-	PositionHull(Harbor->GetActorLocation()+FVector(0,0,450));
+	// A normal-hover drop (up to DeliveryMaxDropCm) now counts; well above that does not.
+	PositionHull(Harbor->GetActorLocation()+FVector(0,0,1100));
 	TestFalse(TEXT("A hull too high above the harbor is rejected"),Ops->TryDeliverCargo());
 	PositionHull(Harbor->GetActorLocation()+FVector(0,0,-150));
 	TestFalse(TEXT("A hull below the harbor deck is rejected"),Ops->TryDeliverCargo());
 	PositionHull(Harbor->GetActorLocation()+FVector(100,0,250));
-	Ops->CargoVelocity=FVector(250,0,0);
+	Ops->CargoVelocity=FVector(600,0,0);
 	TestFalse(TEXT("A fast hull flyby is rejected"),Ops->TryDeliverCargo());
 	Ops->CargoVelocity=FVector::ZeroVector;
 	const int32 ScoreBeforeBoat=Missions->MissionSystem.GetScore();
@@ -272,13 +273,13 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 		else { RoofCar->SetVehicleStalled(false); Event=RoofCar->GetTowMissionId(); }
 		OpenEmptyCage(RoofCar->GetActorLocation()); Ops->Update(0); Ops->CageSeal=1;
 		TestTrue(TEXT("Roof-delivery vehicle is held by cage"),Ops->GetTowVehicle()==RoofCar);
-		PositionCage(PoliceRoof+FVector(0,0,650));
+		PositionCage(PoliceRoof+FVector(0,0,1100));
 		TestFalse(TEXT("Police roof rejects cargo too high"),Ops->TryDeliverCargo());
 		PositionCage(PoliceRoof+FVector(0,0,-300));
 		TestFalse(TEXT("Police roof rejects cargo below the deck"),Ops->TryDeliverCargo());
 		PositionCage(PoliceRoof+FVector(800,0,300));
 		TestFalse(TEXT("Police roof rejects cargo beyond the footprint"),Ops->TryDeliverCargo());
-		PositionCage(PoliceRoof+FVector(0,0,70)); Ops->CargoVelocity=FVector(250,0,0);
+		PositionCage(PoliceRoof+FVector(0,0,70)); Ops->CargoVelocity=FVector(600,0,0);
 		TestFalse(TEXT("Police roof rejects fast-moving cargo"),Ops->TryDeliverCargo());
 		PositionCage(PoliceRoof+FVector(420,0,300));
 		const int32 BeforeScore=Missions->MissionSystem.GetScore();

@@ -388,6 +388,10 @@ public:
 	// the aircraft settles the same 1.2 units above it that a landing leaves it at.
 	void PlaceOnHelipad(const FVector& PadSurfaceWorldLocation, float YawDegrees);
 
+	// Remake request: an aircraft flown into the hangar and left there goes back to the pad it was
+	// first parked on. Returns true when it was moved.
+	bool ReturnHomeIfParkedInHangar();
+
 	// Where PlaceOnHelipad would put the actor's origin for that pad - so a pawn standing next
 	// to the aircraft can be put on the same ground.
 	float GetHelipadRestingOriginOffsetCm() const;
@@ -1579,6 +1583,11 @@ protected:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "SimCopter|Runtime")
 	bool bIsLanded = false;
+	// The first pad PlaceOnHelipad put this airframe on: its spawn point at the hangar.
+	bool bHasHomePad = false;
+	FVector HomePadSurface = FVector::ZeroVector;
+	float HomePadYaw = 0.0f;
+
 
 	// Reset the moment the aircraft rises back out of PassengerAlightClearanceCm, so a bounce off
 	// the pad restarts the wait rather than banking credit toward it.

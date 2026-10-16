@@ -75,6 +75,10 @@ public:
 	void OpenCargo();
 	bool TryGrabCargo();
 	bool TryDeliverCargo();
+	// Recovery drop acceptance (v1.0.19): cargo bottom up to this high above the ring/roof, and
+	// no faster than this, counts as a delivery.
+	static constexpr double DeliveryMaxDropCm = 900.0;
+	static constexpr double DeliveryMaxSpeedCmPerSec = 350.0;
 	void ReleaseCargo(bool bOpenCage = true);
 	bool IsDeployed() const { return bDeployed; }
 	bool HasCargo() const;

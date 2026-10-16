@@ -60,6 +60,10 @@ struct FMaxisMeshObjectHeader
 	uint16 FaceCount = 0;
 	uint32 AttributeFlags = 0;
 	int32 Radius = 0;
+	// Remake-authored geometry (City Hall) is wound consistently, so its faces are oriented by
+	// winding rather than by the "away from the object centre" guess used for original models.
+	// The guess turns faces that look back toward the building (the hedges by the door) inside out.
+	bool bConsistentWinding = false;
 	int32 YRadius = 0;
 	int32 AnimationCount = 0;
 	int32 AnimationPointer = 0;

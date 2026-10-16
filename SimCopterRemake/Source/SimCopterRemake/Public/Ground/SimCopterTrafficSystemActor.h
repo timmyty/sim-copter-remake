@@ -255,8 +255,12 @@ public:
 	bool TryFindNearestTransportLandTile(int32 OriginX, int32 OriginY, int32& OutX, int32& OutY);
 	/** Ground-level helicopter footprint, with a clear vertical approach. Search stays local. */
 	bool IsTransportClearing(const FVector& Surface, float RadiusCm = 275.0f) const;
+	// VarietyCount > 1 (mission placement only) gathers that many nearby valid clearings and picks
+	// one at random, preferring clearings no recent Transport job used, so fares stop repeating
+	// the same few landing spots. The default keeps the nearest clearing.
 	bool TryFindTransportClearing(const FVector& Origin, FVector& OutSurface, float RadiusCm = 275.0f,
-		float MaxDistanceCm = 1600.0f, const FVector* WalkFrom = nullptr) const;
+		float MaxDistanceCm = 1600.0f, const FVector* WalkFrom = nullptr, int32 VarietyCount = 1) const;
+	mutable TArray<FIntPoint> RecentTransportClearingTiles;
 	int32 GetPeopleStoredFacingFromWorldLocations(
 		const FVector& FromWorldLocation,
 		const FVector& ToWorldLocation) const;
@@ -1382,6 +1386,11 @@ public:
 	// FUN_004a01f0 + FUN_0049d980: accumulate each speeder's mark from the spotlight and set the
 	// speed multiplier it earns.
 	void UpdateCriminalCars(float DeltaSeconds);
+	// Remake addition (v1.0.19): police on foot or in a police car next to a burglar's car stop
+	// it; most burglars are then arrested at the car, some bail out and run, and are chased.
+	void ApplyPoliceBurglarStops();
+	float PoliceStopRadiusTiles = 2.5f;
+	float BurglarBailOutChance = 0.35f;
 	void UpdateSpeeders(float DeltaSeconds);
 	void UpdateSpeederDesignation();
 

@@ -340,6 +340,7 @@ void USimCopterAirOperationsComponent::UpdateCageMount()
 	if (CageMountMesh)
 	{
 		CageMountMesh->SetVisibility(bFitted);
+		CageMountMesh->SetOwnerNoSee(Helicopter()->GetCameraMode() == ESimCopterCameraMode::Cockpit);
 		CageMountMesh->SetWorldTransform(Helicopter()->GetCaptureCageMountTransform());
 	}
 }
@@ -436,8 +437,19 @@ void USimCopterAirOperationsComponent::OpenCargo()
 {
 	if (!bDeployed) return;
 	if (TryDeliverCargo()) return;
+	// Tell the pilot why a drop over a recovery ring did not count, instead of silently
+	// releasing the cargo there.
+	FString Hint;
+	if ((TowVehicle.IsValid() || HasBoat()) && GetWorld())
+		if (auto* Ops=GetWorld()->GetSubsystem<USimCopterAirOperationsSubsystem>())
+			if (auto* Site=Ops->FindRecoverySite(CargoLocation,HasBoat()); Site && Site->IsWaypointActive() &&
+				FVector::Dist2D(Site->GetActorLocation(),CargoLocation)<SimCopterAirOperations::RecoveryRadiusCm*2)
+				Hint=CargoVelocity.Size()>DeliveryMaxSpeedCmPerSec ? TEXT(" Slow down over the ring to deliver.")
+					: TEXT(" Lower the cage closer to the ring to deliver.");
 	ReleaseCargo(); bCageOpen=bCage;
-	Status=TEXT("Cage floor open. Cargo released.");
+	Status=TEXT("Cage floor open. Cargo released.")+Hint;
+	if (!Hint.IsEmpty())
+		if (auto* Missions=ActorIn<ASimCopterMissionSystemActor>(GetWorld())) Missions->ShowAirOperationsMessage(Status);
 }
 void USimCopterAirOperationsComponent::ReleaseCargo(bool bOpenCage)
 {
@@ -480,12 +492,15 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 			bHasGeometry=Ambient->GetBoatTowGeometry(BoatIndex,Body,Drop);
 			Drop.SetLocation(CargoLocation);
 		}
+		// A short drop from a normal hover is accepted: the boat or car falls into the ring. The
+		// old 3 m ceiling silently turned a slightly higher drop into a plain release, so the
+		// harbor never acknowledged the boat.
 		if (!bHasGeometry)
-			return FVector::Dist2D(CargoLocation,Center)<=Extent && CargoLocation.Z-Center.Z>=-30 && CargoLocation.Z-Center.Z<=370;
+			return FVector::Dist2D(CargoLocation,Center)<=Extent && CargoLocation.Z-Center.Z>=-30 && CargoLocation.Z-Center.Z<=DeliveryMaxDropCm+70;
 		// Match UpdateCargo between physics ticks, including the hull's capsize rotation.
 		// The visible footprint and bottom govern a short drop, not the cage/mesh pivot.
 		const double BottomHeight=Body.TransformBy(Drop).Min.Z-Center.Z;
-		if (BottomHeight < -70 || BottomHeight > 300) return false;
+		if (BottomHeight < -70 || BottomHeight > DeliveryMaxDropCm) return false;
 		constexpr int32 SamplesPerAxis=9;
 		int32 Inside=0;
 		for (int32 X=0; X<SamplesPerAxis; ++X) for (int32 Y=0; Y<SamplesPerAxis; ++Y)
@@ -505,7 +520,7 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 		Road && Road->TryGetPeopleTileCoordinateAtWorldLocation(CargoLocation,RoofX,RoofY) &&
 		Road->GetXbldTileId(RoofX,RoofY)==0xD2 && Road->TryGetBuildingRoofPost(RoofX,RoofY,PoliceRoof,RoofHalfExtent) &&
 		IsCargoDropInside(PoliceRoof,RoofHalfExtent,true) &&
-		CargoVelocity.Size()<=200)
+		CargoVelocity.Size()<=DeliveryMaxSpeedCmPerSec)
 	{
 		if (HasBoat())
 		{
@@ -520,11 +535,13 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 		bCageOpen=true; CageCaptureDelay=1.5f; BoardHoldSeconds=0;
 		Ops->RefreshRecoveryWaypoints();
 		Status=TEXT("Police station accepted the vehicle. Recovery complete.");
+		if (auto* Missions=ActorIn<ASimCopterMissionSystemActor>(GetWorld())) Missions->ShowAirOperationsMessage(Status);
+		if (auto* Audio=USimCopterAudioSubsystem::Get(this)) Audio->Play2D(SimCopterSound::SND_CA_CHING);
 		return true;
 	}
 	if (Ops) Ops->RefreshRecoveryWaypoints();
 	auto* Site=Ops?Ops->FindRecoverySite(CargoLocation,BoatIndex!=INDEX_NONE):nullptr;
-	if (!Site || !Site->IsWaypointActive() || CargoVelocity.Size()>200) return false;
+	if (!Site || !Site->IsWaypointActive() || CargoVelocity.Size()>DeliveryMaxSpeedCmPerSec) return false;
 	if (!IsCargoDropInside(Site->GetActorLocation(),SimCopterAirOperations::RecoveryRadiusCm,false)) return false;
 	if (TowVehicle.IsValid())
 	{
@@ -540,7 +557,14 @@ bool USimCopterAirOperationsComponent::TryDeliverCargo()
 	}
 	bCageOpen=true; CageCaptureDelay=1.5f; BoardHoldSeconds=0;
 	Ops->RefreshRecoveryWaypoints();
-	Status=TEXT("Recovery complete. Cargo accepted.");
+	const bool bHarborSite=Site->GetKind()==ESimCopterRecoverySite::Harbor;
+	Status=bHarborSite ? TEXT("HARBOR accepted the boat. Recovery complete.")
+		: Site->GetKind()==ESimCopterRecoverySite::Junkyard ? TEXT("JUNKYARD accepted the vehicle. Recovery complete.")
+		: TEXT("AUTO REPAIR accepted the vehicle. Recovery complete.");
+	// The cage panel's status line is easy to miss in flight; put the acknowledgement in the
+	// mission log too, with a chime, whether or not a recovery job was attached to the cargo.
+	if (auto* Missions=ActorIn<ASimCopterMissionSystemActor>(GetWorld())) Missions->ShowAirOperationsMessage(Status);
+	if (auto* Audio=USimCopterAudioSubsystem::Get(this)) Audio->Play2D(SimCopterSound::SND_CA_CHING);
 	return true;
 }
 FBox USimCopterAirOperationsComponent::GetCageCargoBounds() const
@@ -572,10 +596,10 @@ void USimCopterAirOperationsComponent::DrawCargo()
 {
 	if (!CargoMesh || !Helicopter()) return;
 	CargoMesh->SetVisibility(bDeployed || (bCage && CageFormation > 0));
-	// The Rescue view's eye hangs 4.4 m under the belly - inside the deployed cage - so its bars
-	// filled that first-person view. Hide them from the pilot's own view there only; the chase,
-	// orbit and cockpit views and any other viewer still see the cage.
-	CargoMesh->SetOwnerNoSee(bCage && Helicopter()->GetCameraMode() == ESimCopterCameraMode::Rescue);
+	// The bars hang right in front of the first-person (pilot's seat) view and filled it. Hide
+	// them from the pilot's own Cockpit view only; chase, orbit, rescue and other viewers still
+	// see the cage.
+	CargoMesh->SetOwnerNoSee(bCage && Helicopter()->GetCameraMode() == ESimCopterCameraMode::Cockpit);
 	if (!bDeployed && (!bCage || CageFormation <= 0)) return;
 	FRecoveryMesh Shape;
 	// A lighter galvanized steel than the former 0.3 grey, which read as near-black.
