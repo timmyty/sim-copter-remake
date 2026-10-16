@@ -6327,7 +6327,7 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 		Reader << bTaserStunned << bHandcuffed << bVehicleStalled << bVehicleTowed << bVehicleExploded;
 		Reader << HelicopterImpactCount << TowMissionId << VehicleImpactCooldown << VehicleExplosionSeconds << VehicleDents;
 		if (VehicleDents.Num() > 4 || HelicopterImpactCount < 0 || HelicopterImpactCount > 4) return false;
-		UndamagedVehicleVertices.Reset(); RebuildVehicleDents();
+		VehicleDents.Reset(); // Vehicles no longer dent; dents in older saves are discarded.
 	}
 	if (Version >= 7)
 	{

@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.18 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.18.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.19 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.19.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [Quick summary](#quick-summary-added-or-expanded) · [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -61,7 +61,7 @@ such as custom MP4 playback.
 
 ## Start playing
 
-1. Download **`SimCopterRemake-v1.0.18-Windows-x64.7z`** from the latest release.
+1. Download **`SimCopterRemake-v1.0.19-Windows-x64.7z`** from the latest release.
 2. Extract the **entire archive** and run **`SimCopterRemake.exe`** in the extracted folder.
 3. Choose **New Career Game** or **New User Game**, then select a city.
 
@@ -69,11 +69,19 @@ Keep `Engine`, `SimCopter`, `SimCopterRemake` and `DriveInVideos` beside the lau
 Unreal Editor is not required. If Windows requests the Visual C++ runtime, run
 `Engine/Extras/Redist/en-us/vc_redist.x64.exe` and launch again.
 
-## New in v1.0.18: water towers and city names
+## New in v1.0.19: playtest fixes
+
+Police leave burglaries to the pilot, the searchlight stays visible while hovering, station
+roofs show their original artwork, cars no longer dent, traffic jams are reported at once,
+User maps offer transport missions again and hospital windows light up at night. Medics,
+fire engines, the capture cage, tour clouds and night windows also received fixes.
+[Release notes](Docs/Releases/v1.0.19.md).
+
+## Also included from v1.0.17: water towers and city names
 
 Water towers have ivory paint, blue trim, metal detail and large city lettering on
 opposite sides. They retain the same geometry and share one small lettering texture
-per city, with no new per-frame updates. [Release notes](Docs/Releases/v1.0.18.md).
+per city, with no new per-frame updates. [Release notes](Docs/Releases/v1.0.17.md).
 
 ## Also included from v1.0.16: smoother flight and gameplay updates
 
@@ -111,7 +119,7 @@ from 849 MiB to 72.65 MiB. The original-game lossless FLAC soundtrack is preserv
 Saved KINV positions, song order, pause and seeking remain supported.
 
 The normal game download contains Shipping only. For GPU/performance diagnostics,
-download **`SimCopterRemake-v1.0.18-Optional-Development-Windows-x64.7z`** from the same
+download **`SimCopterRemake-v1.0.19-Optional-Development-Windows-x64.7z`** from the same
 release and extract its contents **inside the extracted game folder**, beside the
 root `SimCopterRemake.exe`. This adds the matching Development executable and both
 diagnostic launchers. It requires the full game download and is optional for play.

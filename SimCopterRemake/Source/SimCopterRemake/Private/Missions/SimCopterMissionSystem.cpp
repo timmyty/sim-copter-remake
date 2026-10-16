@@ -929,9 +929,8 @@ void FSimCopterMissionSystem::AnnounceCreated(const FSimCopterMissionRecord& Rec
 
 	// A background record (category 2) stops here, before the kind-5 message:
 	//     if (rec[0x54] == 2) { DAT_0057f9cc++; DAT_00505fb4 = DAT_00505fac >> 1; return rec[0x24]; }
-	// so a traffic jam is not announced while it is one car - it is announced when EVT_JamCarAdded
-	// promotes it at three, which is also when the map starts drawing its icon. Announcing it here
-	// said "traffic jam" for a job the map (FUN_004a4200 skips category 2) could not show.
+	// and remains hidden from the map (FUN_004a4200). Newly created traffic missions deliberately
+	// start active now; saved background jams still use EVT_JamCarAdded's legacy promotion.
 	if (Record.Category == CAT_Background)
 	{
 		BackgroundCount++;
@@ -1281,7 +1280,9 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 		{
 			PickRandomTileNear(TX, TY, PickupX, PickupY);
 			const uint8 PickupXbld = static_cast<uint8>(World ? World->GetXbldTileId(PickupX, PickupY) : 0);
-			if (PickupXbld > 0x6f && PickupXbld < 0xdc)
+			// User maps draw from prevalidated nearby clearings, which are intentionally
+			// outside building cells. Career placement keeps FUN_004a7a10's building test.
+			if ((World && World->UsesCitywideMissionPlacement()) || (PickupXbld > 0x6f && PickupXbld < 0xdc))
 			{
 				break;
 			}
@@ -1432,7 +1433,11 @@ int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 		PostEvent(EVT_JamCarAdded, Rec.EventId, 1);
 		Rec.Name = FString::Printf(TEXT("Traffic Jam #%d"), TypeSerials[8]);
 		TypeSerials[8]++;
-		Rec.Category = CAT_Background;
+		// Requested departure from FUN_004a7a10's background/three-car threshold: every
+		// successfully created traffic job should appear on the map and radio immediately.
+		// Queue followers only receive bJamQueued in the remake, so they never post the
+		// additional EVT_JamCarAdded events that the original promotion depended on.
+		Rec.Category = CAT_Active;
 	}
 	else if (TypeMask == TYPE_CarFireEvent)
 	{
@@ -2001,6 +2006,9 @@ void FSimCopterMissionSystem::UpdateLifecycle()
 		}
 
 		bool bComplete = true;
+		// FUN_004a73e0's active 0x800 arm keeps the job open while counted cars remain.
+		if ((Rec.TypeMask & TYPE_TrafficJam) != 0 && Rec.CarsCleared + Rec.CarsBurned < Rec.JamCarCount)
+			bComplete = false;
 		if ((Rec.TypeMask & (TYPE_VehicleTow | TYPE_BoatTow)) != 0 && Rec.CarsCleared < Rec.CarsCrashed)
 			bComplete = false;
 		if ((Rec.TypeMask & TYPE_Debris) != 0 && Rec.DebrisDoused + Rec.DebrisExpired + Rec.DebrisCleared < Rec.DebrisCreated)

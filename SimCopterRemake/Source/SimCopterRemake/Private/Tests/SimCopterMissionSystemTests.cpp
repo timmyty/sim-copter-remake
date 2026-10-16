@@ -1030,6 +1030,34 @@ bool FSimCopterTrafficJamCarClearTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterTrafficCreationAlertTest, "SimCopter.Missions.TrafficCreationAlert",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterTrafficCreationAlertTest::RunTest(const FString&)
+{
+	FSimCopterTrafficJamTestWorld World;
+	FSimCopterMissionSystem System;
+	System.Initialize(&World, 17);
+	const int32 Event = System.CreateEventOfType(TYPE_TrafficJam);
+	const auto* Record = System.FindRecord(Event);
+	if (!TestNotNull(TEXT("Traffic event creates"), Record)) return false;
+	TestEqual(TEXT("Traffic is immediately selectable"), Record->Category, CAT_Active);
+	TestEqual(TEXT("Traffic consumes one active slot"), System.GetActiveMissionCount(), 1);
+	TestEqual(TEXT("No invisible traffic slot"), System.GetBackgroundMissionCount(), 0);
+	TestTrue(TEXT("Radio queues the traffic headline"), World.RadioVoiceCalls.Contains(0x3d));
+	TestTrue(TEXT("HUD announces the same traffic event"), World.UiMessages.ContainsByPredicate(
+		[Event](const auto& Message) { return Message.Kind == 5 && Message.EventId == Event && Message.TextId == 0x249; }));
+	const int32 VoiceCount = World.RadioVoiceCalls.Num();
+	System.Tick(1.f / 60);
+	TestTrue(TEXT("Uncleared traffic survives the lifecycle update"), System.FindRecord(Event) && System.FindRecord(Event)->bActive);
+	System.PostEvent(EVT_JamCarAdded, Event, 2);
+	TestEqual(TEXT("A growing queue does not repeat the alert"), World.RadioVoiceCalls.Num(), VoiceCount);
+	TestEqual(TEXT("Queue growth does not double count the mission"), System.GetActiveMissionCount(), 1);
+	System.PostEvent(EVT_CarCleared, Event, 3);
+	System.Tick(1.f / 60);
+	TestTrue(TEXT("Clearing all counted cars completes the announced mission"), !System.FindRecord(Event) || !System.FindRecord(Event)->bActive);
+	return true;
+}
+
 // FUN_00408210 (enter city) + FUN_00407f30/FUN_004080c0 (open session).
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterMissionSessionStartTest, "SimCopter.Missions.SessionStart", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
@@ -2867,18 +2895,25 @@ bool FSimCopterMapFocusRulesTest::RunTest(const FString& Parameters)
 		TestEqual(TEXT("...the job, not Base Location"), System.GetRecords()[SecondSlot].EventId, SecondTransportId);
 	}
 
-	// Without a Base Location record a new job is adopted at creation, and a background record
-	// (category 2) never is.
+	// Without a Base Location record the first visible job is adopted at creation.
+	// Traffic now opens active with its radio report, so it receives focus too.
 	FSimCopterTrafficJamTestWorld JamWorld;
 	FSimCopterMissionSystem Bare;
 	Bare.Initialize(&JamWorld, 1);
-	Bare.CreateEventAt(20, 20, TYPE_TrafficJam);
-	TestEqual(TEXT("A background jam is not adopted"), Bare.GetMapFocusRecordIndex(), INDEX_NONE);
+	const int32 BareTrafficId = Bare.CreateEventAt(20, 20, TYPE_TrafficJam);
+	const int32 TrafficFocus = Bare.GetMapFocusRecordIndex();
+	TestTrue(TEXT("New traffic is adopted"), Bare.GetRecords().IsValidIndex(TrafficFocus) &&
+		Bare.GetRecords()[TrafficFocus].EventId == BareTrafficId);
 	const int32 BareTransportId = Bare.CreateEventAt(30, 30, TYPE_Transport);
 	TestTrue(TEXT("Bare transport created"), BareTransportId != INDEX_NONE);
 	const int32 BareFocus = Bare.GetMapFocusRecordIndex();
-	TestTrue(TEXT("The first job is adopted"), Bare.GetRecords().IsValidIndex(BareFocus) &&
-		Bare.GetRecords()[BareFocus].EventId == BareTransportId);
+	TestEqual(TEXT("A later transport does not steal existing focus"), BareFocus, TrafficFocus);
+	Bare.PostEvent(EVT_SetCategory, BareTrafficId, CAT_Background);
+	Bare.SetMapFocusRecordIndex(INDEX_NONE, EMapFocusReason::Reset);
+	Bare.Tick(1.f / 60);
+	TestTrue(TEXT("Legacy background traffic is skipped when adopting a job"),
+		Bare.GetRecords().IsValidIndex(Bare.GetMapFocusRecordIndex()) &&
+		Bare.GetRecords()[Bare.GetMapFocusRecordIndex()].EventId == BareTransportId);
 	return true;
 }
 

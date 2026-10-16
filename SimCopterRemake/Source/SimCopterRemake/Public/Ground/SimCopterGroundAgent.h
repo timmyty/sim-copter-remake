@@ -95,7 +95,6 @@ public:
 	bool ApplyWeaponVehicleHit(bool bMissile, const FVector& WorldImpact);
 	void ExplodeVehicle();
 	bool HasVehicleExploded() const { return bVehicleExploded; }
-	void RebuildVehicleDents();
 	bool IsTowableVehicle() const { return AgentKind == ESimCopterGroundAgentKind::Vehicle && bVehicleStalled && !IsVehicleAccidentBurning() && !bVehicleExploded && !bMissionResolutionReported; }
 	bool IsCageRecoverableVehicle() const;
 	bool IsVehicleTipped() const { return bVehicleTipped; }
@@ -146,8 +145,8 @@ private:
 	int32 TowMissionId = INDEX_NONE;
 	float VehicleImpactCooldown = 0.0f;
 	float VehicleExplosionSeconds = 0.0f;
+	// Always empty: vehicles are never deformed. Kept only so the save layout stays unchanged.
 	TArray<FVector> VehicleDents;
-	TArray<TArray<FVector>> UndamagedVehicleVertices;
 	bool TickAirOperations(float DeltaSeconds);
 	bool UpdatePoliceRecovery();
 public:

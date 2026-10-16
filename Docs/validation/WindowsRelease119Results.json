@@ -1,0 +1,65 @@
+{
+  "version": "v1.0.19",
+  "date": "2026-10-16",
+  "baseline_commit": "cee9cd04a79370461f735215318fc5b6b06a331e",
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log_sha256": "42f876b526933d73c84555e487c62bc7b8c9363b45bf12ac8858718f5ec03ef1"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "e71c315e3b2e1dbb65b070a54feab8ed928aa2310b9475fc8a367e82ad4540ee"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "95f682cfaf996b20533420909d8dfdb38eb603d4dfb88bbc72a6352713dcea96"
+    }
+  },
+  "cook": {
+    "result": "Succeeded",
+    "log_sha256": "229951731bc1dc12cb35979d093e584cf25798e485c0752f169b09f7d6867670"
+  },
+  "automation": {
+    "succeeded": 543,
+    "succeededWithWarnings": 42,
+    "failed": 0,
+    "notRun": 0,
+    "totalDuration": 811.0528564453125
+  },
+  "distinct_cases": 585,
+  "startup": [
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "child_pids": [
+        34184
+      ],
+      "survived": true,
+      "launcher_pid": 51844,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.19\\smoke-shipping",
+      "mode": "shipping",
+      "seconds": 31.1782826
+    },
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "child_pids": [
+        null
+      ],
+      "survived": true,
+      "launcher_pid": 49012,
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.19\\smoke-development",
+      "mode": "development",
+      "seconds": 30.66826
+    }
+  ],
+  "source_files_verified": 483,
+  "binary_sha256": {
+    "SimCopterRemake-Win64-Shipping.exe": "6d7b2d2357ee27028edc25aeec205a0726d100b0e1ee95a310443e784b098539",
+    "SimCopterRemake.exe": "267b5a97d97e486d18da54b0dad8c101b5080020d66d75a9257de4be7a0f0e3a"
+  },
+  "scope": "v1.0.19 playtest rounds one to three plus vehicle dent removal, immediate traffic-jam reporting, User-map transport clearings and hospital night windows.",
+  "limitations": [
+    "No interactive playthrough, physical-controller or manual listening test.",
+    "NullRHI automation can skip GPU assertions; no separate D3D12 offscreen pass was run."
+  ]
+}

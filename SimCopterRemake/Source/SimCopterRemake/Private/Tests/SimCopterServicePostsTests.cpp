@@ -21,6 +21,142 @@
 #include "Materials/MaterialInterface.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "Engine/StaticMesh.h"
+#include "Formats/MaxisMeshLibrary.h"
+#include "Formats/SimCopterOriginalGamePaths.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialExpressionCollectionParameter.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "ImageUtils.h"
+#include "RenderingThread.h"
+#include "AssetCompilingManager.h"
+#include "ShaderCompiler.h"
+#include "ComponentRecreateRenderStateContext.h"
+#include "HAL/FileManager.h"
+#include "RHI.h"
+
+#if WITH_EDITOR
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterBuildingLightingTest,"SimCopter.ServicePosts.BuildingNightLightingCoverage",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FSimCopterBuildingLightingTest::RunTest(const FString& Parameters)
+{
+	auto* Collection=LoadObject<UMaterialParameterCollection>(nullptr,TEXT("/Game/Materials/MPC_SimCopterDayNight.MPC_SimCopterDayNight"));
+	if (!TestNotNull(TEXT("Shared lighting collection loads"),Collection)) return false;
+	const auto CheckGlow = [&](UMaterial* Material)
+	{
+		if (!TestNotNull(TEXT("Window material loads"),Material)) return;
+		TArray<UMaterialExpression*> Pending;
+		TSet<UMaterialExpression*> Seen;
+		TSet<FName> ConnectedParameters;
+		Pending.Add(Material->GetEditorOnlyData()->EmissiveColor.Expression);
+		while (!Pending.IsEmpty())
+		{
+			auto* Node=Pending.Pop();
+			if (!Node || Seen.Contains(Node)) continue;
+			Seen.Add(Node);
+			if (auto* Parameter=Cast<UMaterialExpressionCollectionParameter>(Node); Parameter && Parameter->Collection==Collection)
+			{
+				TestEqual(TEXT("Collection parameter GUID resolves to its named control"),Parameter->ParameterId,Collection->GetParameterId(Parameter->ParameterName));
+				ConnectedParameters.Add(Parameter->ParameterName);
+			}
+			for (FExpressionInputIterator Input(Node);Input;++Input) Pending.Add(Input->Expression);
+		}
+		for (const FName Name:{FName("NightBlend"),FName("WindowSeed"),FName("WindowLitFraction"),FName("WindowRowLitFraction"),FName("WindowGlowNits")})
+			TestTrue(FString::Printf(TEXT("%s emissive follows %s"),*Material->GetName(),*Name.ToString()),ConnectedParameters.Contains(Name));
+	};
+	auto* Atlas=LoadObject<UMaterial>(nullptr,TEXT("/Game/Materials/M_SimCopterCitySurface.M_SimCopterCitySurface"));
+	CheckGlow(Atlas);
+	CheckGlow(LoadObject<UMaterial>(nullptr,TEXT("/Game/Generated/CityAtlas/M_HospitalFacade.M_HospitalFacade")));
+	// Enumerate the complete original model library, not just the buildings in one city.
+	// All textured walls use face 18; the only custom facade override is HO209 above.
+	FString Error;
+	const auto Library=FMaxisMeshLibrary::GetShared(SimCopterOriginalGame::ResolveRoot(),Error);
+	if (!TestTrue(TEXT("Original model library loads"),Library.IsValid())) { AddError(Error); return false; }
+	TSet<int32> Pages;
+	int32 Models=0;
+	for (int32 Id=0;Id<=0x300;++Id) if (const auto* Object=Library->FindObjectByObjectId(Id))
+	{
+		++Models;
+		for (const auto& Face:Object->Faces) if (Face.FaceType==18) Pages.Add(Face.TextureAtlasIndex);
+	}
+	for (const int32 Page:Pages)
+	{
+		const FString Name=FString::Printf(TEXT("/Game/Generated/CityAtlas/MI_CityPage_%d.MI_CityPage_%d"),Page,Page);
+		auto* Material=LoadObject<UMaterialInterface>(nullptr,*Name);
+		if (!TestNotNull(*Name,Material)) continue;
+		TestTrue(TEXT("Every atlas page inherits the verified night-lighting shader"),Material->GetMaterial()==Atlas);
+		UTexture* Night=nullptr;
+		TestTrue(TEXT("Every atlas page binds its night texture"),Material->GetTextureParameterValue(FMaterialParameterInfo(TEXT("NightTexture")),Night) && Night);
+		if (Page==2 || Page==39 || Page==40)
+		{
+			float HasMask=0; UTexture* Mask=nullptr;
+			TestTrue(TEXT("Window pages use their painted mask"),Material->GetScalarParameterValue(FMaterialParameterInfo(TEXT("HasWindowMask")),HasMask) && HasMask==1);
+			TestTrue(TEXT("Painted window texture is bound"),Material->GetTextureParameterValue(FMaterialParameterInfo(TEXT("WindowTexture")),Mask) && Mask);
+			if (Mask) TestFalse(TEXT("Window-mask IDs retain linear byte values"),Mask->SRGB);
+		}
+	}
+	AddInfo(FString::Printf(TEXT("Audited %d original models, %d atlas pages and the hospital facade override"),Models,Pages.Num()));
+	return true;
+}
+#endif
+
+namespace
+{
+void CheckHospitalNightRender(FAutomationTestBase& Test,UWorld* World,UInstancedStaticMeshComponent* Hospital)
+{
+	if (GUsingNullRHI) return;
+	auto* Owner=World->SpawnActor<AActor>();
+	auto* Mesh=NewObject<UStaticMeshComponent>(Owner); Owner->SetRootComponent(Mesh);
+	Mesh->SetStaticMesh(Hospital->GetStaticMesh());
+	for (int32 Slot=0;Slot<Hospital->GetNumMaterials();++Slot) Mesh->SetMaterial(Slot,Hospital->GetMaterial(Slot));
+	Mesh->RegisterComponent();
+	auto* Capture=NewObject<USceneCaptureComponent2D>(Owner);
+	Capture->bCaptureEveryFrame=false; Capture->bCaptureOnMovement=false; Capture->bAlwaysPersistRenderingState=true;
+	Capture->CaptureSource=SCS_FinalColorLDR; Capture->UnlitViewmode=ESceneCaptureUnlitViewmode::Disabled;
+	Capture->FOVAngle=50;
+	const auto Bounds=Mesh->GetStaticMesh()->GetBounds();
+	const FVector LookAt=Bounds.Origin;
+	const FVector Camera=LookAt+FVector(1.6,-2.4,1.0)*Bounds.BoxExtent.GetMax();
+	Capture->SetWorldLocation(Camera); Capture->SetWorldRotation((LookAt-Camera).Rotation());
+	Capture->PostProcessSettings.bOverride_AutoExposureMethod=true; Capture->PostProcessSettings.AutoExposureMethod=AEM_Manual;
+	Capture->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure=true; Capture->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure=false;
+	Capture->PostProcessSettings.bOverride_AutoExposureBias=true; Capture->PostProcessSettings.AutoExposureBias=-2;
+	Capture->ShowFlags.SetBloom(false); Capture->ShowFlags.SetTemporalAA(false); Capture->ShowFlags.SetAtmosphere(false); Capture->ShowFlags.SetFog(false);
+	Capture->PrimitiveRenderMode=ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList; Capture->ShowOnlyComponent(Mesh);
+	auto* Target=NewObject<UTextureRenderTarget2D>(Owner); Target->RenderTargetFormat=RTF_RGBA8;
+	Target->InitAutoFormat(800,800); Target->UpdateResourceImmediate(true); Capture->TextureTarget=Target; Capture->RegisterComponent();
+	auto* Collection=LoadObject<UMaterialParameterCollection>(nullptr,TEXT("/Game/Materials/MPC_SimCopterDayNight.MPC_SimCopterDayNight"));
+	auto* Values=World->GetParameterCollectionInstance(Collection);
+	Values->SetScalarParameterValue(TEXT("WindowSeed"),17);
+	Values->SetScalarParameterValue(TEXT("WindowRowLitFraction"),0);
+	FAssetCompilingManager::Get().FinishAllCompilation(); if(GShaderCompilingManager) GShaderCompilingManager->FinishAllCompilation();
+	World->UpdateParameterCollectionInstances(true,true);
+	{ FGlobalComponentRecreateRenderStateContext Recreate; }
+	World->SendAllEndOfFrameUpdates(); Capture->CaptureScene(); FlushRenderingCommands();
+	if(GShaderCompilingManager) GShaderCompilingManager->FinishAllCompilation(); FAssetCompilingManager::Get().FinishAllCompilation();
+	const FString Folder=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/select-traffic-user-missions-2026-10-15");
+	IFileManager::Get().MakeDirectory(*Folder,true);
+	int32 Bright[4]={};
+	for (int32 State=0;State<4;++State)
+	{
+		Values->SetScalarParameterValue(TEXT("NightBlend"),State==0 ? 0 : 1);
+		Values->SetScalarParameterValue(TEXT("WindowLitFraction"),State==2 ? 0.3f : 1);
+		Values->SetScalarParameterValue(TEXT("WindowGlowNits"),State==3 ? 0 : 25);
+		World->SendAllEndOfFrameUpdates(); Capture->CaptureScene(); FlushRenderingCommands();
+		TArray<FColor> Pixels; Target->GameThread_GetRenderTargetResource()->ReadPixels(Pixels);
+		for(auto& Pixel:Pixels) { Pixel.A=255; Bright[State]+=Pixel.R>80; }
+		const TCHAR* Names[]={TEXT("hospital-day-off.png"),TEXT("hospital-night-all.png"),TEXT("hospital-night-normal.png"),TEXT("hospital-night-disabled.png")};
+		Test.TestTrue(TEXT("Hospital lighting capture exports"),FImageUtils::SaveImageByExtension(*(Folder/Names[State]),FImageView(Pixels.GetData(),800,800)));
+	}
+	Test.AddInfo(FString::Printf(TEXT("Hospital bright pixels: day=%d all=%d normal=%d disabled=%d"),Bright[0],Bright[1],Bright[2],Bright[3]));
+	Test.TestTrue(TEXT("Hospital windows emit only after night blend turns on"),Bright[1]>500 && Bright[0]<Bright[1]/10);
+	Test.TestTrue(TEXT("Hospital occupancy control selects fewer lit windows"),Bright[2]>100 && Bright[2]<Bright[1]*0.8);
+	Test.TestTrue(TEXT("Disabling shared window brightness also disables hospital windows"),Bright[3]<Bright[1]/10);
+	Owner->Destroy();
+}
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterServicePostsTest, "SimCopter.ServicePosts.SpacingEntrancesAndImpact",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -181,6 +317,7 @@ bool FSimCopterHospitalCityTest::RunTest(const FString& Parameters)
 		if(!bFacade) continue;
 		++HospitalMeshes;TestTrue(TEXT("Hospital binds dedicated roof and crisp helipad materials"),bPad&&bRoof);
 		TestTrue(TEXT("Hospital retains cooked building collision"),Component->GetStaticMesh()->GetBodySetup()->TriMeshGeometries.Num()>0);
+		CheckHospitalNightRender(*this,World,Component);
 	}
 	TestEqual(TEXT("One shared hospital mesh services the city's placements"),HospitalMeshes,1);
 	auto* Traffic=World->SpawnActor<ASimCopterTrafficSystemActor>();

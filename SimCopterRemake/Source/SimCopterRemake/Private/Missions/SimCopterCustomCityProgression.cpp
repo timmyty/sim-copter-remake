@@ -56,7 +56,8 @@ bool ASimCopterMissionSystemActor::IsMissionTypeAvailable(int32 TypeMask) const
 	if (TypeMask == TYPE_BoatRescue) return !CustomWaterSites.IsEmpty();
 	if (TypeMask == TYPE_Riot || TypeMask == TYPE_Burglar || TypeMask == TYPE_TrafficJam) return !CustomRoadSites.IsEmpty();
 	if (TypeMask == TYPE_BuildingFire) return !CustomFireSites.IsEmpty();
-	if (TypeMask == TYPE_Medevac || TypeMask == TYPE_Transport || TypeMask == TYPE_Robber || TypeMask == TYPE_Mugger || TypeMask == TYPE_Arsonist)
+	if (TypeMask == TYPE_Transport) return CustomTransportSites.Num() >= 2;
+	if (TypeMask == TYPE_Medevac || TypeMask == TYPE_Robber || TypeMask == TYPE_Mugger || TypeMask == TYPE_Arsonist)
 		return !CustomBuildingSites.IsEmpty();
 	return true;
 }
@@ -68,6 +69,7 @@ void ASimCopterMissionSystemActor::ScanCustomCityMissionSites()
 	FVector Probe;
 	if (!Traffic || !Traffic->HasMissionPlacementData() || !Traffic->GetCityActor() || !Traffic->TryGetTileCenterWorldLocation(0, 0, Probe)) return;
 	CustomBuildingSites.Reset(); CustomFireSites.Reset(); CustomRoadSites.Reset(); CustomRoofSites.Reset(); CustomWaterSites.Reset();
+	CustomTransportSites.Reset();
 	TSet<FIntPoint> RoofCenters;
 	// One initial scan of all 128x128 tiles. No camera, airport or player-distance test.
 	for (int32 Y = 0; Y < 128; ++Y) for (int32 X = 0; X < 128; ++X)
@@ -98,9 +100,37 @@ void ASimCopterMissionSystemActor::ScanCustomCityMissionSites()
 			if (!Traffic->IsWaterTile(X + DX, Y + DY)) { bOpenWater = false; break; }
 		if (bOpenWater) CustomWaterSites.Add(Tile);
 	}
+	// User-city adaptation of FUN_004a7a10's two building endpoints: the remake requires
+	// helicopter clearings near both. Drawing two unfiltered buildings made success the
+	// product of two small probabilities on dense/island maps (including Heven and Hawaii).
+	// Test each nearby ground tile once at load, rather than repeatedly searching the same
+	// blocked neighbourhoods during play. Keep the existing 275 cm footprint / 3200 cm range.
+	constexpr float TransportRangeCm = 3200;
+	const float TileSize = Traffic->GetCityActor()->GetTileSize();
+	const int32 Range = FMath::CeilToInt(TransportRangeCm / TileSize);
+	TBitArray<> NearBuildings(false, 128 * 128);
+	for (const FIntPoint& Building : CustomBuildingSites)
+		for (int32 DY = -Range; DY <= Range; ++DY) for (int32 DX = -Range; DX <= Range; ++DX)
+		{
+			const FIntPoint Tile = Building + FIntPoint(DX, DY);
+			if (Tile.X >= 0 && Tile.X < 128 && Tile.Y >= 0 && Tile.Y < 128 &&
+				(DX * DX + DY * DY) * TileSize * TileSize <= TransportRangeCm * TransportRangeCm)
+				NearBuildings[Tile.Y * 128 + Tile.X] = true;
+		}
+	for (int32 Y = 0; Y < 128; ++Y) for (int32 X = 0; X < 128; ++X)
+	{
+		if (!NearBuildings[Y * 128 + X]) continue;
+		FVector Surface; uint8 TerrainClass; float SurfaceZ;
+		if (Traffic->TryGetTileCenterWorldLocation(X, Y, Surface) &&
+			Traffic->GetCityActor()->TryGetWaterGameplaySurface(Surface, SurfaceZ, TerrainClass))
+		{
+			Surface.Z = SurfaceZ;
+			if (Traffic->IsTransportClearing(Surface, 275)) CustomTransportSites.Add(FIntPoint(X, Y));
+		}
+	}
 	bCustomCitySitesScanned = true;
-	UE_LOG(LogTemp, Display, TEXT("Custom city mission scan: %d buildings, %d roofs, %d open-water sites, %d road tiles."),
-		CustomBuildingSites.Num(), CustomRoofSites.Num(), CustomWaterSites.Num(), CustomRoadSites.Num());
+	UE_LOG(LogTemp, Display, TEXT("Custom city mission scan: %d buildings, %d roofs, %d open-water sites, %d road tiles, %d transport clearings."),
+		CustomBuildingSites.Num(), CustomRoofSites.Num(), CustomWaterSites.Num(), CustomRoadSites.Num(), CustomTransportSites.Num());
 }
 
 bool ASimCopterMissionSystemActor::TryPickCityMissionTile(int32 TypeMask, int32 Random, int32& X, int32& Y)
@@ -111,6 +141,7 @@ bool ASimCopterMissionSystemActor::TryPickCityMissionTile(int32 TypeMask, int32 
 	else if (TypeMask == TYPE_BoatRescue) Sites = &CustomWaterSites;
 	else if (TypeMask == TYPE_BuildingFire) Sites = &CustomFireSites;
 	else if (TypeMask == TYPE_Riot || TypeMask == TYPE_Burglar) Sites = &CustomRoadSites;
+	else if (TypeMask == TYPE_Transport) Sites = &CustomTransportSites;
 	while (!Sites->IsEmpty())
 	{
 		const int32 Index = static_cast<uint32>(Random) % Sites->Num();
@@ -121,6 +152,14 @@ bool ASimCopterMissionSystemActor::TryPickCityMissionTile(int32 TypeMask, int32 
 		if (Sites == &CustomRoofSites) bValid &= (FSimCopterMissionSystem::GetXbldPropertyFlags(Id) & 4) != 0;
 		if (Sites == &CustomFireSites) bValid = FSimCopterMissionSystem::IsFireSuitableTile(Id);
 		if (Sites == &CustomRoadSites) bValid = FSimCopterPeopleCityRules::IsRoadTileClass(FSimCopterPeopleCityRules::GetTileClassForBuildingId(static_cast<uint8>(Id)));
+		if (Sites == &CustomTransportSites)
+		{
+			auto* Traffic = ResolveTrafficSystem();
+			FVector Surface; uint8 TerrainClass; float SurfaceZ;
+			bValid = Traffic && Traffic->GetCityActor() && Traffic->TryGetTileCenterWorldLocation(Tile.X, Tile.Y, Surface) &&
+				Traffic->GetCityActor()->TryGetWaterGameplaySurface(Surface, SurfaceZ, TerrainClass);
+			if (bValid) { Surface.Z = SurfaceZ; bValid = Traffic->IsTransportClearing(Surface, 275); }
+		}
 		if (!bValid) { Sites->RemoveAtSwap(Index); continue; } // demolition since load
 		// Keep separate jobs off an occupied rescue site.
 		if (Sites == &CustomRoofSites || Sites == &CustomWaterSites)

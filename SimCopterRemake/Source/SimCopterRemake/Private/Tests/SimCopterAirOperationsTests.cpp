@@ -213,9 +213,6 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestTrue(TEXT("Stalled car is immobilized"),Car->IsVehicleImmobilized());
  TestTrue(TEXT("Stalled car creates towing job"),Car->GetTowMissionId()!=INDEX_NONE);
  if(const auto* Tow=Missions->MissionSystem.FindRecord(Car->GetTowMissionId())) TestTrue(TEXT("Player-created recovery cannot farm rewards"),Tow->bSuppressCompletionRewards);
- const FVector Near(40,0,10),Far(-100,0,10);
- TestTrue(TEXT("Hit side geometry visibly dents"),!SimCopterAirOperations::DentVertex(Near,Near,FVector::ZeroVector).Equals(Near));
- TestTrue(TEXT("Far side retains body shape"),SimCopterAirOperations::DentVertex(Far,Near,FVector::ZeroVector).Equals(Far));
  auto* Yard=World->SpawnActor<ASimCopterRecoverySite>(); Yard->Configure(ESimCopterRecoverySite::Junkyard,FVector(2500,2500,0)); System->Sites.Add(Yard);
  auto* HealthyCar=World->SpawnActor<ASimCopterGroundAgent>(); HealthyCar->AgentKind=ESimCopterGroundAgentKind::Vehicle; HealthyCar->SetOwner(Traffic);
  System->StartStalledCar(false);

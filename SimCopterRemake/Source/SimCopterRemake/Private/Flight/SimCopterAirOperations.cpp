@@ -112,11 +112,6 @@ void DrawTaserDischarge(USimCopterParticleFXComponent* FX, const FVector& Start,
 }
 bool IsCriminalState(int32 State) { return State >= 10 && State <= 13; }
 bool FallCausesInjury(float DistanceCm, bool bInWater) { return !bInWater && DistanceCm >= SafeFallCm; }
-FVector DentVertex(const FVector& Vertex, const FVector& Impact, const FVector& BodyCenter)
-{
-	const float Weight=FMath::Square(FMath::Clamp(1.0f-FVector::Distance(Vertex,Impact)/80.0f,0.0f,1.0f));
-	return Vertex+(BodyCenter-Vertex).GetSafeNormal()*FMath::Min(22.0f,FVector::Distance(Vertex,BodyCenter)*0.45f)*Weight;
-}
 ASimCopterGroundAgent* TracePerson(UWorld* World, AActor* Source, const FVector& Start, const FVector& Direction, float Range, FVector& OutEnd)
 {
 	OutEnd=Start+Direction.GetSafeNormal()*Range;

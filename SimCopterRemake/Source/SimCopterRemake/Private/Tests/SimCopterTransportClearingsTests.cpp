@@ -7,9 +7,15 @@
 #include "UObject/UnrealType.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "City/SimCity2000CityActor.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Misc/Parse.h"
+#include "Misc/CommandLine.h"
+#include "Ground/SimCopterGroundAgent.h"
+#include "Game/SimCopterSessionSubsystem.h"
+#include "Missions/SimCopterMissionSystemActor.h"
 
 IMPLEMENT_COMPLEX_AUTOMATION_TEST(FSimCopterTransportCityClearingsTest,
 	"SimCopter.Transport.CityClearings", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -104,4 +110,109 @@ bool FSimCopterTransportCityClearingsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("City still has playable transport destinations"),Resolved>0);
 	return true;
 }
+IMPLEMENT_COMPLEX_AUTOMATION_TEST(FSimCopterUserCityTransportCreationTest,
+	"SimCopter.Transport.UserCityCreation", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+namespace
+{
+// Observe the production placement boundary without replacing city geometry or passenger spawning.
+struct FUserTransportProbe : SimCopterMissions::ISimCopterMissionWorld
+{
+	ASimCopterMissionSystemActor* Missions = nullptr;
+	int32 ClearingCalls = 0, ClearingFailures = 0, SpawnCalls = 0, SpawnFailures = 0;
+	virtual bool UsesCitywideMissionPlacement() const override { return true; }
+	virtual bool IsMissionTypeAvailable(int32 Type) const override { return Missions->IsMissionTypeAvailable(Type); }
+	virtual int32 GetMissionPassengerLimit(bool bMedical) const override { return Missions->GetMissionPassengerLimit(bMedical); }
+	virtual int32 GetXbldTileId(int32 X, int32 Y) const override { return Missions->GetXbldTileId(X, Y); }
+	virtual int32 GetBuildingFootprintSize(int32 X, int32 Y) const override { return Missions->GetBuildingFootprintSize(X, Y); }
+	virtual bool GetCameraTile(int32& X, int32& Y) const override { return Missions->GetCameraTile(X, Y); }
+	virtual bool GetPlayerTile(int32& X, int32& Y) const override { return Missions->GetPlayerTile(X, Y); }
+	virtual bool TryPickCityMissionTile(int32 Type, int32 Random, int32& X, int32& Y) override
+	{ return Missions->TryPickCityMissionTile(Type, Random, X, Y); }
+	virtual bool TryResolveTransportSpawnTile(int32 X, int32 Y, int32& OutX, int32& OutY) override
+	{
+		++ClearingCalls;
+		const bool bResolved = Missions->TryResolveTransportSpawnTile(X, Y, OutX, OutY);
+		if (!bResolved) ++ClearingFailures;
+		return bResolved;
+	}
+	virtual bool TrySpawnMissionPerson(int32 State, int32 Behavior, int32 X, int32 Y, int32 Event) override
+	{
+		++SpawnCalls;
+		const bool bSpawned = Missions->TrySpawnMissionPerson(State, Behavior, X, Y, Event);
+		if (!bSpawned) ++SpawnFailures;
+		return bSpawned;
+	}
+};
+}
+
+void FSimCopterUserCityTransportCreationTest::GetTests(TArray<FString>& Names, TArray<FString>& Commands) const
+{
+	TArray<FString> Paths;
+	USimCopterSessionSubsystem::GetUserCityFilePaths(Paths);
+	TMap<FString, FString> ByName;
+	for (const auto& Path : Paths) ByName.Add(FPaths::GetCleanFilename(Path).ToLower(), Path);
+	FString Directory;
+	if (FParse::Value(FCommandLine::Get(), TEXT("SimTransportCities="), Directory))
+	{
+		TArray<FString> Files;
+		IFileManager::Get().FindFiles(Files, *(Directory / TEXT("*.sc2")), true, false);
+		for (const auto& File : Files) ByName.Add(File.ToLower(), Directory / File);
+	}
+	ByName.GetKeys(Paths); Paths.Sort();
+	for (const auto& Name : Paths) { Names.Add(FPaths::GetBaseFilename(Name)); Commands.Add(ByName[Name]); }
+}
+
+bool FSimCopterUserCityTransportCreationTest::RunTest(const FString& Path)
+{
+	using namespace SimCopterMissions;
+	const auto Init = UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(true)
+		.CreateNavigation(false).CreateAISystem(false);
+	auto* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Init);
+	GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World);
+	ON_SCOPE_EXIT { GEngine->DestroyWorldContext(World); World->DestroyWorld(false); CollectGarbage(RF_NoFlags); };
+	auto* City = World->SpawnActorDeferred<ASimCity2000CityActor>(ASimCity2000CityActor::StaticClass(), FTransform::Identity);
+	for (const TCHAR* Flag : {TEXT("bLoadOnConstruction"), TEXT("bLoadOnBeginPlay"),
+		TEXT("bRenderProceduralMapExtension"), TEXT("bRenderStreetLightSpotLights")})
+		FindFProperty<FBoolProperty>(City->GetClass(), Flag)->SetPropertyValue_InContainer(City, false);
+	City->GetRootComponent()->SetMobility(EComponentMobility::Static);
+	FindFProperty<FStructProperty>(City->GetClass(), TEXT("CityFile"))->ContainerPtrToValuePtr<FFilePath>(City)->FilePath = Path;
+	City->FinishSpawning(FTransform::Identity);
+	City->RebuildCity();
+	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
+	if (!TestTrue(TEXT("Real city placement data loads"), Traffic->RebuildSpawnData())) return false;
+	auto* Missions = World->SpawnActor<ASimCopterMissionSystemActor>();
+	Missions->SessionMode = ESimCopterMissionSessionMode::UserCityJobs;
+	FUserTransportProbe Probe;
+	Probe.Missions = Missions;
+	Missions->MissionSystem.Initialize(&Probe, 47);
+	const double ScanStart = FPlatformTime::Seconds();
+	Missions->ScanCustomCityMissionSites();
+	AddInfo(FString::Printf(TEXT("City scan: %.2f ms, %d transport clearings"),
+		(FPlatformTime::Seconds() - ScanStart) * 1000, Missions->CustomTransportSites.Num()));
+	TestTrue(TEXT("Beginner transport is available"), Missions->IsMissionTypeAvailable(TYPE_Transport));
+	// Isolate placement from weighted selection, cap and elapsed time. Each request still runs
+	// the production citywide placement, clearing resolver and actual passenger spawn.
+	int32 Created = 0;
+	for (int32 Attempt = 0; Attempt < 12; ++Attempt)
+	{
+		const int32 Event = Missions->MissionSystem.CreateEventOfType(TYPE_Transport);
+		const auto* Record = Missions->MissionSystem.FindRecord(Event);
+		if (!Record) continue;
+		++Created;
+		TestTrue(TEXT("A passenger actually spawned"), Record->TransportPassengers > 0);
+		TestTrue(TEXT("Starter cabin capacity is respected"), Record->TransportPassengers <= 2);
+		TestTrue(TEXT("Pickup and drop-off differ"), Record->TileX != Record->TertiaryX || Record->TileY != Record->TertiaryY);
+		int32 People = 0;
+		for (TActorIterator<ASimCopterGroundAgent> It(World); It; ++It)
+			if (It->MissionEventId == Event && It->InitialPersonState == 4) ++People;
+		TestEqual(TEXT("Record count matches real passenger actors"), People, Record->TransportPassengers);
+	}
+	AddInfo(FString::Printf(TEXT("User transport %s: %d/12 creation requests succeeded"), *FPaths::GetBaseFilename(Path), Created));
+	AddInfo(FString::Printf(TEXT("Placement boundaries: %d/%d clearings failed; %d/%d passenger spawns failed"),
+		Probe.ClearingFailures, Probe.ClearingCalls, Probe.SpawnFailures, Probe.SpawnCalls));
+	TestEqual(TEXT("Every sampled transport request creates on this User map"), Created, 12);
+	return true;
+}
 #endif
+

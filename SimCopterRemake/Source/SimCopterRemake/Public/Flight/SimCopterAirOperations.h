@@ -30,7 +30,6 @@ constexpr float RecoveryRadiusCm = 180.0f;
 SIMCOPTERREMAKE_API void DrawTaserDischarge(USimCopterParticleFXComponent* FX, const FVector& Start, const FVector& End);
 SIMCOPTERREMAKE_API bool IsCriminalState(int32 State);
 SIMCOPTERREMAKE_API bool FallCausesInjury(float DistanceCm, bool bInWater);
-SIMCOPTERREMAKE_API FVector DentVertex(const FVector& Vertex, const FVector& Impact, const FVector& BodyCenter);
 SIMCOPTERREMAKE_API ASimCopterGroundAgent* TracePerson(UWorld* World, AActor* Source, const FVector& Start, const FVector& Direction, float Range, FVector& OutEnd);
 SIMCOPTERREMAKE_API ASimCopterGroundAgent* TraceRemoteTaserTarget(UWorld* World, AActor* Source, const FVector& Start, const FVector& Direction, float Range, FVector& OutEnd);
 }
