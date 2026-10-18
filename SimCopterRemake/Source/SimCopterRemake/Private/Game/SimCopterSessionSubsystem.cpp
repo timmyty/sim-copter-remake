@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Game/SimCopterSessionSubsystem.h"
+#include "Game/SimCopterSettings.h"
 #include "Game/SimCopterCursorIdle.h"
 
 #include "Game/SimCopterInputDebug.h"
@@ -84,6 +85,7 @@ void USimCopterSessionSubsystem::RequestCareerCity(int32 InCareerCityIndex)
 void USimCopterSessionSubsystem::RequestUserCity(const FString& InCityFilePath)
 {
 	Kind = ESimCopterSessionKind::User;
+	if (auto* Settings = USimCopterSettings::Get(this)) Settings->SetTimeOfDayMode(ESimCopterTimeOfDayMode::Dynamic);
 	// Career City0 supplies only the shared base record; BeginSession replaces its settings fields
 	// with FUN_004080c0's separate mode-1 defaults.
 	CareerCityIndex = 0;

@@ -93,6 +93,16 @@ FString ASimCopterPlayerController::ExecuteCheatCodes(const FString& Text)
 	{
 		switch (Command.Code)
 		{
+		case ECode::RespawnHelicopter:
+			bApplied = Heli && Heli->RespawnParkedAtHangar();
+			if (bApplied)
+			{
+				CloseScreen();
+				if (Pilot) Heli->EnterHelicopter(this, false);
+				Results.Add(TEXT("Helicopter reset and parked at the hangar."));
+			}
+			else Results.Add(TEXT("No free airport pad is available."));
+			break;
 		case ECode::UnlockApache:
 			Career->SetApacheEncounterSpawned(true);
 			bApplied = true;
@@ -274,6 +284,20 @@ FString ASimCopterPlayerController::ExecuteCheatCodes(const FString& Text)
 void ASimCopterPlayerController::PlayerTick(float DeltaSeconds)
 {
 	Super::PlayerTick(DeltaSeconds);
+	// All imported city terrain is above its origin. Recover well below that floor,
+	// without waiting for an impossible landing or a fatal-fall timer to begin.
+	if (IsLocalController() && GetPawn() && !IsPaused())
+	{
+		TActorIterator<ASimCity2000CityActor> City(GetWorld());
+		if (City && GetPawn()->GetActorLocation().Z < City->GetActorLocation().Z - 5000.0)
+			if (auto* Aircraft = SimCopterHelicopterParking::ResolveCurrentAircraft(this);
+				Aircraft && Aircraft->RespawnParkedAtHangar())
+			{
+				Aircraft->EnterHelicopter(this, false);
+				if (auto* Missions = ResolveMissionSystem())
+					Missions->ShowAirOperationsMessage(TEXT("Recovered below the city. Helicopter parked at the hangar."));
+			}
+	}
 	UpdatePhotoMode();
 	if (!IsPhotoModeActive()) UpdateCheatViews();
 }

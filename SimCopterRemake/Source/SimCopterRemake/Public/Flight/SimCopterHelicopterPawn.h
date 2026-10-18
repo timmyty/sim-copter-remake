@@ -279,6 +279,7 @@ class SIMCOPTERREMAKE_API ASimCopterHelicopterPawn
 	GENERATED_BODY()
 	friend class FSimCopterGameplayOptionsTest;
 	friend class FSimCopterFatalRespawnTest;
+	friend class FSimCopterPlaytestRegressionTest;
 	friend class FSimCopterMouseFrameRateTest;
 	friend class USimCopterAirOperationsComponent;
 	friend class FSimCopterRemoteRecoveryTest;
@@ -400,6 +401,8 @@ public:
 	// Put a wrecked aircraft back on a free airport pad. False when the city has no airport or
 	// every pad is blocked, in which case the caller leaves it where it fell.
 	bool ReturnToAirportAfterCrash();
+	// Shared recovery for the hangar reset, cheat and below-world safety cutoff.
+	bool RespawnParkedAtHangar();
 
 	// How close another aircraft has to be to a pad for it to count as parked on it. Pads are one
 	// tile across, so anything inside half a tile is on it.

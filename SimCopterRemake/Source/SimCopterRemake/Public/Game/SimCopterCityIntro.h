@@ -73,7 +73,7 @@ private:
 	void UpdateCamera();
 	void BeginTourLighting();
 	void RestoreLighting();
-	// Light cloud cover for the flyover (user request, v1.0.19), skipped on desert-looking maps.
+	// Light cloud cover for every introductory flyover, including sandy user cities.
 	void BeginTourClouds();
 	void ApplyTourClouds();
 	void RestoreTourClouds();

@@ -1,0 +1,110 @@
+{
+  "version": "v1.0.20",
+  "date": "2026-10-18",
+  "baseline_commit": "cec6f46f5394dadbe2238018affcf67c4a80cbb8",
+  "builds": {
+    "editor": {
+      "result": "Succeeded",
+      "log_sha256": "7b54061df7285adf3d92e97890b0a5284c96ac6b9277c079a75ab737fd503802"
+    },
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "e725a41de8775cfb1556cc8ce6adf22c49803de7e3038e71d968e819faed1e60"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "5d9b0b53a4140ee4adaeb184888e637dc634a2c8a25dd3544e49c3248ad102d0"
+    }
+  },
+  "cook": {
+    "result": "Succeeded",
+    "log_sha256": "e6517f4f3455e68fcbd4e637171bed4f856bf60ab6e2c3fc7492b3fb7c2ec006"
+  },
+  "automation": {
+    "tests": {
+      "succeeded": 541,
+      "succeededWithWarnings": 41,
+      "failed": 18,
+      "notRun": 0,
+      "totalDuration": 493.4134826660156
+    },
+    "regression-tests": {
+      "succeeded": 85,
+      "succeededWithWarnings": 2,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 32.39179611206055
+    },
+    "render-tests": {
+      "succeeded": 47,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 26.541540145874023
+    }
+  },
+  "startup": [
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.20\\smoke-shipping",
+      "seconds": 30.9663763,
+      "survived": true,
+      "launcher_pid": 77632,
+      "mode": "shipping",
+      "child_pids": [
+        18808
+      ]
+    },
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\release-v1.0.20\\smoke-development",
+      "seconds": 30.6449441,
+      "survived": true,
+      "launcher_pid": 22588,
+      "mode": "development",
+      "child_pids": [
+        null
+      ]
+    }
+  ],
+  "source_files_verified": 491,
+  "distinct_cases_passed": 600,
+  "initial_test_fixture_failures": [
+    "SimCopter.AircraftRoadUpdate.AllCitiesAndAircraft",
+    "SimCopter.EnergyTaser.Runtime",
+    "SimCopter.Interaction.MegaphoneEffects",
+    "SimCopter.Transport.UserCityCreation.arcocity",
+    "SimCopter.Transport.UserCityCreation.cancer",
+    "SimCopter.Transport.UserCityCreation.cape wells",
+    "SimCopter.Transport.UserCityCreation.egypt falls",
+    "SimCopter.Transport.UserCityCreation.glorioso",
+    "SimCopter.Transport.UserCityCreation.happylnd",
+    "SimCopter.Transport.UserCityCreation.hawaii",
+    "SimCopter.Transport.UserCityCreation.kathy's retreat",
+    "SimCopter.Transport.UserCityCreation.la-isla",
+    "SimCopter.Transport.UserCityCreation.lakeland",
+    "SimCopter.Transport.UserCityCreation.rio",
+    "SimCopter.Transport.UserCityCreation.stchrisc",
+    "SimCopter.Transport.UserCityCreation.the bahamas",
+    "SimCopter.Transport.UserCityCreation.tokyo",
+    "SimCopter.Transport.UserCityCreation.volcano"
+  ],
+  "fixture_corrections": "Legacy v10/v11 fixtures now remove the v13 farewell suffix; aircraft test releases reverse taxi input and measures police response against its actual slower speed. Transport placement samples now retire older fares while testing that a fourth simultaneous event is refused. Corrected cases rerun successfully; gameplay was not weakened for the tests.",
+  "additional_runtime_fix": "All-city validation reproduced a slow police car stopping outside its destination tile on city8. Final dispatch waypoints now use the tile center; the same route completed in 58.699 seconds after previously failing to arrive after 207.708 seconds.",
+  "build_source": "Development snapshot, byte-identical Source/Config to publication; no copied-source timestamp reuse.",
+  "binary_sha256": {
+    "SimCopterRemake-Win64-Shipping.exe": "b50f0216ad21bfafa5e50a4c1db34d2d95daa6a3e79431eb842c69ff1e0d5d52",
+    "SimCopterRemake.exe": "1c59292219adcf68c9d41e2b1053a785739da42add503e3296e269eb4d7eaf5a"
+  },
+  "scope": "All completed October 18 fixes, marina docks, emergency headquarters, artwork choice, hospital corrections and fixed User-map event limit.",
+  "limitations": [
+    "No interactive playthrough, physical-controller or manual listening test.",
+    "An older save already above three events finishes its existing jobs before receiving new ones."
+  ],
+  "local_installation": {
+    "changed_files": 7,
+    "protected_files_verified": 183,
+    "rollback_copies_verified": true,
+    "installed_binary_hashes_match_release": true
+  }
+}

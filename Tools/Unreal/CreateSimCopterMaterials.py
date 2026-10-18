@@ -634,20 +634,10 @@ def create_city_atlas_material():
     # to know, and the material carries both. The painted mask (WindowTexture, from
     # Tools/WindowLayoutEditor.html) is exact and knows where one window ends and the next begins;
     # the derived one below infers it from the art and is what an unpainted page falls back to.
-    window_mask_texture = unreal.MaterialEditingLibrary.create_material_expression(
-        material, unreal.MaterialExpressionTextureSampleParameter2D, -260, 500
-    )
-    window_mask_texture.set_editor_property("parameter_name", WINDOW_MASK_PARAMETER)
-    unreal.MaterialEditingLibrary.connect_material_expressions(page_uv, "", window_mask_texture, "UVs")
+    # Area coverage, with mip sampling clamped within each 32px atlas cell. The
+    # old nearest/no-mip binary mask made distant windows blink as the camera moved.
+    window_mask_texture = surface_detail.filtered_atlas(material, WINDOW_MASK_PARAMETER, in_cell_uv, cell_index, linear_data=True)
 
-    # Left on the DEFAULT (Color) sampler type on purpose, even though the mask is data rather than
-    # colour. The two lookups are byte-identical - ProcessMaterialColorTextureLookup and
-    # ProcessMaterialLinearColorTextureLookup both `return TextureValue` - so the only thing the type
-    # changes is which default texture the PARENT validates against, and the parent's default is the
-    # engine's sRGB grey checker. Declaring Linear Color here fails that check and breaks the whole
-    # material for the sake of no shader difference at all. What actually matters is on the texture:
-    # BakeCityAtlas.py imports these with srgb=False and nearest/no-mips, so G and B arrive as the
-    # exact bytes the painter wrote.
     has_window_mask = add_scalar_parameter(material, HAS_WINDOW_MASK_PARAMETER, 0.0, 3, 880)
 
     glow_threshold = add_scalar_parameter(
@@ -707,7 +697,7 @@ def create_city_atlas_material():
             "	// and B a per-row byte, both from connected-component labelling of the drawn shapes -\n"
             "	// so a window is whatever was painted and a row is one floor of that atlas cell. No\n"
             "	// dependence on the art's luminance at all, and exact edges.\n"
-            "	isWindow = step(0.5, Authored.r);\n"
+            "	isWindow = saturate(Authored.r);\n"
             "	// ONE TILE, ONE DRAW. floor(InCellUV) is which repeat of the atlas cell we are on\n"
             "	// across this wall, so every window the tile paints lights together - a lit flat, not\n"
             "	// a scatter of separate panes. The mask's per-window (G) and per-row (B) bytes are\n"
@@ -733,21 +723,26 @@ def create_city_atlas_material():
             "\n"
             "// Not every window is occupied. The building's own origin keeps two identical towers\n"
             "// from lighting identically.\n"
-            "float2 building = floor(BuildingOrigin.xy * 0.01);\n"
+            "float2 building = floor(BuildingOrigin.xy * 0.01 + 0.5);\n"
             "float buildingId = building.x + building.y * 71.0;\n"
             "\n"
-            "// Cheap hash: fract(sin(dot)*k) is coarse but this only has to look unpatterned, and\n"
-            "// the seed shifts the whole field so every night draws a different set.\n"
-            "float3 windowKey = float3(windowCell, buildingId) + Seed;\n"
-            "float windowRoll = frac(sin(dot(windowKey, float3(12.9898, 78.233, 37.719))) * 43758.5453);\n"
-            "\n"
-            "// A row is the same hash with the horizontal index dropped, so an entire floor of the\n"
-            "// same building shares one draw - offices left on for the night. windowCell.y is the\n"
-            "// tile row up the facade, so that is a band of tiles all the way across it.\n"
-            "float3 rowKey = float3(0.0, windowCell.y, buildingId) + Seed * 1.7;\n"
-            "float rowRoll = frac(sin(dot(rowKey, float3(39.3468, 11.135, 83.155))) * 24634.6345);\n"
-            "\n"
+            "// Integer hashes avoid sin precision changes across GPU optimizations.\n"
+            "struct StableWindowHash {\n"
+            "  float roll(int3 key, uint seed) {\n"
+            "    uint h = uint(key.x)*1597334677u ^ uint(key.y)*3812015801u ^ uint(key.z)*2798796415u ^ seed;\n"
+            "    h ^= h >> 16; h *= 2246822519u; h ^= h >> 13; h *= 3266489917u; h ^= h >> 16;\n"
+            "    return float(h & 0x00ffffffu) / 16777216.0;\n"
+            "  }\n"
+            "};\n"
+            "StableWindowHash hash;\n"
+            "uint nightlySeed = uint(Seed * 1024.0);\n"
+            "float windowRoll = hash.roll(int3(windowCell, buildingId), nightlySeed);\n"
+            "float rowRoll = hash.roll(int3(0, windowCell.y, buildingId), nightlySeed ^ 0x9e3779b9u);\n"
             "float lit = max(step(windowRoll, LitFraction), step(rowRoll, RowLitFraction));\n"
+            "// Once a screen pixel spans whole rooms, integrate occupancy instead of blinking.\n"
+            "float footprint = max(length(ddx(InCellUV)), length(ddy(InCellUV)));\n"
+            "float average = 1.0 - (1.0 - saturate(LitFraction)) * (1.0 - saturate(RowLitFraction));\n"
+            "lit = lerp(lit, average, smoothstep(0.25, 1.25, footprint));\n"
             "return isWindow * lit * saturate(Blend);"
         ),
         [
@@ -771,7 +766,7 @@ def create_city_atlas_material():
         (window_seed, "", "Seed"),
         (lit_fraction, "", "LitFraction"),
         (row_lit_fraction, "", "RowLitFraction"),
-        (window_mask_texture, "RGB", "Authored"),
+        (window_mask_texture, "", "Authored"),
         (has_window_mask, "", "HasAuthored"),
     ):
         if not unreal.MaterialEditingLibrary.connect_material_expressions(source, source_output, window_mask, pin):
@@ -798,7 +793,7 @@ def create_city_atlas_material():
             "// the time gate and the occupancy roll.\n"
             "if (HasAuthored > 0.5)\n"
             "{\n"
-            "	return step(0.5, Authored.r);\n"
+            "	return saturate(Authored.r);\n"
             "}\n"
             "\n"
             "// For an unpainted page: the night art darkens everything EXCEPT the lit windows, so\n"
@@ -821,7 +816,7 @@ def create_city_atlas_material():
         (night_texture, "RGB", "NightColor"),
         (glow_threshold, "", "Threshold"),
         (glow_contrast, "", "Contrast"),
-        (window_mask_texture, "RGB", "Authored"),
+        (window_mask_texture, "", "Authored"),
         (has_window_mask, "", "HasAuthored"),
     ):
         if not unreal.MaterialEditingLibrary.connect_material_expressions(

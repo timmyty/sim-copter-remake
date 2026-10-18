@@ -9,6 +9,9 @@
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/BoxComponent.h"
+#include "Components/VolumetricCloudComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "HAL/IConsoleManager.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Game/SimCopterCityIntro.h"
 #include "Game/SimCopterSettings.h"
@@ -178,6 +181,30 @@ bool FSimCopterCityIntroLightingTest::RunTest(const FString&)
 	TestTrue(TEXT("Tour finds a newly loaded sky before the normal rescan interval"),Day->GetDaySequenceActor()==Sky);
 	TestEqual(TEXT("Level transition cannot leak the lighting override into the next city"),Settings->GetTimeOfDayMode(),ESimCopterTimeOfDayMode::Dynamic);
 	TestTrue(TEXT("Queued save's original hour survives presentation cleanup"),FMath::IsNearlyEqual(Sky->GetTimeOfDay(),23.f,.01f));
+	// A fresh/low-power city can have clear skies and replace its animated material
+	// after the tour starts. The visible layer must retain preview-style cloud cover.
+	auto* Cloud=NewObject<UVolumetricCloudComponent>(Owner); Cloud->RegisterComponent();
+	auto* Parent=LoadObject<UMaterialInterface>(nullptr,TEXT("/CelestialVault/Materials/m_SimpleVolumetricCloud_TOD_Inst.m_SimpleVolumetricCloud_TOD_Inst"));
+	if (!TestNotNull(TEXT("Tour cloud material loads"),Parent)) return false;
+	auto* Clear=UMaterialInstanceDynamic::Create(Parent,Owner);
+	Clear->SetScalarParameterValue(TEXT("Cloud_GlobalCoverage"),.1f); Cloud->SetMaterial(Clear);
+	auto* CloudsEnabled=IConsoleManager::Get().FindConsoleVariable(TEXT("r.VolumetricCloud"));
+	const int32 BeforeClouds=CloudsEnabled->GetInt();
+	ON_SCOPE_EXIT { CloudsEnabled->Set(BeforeClouds,ECVF_SetByGameOverride); };
+	CloudsEnabled->Set(0,ECVF_SetByGameOverride); Tour->BeginTourClouds();
+	float Coverage=0; Tour->TourCloudMaterial->GetScalarParameterValue(FHashedMaterialParameterInfo(TEXT("Cloud_GlobalCoverage")),Coverage);
+	TestTrue(TEXT("Every tour receives visible cloud coverage"),Coverage>=.5f);
+	TestEqual(TEXT("Tour temporarily enables low-power clouds"),CloudsEnabled->GetInt(),1);
+	auto* Animated=UMaterialInstanceDynamic::Create(Parent,Owner);
+	Animated->SetScalarParameterValue(TEXT("Cloud_GlobalCoverage"),0); Cloud->SetMaterial(Animated);
+	CloudsEnabled->Set(0,ECVF_SetByGameOverride); Tour->ApplyTourClouds();
+	Animated->GetScalarParameterValue(FHashedMaterialParameterInfo(TEXT("Cloud_GlobalCoverage")),Coverage);
+	TestTrue(TEXT("Late day-sequence material replacement retains clouds"),Coverage>=.5f);
+	TestEqual(TEXT("Late graphics settings cannot hide tour clouds"),CloudsEnabled->GetInt(),1);
+	Tour->RestoreTourClouds();
+	Animated->GetScalarParameterValue(FHashedMaterialParameterInfo(TEXT("Cloud_GlobalCoverage")),Coverage);
+	TestTrue(TEXT("Tour restores prior cloud coverage"),FMath::IsNearlyEqual(Coverage,.1f));
+	TestEqual(TEXT("Tour restores low-power cloud setting"),CloudsEnabled->GetInt(),0);
 	return true;
 }
 #endif

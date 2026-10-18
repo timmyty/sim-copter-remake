@@ -85,7 +85,7 @@ bool FSimCopterCaptureCageTest::RunTest(const FString&)
 	const auto CrimeShare=[&] { const int32* Weights=Missions.GetCumulativeWeightTable(); return Weights[2]-Weights[1]; };
 	const int32 Before=CrimeShare();
 	Missions.SetCaptureCageOwned(true);
-	TestTrue(TEXT("Buying cage increases crime share substantially"),CrimeShare()>Before*2);
+	TestEqual(TEXT("Buying cage preserves the chosen crime share"),CrimeShare(),Before);
 	TestEqual(TEXT("Purchase preserves saved city weights"),Missions.GetCareerCity().Weights[1],10.0f);
 	const int32 After=CrimeShare();
 	Missions.SetCaptureCageOwned(true);
@@ -93,7 +93,7 @@ bool FSimCopterCaptureCageTest::RunTest(const FString&)
 	Missions.SetCaptureCageOwned(false);
 	TestEqual(TEXT("Selling restores original crime share"),CrimeShare(),Before);
 	City.Weights[1]=0; Missions.SetCareerCity(City); Missions.SetCaptureCageOwned(true);
-	TestTrue(TEXT("Early cities gain crime jobs after cage purchase"),CrimeShare()>0);
+	TestEqual(TEXT("Cage purchase does not enable disabled crime jobs"),CrimeShare(),0);
 	for (float& Weight:City.Weights) Weight=0;
 	Missions.SetCareerCity(City);
 	TestEqual(TEXT("Free roam/all-zero city remains quiet"),Missions.GetCumulativeWeightTable()[7],0);

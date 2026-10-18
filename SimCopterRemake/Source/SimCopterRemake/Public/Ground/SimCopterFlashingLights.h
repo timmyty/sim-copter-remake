@@ -174,8 +174,8 @@ public:
 	// Multiplies the card's world size. 1 is the size derived from the original's 4-pixel block.
 	UPROPERTY(EditAnywhere, Category = "SimCopter|Lights", meta = (ClampMin = "0.05"))
 	float CardSizeScale = 1.0f;
-	// PhaseStretch given to the police and fire stations' beacons: each colour holds 0.3 s.
-	static constexpr uint8 SlowBeaconPhaseStretch = 6;
+	// PhaseStretch given to the police and fire stations' beacons: each colour holds 0.6 s.
+	static constexpr uint8 SlowBeaconPhaseStretch = 12;
 
 	// Each lit marker also casts a real point light of its own colour. The original had no dynamic
 	// lighting at all - this is purely the remake making the beacons throw light on the geometry

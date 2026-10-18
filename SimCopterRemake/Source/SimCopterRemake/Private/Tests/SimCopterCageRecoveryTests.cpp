@@ -231,6 +231,9 @@ bool FSimCopterCageRecoveryTest::RunTest(const FString&)
 	// A normal-hover drop (up to DeliveryMaxDropCm) now counts; well above that does not.
 	PositionHull(Harbor->GetActorLocation()+FVector(0,0,1100));
 	TestFalse(TEXT("A hull too high above the harbor is rejected"),Ops->TryDeliverCargo());
+	Ops->OpenCargo();
+	TestTrue(TEXT("Rejected harbor drop retains boat for another attempt"),Ops->HasBoat() && Boat.bTowAttached && !Ops->bCageOpen);
+	TestTrue(TEXT("Rejected harbor drop explains how to deliver"),Ops->GetStatus().Contains(TEXT("Cargo retained")));
 	PositionHull(Harbor->GetActorLocation()+FVector(0,0,-150));
 	TestFalse(TEXT("A hull below the harbor deck is rejected"),Ops->TryDeliverCargo());
 	PositionHull(Harbor->GetActorLocation()+FVector(100,0,250));

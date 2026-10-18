@@ -93,6 +93,7 @@ bool FSimCopterCivicCityTest::RunTest(const FString&)
 	TArray<uint8> Heights; Heights.Init(0,128*128*2); Chunk("ALTM",Heights,true);
 	TArray<uint8> Grid; Grid.Init(0,128*128);
 	for(int32 Y=0;Y<128;++Y) for(int32 X=69;X<128;++X) Grid[Y*128+X]=0x30;
+	Grid[64*128+69]=0; // A pier saved over a flat land tile still needs water underneath.
 	Chunk("XTER",Grid); Grid.Init(0,128*128);
 	for(int32 Y=60;Y<63;++Y) for(int32 X=60;X<63;++X) Grid[Y*128+X]=208;
 	for(int32 Y=60;Y<62;++Y) for(int32 X=65;X<67;++X) Grid[Y*128+X]=235;
@@ -125,9 +126,13 @@ bool FSimCopterCivicCityTest::RunTest(const FString&)
 	}
 	TestEqual(TEXT("All eight finishes reach the GPU unchanged"),PackedFinishes.Num(),8);
 	TestEqual(TEXT("Both pier orientations build"),Piers.Num(),2);
+	// City grid is transposed into UE coordinates; sample the rendered pier's location below.
 	for (auto* Pier:Piers)
 	{
 		FTransform T; Pier->GetInstanceTransform(0,T);
+		float WaterZ=0; uint8 TerrainClass=255;
+		TestTrue(TEXT("Pier has a gameplay water surface"),City->TryGetWaterGameplaySurface(T.GetLocation(),WaterZ,TerrainClass));
+		TestEqual(TEXT("Water surrounds the narrow timber walkway"),TerrainClass,uint8(0));
 		// ALTM 0 maps to sample (0+1)*32, i.e. 200 cm, in the rendered height map.
 		TestTrue(TEXT("Actual pier deck sits 40 cm above rendered water"),FMath::IsNearlyEqual(float(T.GetLocation().Z)+206.25f,240.f,.1f));
 	}

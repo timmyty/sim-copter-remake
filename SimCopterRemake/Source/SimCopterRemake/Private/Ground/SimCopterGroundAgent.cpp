@@ -59,7 +59,7 @@ namespace
 constexpr uint32 GroundAgentRuntimeSaveMagic = 0x4147454e; // 'AGEN'
 // 5 adds the vehicle-knockdown phase. Without it a save taken mid-tumble restored a person with no
 // behaviour VM and a forced clip, i.e. a pedestrian frozen in the recoil pose forever.
-constexpr int32 GroundAgentRuntimeSaveVersion = 12;
+constexpr int32 GroundAgentRuntimeSaveVersion = 13;
 
 void SerializeAgentBool(FArchive& Archive, bool& Value)
 {
@@ -873,6 +873,9 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 
 void ASimCopterGroundAgent::ApplyBehaviorFacingRotation()
 {
+	// Formation steering owns the yaw for the entire routine. A changed VM octant
+	// used to bypass the cached-facing check and fight the formation every few ticks.
+	if (bBandFormationActive) return;
 	const int32 Facing = int32(BehaviorContext.Attributes[EBhavAttr::Facing]) & 7;
 	// The cached octant alone is not enough. Guidance walks, car dodges, curiosity visits,
 	// escorts and baseball all turn the actor directly, and when they hand control back the
@@ -5827,6 +5830,21 @@ void ASimCopterGroundAgent::Tick(float DeltaSeconds)
 		? FMath::Max(0.0f, ArsonFireGraceSeconds - FMath::Max(0.0f, DeltaSeconds)) : 0.0f;
 	if (AmbientCuriositySlot != INDEX_NONE && !IsEligibleForAmbientCuriosity()) StopAmbientCuriosity();
 	if (TickAirOperations(DeltaSeconds)) return;
+	if (DeliveredPatientCelebrationSeconds > 0 && !bMissionPatientDead && !BehaviorCarrier.IsValid() &&
+		!bMissionCarried && !bPassengerFallActive)
+	{
+		bBehaviorActive = false;
+		bBehaviorMoveSuspended = false;
+		bMissionStationary = true;
+		CurrentVelocityCmPerSec = FVector::ZeroVector;
+		SetActorHiddenInGame(false);
+		ClearMoveTarget();
+		SetForcedPedestrianFigureClip(DeliveredPatientCelebrationSeconds > 4 ? TEXT("Whoa") : TEXT("WvNo"));
+		DeliveredPatientCelebrationSeconds = FMath::Max(0.0f, DeliveredPatientCelebrationSeconds - DeltaSeconds);
+		UpdateJankyAnimation(DeltaSeconds);
+		if (DeliveredPatientCelebrationSeconds <= 0) Destroy();
+		return;
+	}
 	if (AgentKind == ESimCopterGroundAgentKind::Pedestrian && !bMissionCarried && !bBehaviorMoveSuspended &&
 		!bPassengerFallActive && !bMissionPatientDead && !IsMedevacVictim() && ArsonFireGraceSeconds <= 0.0f &&
 		BehaviorContext.Attributes[EBhavAttr::WrittenOff] == 0)
@@ -6153,6 +6171,7 @@ bool ASimCopterGroundAgent::CaptureRuntimeSaveState(TArray<uint8>& OutData)
 	SerializeAgentBool(Writer,bTaserResumeBehavior);
 	SerializeAgentBool(Writer,bTaserResumeStationary);
 	Writer << MegaphoneStopSeconds;
+	Writer << DeliveredPatientCelebrationSeconds;
 	return !Writer.IsError();
 }
 
@@ -6369,6 +6388,16 @@ bool ASimCopterGroundAgent::RestoreRuntimeSaveState(const TArray<uint8>& Data)
 	{
 		Reader << MegaphoneStopSeconds;
 		if (!FMath::IsFinite(MegaphoneStopSeconds) || MegaphoneStopSeconds<0 || MegaphoneStopSeconds>16) return false;
+	}
+	DeliveredPatientCelebrationSeconds = 0;
+	if (Version >= 13)
+	{
+		Reader << DeliveredPatientCelebrationSeconds;
+		if (!FMath::IsFinite(DeliveredPatientCelebrationSeconds) || DeliveredPatientCelebrationSeconds < 0 || DeliveredPatientCelebrationSeconds > 6) return false;
+	}
+	else if (bMissionResolutionReported && !bMissionPatientDead && InitialPersonState == 6)
+	{
+		ResumeDeliveredPatientBehavior();
 	}
 	ApplyVehicleTipVisual();
 	if (Reader.IsError() || Reader.Tell() != Reader.TotalSize()) return false;
@@ -7108,6 +7137,21 @@ bool ASimCopterGroundAgent::IsNearMoveTarget(float DistanceCm) const
 	return FVector(Delta.X, Delta.Y, 0.0f).SizeSquared() <= FMath::Square(DistanceCm);
 }
 
+bool ASimCopterGroundAgent::TryGetActiveMoveTarget(FVector& OutTarget) const
+{
+	if (!bHasMoveTarget && !IsGuidanceMoveTargetActive() && !IsAvoidanceMoveActive()) return false;
+	const FVector Offset = IsAvoidancePathOffsetActive() ? AvoidancePathOffset : FVector::ZeroVector;
+	OutTarget = IsAvoidanceMoveActive() ? AvoidanceMoveTargetLocation :
+		(IsGuidanceMoveTargetActive() ? GuidanceMoveTargetLocation : MoveTargetLocation) + Offset;
+	// UpdateMovement hands back to the road target on reaching a guidance point.
+	if (IsGuidanceMoveTargetActive() && FVector::DistSquared2D(OutTarget, GetActorLocation()) <= FMath::Square(TargetStopDistanceCm))
+	{
+		if (!bHasMoveTarget && !IsAvoidanceMoveActive()) return false;
+		OutTarget = MoveTargetLocation + Offset;
+	}
+	return true;
+}
+
 float ASimCopterGroundAgent::GetCollisionRadiusCm() const
 {
 	return CollisionComponent != nullptr ? CollisionComponent->GetScaledCapsuleRadius() : 0.0f;
@@ -7570,20 +7614,10 @@ void ASimCopterGroundAgent::SetMissionRetiredAlivePose()
 
 void ASimCopterGroundAgent::ResumeDeliveredPatientBehavior()
 {
-	if (!bMissionResolutionReported || bMissionPatientDead || BehaviorCarrier.IsValid() ||
-		!BehaviorModel.IsValid() || !BehaviorModel->FindProgram(282)) return;
-	ClearMissionPose();
-	bMissionStationary = true;
-	bBehaviorActive = true;
-	bBehaviorMoveSuspended = false;
-	InitialBehaviorProgramId = INDEX_NONE;
-	BehaviorContext.Stack.Reset();
-	// Shipped BHAV 282 rec[1] has already been fulfilled by the idempotent delivery
-	// service. Resume at rec[6]: wait for release, choose Whoa + voice 6/59, Idle-20,
-	// then retire/despawn. Never substitute a forced pose or an invented dance timer.
-	BehaviorContext.Stack.Add({282, 6, {}});
-	BehaviorContext.bRequestDespawn = false;
-	BehaviorTickAccumulator = 0;
+	if (!bMissionResolutionReported || bMissionPatientDead || DeliveredPatientCelebrationSeconds > 0) return;
+	// Requested post-rescue farewell. Whoa is the original acknowledgement; WvNo
+	// is the greeting wave (Wave is the distressed flailing clip).
+	DeliveredPatientCelebrationSeconds = 6.0f;
 }
 
 void ASimCopterGroundAgent::SetMissionFinishedPose(const TCHAR* ClipMnemonic, const bool bDeceased)
@@ -8184,11 +8218,12 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 			}
 			if (!Step.IsNearlyZero())
 			{
-				MoveAgainstCityGeometry(Step, Step.Rotation().Quaternion());
+				const FRotator Facing = FMath::RInterpConstantTo(GetActorRotation(), Step.Rotation(), DeltaSeconds, 90.0f);
+				MoveAgainstCityGeometry(Step, Facing.Quaternion());
 				CurrentVelocityCmPerSec = Step / FMath::Max(DeltaSeconds, UE_SMALL_NUMBER);
 			}
 		}
-		else SetActorRotation(FRotator(0, BandFormationYaw, 0));
+		else SetActorRotation(FMath::RInterpConstantTo(GetActorRotation(), FRotator(0, BandFormationYaw, 0), DeltaSeconds, 90.0f));
 		return;
 	}
 	// Behavior-VM pedestrians move with the original per-tick model: a constant velocity
@@ -8261,7 +8296,12 @@ void ASimCopterGroundAgent::UpdateMovement(float DeltaSeconds)
 		FlatToTarget = FVector(ToTarget.X, ToTarget.Y, 0.0f);
 		DistanceToTarget = FlatToTarget.Size();
 	}
-	if (DistanceToTarget <= TargetStopDistanceCm)
+	// Responder paths use 75 cm cells and discard waypoints within 12 cm. The
+	// generic 75 cm stopping radius could stop a medic before reaching the very
+	// first waypoint, so the route never advanced around a building.
+	const float StopDistance = AgentKind == ESimCopterGroundAgentKind::Pedestrian &&
+		!bUsingAvoidanceTarget && !MedicPath.IsEmpty() ? 8.0f : TargetStopDistanceCm;
+	if (DistanceToTarget <= StopDistance)
 	{
 		if (bUsingAvoidanceTarget)
 		{

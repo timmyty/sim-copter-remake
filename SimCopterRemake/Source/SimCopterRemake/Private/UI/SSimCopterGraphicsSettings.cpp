@@ -975,6 +975,13 @@ void SSimCopterGraphicsSettings::PopulateRows(const TSharedRef<SVerticalBox>& Ro
 	// ---------------------------------------------------------------------------------------
 
 	ActiveRows = GameplayRows;
+	FRowBinding EmergencyArtwork;
+	EmergencyArtwork.GetCount = [] { return 2; };
+	EmergencyArtwork.GetOptionLabel = [](int32 Index) { return FText::FromString(Index ? TEXT("Updated") : TEXT("Previous remake")); };
+	EmergencyArtwork.GetIndex = [this] { const auto* Settings = GetSettings(this); return !Settings || Settings->UsesUpdatedEmergencyArtwork() ? 1 : 0; };
+	EmergencyArtwork.SetIndex = [this](int32 Index) { if (auto* Settings = GetSettings(this)) Settings->SetUpdatedEmergencyArtwork(Index != 0); };
+	AddRow(BuildDropdownRow(LOCTEXT("EmergencyArtwork", "Emergency Buildings"), EmergencyArtwork));
+	AddRow(BuildNote(LOCTEXT("EmergencyArtworkNote", "Choose hospital, police and fire-station artwork. Applies the next time you load a city.")));
 	AddRow(BuildHeading(LOCTEXT("HeadingWorld", "World")));
 
 	{
@@ -1431,6 +1438,7 @@ void SSimCopterGraphicsSettings::CaptureEnteredState()
 		Entered.NightRealMinutes = Settings->GetNightRealMinutes();
 		Entered.HudScale = Settings->GetHudScale();
 		Entered.bCockpitDecorationsVisible = Settings->AreCockpitDecorationsVisible();
+		Entered.bUpdatedEmergencyArtwork = Settings->UsesUpdatedEmergencyArtwork();
 		Entered.bMissionMarkersOnScreen = Settings->IsMissionMarkersOnScreenEnabled();
 		Entered.bMuffleOutsideSounds = Settings->IsMuffleOutsideSoundsEnabled();
 		Entered.OnFootFov = Settings->GetOnFootFov();
@@ -1487,6 +1495,7 @@ void SSimCopterGraphicsSettings::RestoreEnteredState()
 		Settings->SetNightRealMinutes(Entered.NightRealMinutes);
 		Settings->SetHudScale(Entered.HudScale);
 		Settings->SetCockpitDecorationsVisible(Entered.bCockpitDecorationsVisible);
+		Settings->SetUpdatedEmergencyArtwork(Entered.bUpdatedEmergencyArtwork);
 		Settings->SetMissionMarkersOnScreenEnabled(Entered.bMissionMarkersOnScreen);
 		Settings->SetMuffleOutsideSoundsEnabled(Entered.bMuffleOutsideSounds);
 		Settings->SetOnFootFov(Entered.OnFootFov);

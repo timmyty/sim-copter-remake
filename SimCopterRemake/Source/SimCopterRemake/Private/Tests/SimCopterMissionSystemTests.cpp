@@ -3062,3 +3062,56 @@ bool FSimCopterMedevacRecordLayoutTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("The patient tile is kept"), Loaded->TileX, 30);
 	return true;
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterUserCityThreeEventLimitTest,
+    "SimCopter.Missions.UserCityThreeEventLimit", EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FSimCopterUserCityThreeEventLimitTest::RunTest(const FString&)
+{
+    struct FUserWorld : FSimCopterTestMissionWorld
+    {
+        bool bUserCity=true;
+        virtual bool UsesCitywideMissionPlacement() const override { return bUserCity; }
+    } World;
+    for(int32 Tier=0;Tier<4;++Tier)
+    {
+        FSimCopterMissionSystem System;System.Initialize(&World,47);
+        FSimCopterCareerCity City;City.Difficulty=Tier;System.SetCareerCity(City);System.SetMissionFrequency(4);
+        System.CreateEventAt(64,64,TYPE_BaseLocation);
+        int32 First=INDEX_NONE;
+        for(int32 I=0;I<3;++I)
+        {
+            const int32 Id=System.CreateExistingVictimMedevacAt(30+I,31,false);
+            TestTrue(TEXT("Three real events fit alongside base marker"),Id!=INDEX_NONE);
+            if(I==0)First=Id;
+        }
+        const auto Refused=[&](FSimCopterMissionSystem& S)
+        {
+            TestEqual(TEXT("Fourth direct incident refused"),S.CreateEventAt(50,50,TYPE_Robber),INDEX_NONE);
+            TestEqual(TEXT("Secondary medical incident obeys ceiling"),S.CreateExistingVictimMedevacAt(51,51,false),INDEX_NONE);
+            TestFalse(TEXT("Immediate scheduled roll obeys ceiling"),S.RollScheduledMissionNow());
+            TArray<uint8> Before;FMemoryWriter BeforeWriter(Before);S.SerializeRuntimeState(BeforeWriter);
+            for(int32 I=0;I<1200;++I)S.RunSchedulerOnce();
+            TArray<uint8> After;FMemoryWriter AfterWriter(After);S.SerializeRuntimeState(AfterWriter);
+            TestTrue(TEXT("Full roster pauses scheduler state without countdown overflow"),Before==After);
+            TestEqual(TEXT("Late-stage fast scheduler stays at three"),S.GetOngoingEventCount(),3);
+        };
+        Refused(System);
+        TArray<uint8> Bytes;FMemoryWriter Writer(Bytes);System.SerializeRuntimeState(Writer);
+        FSimCopterMissionSystem Restored;Restored.Initialize(&World,99);FMemoryReader Reader(Bytes);Restored.SerializeRuntimeState(Reader);
+        Refused(Restored);
+        System.PostEvent(EVT_SetCategory,First,CAT_ExpireSilently);System.Tick(0.01f);
+        TestEqual(TEXT("Completing an event frees one slot"),System.GetOngoingEventCount(),2);
+        TestTrue(TEXT("Replacement can start"),System.CreateExistingVictimMedevacAt(53,53,false)!=INDEX_NONE);
+        TestEqual(TEXT("Replacement returns to three"),System.GetOngoingEventCount(),3);
+    }
+    World.bUserCity=false;
+    FSimCopterMissionSystem Career;Career.Initialize(&World,47);
+    for(int32 I=0;I<4;++I)TestTrue(TEXT("Career retains its existing concurrency"),Career.CreateExistingVictimMedevacAt(30+I,31,false)!=INDEX_NONE);
+    TArray<uint8> OldSave;FMemoryWriter OldWriter(OldSave);Career.SerializeRuntimeState(OldWriter);
+    World.bUserCity=true;
+    FSimCopterMissionSystem OverCapacity;OverCapacity.Initialize(&World,47);FMemoryReader OldReader(OldSave);OverCapacity.SerializeRuntimeState(OldReader);
+    TestEqual(TEXT("Existing over-cap save retains its passengers"),OverCapacity.GetOngoingEventCount(),4);
+    TestFalse(TEXT("Over-cap save receives no new scheduled job"),OverCapacity.RollScheduledMissionNow());
+    TestEqual(TEXT("Over-cap save receives no new incident"),OverCapacity.CreateIncidentMedevacAt(40,41),INDEX_NONE);
+    return true;
+}

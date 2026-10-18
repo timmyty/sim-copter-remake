@@ -1,0 +1,1343 @@
+{
+  "completed_at_utc": "2026-10-18T06:22:58.403067+00:00",
+  "request": "October 18 batch of 24 gameplay, city-settings and visual reports",
+  "description": "Docs/PlaytestFixesOctober18.md",
+  "publication_modified": false,
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\playtest-2026-10-18\\build-editor-final.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\playtest-2026-10-18\\build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs\\scratchpad\\playtest-2026-10-18\\build-development.log"
+    }
+  },
+  "automation": {
+    "distinct_cases": 192,
+    "passed": 192,
+    "failed": 0,
+    "tests": [
+      {
+        "name": "SimCopter.CaptureCage.ControlsMountsAndMissionWeights",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.CaptureCage.VehicleBoatRecoveryAndWaypoints",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.CEOFreeDeliveryAndLifetime",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.CityEffects",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.DialogEscape",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.DriveInCommands",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.FuelShieldsAndTurbo",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.GortOriginalAssets",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.GortPlayback",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.GortRender",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.GortReturnToGame",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.GortTimeline",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.MoneySuccessRate",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.NuclearPreservesServices",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.OriginalDialogArt",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.OriginalDogAssets",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.OriginalParser",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Cheats.PauseMenuGuide",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.CustomCities.InitialScan.arcocity",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.CustomCities.InitialScan.la-isla",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.CustomCities.InitialScan.lakeland",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.CustomCities.HelpAndCursor",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.CustomCities.PhotoModeLifecycle",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.CustomCities.ProgressionAndSeatLimits",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.AmbientAvailability",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.ArrivalAction",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.EmergencyCrewStates",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.Failures",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.HospitalParamedicRespawn",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.HospitalRoofPost",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.MedevacHandoffGates",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.PoliceRoofBoarding",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.Selection",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.Spiral",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.StationScan",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.TargetSnap",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Dispatch.TileRules",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.AltitudeCeiling",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.BaseTravelSpeed",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.CanExitHelicopter",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.CollectiveDrivesEngine",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.CoordinatedTurn",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.DamagedLanding",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.DryRotorSpoolsDown",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.EasyModel",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.EngineHoldArbitration",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.FixedMath",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.FrameRateIndependence",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.LandingRules",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.ObjectCollisionDamage",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.PassengerTransferClearance",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.PitchDrivesSpeed",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.RotorSpoolDown",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.RotorSpoolGate",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.TakeoffPrompt",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.TakeoffRepeat",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.TravelBoostAndTurbo",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.TurbulenceAndDamage",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Flight.TurbulenceFrameRate",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Missions.ArsonistRenderedBuildingTarget",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.BaseLocationRecord",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.BuildingFireDifficulty",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.BurglarCarStaysOpen",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.CrimeIdentityAndSpawn",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.CrimeNagDistanceAndOnFoot",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.CrimePlacementNeedsBuilding",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.CrimeRewardsPenaltiesAndVoices",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.CustodyStopsCrimePenalties",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.DispatchLocationVoice",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.FireAnnouncementBurst",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.FireDouse",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.FireDouseAcrossFootprint",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.FireLifecycle",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.HospitalSites",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.IncrementalUpdateTextAndPenalties",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MapFocusRules",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MarkerCoordinates",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MarkerLabelFits",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MarkerOverlap",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MarkerUiAvoidance",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MedevacAnnouncementBurst",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MedevacAnnouncementCadence",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MedevacCasualtyHasNoDeliveryReward",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MedevacRecordLayout",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.MessageLogVisibility",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.OriginalMissionAvailability",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.OriginalPickupMessage",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.ParamedicAlightsOnHelipad",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.ParamedicCabinHandoff",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.PassengersAboardNeverFailMission",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.PlaneDeckRescue",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.PostAnnouncementVoice",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.PRNGParity",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.RecoveryDoesNotDisplaceOriginalJobs",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.RiotCountsRewardsAndPenaltyErosion",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.RiotViability",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.RooftopRescueCountsPhasesRewardsAndVoices",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.RuntimeSaveRoundTrip",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.SafePassengerLanding",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.SaveFocusAndTransportLayout",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.SchedulerParity",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.ServiceFireSuppressionUsesFlameOffset",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.SessionStart",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.TrafficCreationAlert",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.TrafficJamCarClearCompletes",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.TransportPassengerSpawnOutsideBuildings",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.TransportSchedulerTimer",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.TypeDisplayNames",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.UserCityDefaultSettings",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.WeightTableParity",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.XbldPropertyTable",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Missions.ZeroWeightCityNeverSpawns",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.NpcMedical.BandClusterAndSpacing",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.NpcMedical.BandObstacleRoutes",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.NpcMedical.IncidentsCrewAndCabin",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PilotRespawn.Airborne",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PilotRespawn.AutopilotOff",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PilotRespawn.Destroyed",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PilotRespawn.ExpiredWithoutController",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PilotRespawn.Grounded",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PilotRespawn.Nonfatal",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PilotRespawn.SavedFatalFall",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PoliceRecovery.DeployedOfficerRetrievesTasedSuspect",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.PoliceRecovery.NearestStationMapRoute",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log"
+      },
+      {
+        "name": "SimCopter.ServicePosts.ActualHospitalGeometry",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.ServicePosts.BuildingNightLightingCoverage",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.ServicePosts.SpacingEntrancesAndImpact",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Civic.CityIntegration",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Civic.GeometryAndPierHeight",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.BandFacing",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.CityOptionsAndCash",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.CollisionSweep",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.HangarRecovery",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.PatientFarewell",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.ReverseTaxi",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.TurboDescent",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Polish.AutomaticBodyRecovery",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.AirOperations.HelperCruisePacing",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.AirOperations.RecoveryCustodyControlsAndPersistence",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.AirOperations.TaserVisuals",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.CityIntro.RouteAndControlRestoration",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Hangar.CatalogControllerSelection",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Hangar.DismountMenuInput",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Hangar.EquipmentInteraction",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Hangar.EquipmentPreview",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.DeployedMedicRiot",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.DroppedMedics",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.MedicDeploymentPriorities",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.MedicReboardingDelay",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.MovingTargetRepathBudget",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.PatientMarkers",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.SlicedSearchPreservesRoutes",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.MedicalNavigation.SteepHillReturn",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.PlaytestOctober.Menus",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log"
+      },
+      {
+        "name": "SimCopter.Settings.CitySettings",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.CityIntro.LightingRestoration",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Scenery.SkyDiscs",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.AntiAliasingMethod",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.ControlBindings",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.DisplayResolution",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.GraphicsPersistence",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.HorizontalSlider",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.LowPowerMode",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.MenuItems",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.MenuLayout",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.OverallQualityLabels",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.RealTimeOfDay",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.SoundSettings",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.SoundVolumePersistence",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Settings.TimeOfDay",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.AircraftTurnHeading",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.BurglarRecovery",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.BurglarSpawn",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.BurglarSpeed",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Following",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.HevenHangarRoutes",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.HevenParkedPlaneRoutes",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.HevenTrafficCirculation",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Intersection",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.KeithlyBurglarRoute",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Recovery",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Routing",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.TurnArrival",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log"
+      },
+      {
+        "name": "SimCopter.GameplayOptions.Integration",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.SaveGame.ArchiveRoundTrip",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.SaveGame.ExternalFiles",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.SaveGame.FleetEquipmentRepair",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.SaveGame.Names",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.SaveGame.QuickSavePersistence",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      },
+      {
+        "name": "SimCopter.SaveGame.RestoreState",
+        "result": "Success",
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log"
+      }
+    ],
+    "runs": [
+      {
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-first.log",
+        "passed": 123,
+        "failed": 5,
+        "completed": false
+      },
+      {
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-second.log",
+        "passed": 32,
+        "failed": 2,
+        "completed": false
+      },
+      {
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-third.log",
+        "passed": 53,
+        "failed": 2,
+        "completed": false
+      },
+      {
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-gpu.log",
+        "passed": 68,
+        "failed": 0,
+        "completed": true
+      },
+      {
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-final.log",
+        "passed": 100,
+        "failed": 0,
+        "completed": true
+      },
+      {
+        "log": "Docs\\scratchpad\\playtest-2026-10-18\\tests-persistence.log",
+        "passed": 13,
+        "failed": 0,
+        "completed": true
+      }
+    ]
+  },
+  "installation": {
+    "installed_at_utc": "2026-10-18T06:21:32.617643+00:00",
+    "installed": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows",
+    "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup",
+    "files": [
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "previous_sha256": "c21f669831968fdd80cad16fce75e325c80cd52abb5b50c8e3b0cb206ed344c9",
+        "sha256": "7ec863c163ad722e41157d7274c0e94e835838134c49ca7225028a5a5831050e"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "previous_sha256": "d1558211c2712209b70dcf0760bd88e15e5464b8b6999c2886fb304d942624a5",
+        "sha256": "b91bc8593268bcc4f145d220f3d3443ebf93fe345a85dfd254d8e42dea250cf7"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "previous_sha256": "e73454c49acc62f9e6dcd8c9181f73d642a71bf2142b2383eaf3b86671c17374",
+        "sha256": "5a351d28f818be4a10eb95fa4230a11c7b8f38c3de79301e8c8693f0c90d8cc3"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\Package\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "previous_sha256": "67e0ba6e7ec648ba3f79562f0497079bc44106f42edcf0105c235c0de61da45e",
+        "sha256": "68efe3a083c365214af630d9a77e4ba3dfe0d18c790c7d9f940aa708c093dc51"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "previous_sha256": "d1bbca361880688dd7b33f530aca2595e59459adee34218c57eefae81d17b62e",
+        "sha256": "739fc9aa6423832634f293036b1f5b448245652378d6b0850864bd081ad7f79f"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\Package\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup\\Manifest_NonUFSFiles_Win64.txt",
+        "relative": "Manifest_NonUFSFiles_Win64.txt",
+        "previous_sha256": "42cb0b0411b6dcf87211af7fcda3b326627f94f9344da3485a2e85ed3effcc6c",
+        "sha256": "8e13f216b306e176011fe76a2b58dbe4c491fd0a1d67d44ac1381c511d05ae2b"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\Package\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\installed-backup\\Manifest_UFSFiles_Win64.txt",
+        "relative": "Manifest_UFSFiles_Win64.txt",
+        "previous_sha256": "ed7145168ccb3172c0dbcf9ebc62c94a8da910fce776d3d597926398739cccb7",
+        "sha256": "236df581b09d60139cd459182e03ffbf80999b5b3bc193cb939016c6a4a7dc20"
+      }
+    ],
+    "protected_files_verified": 205,
+    "packaged_manifest_files": 891,
+    "tests_passed": 192,
+    "interactive_playtest": false
+  },
+  "startups": [
+    {
+      "Mode": "shipping",
+      "Survived": true,
+      "Seconds": 30.4211767,
+      "PID": 5776,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\smoke-shipping",
+      "InteractiveGameplayChecked": false
+    },
+    {
+      "Mode": "development",
+      "Survived": true,
+      "Seconds": 30.6621987,
+      "PID": 31084,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\playtest-2026-10-18\\smoke-development",
+      "InteractiveGameplayChecked": false
+    }
+  ],
+  "source_files": [
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\City\\SimCity2000CityActor.cpp",
+      "sha256": "ba22822ca4ca93e4e2ed5f139aae6d6a10ad80b470a5a670018b261babbb39d5"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\City\\SimCopterHangar.cpp",
+      "sha256": "fa03ae48e956422b18edbad346aec872ff6fea42553db00701b5bc460bdb38a5"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\City\\SimCopterMoonDisc.cpp",
+      "sha256": "7f6c2115d243ebdb873c604f248de1901a57e71eda50ddd83c0f38692d0d5dd8"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Flight\\SimCopterAirOperations.cpp",
+      "sha256": "c21bd3c406415d5b79ff54bcfa84d3a250f49edc0459d93d432a60325cb73f84"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Flight\\SimCopterFlightModel.cpp",
+      "sha256": "9c39b22c4ac1c0bccf1e66878629454c97266cf8b04c1beff1f5bca23ef93c1b"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Flight\\SimCopterHelicopterPawn.cpp",
+      "sha256": "992ffeaa9b3a478dfb8772ab68b3db49d964ce85711da6a11449b9593ddcd7c3"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Flight\\SimCopterPlane.cpp",
+      "sha256": "967c49ef82db862cf178345327b7d8d529552212c5a7777e868cc405d0a4b51c"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Game\\SimCopterCheats.cpp",
+      "sha256": "3e2bc3e7864f4270a7018cac6095002d03f17849f3fb644809789a8556a5be1d"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Game\\SimCopterCityIntro.cpp",
+      "sha256": "0c9eb9fcc03d1752a9417c5e08dc538a29076bbf6abf3d8fc5599f4cb207e2cb"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Game\\SimCopterPlayerCheats.cpp",
+      "sha256": "f7475b03d6c2f7f9968023156c87c237b0d19120487bb8ade8eee38382a54da1"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Game\\SimCopterPlayerController.cpp",
+      "sha256": "7bac65486535381c8e23f0453bdaaa9ecf7387340e9518bb25bbd446db93fe98"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Game\\SimCopterSaveSubsystem.cpp",
+      "sha256": "4c71cbf77e0a0a8f006ef55c50407b87285fa8b1f9402c0627702332a7815cde"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Game\\SimCopterSessionSubsystem.cpp",
+      "sha256": "78d4799182607b07d7b569aca95216e674596864da208f0acf6036477183d844"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Ground\\SimCopterGroundAgent.cpp",
+      "sha256": "2b77be958a4af84ab8d3f0fc6813c887965c20ae1889857003db69ad3da86851"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Ground\\SimCopterServicePosts.cpp",
+      "sha256": "c2ddf9e56963ca575a817d0855eef3ad18e299ae34feed5813976c034da90345"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Ground\\SimCopterTrafficSystemActor.cpp",
+      "sha256": "8ffaf81a112897fc53b5ab6c9a7602a57e910c41af5f73cb807ecd95427f5452"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Missions\\SimCopterCustomCityProgression.cpp",
+      "sha256": "246479767fcd78112279e4a2df06d74280b8be585134b01cdb5bad177d2a976c"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Missions\\SimCopterMissionSystem.cpp",
+      "sha256": "048f43ba8b2e26c0478f4d6fa9f42c8a053f471a50038ec608a232ec5fed47bb"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Missions\\SimCopterMissionSystemActor.cpp",
+      "sha256": "7726a5de1cbb855886e5cb3909346e650545480962abbfcc318cf58ac575b731"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterAirOperationsTests.cpp",
+      "sha256": "0ca39c60525d96d743d3ec093b5dcab969df72de24dbf08ab5f332be0cc17b4b"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterCageRecoveryTests.cpp",
+      "sha256": "a0b8e107999a3b7ae1b451b8f2a68d5b3b70db83d7f78e17aea32ed884a36825"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterCaptureCageTests.cpp",
+      "sha256": "dc2dbf854fc5f23c49e5ec1a4e09f136134a0283bea68b53f1abd3c801c93102"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterCheatTests.cpp",
+      "sha256": "3082bc83236f53e2575573e65c8fac671424270e462ef44d8e98da4a3c00ce4a"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterCivicLandmarkTests.cpp",
+      "sha256": "3ea10b7bd495cf5f56d086fcfa9b8a8e05d50ae23c4fcb102f59ee29e69e9f8b"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterCustomCityProgressionTests.cpp",
+      "sha256": "9c55b61438662347fa82dc1d5187e5f3685cb9026eb61ce1502a2db73bdb5114"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterGameplayPolishTests.cpp",
+      "sha256": "1c08d1eabbf7fbb236f7b4322a1903e07deafffe4771ce9f824bc3dc5271975a"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterLoadingPresentationTests.cpp",
+      "sha256": "fe207ad29b075b4f0884bdfb7a80e13654052cc86e869fa65c9bebd86adfbd68"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterPlaytestMenuTests.cpp",
+      "sha256": "65d2a20cbfa204b38e89cf939d28470ec2934588ab0d2fd7ddd889a22ce4dad4"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterPlaytestRegressionTests.cpp",
+      "sha256": "d07170df82c4c43dd45ffc2c27bb47fa6a11554ba2284011d07f0e6652889ec3"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterSceneryTests.cpp",
+      "sha256": "ea9789f91522ce11adbc6dbf3155e6293c3dae4980883f749054875ad06fa627"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterVehicleTaserTests.cpp",
+      "sha256": "a074d2dddeb51ec9ddb7040eddbb6d177e2ca271e28e4cf6dcfa17d5071328ba"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\UI\\SSimCopterCheatGuide.cpp",
+      "sha256": "8cd109d357071422e404b8893e64aabd05ff240e3ad382b200c3663714f4c399"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\UI\\SSimCopterCitySettings.cpp",
+      "sha256": "6984bef49b5426eee804cc8ed167192164e3971344db6d381b471b3d249757ac"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\UI\\SSimCopterCitySettings.h",
+      "sha256": "a2d66acc839e306787c55298587620764f79629c23673608255cf6c8ea829e86"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\UI\\SSimCopterHangarMenu.cpp",
+      "sha256": "99ac89fdd01fd6dfab8fecb6727d812953a0227e538c135858fa26264436e76c"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\UI\\SSimCopterHangarMenu.h",
+      "sha256": "c178cdb35a8f6dbc53886d4a0f5975f2c29e9cbddb99b3b49a527e8d3abf7eca"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Flight\\SimCopterHelicopterPawn.h",
+      "sha256": "328dc3c247e097ce79ca2f5a900aca73a716fdcffd04484eaf56e6241a5a785e"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Game\\SimCopterCheats.h",
+      "sha256": "84013357d0571e6a090e944330537c9a509d9107fefb866a9f5519a09b4e3fa5"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Game\\SimCopterCityIntro.h",
+      "sha256": "5256ee4f669baaa0ab48b098601b3b233673e90b33f04583f2d22afb1d5a784e"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Ground\\SimCopterFlashingLights.h",
+      "sha256": "a64cdc2c2911e96c7c9b7bf888ce4087ad6642ac39f41457f38f2a53ccec3c8d"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Ground\\SimCopterGroundAgent.h",
+      "sha256": "7e75d73933b61f05f8239aada98cdc1a515074fe226f519f9f86df5b7966085a"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Missions\\SimCopterMissionSystem.h",
+      "sha256": "d11a256d928e00736e18f92e5ddab40011a09aa4bd5342e42608f68f49a49366"
+    },
+    {
+      "path": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Missions\\SimCopterMissionSystemActor.h",
+      "sha256": "290e0896f25fe544fbf41bcf1f3c99bc7fb8d3a3657161f2ba8abb4253607dff"
+    }
+  ],
+  "material_assets_and_generators": [
+    {
+      "path": "SimCopterRemake\\Content\\Materials\\M_SimCopterCitySurface.uasset",
+      "sha256": "e1db2a2a099b38fa81a7085785a1c36d098cfc8502493bbe9eac0a4f927d5c6a"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\T_CityWindowPage_2.uasset",
+      "sha256": "818089a012771aafa6b3547a8e04114afae94d47ba36e1cff712ba8cf5843032"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\T_CityWindowPage_39.uasset",
+      "sha256": "1901e7db92860553225c91e6186257dab15ffabbfcf2701f78a3329cb42b9269"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\T_CityWindowPage_40.uasset",
+      "sha256": "3debb7b827df82211b95d0bea4910578773e6db7054cf5d35742f5180f677a6a"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\MI_CityPage_13.uasset",
+      "sha256": "a4c832e7922b049895840f000499d18056375a018cd1e7a248f51cf02d4788aa"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\MI_CityPage_2.uasset",
+      "sha256": "5f6e034614024c29448efd654a4787e499a4217d9a19e60e81898853961b80a0"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\MI_CityPage_20.uasset",
+      "sha256": "0c8035e834a25d8d55521043235034808f720252af264043aeea9a3afb760d34"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\MI_CityPage_39.uasset",
+      "sha256": "9f04d9a4e5e5f540429498a1853da5769e081d4ec8bd8fa0b1e616fdf44af41b"
+    },
+    {
+      "path": "SimCopterRemake\\Content\\Generated\\CityAtlas\\MI_CityPage_40.uasset",
+      "sha256": "474df2ea4681fa5c0c6367ceec70b5449fe39b62e6baabc46423167460f3f72c"
+    },
+    {
+      "path": "Tools\\Unreal\\CreateSimCopterMaterials.py",
+      "sha256": "dab1600c45bf62785d939a9fed45537bb6588a67f52b838f59ccb4d1cada7eea"
+    },
+    {
+      "path": "Tools\\Unreal\\CitySurfaceDetail.py",
+      "sha256": "11aab04a4bb9ff4591b049675b9e33d1cb7ed618ff8d3e2ef09f3391ed694c42"
+    },
+    {
+      "path": "Tools\\Unreal\\BakeCityAtlas.py",
+      "sha256": "25bed17e2f8aa77dccc44f375713ed53cac1ee57ebf5d9bc3937706368d1be07"
+    },
+    {
+      "path": "Tools\\Unreal\\UpgradeWindowFiltering.py",
+      "sha256": "f8db9885f786b862758bda1a2666c84295c06ad710c0af6e1f4e2cb16f8eddd3"
+    }
+  ],
+  "validation_limits": [
+    "No interactive gameplay.",
+    "The exact reported daytime moon arc and moving nighttime flight route were not replayed.",
+    "D3D12 offscreen captures verify menus, pier geometry/water, hospital night lighting and moon assets; regression tests verify cloud overrides and moon shadow flags."
+  ]
+}

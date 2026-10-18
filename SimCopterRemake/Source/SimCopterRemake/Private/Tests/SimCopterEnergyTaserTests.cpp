@@ -101,7 +101,7 @@ bool FSimCopterEnergyTaserTest::RunTest(const FString&)
 	Restored->TickAirOperations(8.9f); TestTrue(TEXT("Suspect remains stunned before deadline"),Restored->IsTaserStunned());
 	Restored->TickAirOperations(.2f); TestFalse(TEXT("Uncollected suspect recovers automatically"),Restored->IsInPoliceCustody());
 	Restored->Destroy();
-	TArray<uint8> Legacy=Saved; Legacy.SetNum(Legacy.Num()-2*sizeof(float)-2); // v11 stun/flags and v12 megaphone hold
+	TArray<uint8> Legacy=Saved; Legacy.SetNum(Legacy.Num()-3*sizeof(float)-2); // v11 stun/flags, v12 megaphone hold, v13 patient farewell
 	const int32 Version=10; FMemory::Memcpy(Legacy.GetData()+sizeof(uint32),&Version,4);
 	Restored=Person(true,FVector(0,1200,24)); TestTrue(TEXT("Previous version 10 remains readable"),Restored->RestoreRuntimeSaveState(Legacy)); Restored->Destroy();
 	auto* Carrier=World->SpawnActor<ASimCopterHelicopterPawn>(); Carrier->SetActorLocation(FVector(5000,5000,500));

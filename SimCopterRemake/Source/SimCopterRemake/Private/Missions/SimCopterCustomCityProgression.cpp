@@ -23,7 +23,18 @@ int32 ASimCopterMissionSystemActor::GetMissionPassengerLimit(bool bMedical) cons
 
 int32 ASimCopterMissionSystemActor::GetCustomCityProgressionTier() const
 {
-	return SimCopterCustomCityProgression::TierForScore(CustomCityBestScore);
+	return CustomCityTierOverride >= 1 ? CustomCityTierOverride : SimCopterCustomCityProgression::TierForScore(CustomCityBestScore);
+}
+
+void ASimCopterMissionSystemActor::SetCustomCityOptions(int32 Difficulty, float Frequency)
+{
+	if (!UsesCitywideMissionPlacement()) return;
+	CustomCityTierOverride = FMath::Clamp(Difficulty + 1, 1, 4);
+	CustomMissionFrequency = FMath::Clamp(Frequency, 0.25f, 4.0f);
+	MissionSystem.SetMissionFrequency(CustomMissionFrequency);
+	auto City = MissionSystem.GetCareerCity();
+	City.Difficulty = CustomCityTierOverride - 1;
+	MissionSystem.SetCareerCity(City);
 }
 
 FString ASimCopterMissionSystemActor::GetCustomCityProgressionText() const
@@ -32,7 +43,7 @@ FString ASimCopterMissionSystemActor::GetCustomCityProgressionText() const
 	const TCHAR* Names[] = {TEXT("Local response"), TEXT("Rescue response"), TEXT("Advanced response"), TEXT("Major incidents")};
 	const int32 Goals[] = {500, 1500, 3000};
 	FString Text = FString::Printf(TEXT("Custom city: %s (%d/4)."), Names[Tier - 1], Tier);
-	if (Tier < 4) Text += FString::Printf(TEXT(" Next stage: %d points."), Goals[Tier - 1]);
+	if (Tier < 4 && CustomCityTierOverride < 0) Text += FString::Printf(TEXT(" Next stage: %d points."), Goals[Tier - 1]);
 	return Text + TEXT(" Roof/boat rescues need a harness; fires need water equipment; riots need an upgraded helicopter and tear gas.");
 }
 

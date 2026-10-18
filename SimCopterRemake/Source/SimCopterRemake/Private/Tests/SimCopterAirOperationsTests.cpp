@@ -580,17 +580,18 @@ bool FSimCopterAirOperationsTest::RunTest(const FString& Parameters)
  TestNull(TEXT("Delivered patient no longer occupies helper cabin"),Patient->GetBehaviorCarrier());
  const auto* Rescued=Missions->MissionSystem.FindRecord(RescueId);
  TestTrue(TEXT("One delivery and no casualties are recorded"),Rescued && Rescued->MedevacDelivered==1 && Rescued->Casualties==0);
- TestTrue(TEXT("Helper patient resumes original post-delivery program"),Patient->bBehaviorActive &&
-  Patient->BehaviorContext.Stack.Num()>0 && Patient->BehaviorContext.Stack[0].ProgramId==282);
- bool bCheered=false;
- for(int32 Step=0;Step<120;++Step)
+ TestTrue(TEXT("Helper patient starts post-delivery farewell"),Patient->DeliveredPatientCelebrationSeconds>0);
+ bool bCheered=false,bWaved=false;
+ for(int32 Step=0;Step<140 && !Patient->IsActorBeingDestroyed();++Step)
  {
-  Patient->UpdateOriginalBehavior(0.05f);
+  Patient->Tick(0.05f);
   bCheered |= Patient->GetFigureMnemonic()==TEXT("Whoa");
+  bWaved |= Patient->GetFigureMnemonic()==TEXT("WvNo");
  }
  TestTrue(TEXT("Delivered helper patient performs original Whoa celebration"),bCheered);
+ TestTrue(TEXT("Delivered helper patient waves goodbye"),bWaved);
  TestFalse(TEXT("Celebration does not kill the patient"),Patient->IsMissionPatientDead());
- TestTrue(TEXT("Original celebration finishes, rather than looping"),!Patient->IsBehaviorActive());
+ TestTrue(TEXT("Patient leaves after the farewell"),Patient->IsActorBeingDestroyed());
  Building->Destroy(); HospitalBlock->Destroy(); PickupGround->Destroy();
 
  // A building destination and a passenger in a narrow strip beside another building.

@@ -98,6 +98,7 @@ class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public S
 {
 	GENERATED_BODY()
 	friend class FSimCopterGameplayOptionsTest;
+	friend class FSimCopterPlaytestRegressionTest;
 	friend class FSimCopterPlaneControlsTest;
 	friend class FSimCopterWeaponDamageTest;
 	friend class FSimCopterCityWeaponTest;
@@ -113,6 +114,8 @@ public:
 	friend class FSimCopterUserCityTransportCreationTest;
 private:
 	int32 CustomCityBestScore = 0;
+	int32 CustomCityTierOverride = -1;
+	float CustomMissionFrequency = 1.0f;
 	bool bCustomCitySitesScanned = false;
 	TArray<FIntPoint> CustomBuildingSites, CustomFireSites, CustomRoadSites, CustomRoofSites, CustomWaterSites, CustomTransportSites;
 public:
@@ -408,6 +411,8 @@ public:
 	{
 		return MissionSystem.GetCareerCity();
 	}
+	float GetCustomMissionFrequency() const { return CustomMissionFrequency; }
+	void SetCustomCityOptions(int32 Difficulty, float Frequency);
 	void SetSessionCareerCity(const SimCopterMissions::FSimCopterCareerCity& City)
 	{
 		MissionSystem.SetCareerCity(City);

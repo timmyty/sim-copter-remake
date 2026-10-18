@@ -441,10 +441,15 @@ void USimCopterAirOperationsComponent::OpenCargo()
 				FVector::Dist2D(Site->GetActorLocation(),CargoLocation)<SimCopterAirOperations::RecoveryRadiusCm*2)
 				Hint=CargoVelocity.Size()>DeliveryMaxSpeedCmPerSec ? TEXT(" Slow down over the ring to deliver.")
 					: TEXT(" Lower the cage closer to the ring to deliver.");
-	ReleaseCargo(); bCageOpen=bCage;
-	Status=TEXT("Cage floor open. Cargo released.")+Hint;
 	if (!Hint.IsEmpty())
+	{
+		Status = CageSeal < 1 ? TEXT("Cargo retained. Wait for the cage floor to seal, then open to deliver.")
+			: TEXT("Cargo retained.") + Hint;
 		if (auto* Missions=ActorIn<ASimCopterMissionSystemActor>(GetWorld())) Missions->ShowAirOperationsMessage(Status);
+		return;
+	}
+	ReleaseCargo(); bCageOpen=bCage;
+	Status=TEXT("Cage floor open. Cargo released.");
 }
 void USimCopterAirOperationsComponent::ReleaseCargo(bool bOpenCage)
 {

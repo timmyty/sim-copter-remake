@@ -286,6 +286,9 @@ public:
 	bool IsNearMoveTarget(float DistanceCm = 90.0f) const;
 
 	FVector GetMoveTargetLocation() const { return MoveTargetLocation; }
+	// The next movement target, including guidance/avoidance and the arrival fallback.
+	// Obstruction probes must follow this instead of the mesh yaw, which lags turns.
+	bool TryGetActiveMoveTarget(FVector& OutTarget) const;
 	FVector GetCurrentVelocityCmPerSec() const { return CurrentVelocityCmPerSec; }
 	float GetCollisionRadiusCm() const;
 
@@ -403,8 +406,9 @@ public:
 	// Opcode 37 retired this person while they were still alive - a patient handed over, a
 	// criminal caught. 'Inju', the knockdown/passenger-fall pose, not the corpse.
 	void SetMissionRetiredAlivePose();
-	/** Continue the shipped BHAV 282 celebration after an assisted hospital delivery. */
+	/** Play the original acknowledgement and wave clips, then retire a delivered patient. */
 	void ResumeDeliveredPatientBehavior();
+	float DeliveredPatientCelebrationSeconds = 0;
 
 	// Mission-required roof staff are outside the disposable ambient-population budget. A medic
 	// may be far across the city while the player collects a patient and still has to be present
@@ -1349,6 +1353,7 @@ private:
 	friend class FSimCopterSafePassengerLandingTest;
 	friend class FSimCopterGameplayPolishTest;
 	friend class FSimCopterBodyRecoveryTest;
+	friend class FSimCopterPlaytestRegressionTest;
 	friend class FSimCopterParamedicCabinHandoffTest;
 	friend class FSimCopterParamedicAlightsOnHelipadTest;
 	friend class FSimCopterPoliceRoofBoardingTest;

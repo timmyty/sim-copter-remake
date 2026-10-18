@@ -1,0 +1,157 @@
+{
+  "status": "Ready with limitations",
+  "date": "2026-10-18",
+  "implementation": "Reference-based emergency headquarters with retained remake roofs",
+  "editor_and_player_builds": {
+    "editor-final": true,
+    "shipping": true,
+    "development": true
+  },
+  "shipping_package": true,
+  "tests_passed": 32,
+  "tests": {
+    "SimCopter.City.PeopleRules.ClassMap": "Success",
+    "SimCopter.City.PeopleRules.SymmetricHeightStep": "Success",
+    "SimCopter.City.AirportBlockFootprintQuirk": "Success",
+    "SimCopter.City.AirportBlockStamp": "Success",
+    "SimCopter.City.AirportFreePad": "Success",
+    "SimCopter.City.AirportPadTable": "Success",
+    "SimCopter.City.AirportSearch": "Success",
+    "SimCopter.City.BuildingDemolition": "Success",
+    "SimCopter.City.BuildingFootprintClaim": "Success",
+    "SimCopter.City.ConstructionLot": "Success",
+    "SimCopter.City.DayNightFog": "Success",
+    "SimCopter.City.DayNightLength": "Success",
+    "SimCopter.City.EffectExposure": "Success",
+    "SimCopter.City.ExposureRefreshWhilePaused": "Success",
+    "SimCopter.City.HangarInterior": "Success",
+    "SimCopter.City.HangarPlacement": "Success",
+    "SimCopter.City.IslandBuildingFootprints": "Success",
+    "SimCopter.City.IslandHospitalFootprints": "Success",
+    "SimCopter.City.PowerLineHeight": "Success",
+    "SimCopter.City.RoadDecorationDispatch": "Success",
+    "SimCopter.City.RoadDecorationMeshes": "Success",
+    "SimCopter.City.RuntimeMeshDuplication": "Success",
+    "SimCopter.City.SmokeStackMarkers": "Success",
+    "SimCopter.City.SurfaceShadingDefaults": "Success",
+    "SimCopter.City.TreeGrounding": "Success",
+    "SimCopter.EmergencyBuildings.CityCollisionAndPreview": "Success",
+    "SimCopter.EmergencyBuildings.RoofsHeightAndGeometry": "Success",
+    "SimCopter.RooftopSafety.ExitAndContainment": "Success",
+    "SimCopter.ServicePosts.ActualHospitalGeometry": "Success",
+    "SimCopter.ServicePosts.BuildingNightLightingCoverage": "Success",
+    "SimCopter.ServicePosts.GroundMedicPatrolAndBoarding": "Success",
+    "SimCopter.ServicePosts.SpacingEntrancesAndImpact": "Success"
+  },
+  "inspected_unreal_captures": [
+    "hospital.png",
+    "police.png",
+    "fire-station.png"
+  ],
+  "roof_faces_verified": {
+    "hospital": 7,
+    "police": 9,
+    "fire_station": 5
+  },
+  "material_sha256": {
+    "M_EmergencyDetails.uasset": "f5421d015326269779bbbec7ccebe8c96b2d41de2d8cbe0da796b3e35d1fbcf9",
+    "M_HospitalFacade.uasset": "e831e5b9000318b378c26bc730d5e86bae6a54fd47fde1ed0ac58658f1749161",
+    "M_HospitalRoof.uasset": "d6410ff50ecc7030c70e87f053b496077a9b4eedc96a676c7434fc38ddee8bc9",
+    "M_HospitalHelipad.uasset": "149f97777440fa5af9ba528df982656bb61995aea9230ca14556a49d406d1940"
+  },
+  "installation": {
+    "installed_at_utc": "2026-10-18T07:59:42.570080+00:00",
+    "installed": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows",
+    "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup",
+    "files": [
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "previous_sha256": "ff87e5e27e8cc3d4e48b0a03d999e80980472da50c05f5b671708313d927b6f2",
+        "sha256": "a87e97bc8d3eab9ea66b5fd5a77c89051c233c615537f32f36f9a859e4bc7fed"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "previous_sha256": "edae0367db2eec4b144cabdbab75b0ce4658e0297bd7be0d9137e263fda0c321",
+        "sha256": "e1750d85fe3da9f703fd30a6d7cfea1855c88d18443e59660b6f65294b28cb94"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "previous_sha256": "b1063e9baab8226aeb30f46d1d6bd0c399512ebea53bd6d5d0e0fef5c04f3bdd",
+        "sha256": "f50398bf2a24efc19eb8b947d966835163708523278148b3c2146dde001d215f"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\Package\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "previous_sha256": "b164fdf0c281ee62ae830a61f6b198003f6c4a784cd519811861f8801fb7405e",
+        "sha256": "ff29731929cee89b71b209ed4c4d71f0d7b7ad1f6fb4f3c506cbd3d8ec8012d1"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "previous_sha256": "bb15155f02964b4536177b29ffbbebcdede1b63900ecfd3a84ffc60e907c3768",
+        "sha256": "cb833fe9343b45dee833844759c1a6929ad5f1c93b26de336af4b21c7ff297d4"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\Package\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup\\Manifest_NonUFSFiles_Win64.txt",
+        "relative": "Manifest_NonUFSFiles_Win64.txt",
+        "previous_sha256": "609aa8b18d66b368e64a1ebed72e2e2fd2c0d405c6f0868fa2811fd52b66b647",
+        "sha256": "f901dcd2f65a7a25a80b9e2a65b1919868863cfe99fb8e5497985b678d4c6c58"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\Package\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\installed-backup\\Manifest_UFSFiles_Win64.txt",
+        "relative": "Manifest_UFSFiles_Win64.txt",
+        "previous_sha256": "b35836aab1774c7ab5c031793f5feb3d2bdd5f67253f187daa94e4f0e2c03fd0",
+        "sha256": "67d9ca09676a10f2c28744c40114aab8e335f096d30c180c16a877ada2ccb774"
+      }
+    ],
+    "protected_files_verified": 183,
+    "packaged_manifest_files": 891,
+    "tests_passed": 32,
+    "interactive_playtest": false
+  },
+  "startup_checks": {
+    "shipping": {
+      "Mode": "shipping",
+      "Survived": true,
+      "Seconds": 30.4837762,
+      "PID": 21512,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\smoke-shipping",
+      "InteractiveGameplayChecked": false
+    },
+    "development": {
+      "Mode": "development",
+      "Survived": true,
+      "Seconds": 30.3688639,
+      "PID": 68440,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18\\smoke-development",
+      "InteractiveGameplayChecked": false
+    }
+  },
+  "limitations": [
+    "No interactive flight or gameplay playtest.",
+    "Reference is an isometric sprite; unseen facade details are inferred."
+  ],
+  "existing_warnings": [
+    "Graphics plugin reports OS GPU hardware scheduling disabled.",
+    "Existing synthetic city fixture mobility warnings."
+  ],
+  "publication_changed": false,
+  "scratch": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\emergency-hq-2026-10-18"
+}

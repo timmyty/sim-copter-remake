@@ -1,0 +1,478 @@
+{
+  "completed_at_utc": "2026-10-18T05:26:45.412213+00:00",
+  "request": "Resolve traffic stuck at the Heven 2026 airport intersection and prevent the same failure on other user maps.",
+  "changes": [
+    "Aircraft road-block probes follow the active movement target, including guidance and avoidance, and stop at that target.",
+    "Lane guidance converges on the assigned route waypoint, preserving previous/upcoming corner and tunnel adjustments."
+  ],
+  "original_behavior_reference": "FUN_0049ea70 and FUN_0049ee30 inspected; this fixes remake movement integration and retains original following behavior.",
+  "source_baseline": {
+    "release": "v1.0.19",
+    "publication_commit": "cec6f46f5394dadbe2238018affcf67c4a80cbb8",
+    "normalized_source_comparison": "Only the four listed files differ from the published release; all other Source files match after newline normalization.",
+    "publication_modified": false
+  },
+  "source_files": [
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterGroundAgent.cpp",
+      "sha256": "A3E6F895FDAF08D4719EC05DD3D143B8EAE762AD01ABF028B75CE3434767576D"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Ground/SimCopterTrafficSystemActor.cpp",
+      "sha256": "095B93C9C2FBDE8538A60194B64EF1C24C792CDC773EDC58A0A959C07FF9533C"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Public/Ground/SimCopterGroundAgent.h",
+      "sha256": "667D7EF7E2313D1AE7CD1F1DD7E2313B3D85D6EC53B4FC1DFBEE867FA7EC4A93"
+    },
+    {
+      "path": "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterTrafficFlowTests.cpp",
+      "sha256": "1A048204D02771815E9B30B7EC79D74D221989056262E65F241A88E9F5738D3E"
+    }
+  ],
+  "reproduction": {
+    "map": "Heven 2026.SC2",
+    "airport_block": [
+      27,
+      45
+    ],
+    "transport_plane_pad": 11,
+    "cars": 62,
+    "simulated_seconds": 90,
+    "ambient_recycling_disabled": true,
+    "baseline_stalled": {
+      "step_0.025": 14,
+      "step_0.100": 7
+    },
+    "aircraft_fix_only_stalled": {
+      "step_0.025": 1,
+      "step_0.100": 0
+    },
+    "both_fixes_stalled": {
+      "step_0.025_grounded_false": 0,
+      "step_0.100_grounded_false": 0,
+      "step_0.025_grounded_true": 0,
+      "step_0.100_grounded_true": 0
+    }
+  },
+  "builds": {
+    "Editor": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/heven-traffic-2026-10-15/build-final-editor.log"
+    },
+    "Shipping": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/heven-traffic-2026-10-15/build-shipping.log"
+    },
+    "Development": {
+      "result": "Succeeded",
+      "log": "Docs/scratchpad/heven-traffic-2026-10-15/build-development.log"
+    }
+  },
+  "automation": {
+    "report": "Docs/scratchpad/heven-traffic-2026-10-15/final-focused/index.json",
+    "passed": 57,
+    "clean": 54,
+    "with_warnings": 3,
+    "failed": 0,
+    "not_run": 0,
+    "duration_seconds": 55.08864974975586,
+    "user_map_route_cases": 17,
+    "tests": [
+      {
+        "name": "SimCopter.Accidents.FirstImpactOccupantsAndPersistence",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.AircraftRoadUpdate.AllCitiesAndAircraft",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.AirOperations.VehicleTaserHitRecoveryAndPersistence",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Crime.PullOverOrder",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Crime.PursuitTargetFilter",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Crime.SpeederSpeed",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Crime.SpotlightMark",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.AmbientAvailability",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.ArrivalAction",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.EmergencyCrewStates",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.Failures",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.HospitalParamedicRespawn",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.HospitalRoofPost",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.MedevacHandoffGates",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.PoliceRoofBoarding",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.Selection",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.Spiral",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.StationScan",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.TargetSnap",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Dispatch.TileRules",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Safety.ParkedAircraftTraffic",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.arcocity",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.cancer",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.CAPE_WELLS",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.EGYPT_FALLS",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.glorioso",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.happylnd",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.hawaii",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.HEVEN2026",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.heven_(new)",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.KATHY'S_RETREAT",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.la-isla",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.lakeland",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.rio",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.stchrisc",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.THE_BAHAMAS",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.TOKYO",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.CityRoutes.volcano",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.AircraftTurnHeading",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.BurglarRecovery",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.BurglarSpawn",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.BurglarSpeed",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Following",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.HevenHangarRoutes",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.HevenParkedPlaneRoutes",
+        "state": "Success",
+        "warnings": 1,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.HevenTrafficCirculation",
+        "state": "Success",
+        "warnings": 1,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Intersection",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.KeithlyBurglarRoute",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Recovery",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.Routing",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.Flow.TurnArrival",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.JamBlockerDirection",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.JamHornThresholds",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.JamQueueSpacing",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.RoadMeshSurfaceRules",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.TunnelGeometry",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "SimCopter.Traffic.TunnelTransit",
+        "state": "Success",
+        "warnings": 4,
+        "errors": 0
+      }
+    ],
+    "warnings": "Two existing application connectivity HTTP timeouts; four synthetic-world teardown warnings in TunnelTransit. No test errors."
+  },
+  "installation": {
+    "InstalledAtUtc": "2026-10-18T05:25:25.4200785Z",
+    "Files": [
+      {
+        "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "Destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\heven-traffic-2026-10-15\\installed-backup\\SimCopterRemake-Win64-Shipping.exe",
+        "PreviousSHA256": "6D7B2D2357EE27028EDC25AEEC205A0726D100B0E1EE95A310443E784B098539",
+        "SHA256": "67E0BA6E7EC648BA3F79562F0497079BC44106F42EDCF0105C235C0DE61DA45E"
+      },
+      {
+        "Source": "C:\\SimCopterRemake\\sim-copter-remake-main\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "Destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "Backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\heven-traffic-2026-10-15\\installed-backup\\SimCopterRemake.exe",
+        "PreviousSHA256": "267B5A97D97E486D18DA54B0DAD8C101B5080020D66D75A9257DE4BE7A0F0E3A",
+        "SHA256": "D1BBCA361880688DD7B33F530ACA2595E59459ADEE34218C57EEFAE81D17B62E"
+      }
+    ],
+    "ProtectedFilesVerified": 184,
+    "TestsPassed": 57,
+    "InteractiveGameplayChecked": false
+  },
+  "startup_checks": [
+    {
+      "Mode": "shipping",
+      "Survived": true,
+      "Seconds": 30.5166598,
+      "PID": 41888,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\heven-traffic-2026-10-15\\smoke-shipping",
+      "InteractiveGameplayChecked": false
+    },
+    {
+      "Mode": "development",
+      "Survived": true,
+      "Seconds": 30.6331066,
+      "PID": 57932,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\heven-traffic-2026-10-15\\smoke-development",
+      "InteractiveGameplayChecked": false
+    }
+  ],
+  "startup_log_review": {
+    "development_main_menu_loaded": true,
+    "new_fatal_errors": false,
+    "known_diagnostic": "CelestialVault CDO missing MI_StarsStar_EnergyConservative, also present in the v1.0.19 release startup log.",
+    "baseline_log": "Docs/scratchpad/release-v1.0.19/smoke-development/Saved/Logs/SimCopterRemake.log"
+  },
+  "limits": [
+    "Headless Unreal traffic simulation and packaged startups completed.",
+    "No interactive replay of the exact user session or rendered city playtest."
+  ],
+  "evidence_directory": "Docs/scratchpad/heven-traffic-2026-10-15/"
+}

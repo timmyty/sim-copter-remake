@@ -125,7 +125,7 @@ bool FSimCopterVehicleTaserTest::RunTest(const FString&)
 	TestTrue(TEXT("Restored car resumes its route"), Restored->GetActorLocation().X > StoppedAt.X);
 	Restored->Destroy();
 	TArray<uint8> Legacy = Save;
-	constexpr int32 TailAfterVersion8 = 4*sizeof(float)+2; // v9/v10/v11/v12 timers and two v11 byte flags
+	constexpr int32 TailAfterVersion8 = 5*sizeof(float)+2; // v9 through v13 timers and two v11 byte flags
 	Legacy.SetNum(Legacy.Num()-TailAfterVersion8);
 	const int32 LegacyVersion = 8;
 	FMemory::Memcpy(Legacy.GetData()+sizeof(uint32), &LegacyVersion, sizeof(LegacyVersion));

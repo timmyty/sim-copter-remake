@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Flight/SimCopterFlightModel.h"
 
@@ -656,9 +656,9 @@ void FSimCopterFlightModel::StepVertical(int32 Dt, const FSimCopterFlightInputs&
 		{
 			ClimbSpeed = FMath::Min(ClimbSpeed + SpeedDelta * -2, 0);
 		}
-		// SCHOOK: VerticalSuperpower 0x00487160. Preserve the original negative-
-		// collective sign reversal as well as its tenfold multiplier.
-		if (Inputs.bTurbo) ClimbSpeed = -Mul(ClimbSpeed, 0xa0000);
+		// Requested departure from FUN_00487160: turbo keeps the normal descent
+		// limit. Multiplying the accumulated velocity every step reverses/accelerates
+		// the descent and makes a controlled landing impossible.
 		if (State == ESimCopterFlightState::Parked)
 		{
 			ClimbSpeed = 0;

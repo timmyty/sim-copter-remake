@@ -23,6 +23,7 @@ TArray<FCommand> Parse(const FString& Text)
 	const FString Trimmed = Text.TrimStartAndEnd();
 	if (Trimmed.Equals(TEXT("HSI"), ESearchCase::IgnoreCase)) return {{ECode::HSI}};
 	if (Trimmed.Equals(TEXT("Unlock Apache"), ESearchCase::IgnoreCase)) return {{ECode::UnlockApache}};
+	if (Trimmed.Equals(TEXT("Respawn helicopter"), ESearchCase::IgnoreCase)) return {{ECode::RespawnHelicopter}};
 	if (Trimmed == TEXT("Stop video")) return {{ECode::StopVideo}};
 	if (Trimmed.StartsWith(TEXT("Play video:"), ESearchCase::CaseSensitive))
 		return {{ECode::PlayVideo, 0, Trimmed.Mid(11).TrimStartAndEnd()}};

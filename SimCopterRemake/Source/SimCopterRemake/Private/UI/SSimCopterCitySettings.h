@@ -82,6 +82,7 @@ constexpr float CancelButtonX = 364.0f;
 struct FSimCopterCitySettingsValues
 {
 	int32 Difficulty = 0;
+	float MissionFrequency = 1.0f;
 	float Weights[7] = { 0, 0, 0, 0, 0, 0, 0 };
 };
 

@@ -2091,6 +2091,19 @@ bool ASimCopterHelicopterPawn::ReturnHomeIfParkedInHangar()
 	return true;
 }
 
+bool ASimCopterHelicopterPawn::RespawnParkedAtHangar()
+{
+	if (IsSupportAircraft() || !ReturnToAirportAfterCrash()) return false;
+	const FVector Surface = GetActorLocation() - FVector(0, 0, GetHelipadRestingOriginOffsetCm());
+	const float Yaw = GetActorRotation().Yaw;
+	AirOperations->EndPilotRecovery();
+	AirOperations->ReleaseCargo();
+	ResetAircraft();
+	PlaneThrottle = 0;
+	PlaceOnHelipad(Surface, Yaw);
+	return true;
+}
+
 bool ASimCopterHelicopterPawn::ReturnToAirportAfterCrash()
 {
 	StopCrashSiren();
@@ -7362,8 +7375,7 @@ void ASimCopterHelicopterPawn::UpdateEngineState(float DeltaSeconds)
 		EngineShutdownHoldElapsed = 0.0f;
 		EngineShutdownHoldAlpha = 0.0f;
 	}
-	else if (bAnyEngineShutdownHeld && bEngineRunning && bIsLanded &&
-		(!IsFixedWingAircraft() || (PlaneThrottle <= 0 && VelocityCmPerSec.Size2D() < 35)))
+	else if (bAnyEngineShutdownHeld && bEngineRunning && bIsLanded && !IsFixedWingAircraft())
 	{
 		EngineShutdownHoldElapsed += DeltaSeconds;
 		EngineShutdownHoldAlpha = EngineShutdownHoldSeconds > 0.0f ? FMath::Clamp(EngineShutdownHoldElapsed / EngineShutdownHoldSeconds, 0.0f, 1.0f) : 1.0f;
@@ -7374,7 +7386,7 @@ void ASimCopterHelicopterPawn::UpdateEngineState(float DeltaSeconds)
 			EngineShutdownHoldAlpha = 0.0f;
 		}
 	}
-	else if (!bAnyEngineShutdownHeld || !bIsLanded)
+	else
 	{
 		EngineShutdownHoldElapsed = 0.0f;
 		EngineShutdownHoldAlpha = 0.0f;
@@ -7753,27 +7765,12 @@ void ASimCopterHelicopterPawn::ApplyFlightModelToActor(float DeltaSeconds)
 		SimCopterFixed::ToFloat(FlightModel.Altitude) * Unit + CapsuleHalfHeight);
 	const FRotator NewRotation(0.0f, SimCopterFixed::ToFloat(FlightModel.Heading) / 10.0f, 0.0f);
 
-	// SCHOOK: HelicopterObjectCollision 0x0048ad50
-	// The original has exactly one collision system and it never blocks. FUN_00484d20 writes the
-	// simulated position into the node unconditionally; contact is found afterwards, either by the
-	// height test against heli[0x59] or by FUN_0048ad50's AABB sweep of the objects on the
-	// helicopter's own tile, and the response is always to *push the airframe away* - damage, an
-	// attitude kick and a bounce at four times the climb rate. That is why the original cannot
-	// wedge you against anything.
-	//
-	// The remake substitutes a swept capsule against real geometry for the tile-object boxes,
-	// which is a fair trade, but it must keep the "never block" half of the bargain: a capsule
-	// that stops the aircraft while the flight model keeps steering into the obstacle pins it
-	// there, and the blocked position used to be written back into the model so the simulation
-	// believed it too. The sweep is now a detector only.
-	// The collider IS the collision test - no second opinion. An earlier attempt re-swept the
-	// fuselage box as a "narrow phase" to decide whether the capsule's hit really counted; it
-	// suppressed every impact in the game, so nothing took damage or was jolted by anything. The
-	// right fix for a collider that catches things the aircraft should fly under is a collider the
-	// size of the aircraft (SyncCollisionCapsuleToAirframe), not arithmetic on top of a wrong one.
+	// Preserve FUN_0048ad50's impact kick, but keep the swept capsule on the near
+	// side of solid geometry. Teleporting to the unswept endpoint let turbo flight
+	// cross entire buildings, after which the next sweep started inside the wall.
 	FHitResult BlockingHit;
 	RootComponent->MoveComponent(NewLocation - GetActorLocation(), NewRotation.Quaternion(), true, &BlockingHit);
-	if (BlockingHit.IsValidBlockingHit())
+	if (BlockingHit.bBlockingHit)
 	{
 		// The threshold is the flight model's own landing test, not a wall test. StepGroundImpact
 		// treats terrain as landable only when the normal clears LandingFlatNormalZ and bounces
@@ -7810,18 +7807,13 @@ void ASimCopterHelicopterPawn::ApplyFlightModelToActor(float DeltaSeconds)
 			bHasPendingImpactEffect = true;
 		}
 
-		// Hand the position back to the flight model. The bounce above is what clears the
-		// obstacle; the collider's job ends at reporting it. A wreck's shove edits the model's
-		// position directly, so re-read it rather than restoring the pre-impact point - otherwise
-		// the push would not land until the following frame and a wreck wedged in a corner could
-		// out-run it.
-		const FVector RestoreLocation = bWreck
-			? FVector(
-				SimCopterFixed::ToFloat(FlightModel.PosZ) * Unit,
-				SimCopterFixed::ToFloat(FlightModel.PosX) * Unit,
-				SimCopterFixed::ToFloat(FlightModel.Altitude) * Unit + CapsuleHalfHeight)
-			: NewLocation;
-		SetActorLocation(RestoreLocation, /*bSweep=*/false, nullptr, ETeleportType::TeleportPhysics);
+		// MoveComponent has already stopped at contact. Commit that safe position to
+		// the simulation so the next step cannot reapply the rejected displacement.
+		const FVector SafeLocation = GetActorLocation();
+		FlightModel.PosZ = SimCopterFixed::FromFloat(SafeLocation.X / Unit);
+		FlightModel.PosX = SimCopterFixed::FromFloat(SafeLocation.Y / Unit);
+		FlightModel.Altitude = SimCopterFixed::FromFloat((SafeLocation.Z - CapsuleHalfHeight) / Unit);
+
 	}
 
 	// SCHOOK: HelicopterObjectCollision 0x0048ad50 (people arm)

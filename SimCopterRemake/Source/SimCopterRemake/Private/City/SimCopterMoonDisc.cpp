@@ -87,6 +87,14 @@ void USimCopterMoonDiscComponent::ApplyDiscSizes()
 {
 	auto* Sky = Cast<ACelestialVaultDaySequenceActor>(GetOwner());
 	if (!Sky) return;
+	// The enlarged decorative moon is not an eclipse occluder. Its edge otherwise
+	// casts unstable shadows across the daytime atmosphere as it crosses the horizon.
+	if (Sky->MoonDiscComponent)
+	{
+		Sky->MoonDiscComponent->SetCastShadow(false);
+		Sky->MoonDiscComponent->SetAffectDistanceFieldLighting(false);
+		Sky->MoonDiscComponent->SetVisibleInRayTracing(false);
+	}
 	const float Angle = FMath::Clamp(SunDiscAngle, 0.1f, 10.0f);
 	if (Sky->SunLightComponent)
 	{

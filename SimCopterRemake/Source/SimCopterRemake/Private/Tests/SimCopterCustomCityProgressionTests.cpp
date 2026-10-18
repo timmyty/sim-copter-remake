@@ -169,7 +169,7 @@ bool FSimCopterCustomCitySitesTest::RunTest(const FString& Name)
 	TestTrue(TEXT("Version 2 mission save restores"), Missions->RestoreRuntimeSaveState(Saved));
 	TestEqual(TEXT("Progress never relocks after save/load"), Missions->GetCustomCityProgressionTier(), 4);
 	// Version 1 is the same byte layout without the appended best-score field.
-	Saved.SetNum(Saved.Num() - sizeof(int32));
+	Saved.SetNum(Saved.Num() - 2 * sizeof(int32) - sizeof(float));
 	int32 LegacyVersion = 1; FMemory::Memcpy(Saved.GetData() + sizeof(uint32), &LegacyVersion, sizeof(int32));
 	TestTrue(TEXT("Existing v1 saves still load"), Missions->RestoreRuntimeSaveState(Saved));
 	return true;

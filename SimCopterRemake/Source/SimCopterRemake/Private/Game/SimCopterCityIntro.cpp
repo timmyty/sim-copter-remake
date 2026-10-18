@@ -40,14 +40,7 @@ FAutoConsoleVariableRef CVarTourCloudCoverage(
 	GTourCloudCoverage,
 	TEXT("Minimum Cloud_GlobalCoverage during city tours (light cloud cover). <= 0 disables the override."),
 	ECVF_Default);
-// Sand also rings every shoreline, so only a city that is mostly sand counts as desert.
-float GTourDesertFraction = 0.7f;
 
-FAutoConsoleVariableRef CVarTourDesertFraction(
-	TEXT("SimCopter.Tour.DesertFraction"),
-	GTourDesertFraction,
-	TEXT("Maps whose land is at least this fraction sandy/bare ground keep a clear sky on their tour."),
-	ECVF_Default);
 }
 
 // Keep shader-driven water/clouds moving without consuming mission time during
@@ -215,21 +208,8 @@ void USimCopterCityIntro::BeginTourClouds()
 	if (bCloudOverride || GTourCloudCoverage <= 0.0f) return;
 	UWorld* World = GetWorld();
 	if (!World) return;
-	for (TActorIterator<ASimCity2000CityActor> It(World); It; ++It)
-	{
-		if (It->GetDesertTerrainFraction() >= GTourDesertFraction)
-		{
-			if (!bLoggedTourClouds)
-			{
-				bLoggedTourClouds = true;
-				UE_LOG(LogTemp, Display, TEXT("SimCopter tour clouds: desert city (%.2f of land), sky left clear."),
-					It->GetDesertTerrainFraction());
-			}
-			return; // desert: keep it clear
-		}
-		break;
-	}
 	UVolumetricCloudComponent* Cloud = nullptr;
+
 	for (TObjectIterator<UVolumetricCloudComponent> It; It; ++It)
 	{
 		if (It->GetWorld() == World && !It->IsBeingDestroyed()) { Cloud = *It; break; }

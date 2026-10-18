@@ -52,6 +52,7 @@ private:
 	friend class FSimCopterEquipmentPageTest;
 	friend class FSimCopterEquipmentInteractionTest;
 	friend class FSimCopterCatalogNavigationTest;
+	friend class FSimCopterPlaytestMenuTest;
 	enum class EPage : uint8
 	{
 		Hangar,
@@ -102,6 +103,8 @@ private:
 	// The catalog's History and Description text panels. Each scroll box sits inside a
 	// transparent, controller-selectable button so a gamepad can highlight the panel and then
 	// scroll it with the D-pad (or right stick); at either end of the text the D-pad moves on.
+	TSharedPtr<SWidget> LogPanel;
+	TSharedPtr<class SScrollBox> LogScroll;
 	TSharedPtr<SWidget> HistoryPanel;
 	TSharedPtr<SWidget> DescriptionPanel;
 	TSharedPtr<class SScrollBox> HistoryScroll;

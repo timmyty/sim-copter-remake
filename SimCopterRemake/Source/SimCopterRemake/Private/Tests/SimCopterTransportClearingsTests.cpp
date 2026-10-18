@@ -191,14 +191,26 @@ bool FSimCopterUserCityTransportCreationTest::RunTest(const FString& Path)
 	AddInfo(FString::Printf(TEXT("City scan: %.2f ms, %d transport clearings"),
 		(FPlatformTime::Seconds() - ScanStart) * 1000, Missions->CustomTransportSites.Num()));
 	TestTrue(TEXT("Beginner transport is available"), Missions->IsMissionTypeAvailable(TYPE_Transport));
-	// Isolate placement from weighted selection, cap and elapsed time. Each request still runs
-	// the production citywide placement, clearing resolver and actual passenger spawn.
+	// Sample twelve placements while respecting the three-event workload limit. Retire the
+	// oldest fare before requesting another; keep real city geometry and passenger spawning.
 	int32 Created = 0;
+	TArray<int32> Pending;
 	for (int32 Attempt = 0; Attempt < 12; ++Attempt)
 	{
+		if (Pending.Num()==3)
+		{
+			TestEqual(TEXT("Fourth simultaneous fare is refused on this map"),Missions->MissionSystem.CreateEventOfType(TYPE_Transport),INDEX_NONE);
+			const int32 Retired=Pending[0];Pending.RemoveAt(0);
+			Missions->MissionSystem.PostEvent(EVT_SetCategory,Retired,CAT_ExpireSilently);
+			Missions->MissionSystem.Tick(0);
+			for (TActorIterator<ASimCopterGroundAgent> It(World); It; ++It)
+				if (It->MissionEventId==Retired) It->Destroy();
+		}
 		const int32 Event = Missions->MissionSystem.CreateEventOfType(TYPE_Transport);
 		const auto* Record = Missions->MissionSystem.FindRecord(Event);
 		if (!Record) continue;
+		Pending.Add(Event);
+		TestTrue(TEXT("User map never exceeds three ongoing jobs"),Missions->MissionSystem.GetOngoingEventCount()<=3);
 		++Created;
 		TestTrue(TEXT("A passenger actually spawned"), Record->TransportPassengers > 0);
 		TestTrue(TEXT("Starter cabin capacity is respected"), Record->TransportPassengers <= 2);

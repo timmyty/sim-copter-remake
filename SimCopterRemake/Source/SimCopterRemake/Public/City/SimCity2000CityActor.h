@@ -88,6 +88,8 @@ class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 	friend class FSimCopterSceneryCityTest;
 	friend class FWaterTowerCityTest;
 	friend class FSimCopterCivicCityTest;
+	friend class FSimCopterMarinaCityTest;
+	friend class FSimCopterEmergencyCityTest;
 
 public:
 	ASimCity2000CityActor();
@@ -659,6 +661,9 @@ private:
 	void RemoveBuildingInstance(FSimCopterBuildingPart& Part);
 	// Adds an instance of a model component and records which building owns it.
 	FSimCopterBuildingPart AddBuildingInstance(int32 ComponentIndex, int32 BuildingId, const FVector& Origin, bool bWindowHashNudge = true);
+
+	// Latched when loading a city so in-progress geometry is never rebuilt by Options.
+	bool bUpdatedEmergencyArtwork = true;
 
 	FString ResolveCityPath() const;
 	FString ResolveOriginalGameRoot() const;
