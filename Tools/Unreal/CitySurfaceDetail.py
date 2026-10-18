@@ -74,11 +74,14 @@ def connect(source, output, target, pin):
         raise RuntimeError(f"City surface connection failed: {pin}")
 
 
-def filtered_atlas(material, parameter, local_uv, cell):
+def filtered_atlas(material, parameter, local_uv, cell, linear_data=False):
     page = unreal.MaterialEditingLibrary.create_material_expression(material, unreal.MaterialExpressionTextureObjectParameter)
     page.set_editor_property("parameter_name", parameter)
     # A valid default also lets the parent compile before its instances are rebound.
-    page.set_editor_property("texture", unreal.load_asset("/Game/Generated/CityAtlas/T_CitySurfacePage_2"))
+    default = "T_CityWindowPage_2" if linear_data else "T_CitySurfacePage_2"
+    page.set_editor_property("texture", unreal.load_asset(f"/Game/Generated/CityAtlas/{default}"))
+    if linear_data:
+        page.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
     sample = custom(material, "CellSafeFilteredAtlas", ATLAS_SAMPLE_CODE, ["Page", "LocalUV", "Cell"], unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     connect(page, "", sample, "Page")
     connect(local_uv, "", sample, "LocalUV")

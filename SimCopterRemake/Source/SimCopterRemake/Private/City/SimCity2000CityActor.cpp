@@ -3,8 +3,11 @@
 #include "City/SimCity2000CityActor.h"
 #include "City/SimCopterWaterTowers.h"
 #include "City/SimCopterCivicLandmarks.h"
+#include "City/SimCopterEmergencyBuildings.h"
+#include "City/SimCopterMarina.h"
 #include "City/SimCopterDriveInPlacement.h"
 #include "Game/SimCopterCheats.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterParticleFX.h"
 #include "Missions/SimCopterMissionSystemActor.h"
 #include "EngineUtils.h"
@@ -1272,7 +1275,7 @@ FOriginalCityObjectDispatch GetOriginalBuildingDispatch(
 	case 0xF5: PrimaryObjectId = 0x017; break;
 	case 0xF6: PrimaryObjectId = 0x096; break;
 	case 0xF7: PrimaryObjectId = 0x014; break;
-	case 0xF8: return { 0x0F3, 0x166 };
+	case 0xF8: return { 0x0F3 }; // Authored marina uses shoreline terrain, not the residential paving slab.
 	case 0xF9: PrimaryObjectId = 0x0F4; break;
 	case 0xFA: PrimaryObjectId = 0x015; break;
 	case 0xFB: PrimaryObjectId = 0x097; break;
@@ -3196,11 +3199,9 @@ int32 AppendMaxisMeshObject(
 		// a separate animated blade mesh, retaining this original tower/nacelle.
 		if (bAnimatedWindTurbine && MeshObject.Header.Id == 0x0db && Face.FaceType == 11) continue;
 		const bool bTranslucentDiscFace = !bTexturedFace && FMaxisProceduralMeshBuilder::IsTranslucentFaceType(Face.FaceType);
-		// The police (PO210) and fire (FS211) stations are stretched to the hospital's height in
-		// FMaxisMeshLibrary, but their roofs keep the original atlas art (v1.0.19's light-concrete
-		// roof override was reverted at the user's request). Stretching only moves vertices
-		// vertically, so the horizontal roof faces and their texture mapping are unchanged.
-		// HO209-only presentation override; no vertex, triangulation or collision changes.
+		// Preserve the existing emergency-building roofs/helipads. Tagged new facade
+		// details have their own finish; they must not inherit HO209's roof material.
+		const bool bEmergencyDetail = SimCopterEmergencyBuildings::IsDetail(MeshObject, Face);
 		const bool bHospital = MeshObject.Header.Id == 0x016;
 		const int32 HospitalSection = !bHospital ? INDEX_NONE :
 			(Face.FaceType == 18 && Face.TextureAtlasIndex == 39 ? -201 :
@@ -3213,16 +3214,17 @@ int32 AppendMaxisMeshObject(
 		const bool bWaterTower = MeshObject.Header.Id == SimCopterWaterTowers::ObjectId;
 		const bool bCityHall = MeshObject.Header.Id == SimCopterCivicLandmarks::CityHallObjectId;
 		// The authored timber dock (SimCopterCivicLandmarks::MakePier) carries its finish in MaterialIndex.
-		const bool bWoodenPier = SimCopterCivicLandmarks::IsPier(MeshObject.Header.Id) && MeshObject.Header.bConsistentWinding;
-		const int32 SectionKey = bWoodenPier ? INDEX_NONE : bCityHall ? SimCopterCivicLandmarks::CityHallSectionKey : bWaterTower ? SimCopterWaterTowers::SectionKey : ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
+		const bool bWoodenPier = MeshObject.Header.bConsistentWinding &&
+			(SimCopterCivicLandmarks::IsPier(MeshObject.Header.Id) ||
+			 (MeshObject.Header.Id == SimCopterMarina::ObjectId && Face.FaceType == 15 && Face.MaterialIndex <= SimCopterMarina::RoadApronFinish));
+		const int32 SectionKey = bEmergencyDetail ? SimCopterEmergencyBuildings::SectionKey : bWoodenPier ? SimCopterCivicLandmarks::PierSectionKey : bCityHall ? SimCopterCivicLandmarks::CityHallSectionKey : bWaterTower ? SimCopterWaterTowers::SectionKey : ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
 			? MakeBakedAtlasPageSectionKey(Face.TextureAtlasIndex)
 			: (bBakedDirectTexturedFace ? MakeBakedDirectImageSectionKey(Face.MaterialIndex) : (bRuntimeTexturedFace ? TextureKey : (bTranslucentDiscFace ? TranslucentDiscSectionKeyFlag : INDEX_NONE)));
 		FOriginalMeshSectionData& Section = Sections.FindOrAdd(SectionKey);
 		const int32 FaceVertexStart = Section.Vertices.Num();
 		// Binary finish bits survive both static-mesh sRGB packing and the merged mesh's
 		// linear vertex-color packing; fractional tags would select different finishes.
-		const FLinearColor FaceColor = bWoodenPier ? SimCopterCivicLandmarks::PierFinishColor(uint8(Face.MaterialIndex)) :
-			bCityHall ? FLinearColor(Face.MaterialIndex & 1, (Face.MaterialIndex >> 1) & 1, (Face.MaterialIndex >> 2) & 1) : bWaterTower ? FLinearColor(Face.MaterialIndex * 0.5f, 0, 0) : bTexturedFace
+		const FLinearColor FaceColor = (bEmergencyDetail || bWoodenPier || bCityHall) ? FLinearColor(Face.MaterialIndex & 1, (Face.MaterialIndex >> 1) & 1, (Face.MaterialIndex >> 2) & 1) : bWaterTower ? FLinearColor(Face.MaterialIndex * 0.5f, 0, 0) : bTexturedFace
 			? FLinearColor::White
 			: ResolveMaxisFaceColor(ColorMap, Face.FaceType, Face.MaterialIndex, TexturedFaceFallbackColor);
 
@@ -3582,6 +3584,7 @@ TArray<int16> ASimCity2000CityActor::PrepareCityForGameplay(FSimCity2000City& Ci
 
 void ASimCity2000CityActor::RebuildCity()
 {
+	if (const auto* Settings = USimCopterSettings::Get(this)) bUpdatedEmergencyArtwork = Settings->UsesUpdatedEmergencyArtwork();
 	// Existing saved city actors may serialize the former defaults. Upgrade those exact defaults
 	// while retaining any user-authored material override; no level resave is required.
 	if (TerrainMaterial && TerrainMaterial->GetPathName() == TEXT("/Game/Materials/M_SimCopterTerrain.M_SimCopterTerrain"))
@@ -3893,7 +3896,13 @@ void ASimCity2000CityActor::RebuildCity()
 		}
 	}
 	USimCopterLoadingSubsystem::SetStage(this, 5);
-	const TArray<uint8> TerrainTypeGrid = BuildTerrainTextureTypeGrid(City, ConditionedTerrainCorners);
+	TArray<uint8> TerrainTypeGrid = BuildTerrainTextureTypeGrid(City, ConditionedTerrainCorners);
+	for (int32 TileIndex = 0; TileIndex < City.Tiles.Num(); ++TileIndex)
+	{
+		if (City.Tiles[TileIndex].Building == 0xdf)
+			TerrainTypeGrid[TileIndex] = 0; // Water remains visible beside and between timber boards.
+	}
+	const TMap<int32, SimCopterMarina::FLayout> MarinaLayouts = SimCopterMarina::PrepareTerrain(City, TerrainTypeGrid);
 	{
 		// Types below 10 are water and shoreline; everything else is land.
 		int32 LandTiles = 0;
@@ -4210,9 +4219,19 @@ void ASimCity2000CityActor::RebuildCity()
 		}
 
 		UMaterialInterface* Resolved = nullptr;
-		if (SectionKey == SimCopterCivicLandmarks::CityHallSectionKey)
+		if (SectionKey == SimCopterEmergencyBuildings::SectionKey)
+		{
+			Resolved = LoadGeneratedCityAtlasMaterial(TEXT("M_EmergencyDetails"));
+			if (!Resolved) Resolved = VertexColorMaterial;
+		}
+		else if (SectionKey == SimCopterCivicLandmarks::CityHallSectionKey)
 		{
 			Resolved = LoadGeneratedCityAtlasMaterial(TEXT("M_CityHall"));
+			if (!Resolved) Resolved = VertexColorMaterial;
+		}
+		else if (SectionKey == SimCopterCivicLandmarks::PierSectionKey)
+		{
+			Resolved = LoadGeneratedCityAtlasMaterial(TEXT("M_DockTimber"));
 			if (!Resolved) Resolved = VertexColorMaterial;
 		}
 		else if (SectionKey == SimCopterWaterTowers::SectionKey)
@@ -4229,7 +4248,7 @@ void ASimCity2000CityActor::RebuildCity()
 		}
 		else if (SectionKey >= -203 && SectionKey <= -201)
 		{
-			Resolved = LoadGeneratedCityAtlasMaterial(SectionKey == -201 ? TEXT("M_HospitalFacade") :
+			Resolved = LoadGeneratedCityAtlasMaterial(SectionKey == -201 ? (bUpdatedEmergencyArtwork ? TEXT("M_HospitalFacade") : TEXT("M_HospitalFacadeLegacy")) :
 				SectionKey == -202 ? TEXT("M_HospitalHelipad") : TEXT("M_HospitalRoof"));
 			if (!Resolved) Resolved = VertexColorMaterial;
 		}
@@ -4436,9 +4455,12 @@ void ASimCity2000CityActor::RebuildCity()
 	TMap<int32, FMaxisMeshObject> ParkModels;
 	TOptional<FMaxisMeshObject> WaterTowerModel;
 	TOptional<FMaxisMeshObject> CityHallModel;
+	TMap<int32, FMaxisMeshObject> EmergencyModels;
+	EmergencyModels.Reserve(3);
 	// Two orientations only; reserved so the pointers handed out below never move.
 	TMap<int32, FMaxisMeshObject> PierModels;
 	PierModels.Reserve(2);
+	TMap<int32, FMaxisMeshObject> MarinaModels;
 	struct FPendingTreeGrounding
 	{
 		FVector Origin;
@@ -4734,10 +4756,23 @@ void ASimCity2000CityActor::RebuildCity()
 						? MeshLibrary.FindObjectByObjectId(PrimaryObjectId, &ColorMap)
 						: MeshLibrary.FindObjectByTileId(MeshTileId, &ColorMap);
 					MeshObject = ResolveTerrainRelativePowerLineMesh(MeshObject);
+					if (MeshObject && SimCopterEmergencyBuildings::IsEmergencyBuilding(MeshObject->Header.Id))
+					{
+						if (!EmergencyModels.Contains(MeshObject->Header.Id))
+							EmergencyModels.Add(MeshObject->Header.Id, SimCopterEmergencyBuildings::MakeModel(*MeshObject, bUpdatedEmergencyArtwork));
+						MeshObject = &EmergencyModels[MeshObject->Header.Id];
+					}
 					if (MeshObject && MeshObject->Header.Id == SimCopterCivicLandmarks::CityHallObjectId)
 					{
 						if (!CityHallModel.IsSet()) CityHallModel = SimCopterCivicLandmarks::MakeCityHall(*MeshObject);
 						MeshObject = &CityHallModel.GetValue();
+					}
+					const SimCopterMarina::FLayout* MarinaLayout = MarinaLayouts.Find(TileIndex);
+					if (MeshObject && MeshObject->Header.Id == SimCopterMarina::ObjectId && MarinaLayout)
+					{
+						const int32 Variant = MarinaLayout->RoadMask;
+						if (!MarinaModels.Contains(Variant)) MarinaModels.Add(Variant, SimCopterMarina::MakeModel(*MeshObject, *MarinaLayout));
+						MeshObject = &MarinaModels[Variant];
 					}
 					if (MeshObject && SimCopterCivicLandmarks::IsPier(MeshObject->Header.Id))
 					{
@@ -5054,7 +5089,8 @@ void ASimCity2000CityActor::RebuildCity()
 							FBuildingModelKey ModelKey;
 							ModelKey.PrimaryObjectId = PrimaryObjectId;
 							ModelKey.SecondaryObjectId = SecondaryObjectId;
-							ModelKey.MeshTileId = PrimaryObjectId != INDEX_NONE ? INDEX_NONE : static_cast<int32>(MeshTileId);
+							ModelKey.MeshTileId = MarinaLayout ? 0x300000 | MarinaLayout->RoadMask :
+								PrimaryObjectId != INDEX_NONE ? INDEX_NONE : static_cast<int32>(MeshTileId);
 							PlacedComponentIndex = ResolveBuildingModelComponent(ModelKey, *MeshObject, ColorMap);
 						}
 
@@ -5716,7 +5752,7 @@ void ASimCity2000CityActor::RebuildCity()
 
 		UMaterialInterface* SectionMaterial = nullptr;
 		UTexture2D* RuntimeTexture = nullptr;
-		if (TextureKey >= SimCopterCivicLandmarks::CityHallSectionKey && TextureKey <= -201)
+		if (TextureKey >= SimCopterEmergencyBuildings::SectionKey && TextureKey <= -201)
 		{
 			SectionMaterial = ResolveBuildingSectionMaterial(TextureKey);
 		}

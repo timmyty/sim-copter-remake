@@ -146,6 +146,9 @@ void ASimCopterTrafficSystemActor::UpdateServiceEntrances(float DeltaSeconds)
 	for (const auto& Node : PedestrianNodes)
 	{
 		if (Node.BuildingId != 0xD1 && Node.BuildingId != 0xD2) continue;
+		if (const APawn* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+			Player && FVector::DistSquared2D(Player->GetActorLocation(), Node.Location) < FMath::Square(ActiveTileSize * 3.0f))
+			EnsureServiceRoofCrew(Node.FileX, Node.FileY);
 		auto* Worker = EnsureBuildingEntranceCrew(Node.FileX, Node.FileY);
 		if (!Worker || !Missions || Node.BuildingId != 0xD1) continue;
 		const FVector WorkerFeet = Worker->GetActorLocation() - FVector(0,0,Worker->GetCapsuleHalfHeightCm());
@@ -170,8 +173,8 @@ void ASimCopterTrafficSystemActor::UpdateServiceEntrances(float DeltaSeconds)
 			if (!Missions->AcceptEntrancePatient(Patient)) continue;
 			if (bPilotCarry) Pilot->ConsumeCarriedMissionPerson();
 			Patient->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			Patient->SetLifeSpan(3);
-			Patient->SetActorHiddenInGame(true);
+			if (Patient->IsMissionPatientDead()) { Patient->SetLifeSpan(3); Patient->SetActorHiddenInGame(true); }
+			else Patient->ResumeDeliveredPatientBehavior();
 			Patient->SetActorEnableCollision(false);
 			break;
 		}

@@ -71,13 +71,13 @@ def material(name, code, roughness, glow_code=None):
 FACADE = r'''
 // Local centimetres, independent of the tiny repeating legacy atlas texels.
 float u = abs(N.x) > abs(N.y) ? P.y : P.x;
-float floorHeight = 165.0;
+float floorHeight = 206.25; // 33 GEO units: align the window bands with the orange balconies.
 float2 cell = float2(frac((u+48.0)/96.0),frac(P.z/floorHeight));
 float2 aa = max(fwidth(cell),float2(.004,.004));
 float frame = smoothstep(.12-aa.x,.12+aa.x,cell.x)*(1-smoothstep(.88-aa.x,.88+aa.x,cell.x));
 float glass = frame*smoothstep(.29-aa.y,.29+aa.y,cell.y)*(1-smoothstep(.76-aa.y,.76+aa.y,cell.y));
 float seam = (1-smoothstep(.008,.023,min(cell.x,1-cell.x))) * .06;
-float3 ivory = float3(.72,.76,.73) - seam;
+float3 ivory = float3(.12,.52,.55) - seam;
 float3 blue = lerp(float3(.025,.095,.12),float3(.13,.28,.32),cell.y);
 float3 color = lerp(ivory,blue,glass);
 float stripe = smoothstep(.06,.08,cell.y)*(1-smoothstep(.15,.17,cell.y));
@@ -130,6 +130,10 @@ return float3(1.25,.97,.56)*glassMask*lit*saturate(Blend)*max(GlowNits,0);
 '''
 
 material('M_HospitalFacade',FACADE,.75,FACADE_GLOW)
+# Preserve the remake facade from immediately before the reference-artwork update.
+def legacy_facade(code):
+    return code.replace('float floorHeight = 206.25;', 'float floorHeight = 165.0;').replace('float3(.12,.52,.55)', 'float3(.72,.76,.73)')
+material('M_HospitalFacadeLegacy',legacy_facade(FACADE),.75,legacy_facade(FACADE_GLOW))
 unreal.log('Hospital facade saved with shared day/night window controls.')
 if '-HospitalFacadeOnly' not in unreal.SystemLibrary.get_command_line():
     material('M_HospitalHelipad',HELIPAD,.85)

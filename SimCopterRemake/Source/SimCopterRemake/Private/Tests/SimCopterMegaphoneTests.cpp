@@ -57,8 +57,9 @@ bool FSimCopterMegaphoneEffectsTest::RunTest(const FString&)
 	Person->ApplyInteraction(Event);
 	Person->BehaviorContext.Attributes[13]=0; // Mirror the broken attribute block in old saves.
 	TArray<uint8> Saved; TestTrue(TEXT("Pending reaction saves"),Person->CaptureRuntimeSaveState(Saved));
-	// v12 appends the new vehicle stop timer; v11 has the same preceding payload.
-	TArray<uint8> Legacy=Saved; Legacy.SetNum(Legacy.Num()-sizeof(float));
+	// v12 appends the vehicle stop timer and v13 the patient farewell timer.
+	// Remove both suffixes to construct a real v11 payload.
+	TArray<uint8> Legacy=Saved; Legacy.SetNum(Legacy.Num()-2*sizeof(float));
 	int32 LegacyVersion=11; FMemory::Memcpy(Legacy.GetData()+sizeof(uint32),&LegacyVersion,sizeof(LegacyVersion));
 	TestTrue(TEXT("Version-11 pending reaction still loads"),Person->RestoreRuntimeSaveState(Legacy));
 	TestEqual(TEXT("Old save repairs the attribute used by the shipped script"),int32(Person->BehaviorContext.Attributes[13]),1);

@@ -1,0 +1,154 @@
+{
+  "date": "2026-10-18",
+  "model": "MA248 / object 0x0f3 / XBLD 0xf8",
+  "source_and_asset_sha256": {
+    "SimCopterRemake\\Source\\SimCopterRemake\\Private\\City\\SimCity2000CityActor.cpp": "628f305b47819ee14108a5e69aa15b7b3d3669f1e2ada73a27cc0e1d1d0bdd4c",
+    "SimCopterRemake\\Source\\SimCopterRemake\\Public\\City\\SimCity2000CityActor.h": "23b8473ae7d1322b33636f2212629d2da5ff2d3c1e2bc30025caa581637afa60",
+    "SimCopterRemake/Source/SimCopterRemake/Public/City/SimCopterMarina.h": "8a25e24e323a70689eb14a196a86288ca4b3fe223b3b9de8b13c00b14b5b4c0b",
+    "SimCopterRemake/Source/SimCopterRemake/Private/City/SimCopterMarina.cpp": "356372e2e2c4552e635ee5752893a64e250dd12f7474ea4ad644990bb5bbbf25",
+    "SimCopterRemake/Source/SimCopterRemake/Private/Tests/SimCopterMarinaTests.cpp": "7ba018fe973102748aa60435201ab116c4521066b3c580cabae03445be52a081",
+    "Tools/Unreal/BakeDockTimber.py": "e1ee01bc7053204c7859a865c6436ed06545cd1db0489c48fb934922634313a1",
+    "SimCopterRemake/Content/Generated/CityAtlas/M_DockTimber.uasset": "731dabd7ccfbe3ac80505155a8789c941679bda95c34af8f03e2a1f1ba80d876"
+  },
+  "tests": {
+    "SimCopter.CaptureCage.ControlsMountsAndMissionWeights": "Success",
+    "SimCopter.CaptureCage.VehicleBoatRecoveryAndWaypoints": "Success",
+    "SimCopter.City.PeopleRules.ClassMap": "Success",
+    "SimCopter.City.PeopleRules.SymmetricHeightStep": "Success",
+    "SimCopter.City.AirportBlockFootprintQuirk": "Success",
+    "SimCopter.City.AirportBlockStamp": "Success",
+    "SimCopter.City.AirportFreePad": "Success",
+    "SimCopter.City.AirportPadTable": "Success",
+    "SimCopter.City.AirportSearch": "Success",
+    "SimCopter.City.BuildingDemolition": "Success",
+    "SimCopter.City.BuildingFootprintClaim": "Success",
+    "SimCopter.City.ConstructionLot": "Success",
+    "SimCopter.City.DayNightFog": "Success",
+    "SimCopter.City.DayNightLength": "Success",
+    "SimCopter.City.EffectExposure": "Success",
+    "SimCopter.City.ExposureRefreshWhilePaused": "Success",
+    "SimCopter.City.HangarInterior": "Success",
+    "SimCopter.City.HangarPlacement": "Success",
+    "SimCopter.City.IslandBuildingFootprints": "Success",
+    "SimCopter.City.IslandHospitalFootprints": "Success",
+    "SimCopter.City.PowerLineHeight": "Success",
+    "SimCopter.City.RoadDecorationDispatch": "Success",
+    "SimCopter.City.RoadDecorationMeshes": "Success",
+    "SimCopter.City.RuntimeMeshDuplication": "Success",
+    "SimCopter.City.SmokeStackMarkers": "Success",
+    "SimCopter.City.SurfaceShadingDefaults": "Success",
+    "SimCopter.City.TreeGrounding": "Success",
+    "SimCopter.Civic.CityIntegration": "Success",
+    "SimCopter.Civic.GeometryAndPierHeight": "Success",
+    "SimCopter.Marina.CityIntegrationAndPreview": "Success",
+    "SimCopter.Marina.ShorelineAndGeometry": "Success",
+    "SimCopter.Scenery.CityIntegration": "Success",
+    "SimCopter.Scenery.SkyDiscs": "Success",
+    "SimCopter.Scenery.Variants": "Success",
+    "SimCopter.Water.FillDumpPounds": "Success",
+    "SimCopter.Water.FireTruckJetSweep": "Success",
+    "SimCopter.Water.FixedStepReach": "Success",
+    "SimCopter.Water.ImpactStrength": "Success",
+    "SimCopter.Water.ParticleDeterminism": "Success",
+    "SimCopter.Water.ParticleLifeAndDrag": "Success",
+    "SimCopter.Water.RopeAutoZoomGate": "Success",
+    "SimCopter.Water.SupplyGeometry": "Success",
+    "SimCopter.Water.TerrainAndRopeConstants": "Success",
+    "SimCopter.Water.TextureAnimationRate": "Success"
+  },
+  "tests_passed": 44,
+  "offscreen_previews": [
+    "marina-shore.png",
+    "marina-water.png",
+    "pier.png"
+  ],
+  "interactive_gameplay_checked": false,
+  "publication_changed": false,
+  "build-editor-final": true,
+  "build-shipping": true,
+  "build-development": true,
+  "package_succeeded": true,
+  "installation": {
+    "installed_at_utc": "2026-10-18T07:17:55.642397+00:00",
+    "installed": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows",
+    "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup",
+    "files": [
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "previous_sha256": "7ec863c163ad722e41157d7274c0e94e835838134c49ca7225028a5a5831050e",
+        "sha256": "ff87e5e27e8cc3d4e48b0a03d999e80980472da50c05f5b671708313d927b6f2"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "previous_sha256": "b91bc8593268bcc4f145d220f3d3443ebf93fe345a85dfd254d8e42dea250cf7",
+        "sha256": "edae0367db2eec4b144cabdbab75b0ce4658e0297bd7be0d9137e263fda0c321"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "previous_sha256": "5a351d28f818be4a10eb95fa4230a11c7b8f38c3de79301e8c8693f0c90d8cc3",
+        "sha256": "b1063e9baab8226aeb30f46d1d6bd0c399512ebea53bd6d5d0e0fef5c04f3bdd"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\Package\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "previous_sha256": "68efe3a083c365214af630d9a77e4ba3dfe0d18c790c7d9f940aa708c093dc51",
+        "sha256": "b164fdf0c281ee62ae830a61f6b198003f6c4a784cd519811861f8801fb7405e"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "previous_sha256": "739fc9aa6423832634f293036b1f5b448245652378d6b0850864bd081ad7f79f",
+        "sha256": "bb15155f02964b4536177b29ffbbebcdede1b63900ecfd3a84ffc60e907c3768"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\Package\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup\\Manifest_NonUFSFiles_Win64.txt",
+        "relative": "Manifest_NonUFSFiles_Win64.txt",
+        "previous_sha256": "8e13f216b306e176011fe76a2b58dbe4c491fd0a1d67d44ac1381c511d05ae2b",
+        "sha256": "609aa8b18d66b368e64a1ebed72e2e2fd2c0d405c6f0868fa2811fd52b66b647"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\Package\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\installed-backup\\Manifest_UFSFiles_Win64.txt",
+        "relative": "Manifest_UFSFiles_Win64.txt",
+        "previous_sha256": "236df581b09d60139cd459182e03ffbf80999b5b3bc193cb939016c6a4a7dc20",
+        "sha256": "b35836aab1774c7ab5c031793f5feb3d2bdd5f67253f187daa94e4f0e2c03fd0"
+      }
+    ],
+    "protected_files_verified": 183,
+    "packaged_manifest_files": 891,
+    "tests_passed": 44,
+    "interactive_playtest": false
+  },
+  "startup-shipping": {
+    "Mode": "shipping",
+    "Survived": true,
+    "Seconds": 30.5071879,
+    "PID": 36776,
+    "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\smoke-shipping",
+    "InteractiveGameplayChecked": false
+  },
+  "startup-development": {
+    "Mode": "development",
+    "Survived": true,
+    "Seconds": 30.5455951,
+    "PID": 44720,
+    "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\marina-docks-2026-10-18\\smoke-development",
+    "InteractiveGameplayChecked": false
+  }
+}

@@ -77,8 +77,10 @@ void ASimCopterHelicopterPawn::StepFixedWing(float Dt, const FSimCopterFlightInp
 	// W/S (the shared pitch binding) controls climb/descent. Space/Ctrl and
 	// controller collective adjust a retained throttle independently of pitch.
 	SetPlaneThrottle(PlaneThrottle + Inputs.ClimbCommand * Dt * .4f);
+	// Holding the brake after idle engages a slow reverse taxi. Never reverse in flight.
+	const bool bReverseTaxi = bOnGround && bPowered && PlaneThrottle <= 0 && Inputs.ClimbCommand < 0;
 	const float TargetSpeed = !bPowered ? (bOnGround ? 0 : 650) :
-		bOnGround ? PlaneThrottle * 3200 : FMath::Lerp(650.0f, 3200.0f, PlaneThrottle);
+		bReverseTaxi ? -350.0f : bOnGround ? PlaneThrottle * 3200 : FMath::Lerp(650.0f, 3200.0f, PlaneThrottle);
 	const bool bBraking = TargetSpeed < ToFloat(FlightModel.ForwardSpeed) * PositionScale * Unit;
 	float Speed = FMath::FInterpConstantTo(ToFloat(FlightModel.ForwardSpeed) * PositionScale * Unit,
 		TargetSpeed, Dt, bBraking ? 1300 : 1100);

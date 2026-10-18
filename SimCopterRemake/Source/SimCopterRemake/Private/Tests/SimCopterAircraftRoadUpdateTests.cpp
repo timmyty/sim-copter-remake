@@ -119,6 +119,8 @@ bool FSimCopterAircraftRoadUpdateTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Plane turns more than ninety degrees in one second"),SimCopterFixed::ToFloat(Heli->FlightModel.Heading)>900);
 	Input={}; Input.bPitchBackKey=true; Input.ClimbCommand=-1;
 	for (int32 I=0; I<400; ++I) Heli->StepFixedWing(.05f,Input,Environment);
+	// Holding brake after landing now commands reverse taxi; release it to park.
+	Input={};Heli->StepFixedWing(1.f,Input,Environment);
 	TestTrue(TEXT("Plane can land and brake to a stop"),Heli->FlightModel.State==ESimCopterFlightState::Parked && Heli->FlightModel.ForwardSpeed==0);
 	TArray<uint8> SavedPlane;
 	TestTrue(TEXT("Plane runtime state can be saved"),Heli->CaptureRuntimeSaveState(SavedPlane));
@@ -175,11 +177,16 @@ bool FSimCopterAircraftRoadUpdateTest::RunTest(const FString& Parameters)
 				for (auto& Vehicle:Traffic->DispatchVehicles[Service])
 				{
 					if (!Vehicle.Agent.IsValid()) continue;
-					while (Elapsed<45 && Vehicle.State!=ESimCopterDispatchVehicleState::OnScene)
+					Traffic->UpdateDispatchVehicles(0.f); // Apply the service's running speed cap.
+					if (!TestTrue(TEXT("Dispatched vehicle has a positive cruise speed"),Vehicle.Agent->MovementSpeedCmPerSec>0)) break;
+					// Police now use the requested ordinary traffic speed. Keep the same
+					// route/arrival bound expressed in distance, scaled by this unit's speed.
+					const float ResponseLimit=45.f*FMath::Max(1.f,SimCopterDispatch::EmergencySpeedCmPerSec/Vehicle.Agent->MovementSpeedCmPerSec);
+					while (Elapsed<ResponseLimit && Vehicle.State!=ESimCopterDispatchVehicleState::OnScene)
 					{
 						Vehicle.Agent->Tick(.05f); Traffic->UpdateDispatchVehicles(.05f); Traffic->UpdateTunnelTransits(.05f); Elapsed+=.05f;
 					}
-					TestTrue(FString::Printf(TEXT("%s service %d arrives in under 45 seconds (%.2f)"),*FPaths::GetBaseFilename(City),Service,Elapsed),Vehicle.State==ESimCopterDispatchVehicleState::OnScene && Elapsed<45);
+					TestTrue(FString::Printf(TEXT("%s service %d arrives within its speed-adjusted %.2f seconds (%.2f)"),*FPaths::GetBaseFilename(City),Service,ResponseLimit,Elapsed),Vehicle.State==ESimCopterDispatchVehicleState::OnScene && Elapsed<ResponseLimit);
 					break;
 				}
 			}

@@ -78,6 +78,9 @@ bool FSimCopterSkyDiscsTest::RunTest(const FString& Parameters)
 	const float SunIntensity=Sky->SunLightComponent->Intensity;
 	const float MoonIntensity=Sky->MoonLightComponent->Intensity;
 	Settings->ApplyBrightness();
+	TestFalse(TEXT("Decorative moon cannot cast a horizon shadow"),Sky->MoonDiscComponent->CastShadow);
+	TestFalse(TEXT("Decorative moon is excluded from distance-field lighting"),Sky->MoonDiscComponent->bAffectDistanceFieldLighting);
+	TestFalse(TEXT("Decorative moon is excluded from ray-traced shadows"),Sky->MoonDiscComponent->bVisibleInRayTracing);
 	const FVector Scale=Sky->MoonDiscComponent->GetRelativeScale3D();
 	auto* Material=Cast<UMaterialInstanceDynamic>(Sky->MoonDiscComponent->GetMaterial(0));
 	if (!TestNotNull(TEXT("Detailed moon material is assigned"),Material)) return false;

@@ -212,7 +212,7 @@ void FSimCopterMissionSystem::Initialize(ISimCopterMissionWorld* InWorld, uint32
 	DifficultyTier = 1;
 	FrameDeltaEma = 0;
 	SpawnCountdown = 0xb40000;
-	EasyIntervalCache = Tuning.EasyInterval;
+	EasyIntervalCache = FMath::RoundToInt(Tuning.EasyInterval / MissionFrequency);
 	MaxEasyWithDifficulty = Tuning.MaxEasy + DifficultyTier;
 	ScaledMissionTimer = Tuning.BaseMissionTimer;
 	NagInterval = ScaledMissionTimer >> 3;
@@ -278,6 +278,9 @@ void FSimCopterMissionSystem::Tick(float DeltaSeconds)
 
 void FSimCopterMissionSystem::RunSchedulerOnce()
 {
+	// User-map capacity pauses the spawn clock as well as creation, so a long
+	// full roster cannot accumulate an unbounded negative fixed-point countdown.
+	if (!HasUserCityEventCapacity()) return;
 	UpdateSchedulerCadence();
 
 	if (SpawnCountdown < 0 && (World == nullptr || !World->IsModalUiActive()))
@@ -288,6 +291,7 @@ void FSimCopterMissionSystem::RunSchedulerOnce()
 
 void FSimCopterMissionSystem::DispatchWeightedRoll()
 {
+	if (!HasUserCityEventCapacity()) return;
 	if (bRerollRequested == 1)
 	{
 		RebuildCumulativeWeights();
@@ -324,10 +328,19 @@ bool FSimCopterMissionSystem::RollScheduledMissionNow()
 	return (ActiveCount + BackgroundCount) > BeforeCount;
 }
 
+void FSimCopterMissionSystem::SetMissionFrequency(float Frequency)
+{
+	Frequency = FMath::Clamp(Frequency, 0.25f, 4.0f);
+	if (FMath::IsNearlyEqual(Frequency, MissionFrequency)) return;
+	SpawnCountdown = FMath::RoundToInt(SpawnCountdown * double(MissionFrequency) / Frequency);
+	MissionFrequency = Frequency;
+	EasyIntervalCache = FMath::RoundToInt(Tuning.EasyInterval / MissionFrequency);
+}
+
 void FSimCopterMissionSystem::UpdateSchedulerCadence()
 {
 	MaxEasyWithDifficulty = Tuning.MaxEasy + DifficultyTier;
-	EasyIntervalCache = Tuning.EasyInterval;
+	EasyIntervalCache = FMath::RoundToInt(Tuning.EasyInterval / MissionFrequency);
 
 	// DELIBERATE DIVERGENCE: every tier gets tier 1's mission clock.
 	//
@@ -410,14 +423,8 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 		return;
 	}
 
-	// User-requested departure: owning a capture cage makes the crime family three times
-	// as likely relative to other enabled jobs. Its existing difficulty mix includes robbers,
-	// muggers, arsonists and speeders. Even early cities gain crime, but all-zero/free roam
-	// settings above remain silent. Base weights are never mutated, so selling reverses it.
-	const bool bCanBoostCrime = !World || !World->UsesCitywideMissionPlacement() ||
-		World->IsMissionTypeAvailable(TYPE_Robber);
-	const float CrimeWeight = bCaptureCageOwned && bCanBoostCrime ? FMath::Max(Weights[1], Sum / 7.0f) * 3.0f : Weights[1];
-	Sum += CrimeWeight - Weights[1];
+	// Equipment ownership must not override the city's chosen crime frequency.
+	const float CrimeWeight = Weights[1];
 	for (int i = 0; i < 7; ++i)
 	{
 		CumulativeWeights[i + 1] = static_cast<int32>(((i == 1 ? CrimeWeight : Weights[i]) * 100.0f) / Sum);
@@ -872,6 +879,23 @@ bool FSimCopterMissionSystem::IsFireSuitableTile(int32 XbldId)
 	return true;
 }
 
+int32 FSimCopterMissionSystem::GetOngoingEventCount() const
+{
+	int32 Count = 0;
+	for (const auto& Record : Records)
+		if (Record.bActive && !(Record.TypeMask & TYPE_BaseLocation)) ++Count;
+	return Count;
+}
+
+bool FSimCopterMissionSystem::HasUserCityEventCapacity() const
+{
+	// Deliberate User-map pacing rule, independent of FUN_004a6e60's tier limit.
+	// Include background incidents and recovery jobs; the hangar marker is not an event.
+	// Checking both creators also closes incident/forced-roll bypasses. Old saves drain
+	// naturally if already over capacity, without deleting people or penalizing the pilot.
+	return !World || !World->UsesCitywideMissionPlacement() || GetOngoingEventCount() < 3;
+}
+
 int32 FSimCopterMissionSystem::AllocateRecord()
 {
 	// Iterate the actual pool size (Records may have been grown past MaxRecords by a debug force).
@@ -1211,6 +1235,7 @@ const TCHAR* FSimCopterMissionSystem::GetTypeDisplayName(int32 TypeMask)
 
 int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 {
+	if (TypeMask != TYPE_BaseLocation && !HasUserCityEventCapacity()) return INDEX_NONE;
 	// Refuse before reserving an ambient boat/train or allocating a record with no survivors.
 	if (World && (TypeMask == TYPE_Medevac || TypeMask == TYPE_Transport || (TypeMask & TYPE_RescuePeople) != 0) &&
 		World->GetMissionPassengerLimit(TypeMask == TYPE_Medevac) == 0) return INDEX_NONE;
@@ -1687,6 +1712,7 @@ void FSimCopterMissionSystem::ReleaseInjuredMissionPerson(int32 EventId, int32 P
 
 int32 FSimCopterMissionSystem::CreateExistingVictimMedevacAt(int32 TileX, int32 TileY, bool bPlayerCaused)
 {
+	if (!HasUserCityEventCapacity()) return INDEX_NONE;
 	// Incident-created callouts obey the same patient-plus-medic capacity rule as scheduled ones.
 	if (World && World->GetMissionPassengerLimit(true) <= 0) return INDEX_NONE;
 	const int32 RecIndex = AllocateRecord();
@@ -3149,10 +3175,9 @@ void FSimCopterMissionSystem::PayIncremental(const FSimCopterMissionEvent& Event
 		bPostUi = true;
 		break;
 	case EVT_SpeederPursuit:
-		TextId = 0x3af;
-		EarnedCash = Event.Value * Tuning.SpeederIncPoints;
-		bPostUi = true;
-		if (World) World->PlayUiSound(0x1e);
+		// FUN_0049df60 repeats this while a speeder waits. Waiting is not a completed
+		// arrest and must never generate recurring money (including ambient event -1).
+		// The final EVT_SpeederCaught remains the single reward/notification.
 		break;
 	case EVT_SpeederCaught:
 		TextId = 0x3b0;

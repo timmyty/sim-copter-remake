@@ -1158,6 +1158,7 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 		{
 			const SimCopterMissions::FSimCopterCareerCity& City = Missions->GetSessionCareerCity();
 			Values.Difficulty = City.Difficulty;
+			Values.MissionFrequency = Missions->GetCustomMissionFrequency();
 			for (int32 Index = 0; Index < UE_ARRAY_COUNT(Values.Weights); ++Index)
 			{
 				Values.Weights[Index] = City.Weights[Index];
@@ -1182,6 +1183,7 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 							City.Weights[Index] = Accepted.Weights[Index];
 						}
 						Missions->SetSessionCareerCity(City);
+						Missions->SetCustomCityOptions(Accepted.Difficulty, Accepted.MissionFrequency);
 					}
 					EnterScreen(ESimCopterSettingsScreen::Menu);
 				}))

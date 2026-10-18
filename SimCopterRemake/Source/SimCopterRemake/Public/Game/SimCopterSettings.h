@@ -213,6 +213,10 @@ public:
 	 * buys. Everything is restored on the way out, including the scalability level and screen
 	 * percentage that were in force before it was switched on.
 	 */
+	/** Applied on the next city load; rebuilding a live city would reset demolished buildings. */
+	bool UsesUpdatedEmergencyArtwork() const { return bUpdatedEmergencyArtwork; }
+	void SetUpdatedEmergencyArtwork(bool bUpdated) { bUpdatedEmergencyArtwork = bUpdated; }
+
 	bool IsLowPowerMode() const { return bLowPowerMode; }
 	void SetLowPowerMode(bool bEnabled) { bLowPowerMode = bEnabled; }
 
@@ -478,6 +482,9 @@ private:
 
 	UPROPERTY(Config)
 	bool bLowPowerMode = false;
+
+	UPROPERTY(Config)
+	bool bUpdatedEmergencyArtwork = true;
 
 	/**
 	 * The overall scalability level and screen percentage in force when Low Power was switched on,

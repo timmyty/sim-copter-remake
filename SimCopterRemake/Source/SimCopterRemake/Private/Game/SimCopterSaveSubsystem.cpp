@@ -729,7 +729,8 @@ bool USimCopterSaveSubsystem::ApplyPendingAircraftState(UWorld* World)
 				? GetGameInstance()->GetSubsystem<USimCopterSettings>()
 				: nullptr)
 		{
-			Settings->SetTimeOfDayMode(PendingLoadedGame->TimeOfDayMode);
+			Settings->SetTimeOfDayMode(PendingLoadedGame->Kind == ESimCopterSessionKind::User
+				? ESimCopterTimeOfDayMode::Dynamic : PendingLoadedGame->TimeOfDayMode);
 			Settings->SetStaticTimeOfDayHours(PendingLoadedGame->StaticTimeOfDayHours);
 			Settings->SetDayRealMinutes(PendingLoadedGame->DayRealMinutes);
 			Settings->SetNightRealMinutes(PendingLoadedGame->NightRealMinutes);

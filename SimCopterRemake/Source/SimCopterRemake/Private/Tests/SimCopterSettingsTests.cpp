@@ -809,6 +809,7 @@ bool FSimCopterGraphicsSettingsPersistenceTest::RunTest(const FString& Parameter
 	Writer->SetLumenMode(ESimCopterLumenMode::Software);
 	Writer->SetVolumetricFogEnabled(false);
 	Writer->SetLowPowerMode(true);
+	Writer->SetUpdatedEmergencyArtwork(false);
 	Writer->SetOnFootFov(91.0f);
 	Writer->SetHelicopterFov(103.0f);
 	Writer->SetCockpitFov(72.0f);
@@ -837,6 +838,7 @@ bool FSimCopterGraphicsSettingsPersistenceTest::RunTest(const FString& Parameter
 		int32(Reader->GetLumenMode()), int32(ESimCopterLumenMode::Software));
 	TestFalse(TEXT("Volumetric Fog round trips"), Reader->IsVolumetricFogEnabled());
 	TestTrue(TEXT("Low Power Graphics round trips"), Reader->IsLowPowerMode());
+	TestFalse(TEXT("Previous emergency artwork persists"), Reader->UsesUpdatedEmergencyArtwork());
 	TestEqual(TEXT("On-foot FOV round trips"), Reader->GetOnFootFov(), 91.0f);
 	TestEqual(TEXT("Helicopter FOV round trips"), Reader->GetHelicopterFov(), 103.0f);
 	TestEqual(TEXT("Cockpit FOV round trips"), Reader->GetCockpitFov(), 72.0f);
@@ -864,12 +866,14 @@ bool FSimCopterGraphicsSettingsPersistenceTest::RunTest(const FString& Parameter
 	Writer2->SetLumenMode(ESimCopterLumenMode::Off);
 	Writer2->SetVolumetricFogEnabled(true);
 	Writer2->SetLowPowerMode(false);
+	Writer2->SetUpdatedEmergencyArtwork(true);
 	Writer2->SaveConfig(CPF_Config, *TestIni);
 
 	USimCopterSettings* Reader2 = NewObject<USimCopterSettings>(Outer);
 	Reader2->LoadConfig(USimCopterSettings::StaticClass(), *TestIni);
 
 	TestFalse(TEXT("Super Resolution disabled round trips"), Reader2->IsDlssEnabled());
+	TestTrue(TEXT("Updated emergency artwork persists"), Reader2->UsesUpdatedEmergencyArtwork());
 	TestEqual(TEXT("A second quality mode round trips"),
 		int32(Reader2->GetDlssQuality()), int32(ESimCopterDlssQuality::UltraQuality));
 	TestEqual(TEXT("Auto Frame Generation round trips"),

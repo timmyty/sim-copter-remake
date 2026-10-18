@@ -7,6 +7,7 @@
 #include "Styling/SlateBrush.h"
 #include "UI/SimCopterHangarArt.h"
 #include "Widgets/Images/SImage.h"
+#include "Widgets/Input/SSlider.h"
 #include "Widgets/Layout/SConstraintCanvas.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -122,7 +123,7 @@ void SSimCopterCitySettings::Construct(const FArguments& InArgs)
 		Sliders[Index] = Slider;
 		if (Index == 0 && InArgs._bProgressive)
 		{
-			Slider->SetEnabled(false);
+			// User cities may select any progress stage without earning its score first.
 			Slider->SetToolTipText(FText::FromString(InArgs._ProgressionText));
 		}
 		Slider->SetValue(static_cast<float>(GetValueForSlider(Values, Index))
@@ -164,9 +165,16 @@ void SSimCopterCitySettings::Construct(const FArguments& InArgs)
 			ButtonStyles));
 
 	if (InArgs._bProgressive)
-		AddAtPage(FRect{42, 351, 556, 373}, SNew(STextBlock)
-			.Text(LOCTEXT("ProgressStages", "Stages: 0 / 500 / 1500 / 3000 points. Jobs also require suitable equipment."))
+	{
+		AddAtPage(FRect{42, 351, 285, 373}, SNew(STextBlock)
+			.Text_Lambda([this]() { return FText::FromString(FString::Printf(TEXT("Mission frequency: %.2gx"), Values.MissionFrequency)); })
 			.Font(PageFont(12)).ColorAndOpacity(FSlateColor(LabelColor)));
+		AddAtPage(FRect{292, 350, 548, 373}, SNew(SSlider)
+			.MinValue(0.25f).MaxValue(4.0f).StepSize(0.25f)
+			.Value(Values.MissionFrequency)
+			.ToolTipText(LOCTEXT("FrequencyHelp", "How often new jobs appear: 0.25x to 4x. Progress selects the mission difficulty; equipment requirements still apply."))
+			.OnValueChanged_Lambda([this](float Value) { Values.MissionFrequency = Value; }));
+	}
 	ChildSlot
 	[
 		MakeScaledScreen(Canvas)

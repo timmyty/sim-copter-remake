@@ -178,6 +178,14 @@ bool FSimCopterBodyRecoveryTest::RunTest(const FString& Parameters)
 {
 	using namespace SimCopterDispatch;
 	auto* World = MakePolishWorld();
+	auto AddBox = [World](FVector Center, FVector Extent)
+	{
+		auto* Actor=World->SpawnActor<AActor>(); auto* Box=NewObject<UBoxComponent>(Actor);
+		Actor->SetRootComponent(Box); Box->SetBoxExtent(Extent);
+		Box->SetCollisionResponseToAllChannels(ECR_Block); Box->RegisterComponent(); Actor->SetActorLocation(Center);
+		return Actor;
+	};
+	AddBox(FVector(0,0,-20),FVector(10000,10000,20));
 	auto* Traffic = World->SpawnActor<ASimCopterTrafficSystemActor>();
 	Traffic->PeopleTileClasses.Init(7, FSimCity2000City::TileCount);
 	Traffic->TileCenterWorldZ.Init(0, FSimCity2000City::TileCount);
@@ -218,12 +226,29 @@ bool FSimCopterBodyRecoveryTest::RunTest(const FString& Parameters)
 	// Place a real medic explicitly so this fixture does not need city triangle spawn probes.
 	auto* Medic = World->SpawnActor<ASimCopterGroundAgent>();
 	Medic->SetOwner(Traffic); Medic->SetMissionScriptedMover(); Medic->SetBehaviorGroundSnap(true);
-	Medic->SetActorLocation(Body->GetActorLocation());
+	const FVector BodyPosition=Body->GetActorLocation();
+	Medic->SetActorLocation(BodyPosition+FVector(-600,0,1));
+	// A wall blocks the direct approach; the corpse rests close to a second facade.
+	auto* Obstacle=AddBox(BodyPosition+FVector(-250,0,150),FVector(30,180,200));
+	auto* Facade=AddBox(BodyPosition+FVector(0,100,150),FVector(140,45,200));
 	Vehicle.DeployedParamedic = Medic;
-	Traffic->UpdateBodyRecovery(Vehicle, 0.1f);
+	bool bCrossedWall=false;
+	for(int32 Frame=0;Frame<1200 && Vehicle.BodyRecoveryPhase==1;++Frame)
+	{
+		World->Tick(LEVELTICK_TimeOnly,.05f); Traffic->UpdateBodyRecovery(Vehicle,.05f); Medic->UpdateMovement(.05f);
+		bCrossedWall |= Obstacle->GetComponentsBoundingBox().IsInside(Medic->GetActorLocation());
+	}
+	TestFalse(TEXT("Recovery medic routes around the wall"),bCrossedWall);
+	AddInfo(FString::Printf(TEXT("Body recovery approach: medic %s, body %s, phase %d"),
+		*Medic->GetActorLocation().ToString(),*Body->GetActorLocation().ToString(),Vehicle.BodyRecoveryPhase));
 	TestTrue(TEXT("Medic carries the actual body"), Body->GetBehaviorCarrier() == Medic);
 	TestFalse(TEXT("Carried corpse remains visible"), Body->IsHidden());
-	Traffic->UpdateBodyRecovery(Vehicle, 0.1f);
+	for(int32 Frame=0;Frame<1200 && Vehicle.BodyRecoveryPhase==2;++Frame)
+	{
+		World->Tick(LEVELTICK_TimeOnly,.05f); Traffic->UpdateBodyRecovery(Vehicle,.05f);
+		if(!Medic->IsActorBeingDestroyed()) Medic->UpdateMovement(.05f);
+	}
+	Obstacle->Destroy(); Facade->Destroy();
 	TestTrue(TEXT("Body is loaded into the ambulance"), Body->GetBehaviorCarrier() == Vehicle.Agent.Get());
 	TestTrue(TEXT("Loaded body is inside the vehicle"), Body->IsHidden());
 	TestEqual(TEXT("Ambulance heads back to hospital"), Vehicle.State, ESimCopterDispatchVehicleState::Returning);
@@ -242,6 +267,18 @@ bool FSimCopterBodyRecoveryTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("Hospital receives the body"), Body->IsActorBeingDestroyed());
 		TestEqual(TEXT("Hospital ambulance capacity is released"), Traffic->DispatchStations[Service][0].Outstanding, 0);
 	}
+	// More bodies may queue, but unattended calls must not fill every dispatch slot.
+	for(int32 I=0;I<5;++I)
+	{
+		Traffic->DispatchStations[Service].Add(Station);
+		auto* Extra=World->SpawnActor<ASimCopterGroundAgent>(); Extra->SetOwner(Traffic);
+		Extra->SetActorLocation(Traffic->RoadNodes[3].Location+FVector(I*20,0,Extra->GetCapsuleHalfHeightCm()));
+		Extra->SetMissionDeadPose(); Traffic->PedestrianAgents.Add(Extra);
+	}
+	Traffic->DispatchAmbulancesForBodies(2);
+	TestEqual(TEXT("Unattended recovery caps ambulances at three"),Traffic->GetActiveDispatchCount(EService::Ambulance),3);
+	TestEqual(TEXT("Player can explicitly summon an additional ambulance"),
+		Traffic->RequestEmergencyDispatch(EService::Ambulance,FIntPoint(66,64),false),EDispatchResult::Dispatched);
 	GEngine->DestroyWorldContext(World);
 	World->DestroyWorld(false);
 	return true;

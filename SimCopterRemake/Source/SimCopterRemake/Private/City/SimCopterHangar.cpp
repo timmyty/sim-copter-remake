@@ -495,7 +495,14 @@ void ASimCopterHangar::CloseShell()
 	ShellController.Reset();
 
 	bShellOpen = false;
-
+	// A hangar visit recalls the owned fleet, including aircraft left away from base.
+	if (GetWorld() && !GetWorld()->bIsTearingDown && GetGameInstance())
+	if (auto* Career = GetGameInstance()->GetSubsystem<USimCopterCareerSubsystem>())
+	{
+		SimCopterHelicopterParking::EnsureOwnedFleet(this, Career);
+		for (auto* Aircraft : SimCopterHelicopterParking::GetPlayerFleet(this, Career))
+			Aircraft->RespawnParkedAtHangar();
+	}
 	PushPlayerOutOfDoorway();
 
 	if (const UWorld* World = GetWorld())

@@ -13,6 +13,7 @@ TConstArrayView<SSimCopterCheatGuide::FEntry> SSimCopterCheatGuide::GetEntries()
 {
 	// Keep these examples executable and complete; the guide test checks them against Parse.
 	static const FEntry Entries[] = {
+		{ TEXT("Respawn helicopter"), TEXT("Reset your active helicopter on a free hangar pad and return to its cockpit.") },
 		{ TEXT("superpowermultiply"), TEXT("Hold Shift for helicopter turbo, or to become a fast dog while on foot. Release Shift to return to the pilot.") },
 		{ TEXT("Shields up"), TEXT("Toggle protection from aircraft collision and fire damage. Does not repair existing damage.") },
 		{ TEXT("Gas does grow on trees"), TEXT("Refill your current aircraft and toggle unlimited fuel.") },

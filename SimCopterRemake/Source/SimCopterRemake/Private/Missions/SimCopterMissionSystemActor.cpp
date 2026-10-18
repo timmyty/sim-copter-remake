@@ -59,7 +59,7 @@
 namespace
 {
 constexpr uint32 MissionRuntimeSaveMagic = 0x4d534352; // 'MSCR'
-constexpr int32 MissionRuntimeSaveVersion = 2;
+constexpr int32 MissionRuntimeSaveVersion = 3;
 FString FormatSignedAmount(int32 Value, const TCHAR* Unit)
 {
 	return FString::Printf(TEXT("%+d %s"), Value, Unit);
@@ -341,7 +341,7 @@ bool ASimCopterMissionSystemActor::CaptureRuntimeSaveState(TArray<uint8>& OutDat
 		Writer << Handoff.LastOnboardCount << Handoff.SecondsWithoutProgress;
 	}
 	CustomCityBestScore = FMath::Max(CustomCityBestScore, MissionSystem.GetScore());
-	Writer << CustomCityBestScore;
+	Writer << CustomCityBestScore << CustomCityTierOverride << CustomMissionFrequency;
 	if (Writer.IsError())
 	{
 		OutData.Reset();
@@ -459,6 +459,13 @@ bool ASimCopterMissionSystemActor::RestoreRuntimeSaveState(const TArray<uint8>& 
 	}
 	CustomCityBestScore = FMath::Max(0, MissionSystem.GetScore());
 	if (Version >= 2) Reader << CustomCityBestScore;
+	CustomCityTierOverride = -1;
+	CustomMissionFrequency = 1.0f;
+	if (Version >= 3) Reader << CustomCityTierOverride << CustomMissionFrequency;
+	if ((CustomCityTierOverride != -1 && (CustomCityTierOverride < 1 || CustomCityTierOverride > 4)) ||
+		!FMath::IsFinite(CustomMissionFrequency) || CustomMissionFrequency < .25f || CustomMissionFrequency > 4) return false;
+	// The saved countdown is already scaled. Restore the derived option without rescaling it.
+	MissionSystem.MissionFrequency = UsesCitywideMissionPlacement() ? CustomMissionFrequency : 1.0f;
 	CustomCityBestScore = FMath::Max(CustomCityBestScore, MissionSystem.GetScore());
 	bCustomCitySitesScanned = false;
 	ScanCustomCityMissionSites();
@@ -996,6 +1003,7 @@ void ASimCopterMissionSystemActor::BeginSession(
 		Career != nullptr &&
 		Career->HasPendingCityTransfer();
 
+	MissionSystem.MissionFrequency = 1.0f;
 	if (bContinuingCareer)
 	{
 		// FUN_00408210: the money at career + 0x40 comes across with the player.
@@ -1009,6 +1017,9 @@ void ASimCopterMissionSystemActor::BeginSession(
 
 	SessionMode = Mode;
 	CustomCityBestScore = 0;
+	CustomCityTierOverride = -1;
+	CustomMissionFrequency = 1.0f;
+	MissionSystem.MissionFrequency = 1.0f;
 	bCustomCitySitesScanned = false;
 	ScanCustomCityMissionSites();
 	if (UsesCitywideMissionPlacement()) ShowAirOperationsMessage(GetCustomCityProgressionText());
@@ -2698,6 +2709,8 @@ bool ASimCopterMissionSystemActor::NotifyMissionPersonDelivered(ASimCopterGround
 	Person->SetMissionResolutionReported(true);
 	Person->SetMissionPickupCounted(false);
 	Person->SetAmbulanceHandoffPending(false);
+	if (Person->GetMissionPassengerKind() == ESimCopterMissionPassengerKind::Medevac && !Person->IsMissionPatientDead())
+		Person->ResumeDeliveredPatientBehavior();
 	return true;
 }
 

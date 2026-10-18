@@ -4177,6 +4177,19 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 	}
 
 	const bool bActivateAmbient = Outcome.bRedirectedExistingVehicle && Outcome.SlotIndex >= Vehicles.Num();
+	FIntPoint RecoveryHospital(INDEX_NONE, INDEX_NONE);
+	if (RecoveryBody && Outcome.bRedirectedExistingVehicle &&
+		(bActivateAmbient || Vehicles[Outcome.SlotIndex].StationIndex == INDEX_NONE))
+	{
+		float BestTravel = TNumericLimits<float>::Max();
+		for (const auto& Station : Stations)
+		{
+			const float Travel = RouteQuery(Outcome.DestinationTile, Station.RoadTile);
+			if (Travel < BestTravel) { BestTravel = Travel; RecoveryHospital = Station.RoadTile; }
+		}
+		// Do not recruit an ambient ambulance that has nowhere to take the patient.
+		if (RecoveryHospital.X == INDEX_NONE) return SimCopterDispatch::EDispatchResult::CannotReach;
+	}
 	FSimCopterDispatchVehicle& Vehicle = Vehicles[bActivateAmbient ? AmbientPoolSlot : Outcome.SlotIndex];
 	if (bActivateAmbient)
 	{
@@ -4187,7 +4200,8 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 		// Dispatch now owns routing, scene work and retirement. Ambient culling must not remove
 		// this unit or overwrite its response route. It never consumes an HQ launch allocation.
 		VehicleAgents.Remove(Agent);
-		Agent->MovementSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
+		if (Service != SimCopterDispatch::EService::Police)
+			Agent->MovementSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
 		Agent->SetTrafficSpeedScale(1.0f);
 	}
 
@@ -4209,6 +4223,7 @@ SimCopterDispatch::EDispatchResult ASimCopterTrafficSystemActor::RequestEmergenc
 		Vehicle.StationIndex = Outcome.StationIndex;
 	}
 
+	if (RecoveryHospital.X != INDEX_NONE) Vehicle.HomeTile = RecoveryHospital;
 	Vehicle.RecoveryBody = RecoveryBody;
 	Vehicle.BodyRecoveryPhase = RecoveryBody != nullptr ? 1 : 0;
 	Vehicle.BodyRecoverySeconds = 0.0f;
@@ -4492,7 +4507,8 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::SpawnDispatchVehicleAgent(
 
 	// Intentional extension to FUN_0049dbb0: responders have a higher service speed so
 	// the route-time coverage guarantee includes outlying roads and police pursuits.
-	const float ServiceSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
+	const float ServiceSpeedCmPerSec = Service == SimCopterDispatch::EService::Police
+		? DrawVehicleSpeedCmPerSec() : SimCopterDispatch::EmergencySpeedCmPerSec;
 	FString MeshName = GetDispatchMeshName(Service);
 	Agent->ConfigureAgent(
 		ESimCopterGroundAgentKind::Vehicle,
@@ -4578,7 +4594,13 @@ void ASimCopterTrafficSystemActor::AdvanceDispatchRoute(FSimCopterDispatchVehicl
 			: INDEX_NONE;
 
 		Agent->SetRouteState(NodeIndex, PrevIndex, NextIndex);
-		Agent->SetMoveTarget(MakeVehicleRouteTargetLocation(RoadNodes, NodeIndex, PrevIndex, INDEX_NONE, NextIndex));
+		FVector Target = MakeVehicleRouteTargetLocation(RoadNodes, NodeIndex, PrevIndex, INDEX_NONE, NextIndex);
+		// FUN_004b9e40 requires entering the destination tile, not just approaching
+		// its lane waypoint. A slow car can stop 75 cm short of an edge waypoint
+		// and endlessly re-plan; finish inside the tile before reporting arrival.
+		if (NextIndex == INDEX_NONE)
+			TryGetTileCenterWorldLocation(RoadNodes[NodeIndex].FileX, RoadNodes[NodeIndex].FileY, Target);
+		Agent->SetMoveTarget(Target);
 		return;
 	}
 
@@ -5724,7 +5746,9 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 	if (Vehicle.State == ESimCopterDispatchVehicleState::Responding || Vehicle.State == ESimCopterDispatchVehicleState::Chasing ||
 		Vehicle.State == ESimCopterDispatchVehicleState::Returning)
 	{
-		Vehicle.Agent->MovementSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
+		if (Service != SimCopterDispatch::EService::Police)
+			Vehicle.Agent->MovementSpeedCmPerSec = SimCopterDispatch::EmergencySpeedCmPerSec;
+		else Vehicle.Agent->MovementSpeedCmPerSec = FMath::Min(Vehicle.Agent->MovementSpeedCmPerSec, VehicleSpeedCmPerSec * (47.f / 41.5f));
 		Vehicle.Agent->SetTrafficSpeedScale(1.0f);
 	}
 	if (Vehicle.BodyRecoveryPhase != 0 && Vehicle.State == ESimCopterDispatchVehicleState::OnScene)
@@ -5987,6 +6011,11 @@ void ASimCopterTrafficSystemActor::DispatchAmbulancesForBodies(const float Delta
 	if (BodyDispatchCountdown > 0.0f) return;
 	BodyDispatchCountdown = 2.0f;
 	const auto& Ambulances = DispatchVehicles[static_cast<int32>(SimCopterDispatch::EService::Ambulance)];
+	// At most three automatically circulating EMS vehicles, counting both idle ambient
+	// ambulances and responses. Explicit player dispatch still uses the full service pool.
+	int32 ActiveAmbulances = 0;
+	for (TActorIterator<ASimCopterGroundAgent> It(GetWorld()); It; ++It)
+		if (!It->IsActorBeingDestroyed() && It->GetMeshTableName().Equals(TEXT("CARAMBUL"), ESearchCase::IgnoreCase)) ++ActiveAmbulances;
 	for (const auto& PersonPtr : PedestrianAgents)
 	{
 		auto* Body = PersonPtr.Get();
@@ -5998,7 +6027,9 @@ void ASimCopterTrafficSystemActor::DispatchAmbulancesForBodies(const float Delta
 		if (TryGetPeopleTileCoordinateAtWorldLocation(Body->GetActorLocation(), Tile.X, Tile.Y))
 		{
 			// Reuse hospital capacity and road routing; unavailable/unreachable calls remain pending.
-			RequestEmergencyDispatch(SimCopterDispatch::EService::Ambulance, Tile, false, Body);
+			if (ActiveAmbulances >= 3) break;
+			if (RequestEmergencyDispatch(SimCopterDispatch::EService::Ambulance, Tile, false, Body) ==
+				SimCopterDispatch::EDispatchResult::Dispatched) ++ActiveAmbulances;
 		}
 	}
 }
@@ -6041,12 +6072,25 @@ void ASimCopterTrafficSystemActor::UpdateBodyRecovery(FSimCopterDispatchVehicle&
 		return;
 	}
 	const FVector Target = Vehicle.BodyRecoveryPhase == 1 ? Body->GetActorLocation() : Ambulance->GetActorLocation();
-	Medic->SetMoveTarget(Target);
 	const float Reach = Vehicle.BodyRecoveryPhase == 1
-		? Medic->GetCollisionRadiusCm() + Body->GetCollisionRadiusCm() + 25.0f
-		: 110.0f;
-	if (FVector::Dist2D(Medic->GetActorLocation(), Target) > Reach ||
-		FMath::Abs(Medic->GetActorLocation().Z - Target.Z) > 110.0f) return;
+		? Medic->GetCollisionRadiusCm() + Body->GetCollisionRadiusCm() + 65.0f
+		: 130.0f;
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(BodyRecoveryReach), false, Medic);
+	Query.AddIgnoredActor(Body); Query.AddIgnoredActor(Ambulance);
+	FHitResult Hit;
+	const bool bCanReach = FVector::Dist2D(Medic->GetActorLocation(), Target) <= Reach &&
+		FMath::Abs(Medic->GetActorLocation().Z - Target.Z) <= 110.0f &&
+		!GetWorld()->LineTraceSingleByChannel(Hit, Medic->GetActorLocation(), Target, ECC_Camera, Query);
+	if (!bCanReach)
+	{
+		const FVector Approach = Target + (Medic->GetActorLocation() - Target).GetSafeNormal2D() * (Reach * .75f);
+		FVector Waypoint;
+		if (Medic->GetMedicWaypoint(Approach, Vehicle.BodyRecoveryPhase == 1 ? Body : Ambulance, Waypoint))
+			Medic->SetMoveTarget(Waypoint);
+		else Medic->ClearMoveTarget();
+		return;
+	}
+	Medic->ClearMoveTarget();
 	if (Vehicle.BodyRecoveryPhase == 1)
 	{
 		if (Body->BoardCarrier(Medic, false, false, true))
@@ -7706,9 +7750,20 @@ void ASimCopterTrafficSystemActor::ApplyAircraftRoadBlocking(const float DeltaSe
 			const FVector Extent(Vehicle->GetCollisionRadiusCm(), Vehicle->GetCollisionRadiusCm(), Vehicle->GetCapsuleHalfHeightCm());
 			CarBounds = FBox(-Extent, Extent);
 		}
-		const FTransform WorldToCar = Vehicle->GetActorTransform().Inverse();
-		const float LookAhead = FMath::Max(PlayerRoadBlockLookAheadCm,
-			float(Vehicle->GetCurrentVelocityCmPerSec().Size2D()) * FMath::Max(DeltaSeconds, 0.0f) + 30.0f);
+		FVector MoveTarget;
+		if (!Vehicle->TryGetActiveMoveTarget(MoveTarget))
+		{
+			Vehicle->SetAircraftTrafficBlocked(false);
+			continue;
+		}
+		const FVector ToTarget = MoveTarget - Vehicle->GetActorLocation();
+		// A stopped car cannot rotate its mesh. Probing that stale yaw can permanently
+		// stop a car travelling beside an airport because its nose still faces a plane.
+		// Follow the movement intent, and never extend the probe beyond its next turn.
+		const FTransform ProbeTransform(ToTarget.GetSafeNormal2D().Rotation(), Vehicle->GetActorLocation(), Vehicle->GetActorScale3D());
+		const FTransform WorldToCar = ProbeTransform.Inverse();
+		const float LookAhead = FMath::Min(float(ToTarget.Size2D()), FMath::Max(PlayerRoadBlockLookAheadCm,
+			float(Vehicle->GetCurrentVelocityCmPerSec().Size2D()) * FMath::Max(DeltaSeconds, 0.0f) + 30.0f));
 		bool bBlocked = false;
 		for (const FBox& Bounds : AircraftBounds)
 		{
@@ -9290,9 +9345,10 @@ bool ASimCopterTrafficSystemActor::TryMakeVehicleLaneGuidanceTarget(
 	bOutTraversingDiagonalRoad = DoesVehicleRouteTouchDiagonalRoadTile(TargetIndex, PreviousIndex, NextIndex);
 
 	const FVector SegmentStart = MakeRoutePointLocation(RoadNodes, PreviousIndex, INDEX_NONE, TargetIndex, true);
-	const FVector SegmentEnd = SimCopterTunnel::IsPortal(RoadNodes[TargetIndex].BuildingId)
-		? MakeVehicleRouteTargetLocation(RoadNodes, TargetIndex, PreviousIndex, INDEX_NONE, INDEX_NONE)
-		: MakeRoutePointLocation(RoadNodes, TargetIndex, PreviousIndex, NextIndex, true);
+	// AssignNextTarget already includes both the previous corner's clip and the upcoming
+	// turn (or tunnel entry). Reconstructing a different endpoint here can make a displaced
+	// car oscillate between guidance and its real waypoint, just outside the arrival radius.
+	const FVector SegmentEnd = Vehicle.GetMoveTargetLocation();
 	FVector Segment = SegmentEnd - SegmentStart;
 	Segment.Z = 0.0f;
 	const float SegmentLength = Segment.Size();
@@ -10097,7 +10153,9 @@ FString ASimCopterTrafficSystemActor::ChooseAmbientVehicleMesh()
 			const auto* Agent = Weak.Get();
 			return Agent && !Agent->IsActorBeingDestroyed() && Agent->GetMeshTableName().Equals(Mesh, ESearchCase::IgnoreCase);
 		};
-		if (!VehicleAgents.ContainsByPredicate(Matches) &&
+		const bool bDispatched = DispatchVehicles[Service].ContainsByPredicate([](const auto& Vehicle)
+			{ return Vehicle.Agent.IsValid() && !Vehicle.Agent->IsActorBeingDestroyed(); });
+		if (!bDispatched && !VehicleAgents.ContainsByPredicate(Matches) &&
 			!TunnelTransits.ContainsByPredicate([&](const auto& Transit) { return Matches(Transit.Agent); })) Emergency.Add(Mesh);
 	}
 	// Requested lighter emergency traffic: two percent of ambient choices, with at most one

@@ -7,6 +7,7 @@
 class FArchive;
 class FSimCopterAirOperationsTest;
 class FSimCopterMissionRecoveryPriorityTest;
+class FSimCopterPlaytestRegressionTest;
 
 // Decompiled SimCopter mission/event system, ported from SimCopter.exe.
 //
@@ -714,6 +715,9 @@ public:
 	int32 GetCash() const { return Cash; }
 	void AddScore(int32 Delta);  // FUN_00407b00 (clamps at 0)
 	void AddCash(int32 Delta);   // FUN_00407a90 (clamps at 0)
+	// User cities have a fixed workload ceiling independent of tier/frequency.
+	int32 GetOngoingEventCount() const;
+	bool HasUserCityEventCapacity() const;
 	int32 GetActiveMissionCount() const { return ActiveCount; }
 	int32 GetBackgroundMissionCount() const { return BackgroundCount; }
 	int32 GetDifficultyTier() const { return DifficultyTier; }
@@ -779,6 +783,8 @@ public:
 	// main menu hands the player a first job without the opening wait. Returns true when a mission
 	// was created; a zero-weight city can never create one.
 	bool RollScheduledMissionNow();
+	void SetMissionFrequency(float Frequency);
+	float MissionFrequency = 1.0f; // User-city option, persisted by the actor's versioned suffix.
 	// Derived from the possessed aircraft, never persisted over a helicopter switch.
 	bool bTransportOnly = false;
 	// Remake variety rule (not saved): whether the previous scheduled roll picked Transport.
@@ -791,6 +797,7 @@ public:
 
 private:
 	friend class ::FSimCopterAirOperationsTest;
+	friend class ::FSimCopterPlaytestRegressionTest;
 	friend class ::FSimCopterMissionRecoveryPriorityTest;
 	friend class FSimCopterNpcMedicalTest;
 	ISimCopterMissionWorld* World = nullptr;

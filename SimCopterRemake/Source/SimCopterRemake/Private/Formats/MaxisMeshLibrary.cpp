@@ -388,13 +388,11 @@ bool FMaxisMeshLibrary::LoadFromOriginalGameRoot(const FString& OriginalGameRoot
 		RegisterMeshFile(MeshFileIndex);
 	}
 
-	// DELIBERATE PRESENTATION DIVERGENCE (user request): the fire station, FS211 (object 0xE3,
-	// XBLD 0xD3, 8.97M original units tall) and the police station, PO210 (object 0x000, XBLD
-	// 0xD2, 11.44M) are stretched vertically to the hospital's height (HO209, 13.95M) so the three
-	// emergency buildings read as a set. Done once on the shared source data, so render,
-	// collision, roof posts, light markers and every later lookup agree; footprints are untouched.
+	// Police retains the previously requested hospital-height presentation. FS211 now
+	// uses its shipped height again (October 18 reference request). Scale shared source
+	// data so rendering, collision, roof posts and beacon positions always agree.
 	constexpr int32 HospitalObjectId = 0x016;
-	constexpr int32 StationObjectIds[] = { 0x000, 0x0E3 };
+	constexpr int32 PoliceObjectId = 0x000;
 	int64 HospitalTop = 0;
 	for (const FMaxisMeshFile& File : MeshFiles)
 		for (const FMaxisMeshObject& Object : File.Objects)
@@ -405,7 +403,7 @@ bool FMaxisMeshLibrary::LoadFromOriginalGameRoot(const FString& OriginalGameRoot
 	{
 		for (FMaxisMeshObject& Object : File.Objects)
 		{
-			if (Object.Header.Id != StationObjectIds[0] && Object.Header.Id != StationObjectIds[1]) continue;
+			if (Object.Header.Id != PoliceObjectId) continue;
 			int64 Top = 0;
 			for (const FMaxisMeshVertex& Vertex : Object.Vertices) Top = FMath::Max<int64>(Top, Vertex.Y);
 			if (Top <= 0 || Top >= HospitalTop) continue;

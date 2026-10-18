@@ -268,6 +268,11 @@ def main():
         mask_png = os.path.join(mask_dir, f"windows_page_{page_id}.png")
         if os.path.isfile(mask_png):
             window_texture = import_texture(mask_png, f"T_CityWindowPage_{page_id}", srgb=False)
+            # The surface shader integrates window coverage at distance; cell-safe
+            # sampling prevents these mipmaps from bleeding into adjacent facades.
+            window_texture.set_editor_property("filter", unreal.TextureFilter.TF_TRILINEAR)
+            window_texture.set_editor_property("mip_gen_settings", unreal.TextureMipGenSettings.TMGS_SIMPLE_AVERAGE)
+            unreal.EditorAssetLibrary.save_loaded_asset(window_texture, only_if_is_dirty=False)
             baked_window_pages.append(page_id)
 
         # SCHOOK: FUN_004814c0. SKY.BMP image 4 (the page-20 exception) contains the exact same

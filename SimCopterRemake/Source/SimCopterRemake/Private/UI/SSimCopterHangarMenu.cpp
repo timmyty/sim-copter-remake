@@ -330,7 +330,7 @@ TSharedRef<SWidget> SSimCopterHangarMenu::MakeReadingPanel(const TSharedRef<SScr
 			Scroll
 		];
 	Panel->AddMetadata(MakeShared<FSimCopterMenuFocusOutline>(FSlateRect(0, 0, 1, 1), FSlateRect(0, 0, 1, 1), 0.04f));
-	(Name == TEXT("History") ? HistoryPanel : DescriptionPanel) = Panel;
+	(Name == TEXT("Mission Log") ? LogPanel : Name == TEXT("History") ? HistoryPanel : DescriptionPanel) = Panel;
 	return Panel;
 }
 
@@ -338,7 +338,8 @@ bool SSimCopterHangarMenu::TryScrollReadingPanel(const FKey& Key)
 {
 	const TSharedPtr<SWidget> Selected = GetControllerSelection();
 	const TSharedPtr<SScrollBox> Scroll = Selected.IsValid() && Selected == HistoryPanel ? HistoryScroll
-		: Selected.IsValid() && Selected == DescriptionPanel ? DescriptionScroll : nullptr;
+		: Selected.IsValid() && Selected == DescriptionPanel ? DescriptionScroll
+		: Selected.IsValid() && Selected == LogPanel ? LogScroll : nullptr;
 	if (!Scroll.IsValid()) return false;
 	const bool bStick = Key == EKeys::Gamepad_RightStick_Up || Key == EKeys::Gamepad_RightStick_Down;
 	const bool bUp = Key == EKeys::Up || Key == EKeys::Gamepad_DPad_Up || Key == EKeys::Gamepad_RightStick_Up;
@@ -718,20 +719,20 @@ void SSimCopterHangarMenu::BuildMissionLogPage(SConstraintCanvas& Canvas)
 			true,
 			false));
 
-	// The page holds this many ruled lines; the newest entries win when the log is longer.
-	const int32 VisibleLines = FMath::FloorToInt(LogPageHeight / LogLineHeight);
-	const int32 First = FMath::Max(0, Entries.Num() - VisibleLines);
-
-	for (int32 Index = First; Index < Entries.Num(); ++Index)
-	{
-		const FSimCopterCareerLogEntry& Entry = Entries[Index];
-		const float LineY = LogPageY + 4.0f + (Index - First) * LogLineHeight;
-
-		AddAt(Canvas, LogPageX + 8.0f, LineY, 40.0f, LogLineHeight,
-			MakePageText(FormatLogStamp(Entry.SessionSeconds), 9, PaperInkDim, ETextJustify::Left, false, false));
-		AddAt(Canvas, LogPageX + 52.0f, LineY, LogPageWidth - 60.0f, LogLineHeight,
-			MakePageText(Entry.Text, 9, PaperInk, ETextJustify::Left, false, false));
-	}
+	TSharedRef<SVerticalBox> Lines = SNew(SVerticalBox);
+	for (const FSimCopterCareerLogEntry& Entry : Entries)
+		Lines->AddSlot().AutoHeight().Padding(0, 2)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth().Padding(0, 0, 8, 0)
+			[MakePageText(FormatLogStamp(Entry.SessionSeconds), 9, PaperInkDim, ETextJustify::Left, false, false)]
+			+ SHorizontalBox::Slot().FillWidth(1)
+			[MakePageText(Entry.Text, 9, PaperInk, ETextJustify::Left, false, true, LogPageWidth - 85)]
+		];
+	AddAt(Canvas, LogPageX + 8, LogPageY + 4, LogPageWidth - 16, LogPageHeight - 8,
+		MakeReadingPanel(SAssignNew(LogScroll, SScrollBox).ScrollBarAlwaysVisible(true)
+		+ SScrollBox::Slot()[Lines], TEXT("Mission Log")));
+	LogScroll->ScrollToEnd();
 
 	if (Entries.Num() == 0)
 	{
@@ -913,7 +914,7 @@ FReply SSimCopterHangarMenu::CycleEquipmentHelicopter(int32 Direction)
 
 FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
 {
-	if (Page == EPage::Catalog && CatalogRow != INDEX_NONE && TryScrollReadingPanel(Event.GetKey()))
+	if (TryScrollReadingPanel(Event.GetKey()))
 	{
 		return FReply::Handled();
 	}
