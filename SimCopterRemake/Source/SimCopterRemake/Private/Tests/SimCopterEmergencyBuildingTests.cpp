@@ -82,6 +82,23 @@ bool FSimCopterEmergencyGeometryTest::RunTest(const FString&)
 		}
 		TestTrue(TEXT("Roof preservation was exercised"),Roofs>=5);
 		if(Id==FireId) TestTrue(TEXT("Fire station is back to the shipped height, including roof equipment"),Bounds.Max.Y<140 && Bounds.Max.Y>136);
+		if(Id==FireId)
+		{
+			const auto* Truck=Library->FindObjectByTableName(TEXT("CARFIRET"));
+			if(!TestNotNull(TEXT("Gameplay fire engine exists for size comparison"),Truck)) return false;
+			FBox TruckBody(ForceInit),Paint[2]={FBox(ForceInit),FBox(ForceInit)};
+			for(const auto& F:Truck->Faces) if(F.FaceType!=11) // Exclude the discarded headlight cards.
+				for(auto I:F.VertexIndices){const auto& V=Truck->Vertices[I];TruckBody+=FVector(V.X,V.Y,V.Z)/65536.;}
+			for(const auto& F:Model.Faces)
+				if(IsDetail(Model,F) && F.MaterialIndex==Orange && !F.RawUVs.IsEmpty() && F.RawUVs[0].X>50*65536)
+					for(auto I:F.VertexIndices){const auto& V=Model.Vertices[I];Paint[V.Z>0?1:0]+=FVector(V.X,V.Y,V.Z)/65536.;}
+			for(const auto& Cab:Paint)
+			{
+				TestTrue(TEXT("Decorative cab width matches the gameplay truck within ten percent"),Cab.IsValid && FMath::Abs(Cab.GetSize().Z/TruckBody.GetSize().X-1)<.1);
+				TestTrue(TEXT("Resized cab keeps its ground position"),FMath::IsNearlyEqual(Cab.Min.Y,3.5,.001));
+			}
+			AddInfo(FString::Printf(TEXT("Fire engine body width %.2f GEO; station cab %.2f GEO (both use 6.25 cm/unit)"),TruckBody.GetSize().X,Paint[0].GetSize().Z));
+		}
 		AddInfo(FString::Printf(TEXT("Model %x: %d vertices, %d detail faces, %d preserved roofs"),Id,Model.Vertices.Num(),Details,Roofs));
 	}
 	return true;
@@ -91,7 +108,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSimCopterEmergencyCityTest,"SimCopter.Emergenc
 	EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FSimCopterEmergencyCityTest::RunTest(const FString&)
 {
-	const FString Folder=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/release-v1.0.20/previews");
+	const FString Folder=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/fog-engines-v123/buildings");
 	IFileManager::Get().MakeDirectory(*Folder,true);
 	TArray<uint8> Body; Body.Append(reinterpret_cast<const uint8*>("SCDH"),4);
 	auto BE=[](TArray<uint8>& Bytes,uint32 Value){for(int32 S=24;S>=0;S-=8) Bytes.Add(Value>>S);};

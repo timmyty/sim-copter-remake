@@ -220,7 +220,7 @@ void USimCopterCityIntro::BeginPreviewCloudBanks()
 		PreviousLocalCloudCVar = CVar->GetInt();
 		CVar->Set(1, ECVF_SetByGameOverride);
 	}
-	// Overlapping soft volumes provide real depth/parallax on the low fly-through.
+	// Sparse, translucent wisps retain the preview's fog-like veil and real parallax.
 	// They do not need the much higher, planet-scale CelestialVault cloud layer.
 	FRandomStream Shape(1647 + Route.CityIndex);
 	for (const FVector4& Bank : Route.CloudBanks)
@@ -228,17 +228,17 @@ void USimCopterCityIntro::BeginPreviewCloudBanks()
 		for (int32 Lobe=0; Lobe<11; ++Lobe)
 		{
 			const float Angle = Lobe * UE_TWO_PI / 6;
-			const float Radius = Bank.W * (Lobe == 0 ? .75f : Lobe < 7 ? Shape.FRandRange(.45f,.65f) : Shape.FRandRange(.22f,.38f));
+			const float Radius = Bank.W * (Lobe == 0 ? .65f : Lobe < 7 ? Shape.FRandRange(.4f,.6f) : Shape.FRandRange(.22f,.38f));
 			const FVector Offset = Lobe == 0 ? FVector::ZeroVector :
-				FVector(FMath::Cos(Angle)*Bank.W*.85f,FMath::Sin(Angle)*Bank.W*.6f,Shape.FRandRange(-.2f,.25f)*Bank.W);
+				FVector(FMath::Cos(Angle)*Bank.W*1.05f,FMath::Sin(Angle)*Bank.W*.7f,Shape.FRandRange(-.08f,.08f)*Bank.W);
 			auto* Cloud = NewObject<ULocalFogVolumeComponent>(PreviewCloudActor);
 			Cloud->SetWorldLocation(FVector(Bank)+Offset);
 			Cloud->SetWorldScale3D(FVector(Radius/ULocalFogVolumeComponent::GetBaseVolumeSize()));
-			Cloud->RadialFogExtinction = .08f * 2000.0f / Radius;
+			Cloud->RadialFogExtinction = .018f * 2000.0f / Radius;
 			// UE combines radial and height coverage multiplicatively: zero height
 			// density makes even a dense radial cloud completely transparent.
-			Cloud->HeightFogExtinction = .8f;
-			Cloud->HeightFogFalloff = 1.0f;
+			Cloud->HeightFogExtinction = .35f;
+			Cloud->HeightFogFalloff = 2.0f;
 			Cloud->FogPhaseG = .1f;
 			Cloud->FogAlbedo = FLinearColor(.98f,.985f,1);
 			const float Light = Shape.FRandRange(.7f,1.0f);

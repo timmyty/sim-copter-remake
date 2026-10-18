@@ -439,6 +439,19 @@ const FSlateBrush* USimCopterHangarArt::GetCareerCityMovieBrush(const int32 City
 {
 	if (const TSharedPtr<FSlateBrush>* Existing = CareerCityMovieBrushes.Find(CityIndex))
 	{
+		// CloseScreen closes players but keeps the art cache. Reentering New Career
+		// must restart the original rotating preview, in either gameplay mode.
+		// Keep the brush/texture stable and do not restart an asynchronous open.
+		if (UMediaPlayer* Player = CareerCityPlayers.FindRef(CityIndex))
+		{
+			Player->SetLooping(true);
+			if (Player->IsClosed() || Player->HasError())
+			{
+				const FString MoviePath = ResolveCareerCityMoviePath(CityIndex);
+				if (MoviePath.IsEmpty() || !Player->OpenFile(MoviePath)) return nullptr;
+			}
+			else if (!Player->IsPreparing() && !Player->IsPlaying()) Player->Play();
+		}
 		return Existing->IsValid() ? Existing->Get() : nullptr;
 	}
 

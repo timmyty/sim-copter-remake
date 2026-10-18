@@ -1,5 +1,7 @@
 # Saved game-flow toggle and preview cloud banks
 
+v1.0.23 follow-up: the banks now use softer, translucent fog. Career preview playback and station engine scale are documented in [the follow-up](FogEnginesAndCareerPreviews.md).
+
 ## Game selection
 
 Every New Career, Open Career, New User and Open User selection now opens a Game Options page with a persistent Extra Remake Features toggle, Back and Continue. The retired first-run flag no longer hides the choice. The main menu returns to its original five entries. Changing the toggle remembers the choice immediately; Continue activates it before constructing the appropriate city/save picker. In-game Options changes the same preference for the next New/Open game and retains its normal OK/Cancel behavior. No application restart is required.

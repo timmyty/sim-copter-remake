@@ -412,7 +412,7 @@ void FSimCopterCityTourRenderTest::GetTests(TArray<FString>& Names,TArray<FStrin
 }
 bool FSimCopterCityTourRenderTest::RunTest(const FString& Parameters)
 {
-	const FString Evidence=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/session-toggle-clouds/tours");
+	const FString Evidence=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/fog-engines-v123/tours");
 	IFileManager::Get().MakeDirectory(*Evidence,true);
 	for (const int32 CityIndex : {FCString::Atoi(*Parameters)})
 	{
