@@ -1,4 +1,5 @@
 #include "Ground/SimCopterGroundAgent.h"
+#include "Game/SimCopterSettings.h"
 #include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
@@ -74,7 +75,7 @@ bool ASimCopterGroundAgent::UpdatePoliceRecovery()
 		Target = Traffic->FindPoliceRecoveryTarget(*this);
 		// Requested remake addition: deployed police help with medical retrieval only
 		// after criminal work. Keep the same patient claims, route and real-body carry.
-		if (!Target && !bStreetOfficer) Target = Traffic->FindAndClaimGroundPatient(*this);
+		if (!Target && !bStreetOfficer && USimCopterSettings::RemakeFeaturesEnabled(this)) Target = Traffic->FindAndClaimGroundPatient(*this);
 	}
 	if (auto* Previous = Cast<ASimCopterGroundAgent>(BehaviorContext.SelectedObject.Get());
 		Previous && Previous != Target && Previous != Carried && Previous->HospitalPatientClaim.Get() == this)
@@ -158,6 +159,7 @@ bool ASimCopterGroundAgent::IsArrestableSuspect() const
 
 bool ASimCopterGroundAgent::StunForArrest(float DurationSeconds)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	if (!IsArrestableSuspect() || bTaserStunned || BehaviorCarrier.IsValid() || bMissionCarried) return false;
 	bTaserStunned = true;
 	if (IsKnockedDown()) FinishKnockdown(true);
@@ -197,6 +199,7 @@ void ASimCopterGroundAgent::CompletePoliceDelivery(const FVector& Roof)
 
 void ASimCopterGroundAgent::EnsureTowMission(bool bPlayerCaused)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if (!IsTowableVehicle() || TowMissionId != INDEX_NONE) return;
 	auto* Missions = MissionActor(this);
 	auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
@@ -221,6 +224,7 @@ void ASimCopterGroundAgent::SetVehicleStalled(bool bPlayerCaused)
 
 bool ASimCopterGroundAgent::DisableVehicleWithTaser()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	if (AgentKind != ESimCopterGroundAgentKind::Vehicle || bVehicleStalled || bVehicleTowed ||
 		bVehicleTipped || bVehicleExploded || bMissionResolutionReported || IsHidden() || IsActorBeingDestroyed()) return false;
 	// Remake-only electrical stop: preserve the route and traffic state for recovery.
@@ -432,6 +436,7 @@ bool ASimCopterGroundAgent::TickVehicleEscape(float DeltaSeconds)
 
 bool ASimCopterGroundAgent::IsCageRecoverableVehicle() const
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	if (AgentKind != ESimCopterGroundAgentKind::Vehicle || IsHidden() || IsActorBeingDestroyed() ||
 		bVehicleExploded || IsVehicleAccidentBurning() || bMissionResolutionReported) return false;
 	if (bVehicleStalled || bVehicleTowed || IsVehicleTaserDisabled()) return true;

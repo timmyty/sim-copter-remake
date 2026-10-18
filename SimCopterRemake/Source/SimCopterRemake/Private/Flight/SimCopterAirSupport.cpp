@@ -1,4 +1,5 @@
 #include "Flight/SimCopterAirOperations.h"
+#include "Game/SimCopterSettings.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Game/SimCopterCareerSubsystem.h"
 #include "Ground/SimCopterGroundAgent.h"
@@ -45,6 +46,7 @@ void USimCopterAirOperationsSubsystem::Deinitialize()
 }
 bool USimCopterAirOperationsSubsystem::IsSupportUnlocked() const
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	// The helper is a reward for finishing THIS city. A carried career flag (including
 	// one in an older save or a cheat warp transfer) cannot authorize work in a new city.
 	const auto* Mission = GetWorld() ? Missions() : nullptr;
@@ -52,6 +54,7 @@ bool USimCopterAirOperationsSubsystem::IsSupportUnlocked() const
 }
 void USimCopterAirOperationsSubsystem::Tick(float DeltaSeconds)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if (!GetWorld() || !GetWorld()->HasBegunPlay() || GetWorld()->IsPaused()) return;
 	auto* Mission=Missions(); if (!Mission) return;
 	ThinkSeconds-=DeltaSeconds;
@@ -72,6 +75,7 @@ void USimCopterAirOperationsSubsystem::Tick(float DeltaSeconds)
 }
 void USimCopterAirOperationsSubsystem::EnsureSites()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if (bSitesReady) return;
 	auto* Road=Traffic(); auto* City=Road?Road->GetCityActor():nullptr;
 	if (!Road || !City) return;
@@ -183,6 +187,7 @@ void USimCopterAirOperationsSubsystem::UpdateStalledCars(float DeltaSeconds)
 
 void USimCopterAirOperationsSubsystem::StartStalledCar(bool bCanTow)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if(!FindRecoverySite(FVector::ZeroVector,false)) return;
 	// Original missions own dispatch while there is work to do. Collision-created
 	// recoveries still use EnsureTowMission immediately and do not pass through here.
@@ -200,6 +205,7 @@ void USimCopterAirOperationsSubsystem::StartStalledCar(bool bCanTow)
 }
 void USimCopterAirOperationsSubsystem::EnsureSupport()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if(!IsSupportUnlocked() || SupportHelicopter.IsValid()) return;
 	for(TActorIterator<ASimCopterHelicopterPawn> It(GetWorld());It;++It)
 		if(It->IsSupportAircraft()) { SupportHelicopter=*It; return; }
@@ -239,6 +245,7 @@ void USimCopterAirOperationsSubsystem::EnsureSupport()
 }
 bool USimCopterAirOperationsSubsystem::OrderSupport(int32 EventId)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	if(!IsSupportUnlocked()) return false;
 	EnsureSupport(); if(!SupportHelicopter.IsValid()) return false;
 	if(SupportHelicopter->GetPassengerCount()>0 || SupportHelicopter->GetAirOperations()->HasCargo()) return false;

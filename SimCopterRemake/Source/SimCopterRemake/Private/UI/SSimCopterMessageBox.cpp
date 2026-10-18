@@ -36,6 +36,7 @@ constexpr float PlateButtonGap = 14.0f;
 void SSimCopterMessageBox::Construct(const FArguments& InArgs)
 {
 	bConfirm = InArgs._Confirm;
+	bExpandedText = InArgs._ExpandedText;
 	OnDismissed = InArgs._OnDismissed;
 	OnConfirmed = InArgs._OnConfirmed;
 
@@ -58,7 +59,7 @@ void SSimCopterMessageBox::Construct(const FArguments& InArgs)
 	ChildSlot
 	[
 		MakeScaledScreen(
-			HasPageBitmap(ArtObject, MessageBoxPage)
+			!bExpandedText && HasPageBitmap(ArtObject, MessageBoxPage)
 				? BuildPrintedPage(ArtObject, InArgs._Message, MakeDialogButton)
 				: BuildFallbackPlate(InArgs._Message, MakeDialogButton))
 	];
@@ -149,12 +150,12 @@ TSharedRef<SWidget> SSimCopterMessageBox::BuildFallbackPlate(
 			SNew(STextBlock)
 			.Text(Message)
 			.Justification(ETextJustify::Center)
-			.AutoWrapText(true)
+			.WrapTextAt(PlateWidth - PlatePadding * 2.0f)
 			// The missing-data message names an absolute folder, and a path has no spaces to break
 			// at - word wrapping alone lets it run straight off the plate.
 			.WrappingPolicy(ETextWrappingPolicy::AllowPerCharacterWrapping)
 			.LineHeightPercentage(1.2f)
-			.Font(PageFont(TextFontHeight))
+			.Font(PageFont(bExpandedText ? 13 : TextFontHeight))
 			.ColorAndOpacity(FSlateColor(PlateTextColor))
 		]
 		// A rule above the button row. No words, and it is what stops the buttons reading as

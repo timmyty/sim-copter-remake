@@ -1,4 +1,5 @@
 #include "Flight/SimCopterHelicopterPawn.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "EngineUtils.h"
@@ -151,6 +152,7 @@ void ASimCopterHelicopterPawn::StepFixedWing(float Dt, const FSimCopterFlightInp
 
 void ASimCopterHelicopterPawn::EnsureTransportPlane(UWorld* World)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(World)) return;
 	if (!World) return;
 	for (TActorIterator<ASimCopterHelicopterPawn> It(World); It; ++It)
 		if (It->IsFixedWingAircraft() && !It->IsActorBeingDestroyed()) return;

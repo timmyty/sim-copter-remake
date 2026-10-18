@@ -68,6 +68,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterHangar : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterRemakeModeTest;
 
 public:
 	ASimCopterHangar();
@@ -171,6 +172,10 @@ private:
 	double ReopenAllowedTimeSeconds = 0.0;
 
 	void BuildShellMesh();
+	void BuildLegacyShellMesh();
+	UMaterialInterface* ResolveLegacyCellMaterial(int32 AtlasCell);
+	UPROPERTY(Transient) TObjectPtr<UMaterialInterface> TexturedMaterial;
+	UPROPERTY(Transient) TMap<int32, TObjectPtr<UMaterialInterface>> CellMaterials;
 	FString ResolveOriginalGameRoot() const;
 
 	// Shared by the overlap event and the tick: open the shell if this really is the player on

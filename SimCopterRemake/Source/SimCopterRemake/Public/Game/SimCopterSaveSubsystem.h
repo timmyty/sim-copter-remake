@@ -37,7 +37,7 @@ class SIMCOPTERREMAKE_API USimCopterSaveGame : public USaveGame
 	GENERATED_BODY()
 
 public:
-	static constexpr int32 CurrentFormatVersion = 5;
+	static constexpr int32 CurrentFormatVersion = 6;
 	static const TCHAR* GetFormatMagic() { return TEXT("SimCopterRemakeSave"); }
 
 	UPROPERTY()
@@ -45,6 +45,10 @@ public:
 
 	UPROPERTY()
 	int32 FormatVersion = CurrentFormatVersion;
+
+	/** Pre-choice saves used the full fork. Never silently discard their people/cargo when loading. */
+	UPROPERTY()
+	bool bRemakeFeatures = true;
 
 	UPROPERTY()
 	ESimCopterSessionKind Kind = ESimCopterSessionKind::None;

@@ -157,6 +157,7 @@ enum class ESimCopterMainMenuItem : uint8
 	NewUserGame = 2,
 	OpenUserGame = 3,
 	Quit = 4,
+	RemakeFeatures = 5,
 };
 
 DECLARE_DELEGATE_OneParam(FOnSimCopterMainMenuItemChosen, ESimCopterMainMenuItem);

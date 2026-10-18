@@ -14,11 +14,14 @@ The partially visible globe/park structure in the reference is the **Launch Arco
 
 The automation cases `SimCopter.EmergencyBuildings.RoofsHeightAndGeometry` and `SimCopter.EmergencyBuildings.CityCollisionAndPreview` verify retained roof vertices/UVs/materials, original fire height, lot bounds, material binding, hospital canopy clearance, a recessed fire bay and actual rendered day/night controls. The offscreen images below are Unreal captures, not illustrative mockups.
 
-![Hospital](scratchpad/emergency-hq-2026-10-18/hospital.png)
+The gallery was refreshed from the v1.0.21 offscreen run and includes the later
+[hospital balcony/canopy corrections and artwork option](EmergencyArtworkOptionsOctober18.md).
 
-![Police station](scratchpad/emergency-hq-2026-10-18/police.png)
+![Hospital](images/emergency-buildings-v121/hospital.webp)
 
-![Fire station](scratchpad/emergency-hq-2026-10-18/fire-station.png)
+![Police station](images/emergency-buildings-v121/police.webp)
+
+![Fire station](images/emergency-buildings-v121/fire-station.webp)
 
 Build logs, before-edit source copies, an exact source diff, render captures and installation backups are under `Docs/scratchpad/emergency-hq-2026-10-18/`. Final validation and installation status is recorded in `Docs/validation/EmergencyHeadquartersOctober18Results.json`.
 

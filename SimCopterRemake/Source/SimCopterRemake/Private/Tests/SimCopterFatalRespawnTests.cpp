@@ -20,7 +20,7 @@ IMPLEMENT_COMPLEX_AUTOMATION_TEST(FSimCopterFatalRespawnTest, "SimCopter.PilotRe
 void FSimCopterFatalRespawnTest::GetTests(TArray<FString>& Names, TArray<FString>& Commands) const
 {
 	for (const TCHAR* Case : {TEXT("Airborne"), TEXT("AutopilotOff"), TEXT("Grounded"),
-		TEXT("Destroyed"), TEXT("SavedFatalFall"), TEXT("ExpiredWithoutController"), TEXT("Nonfatal")})
+		TEXT("Destroyed"), TEXT("SavedFatalFall"), TEXT("ExpiredWithoutController"), TEXT("Nonfatal"), TEXT("RepeatAfterRespawn"), TEXT("RepeatNearOtherAircraft"), TEXT("RepeatAfterBoarding")})
 	{
 		Names.Add(Case); Commands.Add(Case);
 	}
@@ -135,6 +135,36 @@ bool FSimCopterFatalRespawnTest::RunTest(const FString& Case)
 		TestEqual(TEXT("Surviving aircraft retains damage"), Heli->FlightModel.HitPoints, HitPoints);
 		TestEqual(TEXT("Surviving aircraft retains engine state"), Heli->bEngineRunning, EngineRunning);
 		TestEqual(TEXT("Autopilot preference survives respawn"), Ops->IsAutopilotEnabled(), Case != TEXT("AutopilotOff"));
+	}
+	if (Case.StartsWith(TEXT("Repeat")))
+	{
+		for (int32 Attempt = 0; Attempt < 3; ++Attempt)
+		{
+			Heli->SetAutopilotTransform(FVector(800,500,1000),FRotator::ZeroRotator,.05f);
+			Heli->ExitHelicopter();
+			auto* NextPilot = Cast<ASimCopterOnFootPawn>(PC->GetPawn());
+			if (!TestNotNull(TEXT("Repeated airborne exit creates a fresh pilot"), NextPilot)) return false;
+			ASimCopterHelicopterPawn* Nearby = nullptr;
+			if (Case == TEXT("RepeatNearOtherAircraft"))
+			{
+				Nearby = World->SpawnActor<ASimCopterHelicopterPawn>();
+				Nearby->SetActorLocation(NextPilot->GetActorLocation()+FVector(0,0,-10));
+				// This is the discovery path run by the real deferred pawn's BeginPlay.
+				NextPilot->FindOrSpawnParkedHelicopter();
+				TestEqual(TEXT("Spawn discovery preserves explicitly assigned exit aircraft"), NextPilot->GetParkedHelicopter(), Heli);
+				Nearby->Destroy();
+			}
+			NextPilot->SetActorLocation(FVector(1500,500,94));
+			NextPilot->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			const FVector Before = Heli->GetActorLocation();
+			for (int32 Frame=0;Frame<60;++Frame) Ops->Update(.1f);
+			TestTrue(TEXT("Retrieval still moves after every return and exit"),FVector::Distance(Before,Heli->GetActorLocation())>100);
+			TestTrue(TEXT("Retrieval preference remains enabled"), Ops->IsAutopilotEnabled());
+			// I love my helicopter uses this same boarding transition, including an interrupted lift.
+			Heli->EnterHelicopter(PC);
+			TestFalse(TEXT("Boarding fully ends the prior recovery"), Ops->IsRecoveringPilot());
+			TestFalse(TEXT("Old pilot cannot obstruct the next recovery"),NextPilot->GetActorEnableCollision());
+		}
 	}
 	return true;
 }

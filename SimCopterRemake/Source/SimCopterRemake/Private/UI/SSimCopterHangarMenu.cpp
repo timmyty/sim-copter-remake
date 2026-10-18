@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterHangarMenu.h"
+#include "Game/SimCopterSettings.h"
 #include "SimCopterEquipmentPreview.h"
 #include "Game/SimCopterCheats.h"
 #include "SimCopterMenuFocusOutline.h"
@@ -55,6 +56,7 @@ const TCHAR* const HangarBackdropNight = TEXT("NHANGAR.BMP");
 const TCHAR* const ShellButtonStrip = TEXT("BUTTON.BMP");
 const TCHAR* const CatalogButtonStrip = TEXT("CAT_BTN.BMP");
 constexpr int32 ButtonFrameCount = 3;
+constexpr int32 LegacyUpgradeRowCount = 5;
 
 // The original prints these readouts as plain integers - no thousands separator.
 FString FormatDollars(const int32 Value)
@@ -196,7 +198,7 @@ void SSimCopterHangarMenu::RebuildPage()
 			? 0
 			: FMath::Clamp(PreviousFocusIndex, 0, ControllerFocusableWidgets.Num() - 1);
 		InitialFocusWidget = ControllerFocusableWidgets[FocusIndex];
-		if (Page==EPage::Catalog && CatalogRow==INDEX_NONE)
+		if (Page==EPage::Catalog && CatalogRow==INDEX_NONE && USimCopterSettings::RemakeFeaturesEnabled(Shop.Helicopter.Get()))
 		{
 			if (PreviousControllerIndex>=8 && PreviousControllerIndex<=10) SelectEquipmentAction();
 			else SetControllerSelection(ControllerFocusableWidgets[2+UpgradeRow]);
@@ -592,6 +594,7 @@ void SSimCopterHangarMenu::BuildCatalogHelicopterPage(SConstraintCanvas& Canvas)
 
 void SSimCopterHangarMenu::BuildCatalogUpgradesPage(SConstraintCanvas& Canvas)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(Shop.Helicopter.Get())) { BuildLegacyUpgradesPage(Canvas); return; }
 	const auto Paper=FLinearColor(.86f,.83f,.71f);
 	AddAt(Canvas,12,20,610,392,SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(Paper));
 	AddAt(Canvas,24,27,580,20,MakePageText(TEXT("HELICOPTER EQUIPMENT"),14,PaperInk,ETextJustify::Left,true,false));
@@ -865,7 +868,8 @@ FReply SSimCopterHangarMenu::HandleSelectCatalogRow(const int32 NewRow)
 
 FReply SSimCopterHangarMenu::HandleSelectUpgradeRow(const int32 NewRow)
 {
-	UpgradeRow = FMath::Clamp(NewRow, 0, SimCopterHangarShop::UpgradeRowCount - 1);
+	UpgradeRow = FMath::Clamp(NewRow, 0, USimCopterSettings::RemakeFeaturesEnabled(Shop.Helicopter.Get()) ? SimCopterHangarShop::UpgradeRowCount - 1 : LegacyUpgradeRowCount - 1);
+	if (!USimCopterSettings::RemakeFeaturesEnabled(Shop.Helicopter.Get())) RebuildPage();
 	StatusText.Reset();
 	return FReply::Handled();
 }
@@ -929,7 +933,7 @@ FReply SSimCopterHangarMenu::OnPreviewKeyDown(const FGeometry& Geometry, const F
 			return FReply::Handled();
 		}
 	}
-	if (Page == EPage::Catalog && CatalogRow == INDEX_NONE)
+	if (Page == EPage::Catalog && CatalogRow == INDEX_NONE && USimCopterSettings::RemakeFeaturesEnabled(Shop.Helicopter.Get()))
 	{
 		const FKey Key=Event.GetKey();
 		// B leaves Upgrades for the aircraft list (OnKeyDown); it no longer stops on the item row.
@@ -959,7 +963,7 @@ bool SSimCopterHangarMenu::IsControllerNavigationCandidate(const TSharedPtr<SWid
 void SSimCopterHangarMenu::OnControllerSelectionChanged(int32 Index)
 {
 	// The equipment page's two arrow buttons precede its always-enabled item buttons.
-	if (Page==EPage::Catalog && CatalogRow==INDEX_NONE && Index>=2 && Index<2+SimCopterHangarShop::UpgradeRowCount)
+	if (USimCopterSettings::RemakeFeaturesEnabled(Shop.Helicopter.Get()) && Page==EPage::Catalog && CatalogRow==INDEX_NONE && Index>=2 && Index<2+SimCopterHangarShop::UpgradeRowCount)
 		HandleSelectUpgradeRow(Index-2);
 }
 
@@ -1023,7 +1027,7 @@ FReply SSimCopterHangarMenu::OnKeyDown(const FGeometry& MyGeometry, const FKeyEv
 	{
 		// Upgrades is a sub-page of the catalog: back steps out to the aircraft list first,
 		// and a second back closes the catalog.
-		if (Page == EPage::Catalog && CatalogRow == INDEX_NONE)
+		if (Page == EPage::Catalog && CatalogRow == INDEX_NONE && USimCopterSettings::RemakeFeaturesEnabled(Shop.Helicopter.Get()))
 		{
 			return InKeyEvent.IsRepeat() ? FReply::Handled() : HandleSelectCatalogRow(LastAircraftCatalogRow);
 		}
@@ -1035,4 +1039,73 @@ FReply SSimCopterHangarMenu::OnKeyDown(const FGeometry& MyGeometry, const FKeyEv
 	}
 
 	return SCompoundWidget::OnKeyDown(MyGeometry, InKeyEvent);
+}
+
+void SSimCopterHangarMenu::BuildLegacyUpgradesPage(SConstraintCanvas& Canvas)
+{
+	// The page's three letterheads (strings 439..441) are part of cataloge.bmp itself, so nothing
+	// is drawn for them here - printing them again just doubles the ink.
+
+	for (int32 Row = 0; Row < LegacyUpgradeRowCount; ++Row)
+	{
+		const SimCopterHangarShop::FRowState State = SimCopterHangarShop::GetUpgradeRowState(Shop, Row);
+
+		// The icon is printed on the page; the selected row gets the original's blue outline.
+		if (Row == UpgradeRow)
+		{
+			AddAt(Canvas, UpgradeIconLeft[Row] - 2.0f, UpgradeIconTop[Row] - 2.0f, UpgradeIconWidth + 4.0f, UpgradeIconHeight + 4.0f,
+				SNew(SBorder)
+				.BorderImage(FCoreStyle::Get().GetBrush(TEXT("Border")))
+				.BorderBackgroundColor(SelectionTint));
+		}
+
+		// Font 8 with a 4px margin is the largest that fits every one of the five blurbs inside a
+		// 167x96 cell without the last line running off the bottom.
+		AddAt(Canvas, UpgradeTextLeft[Row] + 4.0f, UpgradeTextTop[Row] + 4.0f, UpgradeTextWidth - 8.0f, UpgradeTextHeight - 6.0f,
+			MakePageText(
+				SimCopterHangarShop::GetUpgradeDescription(Row),
+				8,
+				State.bOwned ? PaperInk : PaperInkDim,
+				ETextJustify::Left,
+				false,
+				true,
+				UpgradeTextWidth - 8.0f));
+
+		if (State.bOwned)
+		{
+			AddAt(Canvas, UpgradeIconLeft[Row], UpgradeIconTop[Row] + UpgradeIconHeight - 14.0f, UpgradeIconWidth, 13.0f,
+				MakePageText(TEXT("OWNED"), 8, SelectionTint, ETextJustify::Center, true, false));
+		}
+
+		// Both cells select the row, as the original's whole-cell hit test does.
+		AddAt(Canvas, UpgradeIconLeft[Row], UpgradeIconTop[Row], UpgradeIconWidth, UpgradeIconHeight,
+			MakeHotspot(
+				FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSelectUpgradeRow, Row),
+				SimCopterHelicopterRegistry::GetToolDisplayName(SimCopterHangarShop::GetToolForUpgradeRow(Row))));
+		AddAt(Canvas, UpgradeTextLeft[Row], UpgradeTextTop[Row], UpgradeTextWidth, UpgradeTextHeight,
+			MakeHotspot(
+				FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSelectUpgradeRow, Row),
+				SimCopterHelicopterRegistry::GetToolDisplayName(SimCopterHangarShop::GetToolForUpgradeRow(Row))));
+	}
+
+	// Readouts (strings 437 / 438) in the bottom-right cell.
+	const SimCopterHangarShop::FRowState Selected = SimCopterHangarShop::GetUpgradeRowState(Shop, UpgradeRow);
+	AddAt(Canvas, UpgradeFundsLabelX, UpgradeFundsRowY, UpgradeLabelWidth, 18.0f,
+		MakePageText(TEXT("Current Funds"), 12, PaperInk, ETextJustify::Left, true, false));
+	AddAt(Canvas, UpgradeFundsValueX, UpgradeFundsRowY, UpgradeValueWidth, 18.0f,
+		MakePageText(FormatDollars(SimCopterHangarShop::GetCurrentFunds(Shop)), 12, PaperInk, ETextJustify::Left, true, false));
+	AddAt(Canvas, UpgradeFundsLabelX, UpgradeValueRowY, UpgradeLabelWidth, 18.0f,
+		MakePageText(TEXT("Item Value"), 12, PaperInk, ETextJustify::Left, true, false));
+	AddAt(Canvas, UpgradeFundsValueX, UpgradeValueRowY, UpgradeValueWidth, 18.0f,
+		MakePageText(FormatDollars(Selected.ItemValue), 12, PaperInk, ETextJustify::Left, true, false));
+
+	AddAt(Canvas, UpgradeBuyX, UpgradeBuyY, ShellButtonWidth, ShellButtonHeight,
+		MakeArtButton(ShellButtonStrip, ButtonFrameCount, TEXT("Buy"),
+			FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleBuy), Selected.bCanBuy));
+	AddAt(Canvas, UpgradeBuyX, UpgradeSellY, ShellButtonWidth, ShellButtonHeight,
+		MakeArtButton(ShellButtonStrip, ButtonFrameCount, TEXT("Sell"),
+			FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleSell), Selected.bCanSell));
+	AddAt(Canvas, UpgradeDoneX, UpgradeDoneY, ShellButtonWidth, ShellButtonHeight,
+		MakeArtButton(ShellButtonStrip, ButtonFrameCount, TEXT("Done"),
+			FOnClicked::CreateSP(this, &SSimCopterHangarMenu::HandleShowPage, EPage::Hangar)));
 }

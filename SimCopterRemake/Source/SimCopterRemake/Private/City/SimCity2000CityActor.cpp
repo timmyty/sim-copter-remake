@@ -4,6 +4,7 @@
 #include "City/SimCopterWaterTowers.h"
 #include "City/SimCopterCivicLandmarks.h"
 #include "City/SimCopterEmergencyBuildings.h"
+#include "City/SimCopterSelectedBuildings.h"
 #include "City/SimCopterMarina.h"
 #include "City/SimCopterDriveInPlacement.h"
 #include "Game/SimCopterCheats.h"
@@ -3201,6 +3202,7 @@ int32 AppendMaxisMeshObject(
 		const bool bTranslucentDiscFace = !bTexturedFace && FMaxisProceduralMeshBuilder::IsTranslucentFaceType(Face.FaceType);
 		// Preserve the existing emergency-building roofs/helipads. Tagged new facade
 		// details have their own finish; they must not inherit HO209's roof material.
+		const bool bSelectedDetail = SimCopterSelectedBuildings::IsDetail(Face);
 		const bool bEmergencyDetail = SimCopterEmergencyBuildings::IsDetail(MeshObject, Face);
 		const bool bHospital = MeshObject.Header.Id == 0x016;
 		const int32 HospitalSection = !bHospital ? INDEX_NONE :
@@ -3217,14 +3219,14 @@ int32 AppendMaxisMeshObject(
 		const bool bWoodenPier = MeshObject.Header.bConsistentWinding &&
 			(SimCopterCivicLandmarks::IsPier(MeshObject.Header.Id) ||
 			 (MeshObject.Header.Id == SimCopterMarina::ObjectId && Face.FaceType == 15 && Face.MaterialIndex <= SimCopterMarina::RoadApronFinish));
-		const int32 SectionKey = bEmergencyDetail ? SimCopterEmergencyBuildings::SectionKey : bWoodenPier ? SimCopterCivicLandmarks::PierSectionKey : bCityHall ? SimCopterCivicLandmarks::CityHallSectionKey : bWaterTower ? SimCopterWaterTowers::SectionKey : ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
+		const int32 SectionKey = bSelectedDetail ? (Face.MaterialIndex==16 ? SimCopterSelectedBuildings::GlassSectionKey : SimCopterSelectedBuildings::SectionKey) : bEmergencyDetail ? SimCopterEmergencyBuildings::SectionKey : bWoodenPier ? SimCopterCivicLandmarks::PierSectionKey : bCityHall ? SimCopterCivicLandmarks::CityHallSectionKey : bWaterTower ? SimCopterWaterTowers::SectionKey : ScenerySection != INDEX_NONE ? ScenerySection : HospitalSection != INDEX_NONE ? HospitalSection : bBakedAtlasTexturedFace
 			? MakeBakedAtlasPageSectionKey(Face.TextureAtlasIndex)
 			: (bBakedDirectTexturedFace ? MakeBakedDirectImageSectionKey(Face.MaterialIndex) : (bRuntimeTexturedFace ? TextureKey : (bTranslucentDiscFace ? TranslucentDiscSectionKeyFlag : INDEX_NONE)));
 		FOriginalMeshSectionData& Section = Sections.FindOrAdd(SectionKey);
 		const int32 FaceVertexStart = Section.Vertices.Num();
 		// Binary finish bits survive both static-mesh sRGB packing and the merged mesh's
 		// linear vertex-color packing; fractional tags would select different finishes.
-		const FLinearColor FaceColor = (bEmergencyDetail || bWoodenPier || bCityHall) ? FLinearColor(Face.MaterialIndex & 1, (Face.MaterialIndex >> 1) & 1, (Face.MaterialIndex >> 2) & 1) : bWaterTower ? FLinearColor(Face.MaterialIndex * 0.5f, 0, 0) : bTexturedFace
+		const FLinearColor FaceColor = bSelectedDetail ? SimCopterSelectedBuildings::FinishColor(Face.MaterialIndex) : (bEmergencyDetail || bWoodenPier || bCityHall) ? FLinearColor(Face.MaterialIndex & 1, (Face.MaterialIndex >> 1) & 1, (Face.MaterialIndex >> 2) & 1) : bWaterTower ? FLinearColor(Face.MaterialIndex * 0.5f, 0, 0) : bTexturedFace
 			? FLinearColor::White
 			: ResolveMaxisFaceColor(ColorMap, Face.FaceType, Face.MaterialIndex, TexturedFaceFallbackColor);
 
@@ -4219,7 +4221,12 @@ void ASimCity2000CityActor::RebuildCity()
 		}
 
 		UMaterialInterface* Resolved = nullptr;
-		if (SectionKey == SimCopterEmergencyBuildings::SectionKey)
+		if (SectionKey == SimCopterSelectedBuildings::SectionKey || SectionKey == SimCopterSelectedBuildings::GlassSectionKey)
+		{
+			Resolved = LoadGeneratedCityAtlasMaterial(SectionKey == SimCopterSelectedBuildings::GlassSectionKey ? TEXT("M_SelectedBuildingGlass") : TEXT("M_SelectedBuildings"));
+			if (!Resolved) Resolved = VertexColorMaterial;
+		}
+		else if (SectionKey == SimCopterEmergencyBuildings::SectionKey)
 		{
 			Resolved = LoadGeneratedCityAtlasMaterial(TEXT("M_EmergencyDetails"));
 			if (!Resolved) Resolved = VertexColorMaterial;
@@ -4457,6 +4464,10 @@ void ASimCity2000CityActor::RebuildCity()
 	TOptional<FMaxisMeshObject> CityHallModel;
 	TMap<int32, FMaxisMeshObject> EmergencyModels;
 	EmergencyModels.Reserve(3);
+	TMap<int32, FMaxisMeshObject> SelectedModels;
+	SelectedModels.Reserve(48);
+	TMap<int32, FMaxisMeshObject> CausewayModels;
+	CausewayModels.Reserve(8);
 	// Two orientations only; reserved so the pointers handed out below never move.
 	TMap<int32, FMaxisMeshObject> PierModels;
 	PierModels.Reserve(2);
@@ -4756,6 +4767,21 @@ void ASimCity2000CityActor::RebuildCity()
 						? MeshLibrary.FindObjectByObjectId(PrimaryObjectId, &ColorMap)
 						: MeshLibrary.FindObjectByTileId(MeshTileId, &ColorMap);
 					MeshObject = ResolveTerrainRelativePowerLineMesh(MeshObject);
+					if (MeshObject && SimCopterSelectedBuildings::IsSelected(MeshObject->Header.Id))
+					{
+						const int32 Id=MeshObject->Header.Id;
+						if (!SelectedModels.Contains(Id)) SelectedModels.Add(Id,SimCopterSelectedBuildings::MakeModel(*MeshObject));
+						MeshObject=&SelectedModels[Id];
+					}
+					if (MeshObject && SimCopterSelectedBuildings::IsCausewayModel(MeshObject->Header.Id))
+					{
+						const int32 Id=MeshObject->Header.Id;
+						// GEO Z maps to world/file X. Align each continuous orientation to an eight-tile cadence.
+						const bool Support=((Id==247 || Id==249 ? FileX : FileY)%8)==0;
+						const int32 Key=Id*2+int32(Support);
+						if (!CausewayModels.Contains(Key)) CausewayModels.Add(Key,SimCopterSelectedBuildings::MakeCauseway(*MeshObject,Support));
+						MeshObject=&CausewayModels[Key];
+					}
 					if (MeshObject && SimCopterEmergencyBuildings::IsEmergencyBuilding(MeshObject->Header.Id))
 					{
 						if (!EmergencyModels.Contains(MeshObject->Header.Id))
@@ -4862,7 +4888,8 @@ void ASimCity2000CityActor::RebuildCity()
 						// Pools are water polygons inside land tiles, not entire water-class tiles.
 						for (const auto& Face : MeshObject->Faces)
 						{
-							if (Face.FaceType != 18 || Face.TextureAtlasIndex != 20 || Face.MaterialIndex >= 10) continue;
+							if (!(Face.FaceType == 18 && Face.TextureAtlasIndex == 20 && Face.MaterialIndex < 10) &&
+								! (SimCopterSelectedBuildings::IsDetail(Face) && Face.MaterialIndex == 10)) continue;
 							TArray<FVector> Points;
 							for (const auto V : Face.VertexIndices)
 							{
@@ -5752,7 +5779,7 @@ void ASimCity2000CityActor::RebuildCity()
 
 		UMaterialInterface* SectionMaterial = nullptr;
 		UTexture2D* RuntimeTexture = nullptr;
-		if (TextureKey >= SimCopterEmergencyBuildings::SectionKey && TextureKey <= -201)
+		if (TextureKey >= SimCopterSelectedBuildings::GlassSectionKey && TextureKey <= -201)
 		{
 			SectionMaterial = ResolveBuildingSectionMaterial(TextureKey);
 		}

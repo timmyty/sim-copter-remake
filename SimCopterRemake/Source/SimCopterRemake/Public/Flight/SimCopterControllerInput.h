@@ -17,7 +17,8 @@ struct FDispatchSelection
 	bool bChaseSpotlight;
 	const TCHAR* Label;
 };
-SIMCOPTERREMAKE_API FDispatchSelection GetDispatchSelection(int32 Slot);
+SIMCOPTERREMAKE_API FDispatchSelection GetDispatchSelection(int32 Slot, bool bAllowAirSupport = true);
+inline int32 GetDispatchSlotCount(bool bAllowAirSupport) { return bAllowAirSupport ? DispatchSlotCount : DispatchSlotCount - 1; }
 
 constexpr float RadialDeadZone = 0.45f;
 constexpr float TriggerPressedThreshold = 0.25f;

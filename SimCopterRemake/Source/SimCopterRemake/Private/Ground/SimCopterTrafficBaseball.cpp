@@ -1,4 +1,5 @@
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterBaseballGame.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Engine/World.h"
@@ -17,7 +18,7 @@ void ASimCopterTrafficSystemActor::PruneBaseballGames()
 		auto* Game=It.Value().Get();
 		const bool bValidField=PedestrianNodes.IsValidIndex(It.Key()) &&
 			GetXbldTileId(PedestrianNodes[It.Key()].FileX,PedestrianNodes[It.Key()].FileY)==0xd7;
-		if (!Game || !bPlayFullBaseballGames || !bValidField ||
+		if (!Game || !bPlayFullBaseballGames || !USimCopterSettings::RemakeFeaturesEnabled(this) || !bValidField ||
 			FVector::DistSquared2D(Game->GetActorLocation(),Focus)>FMath::Square(12*ActiveTileSize))
 		{
 			if (Game) { Game->Stop(); Game->Destroy(); }
@@ -28,6 +29,7 @@ void ASimCopterTrafficSystemActor::PruneBaseballGames()
 
 int32 ASimCopterTrafficSystemActor::EnsureBaseballGame(int32 TileX, int32 TileY, int32& AttemptsRemaining)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return 0;
 	int32 NodeIndex=INDEX_NONE;
 	if (!TryResolvePedestrianNodeForTile(TileX,TileY,NodeIndex)) return 0;
 	const auto& Node=PedestrianNodes[NodeIndex];

@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Game/SimCopterSettings.h"
 #include "ProfilingDebugging/CsvProfiler.h"
 #include "Game/SimCopterLoadingSubsystem.h"
 #include "City/SimCopterTunnel.h"
@@ -3141,10 +3142,11 @@ ASimCopterGroundAgent* ASimCopterTrafficSystemActor::EnsureServiceRoofCrew(
 	const uint8 Building = uint8(GetXbldTileId(TileX, TileY));
 	if (!GetWorld() || (Building != 0xD1 && Building != 0xD2)) return nullptr;
 	const int32 State = Building == 0xD1 ? 5 : 7;
+	if (State == 7 && !USimCopterSettings::RemakeFeaturesEnabled(this)) return nullptr;
 	FVector RoofCenter;
 	float HalfExtent;
 	if (!TryGetBuildingRoofPost(TileX, TileY, RoofCenter, HalfExtent)) return nullptr;
-	const int32 Required = FMath::Clamp(DesiredCrew, 1, 8);
+	const int32 Required = USimCopterSettings::RemakeFeaturesEnabled(this) ? FMath::Clamp(DesiredCrew, 1, 8) : 1;
 	TArray<ASimCopterGroundAgent*> Crew;
 	auto Gather = [&]()
 	{
@@ -6007,6 +6009,7 @@ void ASimCopterTrafficSystemActor::UpdateOneDispatchVehicle(SimCopterDispatch::E
 
 void ASimCopterTrafficSystemActor::DispatchAmbulancesForBodies(const float DeltaSeconds)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	BodyDispatchCountdown -= DeltaSeconds;
 	if (BodyDispatchCountdown > 0.0f) return;
 	BodyDispatchCountdown = 2.0f;
@@ -9811,7 +9814,7 @@ int32 ASimCopterTrafficSystemActor::TrySpawnSpecialBuildingPeople(int32 TileX, i
 	}
 	if (BuildingId == 0xD7)
 	{
-		if (bPlayFullBaseballGames) return EnsureBaseballGame(TileX, TileY, AttemptsRemaining);
+		if (bPlayFullBaseballGames && USimCopterSettings::RemakeFeaturesEnabled(this)) return EnsureBaseballGame(TileX, TileY, AttemptsRemaining);
 		// SCHOOK: SpawnSpecialBuildingPeople 0x004c25b0 / ScriptedPerson 0x004c20b0.
 		// One class-4 batter and seven class-4 fielders, relative to the scene centre.
 		// The original duplicate check (004c1fb0) matches scripted building identity,

@@ -29,6 +29,7 @@ class SIMCOPTERREMAKE_API ASimCopterOnFootPawn
 	, public ISimCopterReplayRecordable
 {
 	GENERATED_BODY()
+	friend class FSimCopterRemakeModeTest;
 	friend class FSimCopterRescuePilotRuntimeTest;
 	friend class FSimCopterFatalRespawnTest;
 	friend class FSimCopterRooftopSafetyTest;

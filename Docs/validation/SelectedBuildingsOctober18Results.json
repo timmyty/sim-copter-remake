@@ -1,0 +1,186 @@
+{
+  "date_utc": "2026-10-18T10:04:37.203286+00:00",
+  "base": "v1.0.20",
+  "scope": "36 requested entries: 35 building entries including both hydro variants, plus causeway",
+  "reference": "https://www.timigi.com/Stuff/Archive/simcopter/buildings.html",
+  "tests": {
+    "tests-all": {
+      "succeeded": 559,
+      "succeededWithWarnings": 44,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 546.401611328125
+    },
+    "tests-render-final": {
+      "succeeded": 51,
+      "succeededWithWarnings": 3,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 40.32181167602539
+    },
+    "tests-selected-final": {
+      "succeeded": 3,
+      "succeededWithWarnings": 0,
+      "failed": 0,
+      "notRun": 0,
+      "totalDuration": 9.740743637084961
+    }
+  },
+  "editor_shipping_development": "Succeeded",
+  "package": "Succeeded; fresh cook",
+  "source": [
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\City\\SimCity2000CityActor.cpp",
+      "sha256": "efbd1ee983f30443bf4d683ac5f92e065e70fb58944360f8096be2f0adacc834",
+      "new": false
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\City\\SimCopterEmergencyBuildings.cpp",
+      "sha256": "3753b4d323521f6f2574936bc31ce832a079fabe016bf4d87351e3e4a6bf6751",
+      "new": false
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\City\\SimCopterSelectedBuildings.cpp",
+      "sha256": "4633f95ce7a696f42f7c416d8dd7fa08c73ee6b99deb2813b1071e2a698bd99a",
+      "new": true
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Ground\\SimCopterAmbientVehicles.cpp",
+      "sha256": "ebc9d93e9fe24fe78f9ba56d4fda6441dd0335048c6f656f16f8ca7fcd7fe17e",
+      "new": false
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Private\\Tests\\SimCopterSelectedBuildingTests.cpp",
+      "sha256": "1c846c4be1b1f8bfb11b2b916d083110675bd9479b0d4f9428e7ea387ab4495a",
+      "new": true
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\City\\SimCity2000CityActor.h",
+      "sha256": "7bcc5c955d98a3981ccc609b49fd3d41a9ce4ce3702ec478a923b627da057ef9",
+      "new": false
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\City\\SimCopterSelectedBuildings.h",
+      "sha256": "6dd6ac4bb1707bb984cc098525de4242b8585d13c652848a90e0f37bd63f68b3",
+      "new": true
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Ground\\SimCopterAmbientVehicles.h",
+      "sha256": "b3b67fbfd4fe5e1e8b17d694d0ae8e3fee71cffd304225e4cc665d7238bb2f33",
+      "new": false
+    },
+    {
+      "file": "SimCopterRemake\\Source\\SimCopterRemake\\Public\\Ground\\SimCopterTrafficSystemActor.h",
+      "sha256": "67428a2071a7a1744d3421ed8b10b7b37a28e91aa79dbef7407e951efc42a13f",
+      "new": false
+    },
+    {
+      "file": "Tools\\Unreal\\BakeSelectedBuildingPresentation.py",
+      "sha256": "08fbfb54add95bb8b39e3d270cff6e9b7a8fa8100bd62b6e17df2dd73b45b95d",
+      "new": true
+    }
+  ],
+  "materials": [
+    {
+      "file": "SimCopterRemake\\Content\\Generated\\CityAtlas\\M_SelectedBuildingGlass.uasset",
+      "sha256": "9a991365b8cfa46e4915c0ca75661e399fc3300c371652bf1c2e133d68a205d1"
+    },
+    {
+      "file": "SimCopterRemake\\Content\\Generated\\CityAtlas\\M_SelectedBuildings.uasset",
+      "sha256": "3c30a4ff95e7ee3deeaae78bb5fc31a8e1e1162c3c75236192689a902c39dea7"
+    }
+  ],
+  "installation": {
+    "installed_at_utc": "2026-10-18T10:03:16.815755+00:00",
+    "installed": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows",
+    "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup",
+    "files": [
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.pak",
+        "previous_sha256": "a86326fb03f7e930c50ccb718495db4428fbf016722336a4e41e38f0c09d9c52",
+        "sha256": "117a1946f90a7fb92f937681afdcbb7065f9637f5d856b540eef5a991e5e7b4d"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.ucas",
+        "previous_sha256": "32b1174ca69c31464ee8a3a8e9e3ebbda65b5d673e5a21c63a39d25bbf143be0",
+        "sha256": "3dae93700f0797c8d5ebff9fa975b9b7081cf65fca5975de4d9141f74a42b3a4"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\Package\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup\\SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "relative": "SimCopterRemake\\Content\\Paks\\SimCopterRemake-Windows.utoc",
+        "previous_sha256": "8585eb3550b72a19e4eaa5674520ff43049e0b33afd7fbe0e598e97f601d0ea6",
+        "sha256": "e8e5ef49e293a3129e426cbc41625e144cb9783a0032a21f1e134ed2719df9d3"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\Package\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake-Win64-Shipping.exe",
+        "previous_sha256": "b50f0216ad21bfafa5e50a4c1db34d2d95daa6a3e79431eb842c69ff1e0d5d52",
+        "sha256": "1ffd6ad44dd6b04c2b2ecedf4b0515a5f0e06e16de9aac542a15e90d85983358"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup\\SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "relative": "SimCopterRemake\\Binaries\\Win64\\SimCopterRemake.exe",
+        "previous_sha256": "1c59292219adcf68c9d41e2b1053a785739da42add503e3296e269eb4d7eaf5a",
+        "sha256": "32cf7a820b4828dd543f798107e535ca779da86639fba8047eadace1235bf040"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\Package\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_NonUFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup\\Manifest_NonUFSFiles_Win64.txt",
+        "relative": "Manifest_NonUFSFiles_Win64.txt",
+        "previous_sha256": "72a283ca17e5eff7a3a020413c134f8bec9ad9370d48c160bc5999bd218e6643",
+        "sha256": "a75eec91ebb45880ba3046b170bc2139089843611befd6b086ae9e4e19bead24"
+      },
+      {
+        "source": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\Package\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "destination": "C:\\SimCopterRemake\\SimCopter Remake v1.0.1\\Windows\\Manifest_UFSFiles_Win64.txt",
+        "backup": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\installed-backup\\Manifest_UFSFiles_Win64.txt",
+        "relative": "Manifest_UFSFiles_Win64.txt",
+        "previous_sha256": "18122bdadda1ae98ec578db6ca45a30ee76111c5f819310c99ea502854bd2c59",
+        "sha256": "0b860cfbd9ba08aa02f703f8456bd4d318022adeac7f2d5911061da539be35a5"
+      }
+    ],
+    "protected_files_verified": 183,
+    "packaged_manifest_files": 891,
+    "tests_passed": 603,
+    "interactive_playtest": false
+  },
+  "startups": [
+    {
+      "Mode": "shipping",
+      "Survived": true,
+      "Seconds": 30.4569083,
+      "PID": 61276,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\smoke-shipping",
+      "InteractiveGameplayChecked": false
+    },
+    {
+      "Mode": "development",
+      "Survived": true,
+      "Seconds": 30.4090745,
+      "PID": 11592,
+      "IsolatedProfile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\selected-buildings-2026-10-18\\smoke-development",
+      "InteractiveGameplayChecked": false
+    }
+  ],
+  "visual_review": {
+    "daylight_models": 35,
+    "causeway": true,
+    "night_controls": true,
+    "exclusions_preserved": true,
+    "interactive_playtest": false
+  },
+  "publication_changed": false
+}

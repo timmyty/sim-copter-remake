@@ -1425,17 +1425,17 @@ void ASimCopterHelicopterPawn::PrepareHelicopterModel(
 			return false;
 		}
 		TArray<FColor> PaintPalette;
-		if (ColorMap) SimCopterHelicopterPresentation::MakePaintPalette(*ColorMap, PaintPalette,
+		if (ColorMap && USimCopterSettings::RemakeFeaturesEnabled(this)) SimCopterHelicopterPresentation::MakePaintPalette(*ColorMap, PaintPalette,
 			ObjectId == Definition.BodyObjectId ? TypeIndex : INDEX_NONE);
 		FMaxisMeshObject PaintedBody;
-		if (ObjectId == Definition.BodyObjectId && (TypeIndex == 0 || TypeIndex == 1 || TypeIndex == 6 || TypeIndex == 7))
+		if (USimCopterSettings::RemakeFeaturesEnabled(this) && ObjectId == Definition.BodyObjectId && (TypeIndex == 0 || TypeIndex == 1 || TypeIndex == 6 || TypeIndex == 7))
 		{
 			PaintedBody = *Object;
 			SimCopterHelicopterPresentation::ApplyCatalogPaintRegions(PaintedBody, TypeIndex);
 			Object = &PaintedBody;
 		}
 		FMaxisProceduralMeshBuilder::BuildPaletteColoredSection(
-			*Object, ColorMap ? &PaintPalette : nullptr, ModelUnitsPerCentimeter, ModelScale, bRenderModelBackfaces, FallbackColor, OutSection);
+			*Object, PaintPalette.IsEmpty() ? ColorMap : &PaintPalette, ModelUnitsPerCentimeter, ModelScale, bRenderModelBackfaces, FallbackColor, OutSection);
 		return !OutSection.IsEmpty();
 	};
 
@@ -1467,7 +1467,7 @@ void ASimCopterHelicopterPawn::PrepareHelicopterModel(
 			*RootPath));
 	}
 
-	if (TypeIndex >= 0)
+	if (TypeIndex >= 0 && USimCopterSettings::RemakeFeaturesEnabled(this))
 	{
 		const TArray<FColor>* Palette = nullptr;
 		if (const auto* Source = MeshLibrary.FindObjectByObjectId(Definition.BodyObjectId, &Palette))
@@ -1596,6 +1596,8 @@ bool ASimCopterHelicopterPawn::ValidateHelicopterModel(
 
 void ASimCopterHelicopterPawn::ApplyPreparedModelMeshes(const FSimCopterPreparedHelicopterModel& Prepared)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this))
+		ModelVertexColorMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_SimCopterLitVertexColor.M_SimCopterLitVertexColor"));
 	if (ModelVertexColorMaterial && !Cast<UMaterialInstanceDynamic>(ModelVertexColorMaterial))
 		ModelVertexColorMaterial = UMaterialInstanceDynamic::Create(ModelVertexColorMaterial, this);
 	if (auto* Paint = Cast<UMaterialInstanceDynamic>(ModelVertexColorMaterial))
@@ -1903,6 +1905,7 @@ void ASimCopterHelicopterPawn::CommitHelicopterModel(FSimCopterPreparedHelicopte
 
 bool ASimCopterHelicopterPawn::SwitchHelicopterModel(int32 TypeIndex)
 {
+	if (TypeIndex == SimCopterHelicopterRegistry::PlaneTypeIndex && !USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	if (TypeIndex == ActiveHelicopterTypeIndex && bUsingOriginalMesh)
 	{
 		LastModelSwitchStatus = FString::Printf(TEXT("Already flying runtime type %d."), TypeIndex);
@@ -4636,7 +4639,7 @@ void ASimCopterHelicopterPawn::ControllerDispatchWheelPressed()
 
 void ASimCopterHelicopterPawn::DispatchControllerSelection()
 {
-	const auto Selection = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex);
+	const auto Selection = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex, USimCopterSettings::RemakeFeaturesEnabled(this));
 	if (Selection.ServiceIndex == SimCopterControllerInput::RecallAllServiceIndex) { ClearAllDispatchVehicles(); return; }
 	if (Selection.ServiceIndex == 100) { RequestAirSupport(); return; }
 	if (Selection.ServiceIndex != INDEX_NONE)
@@ -4989,7 +4992,7 @@ void ASimCopterHelicopterPawn::UpdateControllerRadialSelection()
 	int32 SlotCount = 0;
 	if (ControllerMode == ESimCopterControllerMode::DispatchWheel)
 	{
-		SlotCount = SimCopterControllerInput::DispatchSlotCount;
+		SlotCount = SimCopterControllerInput::GetDispatchSlotCount(USimCopterSettings::RemakeFeaturesEnabled(this));
 	}
 	else if (ControllerMode == ESimCopterControllerMode::ToolWheel)
 	{
@@ -5012,7 +5015,7 @@ void ASimCopterHelicopterPawn::UpdateControllerRadialSelection()
 	ControllerRadialIndex = NewIndex;
 	if (ControllerMode == ESimCopterControllerMode::DispatchWheel && NewIndex != INDEX_NONE)
 	{
-		const int32 Service = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex).ServiceIndex;
+		const int32 Service = SimCopterControllerInput::GetDispatchSelection(ControllerRadialIndex, USimCopterSettings::RemakeFeaturesEnabled(this)).ServiceIndex;
 		if (Service != SimCopterControllerInput::RecallAllServiceIndex) SelectedDispatchService = Service;
 	}
 }
@@ -5309,6 +5312,8 @@ ESimCopterToolAvailability ASimCopterHelicopterPawn::GetToolAvailability(ESimCop
 
 bool ASimCopterHelicopterPawn::IsToolAvailable(ESimCopterHelicopterTool Tool) const
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this) &&
+		(Tool == ESimCopterHelicopterTool::CaptureCage || Tool == ESimCopterHelicopterTool::RemoteTaser)) return false;
 	return GetToolAvailability(Tool) != ESimCopterToolAvailability::Unavailable;
 }
 
@@ -9488,6 +9493,7 @@ void ASimCopterHelicopterPawn::AdvanceCockpitStabilizedAttitude(float DeltaSecon
 
 bool ASimCopterHelicopterPawn::IsPassengerProvidingMedicalCare(int32 SlotIndex) const
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	if (!MissionPassengerSlots.IsValidIndex(SlotIndex)) return false;
 	const auto* Medic = MissionPassengerSlots[SlotIndex].Person.Get();
 	// BHAV 281 identifies medics by state 5. Keep this display separate from the original
@@ -9506,6 +9512,8 @@ bool ASimCopterHelicopterPawn::IsPassengerProvidingMedicalCare(int32 SlotIndex) 
 
 void ASimCopterHelicopterPawn::RefreshCabinOccupants()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this))
+	{ if (CabinOccupantsMesh) CabinOccupantsMesh->ClearAllMeshSections(); return; }
 	if (!CabinOccupantsMesh) return;
 	CabinOccupantsMesh->SetVisibility(bUsingOriginalMesh);
 	CabinOccupantsMesh->SetRelativeScale3D(FVector(ModelScale / 0.25f));

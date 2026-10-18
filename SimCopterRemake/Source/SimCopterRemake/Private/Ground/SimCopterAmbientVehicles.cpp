@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterAmbientVehicles.h"
+#include "Game/SimCopterSettings.h"
+#include "City/SimCopterSelectedBuildings.h"
 #include "Flight/SimCopterPlaneParts.h"
 #include "Ground/SimCopterRescueDeck.h"
 #include "Ground/SimCopterUfoMesh.h"
@@ -695,11 +697,47 @@ bool ASimCopterAmbientVehiclesActor::TryGetTrainTileCenter(
 
 bool ASimCopterAmbientVehiclesActor::IsWaterTile(const FIntPoint& Tile) const
 {
+	if (const auto* Traffic = ResolveTrafficSystem()) return Traffic->IsWaterTile(Tile.X, Tile.Y);
+	return false;
+}
+
+bool ASimCopterAmbientVehiclesActor::IsBoatWaterTile(const FIntPoint& Tile) const
+{
 	if (const ASimCopterTrafficSystemActor* TrafficSystem = ResolveTrafficSystem())
 	{
-		return TrafficSystem->IsWaterTile(Tile.X, Tile.Y);
+		return TrafficSystem->IsWaterTile(Tile.X, Tile.Y) &&
+			!SimCopterSelectedBuildings::IsCausewayTile(TrafficSystem->GetXbldTileId(Tile.X,Tile.Y));
 	}
 	return false;
+}
+
+// A boat has a hull, not just a tile-centre point. Sweep small samples so rotor wash and
+// a long frame cannot carry any part of it through a causeway's exclusion strip.
+bool ASimCopterAmbientVehiclesActor::CanMoveBoat(const FVector& From,const FVector& To,bool bCapsized) const
+{
+	const auto* Traffic=ResolveTrafficSystem();if(!Traffic)return false;
+	const double TileSize=GetTileSizeCm(),Radius=TileSize*.4;
+	const double Distance=FVector::Dist2D(From,To);
+	if(Distance>TileSize*128)return false;
+	const int32 Steps=FMath::Max(1,FMath::CeilToInt(Distance/(TileSize*.2)));
+	// Resolve the actor once for the whole sweep; this is used every frame for each boat.
+	auto IsClearWater=[Traffic](int32 X,int32 Y)
+	{
+		return Traffic->IsWaterTile(X,Y) && !SimCopterSelectedBuildings::IsCausewayTile(Traffic->GetXbldTileId(X,Y));
+	};
+	for(int32 I=0;I<=Steps;++I)
+	{
+		const FVector Center=FMath::Lerp(From,To,double(I)/Steps);
+		for(const FVector& Offset:{FVector::ZeroVector,FVector(Radius,0,0),FVector(-Radius,0,0),FVector(0,Radius,0),FVector(0,-Radius,0),FVector(Radius,Radius,0),FVector(-Radius,Radius,0),FVector(Radius,-Radius,0),FVector(-Radius,-Radius,0)})
+		{
+			int32 X,Y;if(!Traffic->TryGetPeopleTileCoordinateAtWorldLocation(Center+Offset,X,Y))return false;
+			if(!IsClearWater(X,Y))return false;
+			if(bCapsized && Offset.IsZero())
+				for(int32 DY=-1;DY<=1;++DY)for(int32 DX=-1;DX<=1;++DX)
+					if(!IsClearWater(X+DX,Y+DY))return false;
+		}
+	}
+	return true;
 }
 
 bool ASimCopterAmbientVehiclesActor::IsOpenWaterTile(const FIntPoint& Tile) const
@@ -710,7 +748,7 @@ bool ASimCopterAmbientVehiclesActor::IsOpenWaterTile(const FIntPoint& Tile) cons
 	{
 		for (int32 OffsetX = -1; OffsetX <= 1; ++OffsetX)
 		{
-			if (!IsWaterTile(FIntPoint(Tile.X + OffsetX, Tile.Y + OffsetY)))
+			if (!IsBoatWaterTile(FIntPoint(Tile.X + OffsetX, Tile.Y + OffsetY)))
 			{
 				return false;
 			}
@@ -777,7 +815,7 @@ void ASimCopterAmbientVehiclesActor::EnsureRailScan()
 				RailTiles.Add(FIntPoint(X, Y));
 				RailTileSet.Add(FIntPoint(X, Y));
 			}
-			else if (TrafficSystem->IsWaterTile(X, Y))
+			else if (IsBoatWaterTile(FIntPoint(X,Y)))
 			{
 				WaterTiles.Add(FIntPoint(X, Y));
 			}
@@ -876,6 +914,7 @@ int32 ASimCopterAmbientVehiclesActor::GetDifficultyTier() const
 
 UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(const int32 ObjectId, const TCHAR* Name, bool bPresentationAircraft)
 {
+	bPresentationAircraft &= USimCopterSettings::RemakeFeaturesEnabled(this);
 	const FString RootPath = ResolveOriginalGameRoot();
 	if (RootPath.IsEmpty())
 	{
@@ -940,13 +979,13 @@ UProceduralMeshComponent* ASimCopterAmbientVehiclesActor::CreateVehicleMesh(cons
 	// silver paint, not the nearly black first stop. Reuse the flyable aircraft's
 	// palette conversion and keep type-11 propeller blur out of the opaque body.
 	TArray<FColor> Paint;
-	if (bPresentationAircraft && ColorMap)
+	if (bPresentationAircraft && ColorMap && USimCopterSettings::RemakeFeaturesEnabled(this))
 	{
 		SimCopterHelicopterPresentation::MakePaintPalette(*ColorMap, Paint, ObjectId == 0x124 ? 3 : INDEX_NONE);
 		ColorMap = &Paint;
 	}
 	FMaxisMeshObject Body = *Object;
-	const bool bPlane = ObjectId == SimCopterAmbientVehicles::PlaneObjectId;
+	const bool bPlane = ObjectId == SimCopterAmbientVehicles::PlaneObjectId && USimCopterSettings::RemakeFeaturesEnabled(this);
 	if (bPlane) USimCopterPlanePartsComponent::RemoveMovingFaces(Body);
 	FMaxisMeshSection Section, Disc;
 	FMaxisProceduralMeshBuilder::BuildPaletteColoredSections(
@@ -1907,11 +1946,22 @@ void ASimCopterAmbientVehiclesActor::UpdateBoat(FSimCopterAmbientBoat& Boat, con
 				M->PostMissionEvent(SimCopterMissions::EVT_SetCategory,Boat.TowEventId,SimCopterMissions::CAT_ExpireSilently,true);
 				Boat.TowEventId=INDEX_NONE;
 			}
-			else if (BoatRiders.IsEmpty() && Boat.TowEventId == INDEX_NONE)
+			else if (BoatRiders.IsEmpty() && Boat.TowEventId == INDEX_NONE && USimCopterSettings::RemakeFeaturesEnabled(this))
 				Boat.TowEventId = M->CreateMissionAt(Boat.Tile.X, Boat.Tile.Y, SimCopterMissions::TYPE_BoatTow);
 		}
 	}
 	if (Boat.bTowAttached) { SetBoatMeshTransform(Boat, Boat.World, FRotator::ZeroRotator); return; }
+	// Old saves can already contain a boat beneath a bridge. Rehome it in nearby open
+	// water while retaining the rescue/tow record and its passengers.
+	if (Boat.bVisible && !CanMoveBoat(Boat.World,Boat.World,Boat.ObjectId==SimCopterAmbientVehicles::CapsizedBoatObjectId))
+	{
+		FSimCopterAmbientBoat Replacement=Boat;
+		if(!PlaceBoatNearTile(Replacement,Boat.Tile,BoatPlacementRings)) return;
+		Boat=Replacement;
+		Boat.RotorPushVelocityCm=FVector::ZeroVector;
+		if(auto* M=ResolveMissionSystem()) for(int32 Event:{Boat.EventId,Boat.TowEventId})
+			if(Event!=INDEX_NONE) M->PostMissionEventAt(SimCopterMissions::EVT_SetPrimaryCoords,Event,Boat.Tile.X,Boat.Tile.Y,0,true);
+	}
 	if (Boat.bVisible && Boat.TowEventId != INDEX_NONE)
 	{
 		// Leave the capsized hull recoverable after its passengers have been rescued.
@@ -2024,9 +2074,15 @@ void ASimCopterAmbientVehiclesActor::UpdateBoat(FSimCopterAmbientBoat& Boat, con
 		ChooseBoatTarget(Boat);
 	}
 
-	const float StepCm = Boat.SpeedCmPerSec * DeltaSeconds;
-	Boat.DistanceToTargetCm -= StepCm;
-	Boat.World += Boat.Direction * StepCm;
+	if(!Boat.bVisible)return;
+	const float StepCm = FMath::Min(Boat.DistanceToTargetCm,Boat.SpeedCmPerSec * DeltaSeconds);
+	const FVector TravelWorld=Boat.World+Boat.Direction*FMath::Max(0.f,StepCm);
+	if(CanMoveBoat(Boat.World,TravelWorld,bCapsized))
+	{
+		Boat.DistanceToTargetCm-=StepCm;Boat.World=TravelWorld;
+	}
+	else { Boat.TargetTile=FIntPoint(INDEX_NONE,INDEX_NONE);Boat.RotorPushVelocityCm=FVector::ZeroVector;ChooseBoatTarget(Boat); }
+	if(!Boat.bVisible)return;
 
 	// Apply rotor push, clamping so the displacement cannot push the boat onto land / outside valid water.
 	const FVector ProposedPushWorld = Boat.World + Boat.RotorPushVelocityCm * DeltaSeconds;
@@ -2035,8 +2091,8 @@ void ASimCopterAmbientVehiclesActor::UpdateBoat(FSimCopterAmbientBoat& Boat, con
 	if (TrafficSystem != nullptr && TrafficSystem->TryGetPeopleTileCoordinateAtWorldLocation(ProposedPushWorld, ProposedX, ProposedY))
 	{
 		const FIntPoint ProposedTile(ProposedX, ProposedY);
-		const bool bValidWater = bCapsized ? IsOpenWaterTile(ProposedTile) : IsWaterTile(ProposedTile);
-		if (bValidWater)
+		const bool bValidWater = bCapsized ? IsOpenWaterTile(ProposedTile) : IsBoatWaterTile(ProposedTile);
+		if (bValidWater && CanMoveBoat(Boat.World,ProposedPushWorld,bCapsized))
 		{
 			Boat.World = ProposedPushWorld;
 		}
@@ -2159,10 +2215,12 @@ void ASimCopterAmbientVehiclesActor::ChooseBoatTarget(FSimCopterAmbientBoat& Boa
 	for (const FIntPoint& Step : Steps)
 	{
 		const FIntPoint Candidate(Boat.Tile.X + Step.X, Boat.Tile.Y + Step.Y);
-		if (!IsWaterTile(Candidate))
+		if (!IsBoatWaterTile(Candidate))
 		{
 			continue;
 		}
+		FVector CandidateCenter;
+		if(!TryGetTileCenter(Candidate,CandidateCenter) || !CanMoveBoat(Boat.World,CandidateCenter,Boat.ObjectId==SimCopterAmbientVehicles::CapsizedBoatObjectId)) continue;
 		Fallback.Add(Candidate);
 		if (Candidate != Boat.PreviousTile)
 		{
@@ -2219,7 +2277,7 @@ bool ASimCopterAmbientVehiclesActor::PlaceBoatNearTile(
 				{
 					continue;
 				}
-				if (bCapsized ? !IsOpenWaterTile(Candidate) : !IsWaterTile(Candidate))
+				if (bCapsized ? !IsOpenWaterTile(Candidate) : !IsBoatWaterTile(Candidate))
 				{
 					continue;
 				}
@@ -2236,6 +2294,16 @@ bool ASimCopterAmbientVehiclesActor::PlaceBoatNearTile(
 					Center.Z = SurfaceZ;
 				}
 
+				if(!CanMoveBoat(Center,Center,bCapsized)) continue;
+				// Check a route before touching the existing hull or its survivors. A failed
+				// relocation must not call HideBoat through ChooseBoatTarget on a copy.
+				bool bHasExit=false;
+				for(const FIntPoint& Step:{FIntPoint(0,-1),FIntPoint(1,0),FIntPoint(0,1),FIntPoint(-1,0)})
+				{
+					FVector Next;
+					if(TryGetTileCenter(Candidate+Step,Next) && CanMoveBoat(Center,Next,bCapsized)){bHasExit=true;break;}
+				}
+				if(!bHasExit)continue;
 				Boat.Tile = Candidate;
 				Boat.PreviousTile = FIntPoint(INDEX_NONE, INDEX_NONE);
 				Boat.TargetTile = FIntPoint(INDEX_NONE, INDEX_NONE);

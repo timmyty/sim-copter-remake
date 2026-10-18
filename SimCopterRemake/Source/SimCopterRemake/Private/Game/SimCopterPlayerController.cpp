@@ -1168,7 +1168,7 @@ TSharedRef<SWidget> ASimCopterPlayerController::BuildScreen(const ESimCopterSett
 		return SNew(SSimCopterCitySettings)
 			.Art(Art)
 			.Values(Values)
-			.bProgressive(ResolveMissionSystem() && ResolveMissionSystem()->UsesCitywideMissionPlacement())
+			.bProgressive(ResolveMissionSystem() && ResolveMissionSystem()->UsesCustomCityProgression())
 			.ProgressionText(ResolveMissionSystem() ? ResolveMissionSystem()->GetCustomCityProgressionText() : FString())
 			.OnAccepted(FOnSimCopterCitySettingsAccepted::CreateLambda(
 				[this](const FSimCopterCitySettingsValues& Accepted)

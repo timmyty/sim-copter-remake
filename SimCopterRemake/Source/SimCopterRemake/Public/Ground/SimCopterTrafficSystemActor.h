@@ -197,6 +197,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterTrafficSystemActor : public AActor
 {
 	GENERATED_BODY()
+	friend class FSimCopterRemakeModeTest;
 	friend class FSimCopterGameplayOptionsTest;
 	friend class FSimCopterUserCityPopulationTest;
 	friend class FSimCopterFastFlightPopulationTest;
@@ -840,6 +841,7 @@ private:
 	friend class FSimCopterPatientPlacementTest;
 	friend class FSimCopterMedicRouteTest;
 	friend class FSimCopterAmbientDispatchTest;
+	friend class FSimCopterSelectedBoatTest;
 	friend class FSimCopterDeployedMedicRiotTest;
 	friend class FSimCopterMedicDeploymentTest;
 	friend class FSimCopterMedicReboardingTest;

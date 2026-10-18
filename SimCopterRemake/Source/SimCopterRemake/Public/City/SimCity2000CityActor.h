@@ -90,6 +90,7 @@ class SIMCOPTERREMAKE_API ASimCity2000CityActor : public AActor
 	friend class FSimCopterCivicCityTest;
 	friend class FSimCopterMarinaCityTest;
 	friend class FSimCopterEmergencyCityTest;
+	friend class FSimCopterSelectedCityTest;
 
 public:
 	ASimCity2000CityActor();

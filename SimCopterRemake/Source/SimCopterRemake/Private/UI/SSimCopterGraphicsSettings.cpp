@@ -382,7 +382,7 @@ TSharedRef<SWidget> SSimCopterGraphicsSettings::BuildNote(const FText& Text)
 			.Text(Text)
 			.Font(PageFont(RowFontHeight - 3))
 			.ColorAndOpacity(FSlateColor(DisabledText))
-			.AutoWrapText(true)
+			.WrapTextAt(ListRect.Right - ListRect.Left - 24.0f)
 		];
 }
 
@@ -975,6 +975,14 @@ void SSimCopterGraphicsSettings::PopulateRows(const TSharedRef<SVerticalBox>& Ro
 	// ---------------------------------------------------------------------------------------
 
 	ActiveRows = GameplayRows;
+	FRowBinding RemakeFeatures;
+	RemakeFeatures.GetCount = [] { return 2; };
+	RemakeFeatures.GetOptionLabel = [](int32 Index) { return FText::FromString(Index ? TEXT("Yes") : TEXT("No")); };
+	RemakeFeatures.GetIndex = [this] { const auto* Settings = GetSettings(this); return !Settings || Settings->WantsRemakeFeatures() ? 1 : 0; };
+	RemakeFeatures.SetIndex = [this](int32 Index) { if (auto* Settings = GetSettings(this)) Settings->SetRemakeFeaturesPreference(Index != 0); };
+	AddRow(BuildDropdownRow(LOCTEXT("RemakeFeatures", "Extra Remake Features"), RemakeFeatures));
+	AddRow(BuildNote(LOCTEXT("RemakeFeaturesNote", "Restart after changing. No keeps fixes, scenery, music and Photo Mode, with original-style gameplay. Saves retain their gameplay mode.")));
+
 	FRowBinding EmergencyArtwork;
 	EmergencyArtwork.GetCount = [] { return 2; };
 	EmergencyArtwork.GetOptionLabel = [](int32 Index) { return FText::FromString(Index ? TEXT("Updated") : TEXT("Previous remake")); };
@@ -1438,6 +1446,7 @@ void SSimCopterGraphicsSettings::CaptureEnteredState()
 		Entered.NightRealMinutes = Settings->GetNightRealMinutes();
 		Entered.HudScale = Settings->GetHudScale();
 		Entered.bCockpitDecorationsVisible = Settings->AreCockpitDecorationsVisible();
+		Entered.bRemakeFeatures = Settings->WantsRemakeFeatures();
 		Entered.bUpdatedEmergencyArtwork = Settings->UsesUpdatedEmergencyArtwork();
 		Entered.bMissionMarkersOnScreen = Settings->IsMissionMarkersOnScreenEnabled();
 		Entered.bMuffleOutsideSounds = Settings->IsMuffleOutsideSoundsEnabled();
@@ -1495,6 +1504,7 @@ void SSimCopterGraphicsSettings::RestoreEnteredState()
 		Settings->SetNightRealMinutes(Entered.NightRealMinutes);
 		Settings->SetHudScale(Entered.HudScale);
 		Settings->SetCockpitDecorationsVisible(Entered.bCockpitDecorationsVisible);
+		Settings->SetRemakeFeaturesPreference(Entered.bRemakeFeatures);
 		Settings->SetUpdatedEmergencyArtwork(Entered.bUpdatedEmergencyArtwork);
 		Settings->SetMissionMarkersOnScreenEnabled(Entered.bMissionMarkersOnScreen);
 		Settings->SetMuffleOutsideSoundsEnabled(Entered.bMuffleOutsideSounds);

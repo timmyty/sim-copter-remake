@@ -465,7 +465,7 @@ bool ASimCopterMissionSystemActor::RestoreRuntimeSaveState(const TArray<uint8>& 
 	if ((CustomCityTierOverride != -1 && (CustomCityTierOverride < 1 || CustomCityTierOverride > 4)) ||
 		!FMath::IsFinite(CustomMissionFrequency) || CustomMissionFrequency < .25f || CustomMissionFrequency > 4) return false;
 	// The saved countdown is already scaled. Restore the derived option without rescaling it.
-	MissionSystem.MissionFrequency = UsesCitywideMissionPlacement() ? CustomMissionFrequency : 1.0f;
+	MissionSystem.MissionFrequency = UsesCustomCityProgression() ? CustomMissionFrequency : 1.0f;
 	CustomCityBestScore = FMath::Max(CustomCityBestScore, MissionSystem.GetScore());
 	bCustomCitySitesScanned = false;
 	ScanCustomCityMissionSites();
@@ -542,9 +542,9 @@ void ASimCopterMissionSystemActor::Tick(float DeltaTime)
 			break;
 		}
 	}
-	if (UsesCitywideMissionPlacement())
+	if (UsesCitywideMissionPlacement()) ScanCustomCityMissionSites();
+	if (UsesCustomCityProgression())
 	{
-		ScanCustomCityMissionSites();
 		const int32 PreviousTier = GetCustomCityProgressionTier();
 		CustomCityBestScore = FMath::Max(CustomCityBestScore, MissionSystem.GetScore());
 		SimCopterMissions::FSimCopterCareerCity City = MissionSystem.GetCareerCity();
@@ -1022,7 +1022,7 @@ void ASimCopterMissionSystemActor::BeginSession(
 	MissionSystem.MissionFrequency = 1.0f;
 	bCustomCitySitesScanned = false;
 	ScanCustomCityMissionSites();
-	if (UsesCitywideMissionPlacement()) ShowAirOperationsMessage(GetCustomCityProgressionText());
+	if (UsesCustomCityProgression()) ShowAirOperationsMessage(GetCustomCityProgressionText());
 	bSessionSelectionHeld = false;
 	SessionElapsedSeconds = 0.0f;
 
@@ -1992,6 +1992,7 @@ bool ASimCopterMissionSystemActor::TryResolveTransportSpawnTile(
 
 bool ASimCopterMissionSystemActor::CreateIncidentMedevacForVictim(ASimCopterGroundAgent* Victim, bool bPreserveWorldLocation)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	if (Victim && Victim->IsCow()) return false;
 	if (!IsValid(Victim) || Victim->IsMissionPatientDead() || Victim->IsMedevacVictim() ||
 		Victim->GetBehaviorAttribute(EBhavAttr::WrittenOff) != 0 || Victim->GetBehaviorCarrier() != nullptr ||

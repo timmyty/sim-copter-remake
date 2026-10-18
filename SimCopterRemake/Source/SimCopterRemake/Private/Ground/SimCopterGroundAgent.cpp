@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Ground/SimCopterGroundAgent.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterWalkSupport.h"
 #include "Ground/SimCopterRescueDeck.h"
 #include "Flight/SimCopterAirOperations.h"
@@ -716,7 +717,7 @@ void ASimCopterGroundAgent::UpdateOriginalBehavior(float DeltaSeconds)
 			}
 			ASimCopterMissionSystemActor* Missions = Cast<ASimCopterMissionSystemActor>(
 				UGameplayStatics::GetActorOfClass(GetWorld(), ASimCopterMissionSystemActor::StaticClass()));
-			if (bMissionPatientDead && !BehaviorCarrier.IsValid())
+			if (bMissionPatientDead && !BehaviorCarrier.IsValid() && USimCopterSettings::RemakeFeaturesEnabled(this))
 			{
 				// Remake recovery: keep the real body available until an ambulance collects it.
 				BehaviorContext.bRequestDespawn = false;
@@ -7781,7 +7782,7 @@ void ASimCopterGroundAgent::PrepareEmergencyCrewDeployment(ASimCopterHelicopterP
 	if (!Helicopter || !IsEmergencyCrewMember() || bMissionPatientDead) return;
 	SetBehaviorStartingVehicle(Helicopter);
 	CrewReboardAfterTime = GetWorld()->GetTimeSeconds() + 15.0;
-	if (BehaviorContext.GetStateIndex() != 5 || !bTakeCabinPatient) return;
+	if (BehaviorContext.GetStateIndex() != 5 || !bTakeCabinPatient || !USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	const auto* Traffic = Cast<ASimCopterTrafficSystemActor>(GetOwner());
 	auto* Patient = Traffic ? Traffic->FindMedevacPassengerAboard(Helicopter, this) : nullptr;
 	if (!Patient) return;

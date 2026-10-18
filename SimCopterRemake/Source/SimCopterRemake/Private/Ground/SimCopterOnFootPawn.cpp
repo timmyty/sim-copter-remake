@@ -636,6 +636,8 @@ void ASimCopterOnFootPawn::DropCarriedMissionPerson()
 
 bool ASimCopterOnFootPawn::PickUpMissionPerson(ASimCopterGroundAgent* MissionPerson)
 {
+	if (MissionPerson && !USimCopterSettings::RemakeFeaturesEnabled(this) &&
+		(MissionPerson->IsMissionPatientDead() || MissionPerson->IsInPoliceCustody())) return false;
 	if (MissionPerson && MissionPerson->IsCow()) return false;
 	if (MissionPerson == nullptr || CarriedMissionPerson.IsValid() || GetCapsuleComponent() == nullptr)
 	{
@@ -1403,6 +1405,9 @@ void ASimCopterOnFootPawn::SnapToGround()
 
 void ASimCopterOnFootPawn::FindOrSpawnParkedHelicopter()
 {
+	// Exit/save restoration assigned the actual aircraft before deferred BeginPlay.
+	// A nearby parked/helper helicopter must not steal that binding on the next exit.
+	if (IsValid(ParkedHelicopter)) return;
 	ParkedHelicopter = FindNearestHelicopter(ParkedHelicopterSearchRadiusCm);
 	if (ParkedHelicopter != nullptr || GetWorld() == nullptr || HelicopterClass == nullptr || GetCapsuleComponent() == nullptr)
 	{
@@ -1448,7 +1453,7 @@ ASimCopterHelicopterPawn* ASimCopterOnFootPawn::FindNearestHelicopter(float Sear
 	for (AActor* Actor : Helicopters)
 	{
 		ASimCopterHelicopterPawn* Helicopter = Cast<ASimCopterHelicopterPawn>(Actor);
-		if (Helicopter == nullptr)
+		if (!IsValid(Helicopter) || Helicopter->IsSupportAircraft() || Helicopter->IsHidden())
 		{
 			continue;
 		}

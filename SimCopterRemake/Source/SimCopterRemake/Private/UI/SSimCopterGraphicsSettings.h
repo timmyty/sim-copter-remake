@@ -78,6 +78,7 @@ public:
 	static void GetFrameRateOptions(TArray<float>& OutRates);
 
 private:
+	friend class FSimCopterRemakeModeTest;
 	TObjectPtr<USimCopterHangarArt> Art;
 	FOnSimCopterGraphicsSettingsClosed OnAccepted;
 	FOnSimCopterGraphicsSettingsClosed OnCancelled;
@@ -116,6 +117,7 @@ private:
 		float NightRealMinutes = 3.0f;
 		float HudScale = 1.0f;
 		bool bCockpitDecorationsVisible = true;
+		bool bRemakeFeatures = true;
 		bool bUpdatedEmergencyArtwork = true;
 		bool bMissionMarkersOnScreen = true;
 		bool bMuffleOutsideSounds = true;
