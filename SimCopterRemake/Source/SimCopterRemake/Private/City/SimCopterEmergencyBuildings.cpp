@@ -157,6 +157,7 @@ FMaxisMeshObject MakeModel(const FMaxisMeshObject& Original, bool bUpdated)
 			Box({74,43.5,Z},{18,2,40},Dark);
 			if(Z!=0)
 			{
+				const int32 EngineStart=R.Vertices.Num();
 				const int32 PaintStart=R.Faces.Num();
 				Box({74,10,Z},{14,13,29},Orange);
 				Box({76,20,Z},{11,10,27},Orange);
@@ -165,6 +166,17 @@ FMaxisMeshObject MakeModel(const FMaxisMeshObject& Original, bool bUpdated)
 				Box({81.8,13.5,Z},{.6,1.5,29},Stone);
 				Box({82,5,Z},{1.4,2,31},Metal);
 				for(double S:{-1.,1.}) Box({82,10,Z+S*11},{1,2.4,3.3},Gold);
+				// CARFIRET's rendered body is 10.55 GEO units wide (66 cm at the
+				// shared 6.25 cm/unit scale). These decorative noses were 31 units.
+				// Scale the complete nose uniformly to 10.85, keeping its original art,
+				// bay centre, front bumper position and floor contact.
+				const FVector Pivot(82.7,3.5,Z);
+				for(int32 I=EngineStart;I<R.Vertices.Num();++I)
+				{
+					auto& V=R.Vertices[I];
+					const FVector P=Pivot+(FVector(V.X,V.Y,V.Z)/65536.-Pivot)*.35;
+					V.X=FMath::RoundToInt(P.X*65536);V.Y=FMath::RoundToInt(P.Y*65536);V.Z=FMath::RoundToInt(P.Z*65536);
+				}
 			}
 		}
 		for(double Z:{-81.5,-27.5,27.5,80.8}) Box({76.4,23,Z},{12.6,46,10},Brick);

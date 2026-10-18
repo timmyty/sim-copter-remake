@@ -1,5 +1,12 @@
 # Timmyty SimCopter gameplay fork
 
+## v1.0.23: fog, engine size and career preview playback
+
+- Softer, translucent tour fog retains the map-specific layouts.
+- Station engine noses retain their artwork at 35% scale, matching gameplay truck width more closely.
+- Cached career movie players restart after leaving/reopening the picker. Original rotating previews work with Extra Remake Features off and on, including the first New Career visit.
+- [Detailed fixes and rendered evidence](FogEnginesAndCareerPreviews.md), [release notes](Releases/v1.0.23.md) and [validation](validation/WindowsRelease123Results.json).
+
 ## October 18 release v1.0.22
 
 Replaces the first-start prompt with a saved Extra Remake Features toggle after every New Career, Open Career, New User and Open User selection. Continue applies the choice before the picker without restarting; in-game Options stages the same preference for the next session. Save-mode validation remains intact.

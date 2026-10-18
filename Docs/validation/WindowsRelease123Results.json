@@ -1,0 +1,83 @@
+{
+  "version": "v1.0.23",
+  "date": "2026-10-18",
+  "baseline_commit": "46b3253e268660dd2a49317c0fe6d76d09276ddb",
+  "builds": {
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "05371edd1432e81f8105b2e6937f70e8a332bf3f846f35164cc65bb7c2997d70"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "c8c1e56680362320561946daaa632e1d81a67d3f9ec3a92b795298a5814dbffe"
+    }
+  },
+  "editor": {
+    "result": "Succeeded",
+    "log_sha256": "fcd5843ebf610aab9afce2fe01f2dad3b47812fc8a4857c82c1aac9bebfd73f3"
+  },
+  "cook": {
+    "result": "Succeeded",
+    "log_sha256": "ccd4e1fa24e3c34fa6d430a581b828a0e2383af641838819529b9d2247df963d"
+  },
+  "tests": {
+    "tests": {
+      "succeeded": 564,
+      "succeededWithWarnings": 47,
+      "failed": 0,
+      "notRun": 0
+    },
+    "render-final": {
+      "succeeded": 47,
+      "succeededWithWarnings": 22,
+      "failed": 0,
+      "notRun": 0
+    }
+  },
+  "source_files_verified": 499,
+  "startup": [
+    {
+      "launcher_pid": 42236,
+      "mode": "shipping",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fog-engines-v123\\smoke-shipping",
+      "child_pids": [
+        41120
+      ],
+      "seconds": 30.8707858,
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "survived": true
+    },
+    {
+      "launcher_pid": 76180,
+      "mode": "development",
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\fog-engines-v123\\smoke-development",
+      "child_pids": [
+        null
+      ],
+      "seconds": 30.6560658,
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "survived": true
+    }
+  ],
+  "career_preview_baseline": {
+    "result": "reproduced",
+    "first_visit": "all three movies move and loop with extras disabled",
+    "second_visit": "cached closed players do not resume",
+    "final": "all three movies move and loop across four visits: off, off, on, off"
+  },
+  "fire_engine_width_geo": {
+    "gameplay_body": 10.5468,
+    "previous_station_bumper": 31,
+    "station_bumper": 10.85,
+    "station_cab": 10.15,
+    "uniform_scale": 0.35
+  },
+  "validation_sequence": "Full-suite regressions plus offscreen tests of all 30 tours, emergency geometry, menus, media decoding and looping in both gameplay modes; final binaries and cook use the same published source.",
+  "screenshots": "Actual offscreen Unreal game widgets and all 30 career tour scenes; selected WebP captures in Docs.",
+  "limitations": [
+    "No interactive flight, physical-controller or manual listening playtest.",
+    "Cloud placement is visually adapted from original previews, not recovered numerical positions.",
+    "Imported cities have no original movie; their cloud layouts are repeatable terrain adaptations.",
+    "Saves retain their gameplay mode; mismatches are rejected before restoration."
+  ]
+}

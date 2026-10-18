@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.22 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.22.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.23 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.23.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [Quick summary](#quick-summary-added-or-expanded) · [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -13,13 +13,13 @@ and [wyozi's fork](https://github.com/wyozi/sim-copter-remake), preserving their
 history and authorship. The capture cage, police tasers, AI helper and expanded
 recovery systems are deliberate additions to the remake.
 
-## v1.0.22: saved game options and clouds for each city
+## v1.0.23: softer fog, smaller station engines and moving previews
 
 Choose **New Career Game**, **Open Career Game**, **New User Game**, or **Open User Game** to see a saved **Extra Remake Features** toggle before choosing a city/save. Continue applies it without restarting. **Game Menu > Options > Gameplay** edits the same preference for the next New/Open game.
 
 **Off** retains bug fixes, city graphics, music, Photo Mode and general controls while disabling the added gameplay groups in the [feature policy](Docs/RemakeFeatureChoice.md). Saves retain their gameplay mode.
 
-City tours now have low, thick cloud banks adapted to each island's original preview, plus repeatable terrain-adapted layouts for imported maps. [Details and limitations](Docs/SessionOptionsAndTourClouds.md).
+City tours now use softer, translucent fog adapted to each island’s preview. Fire-station engine noses match the gameplay trucks’ width more closely while retaining their appearance. Career map previews rotate and loop on first and repeated visits with Extra Remake Features off or on. [Details and evidence](Docs/FogEnginesAndCareerPreviews.md).
 
 Pilot retrieval now preserves the aircraft assigned when you exit, fixing a
 reproduced case where a nearer parked helicopter stole the binding and stopped
