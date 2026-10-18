@@ -208,11 +208,9 @@ bool USimCopterSettings::RemakeFeaturesEnabled(const UObject* Context)
 	return !Settings || Settings->AreRemakeFeaturesEnabled();
 }
 
-void USimCopterSettings::ChooseInitialRemakeFeatures(bool bEnabled)
+void USimCopterSettings::ApplyRemakeFeaturesForSession()
 {
-	if (bRemakeFeaturesChosen) return;
-	bRemakeFeatures = bActiveRemakeFeatures = bEnabled;
-	bRemakeFeaturesChosen = true;
+	bActiveRemakeFeatures = bRemakeFeatures;
 	SaveConfig();
 }
 

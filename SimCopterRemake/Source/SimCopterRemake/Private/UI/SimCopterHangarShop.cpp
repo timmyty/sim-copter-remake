@@ -335,7 +335,7 @@ FRowState GetUpgradeRowState(const FContext& Context, const int32 UpgradeRow)
 
 	if (!USimCopterSettings::RemakeFeaturesEnabled(Helicopter) &&
 		(Tool == ESimCopterHelicopterTool::CaptureCage || Tool == ESimCopterHelicopterTool::RemoteTaser))
-	{ State.Reason = TEXT("Enable Extra Remake Features and restart to use this equipment."); return State; }
+	{ State.Reason = TEXT("Enable Extra Remake Features for a new game to use this equipment."); return State; }
 	const int32 Bit = SimCopterHelicopterRegistry::GetToolCareerBit(Tool);
 	State.bOwned = (SimCopterHelicopterParking::GetFleetEquipmentMask(Helicopter,GetCareer(Context)) & Bit)!=0;
 	State.ItemValue = State.bOwned

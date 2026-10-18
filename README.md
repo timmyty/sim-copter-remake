@@ -4,8 +4,8 @@ Fly rescue missions, fight fires, recover vehicles and build a helicopter fleet 
 the cities of *SimCopter*. This Unreal Engine 5.8 fork combines restored 1996
 behavior with new tools, on-foot rescue work and modern controls.
 
-**[Download v1.0.21 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
-[Release notes](Docs/Releases/v1.0.21.md) · [Controller guide](Docs/ControllerSupport.md) ·
+**[Download v1.0.22 for Windows](https://github.com/timmyty/sim-copter-remake/releases/latest)** ·
+[Release notes](Docs/Releases/v1.0.22.md) · [Controller guide](Docs/ControllerSupport.md) ·
 [Quick summary](#quick-summary-added-or-expanded) · [All changes](Docs/ForkChanges.md)
 
 Built on [JamesIV4's original remake](https://github.com/JamesIV4/sim-copter-remake)
@@ -13,20 +13,20 @@ and [wyozi's fork](https://github.com/wyozi/sim-copter-remake), preserving their
 history and authorship. The capture cage, police tasers, AI helper and expanded
 recovery systems are deliberate additions to the remake.
 
-## v1.0.21: choose your gameplay, with fixes in both modes
+## v1.0.22: saved game options and clouds for each city
 
-The first start asks whether to enable **Extra Remake Features**. **No** retains
-bug fixes, city graphics, music, Photo Mode and general controls, while disabling
-the added gameplay groups listed in the [feature policy](Docs/RemakeFeatureChoice.md).
-Change the choice from the main menu or **Game Menu > Options > Gameplay**;
-later changes require a restart. Saves record their gameplay mode.
+Choose **New Career Game**, **Open Career Game**, **New User Game**, or **Open User Game** to see a saved **Extra Remake Features** toggle before choosing a city/save. Continue applies it without restarting. **Game Menu > Options > Gameplay** edits the same preference for the next New/Open game.
+
+**Off** retains bug fixes, city graphics, music, Photo Mode and general controls while disabling the added gameplay groups in the [feature policy](Docs/RemakeFeatureChoice.md). Saves retain their gameplay mode.
+
+City tours now have low, thick cloud banks adapted to each island's original preview, plus repeatable terrain-adapted layouts for imported maps. [Details and limitations](Docs/SessionOptionsAndTourClouds.md).
 
 Pilot retrieval now preserves the aircraft assigned when you exit, fixing a
 reproduced case where a nearer parked helicopter stole the binding and stopped
 retrieval. Repeated fatal respawn and the actual **I love my helicopter** cheat
 are covered by regression tests. [Detailed fixes and validation](Docs/Releases/v1.0.21.md).
 
-![First-start choice of Remake features](Docs/screenshots/remake-choice-v1.0.21.webp)
+![Saved toggle after every New/Open selection](Docs/screenshots/session-options-v1.0.22.webp)
 
 The completed building update includes corporate HQ, arcologies, civic buildings,
 power plants, construction, military structures and causeways.
@@ -39,7 +39,7 @@ Buildings > Previous remake**, then reload the city. This restores the earlier
 hospital, police station and fire station styles. It is separate from the gameplay
 choice and does not revert the other landmarks.
 
-![Options showing the previous emergency-building style](Docs/screenshots/building-option-v1.0.21.webp)
+![Options showing the previous emergency-building style](Docs/screenshots/building-option-v1.0.22.webp)
 
 ## Quick summary: added or expanded
 

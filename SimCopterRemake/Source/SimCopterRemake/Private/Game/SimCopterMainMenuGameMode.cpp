@@ -17,6 +17,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "UI/SSimCopterCareerSelect.h"
 #include "UI/SSimCopterMainMenu.h"
+#include "UI/SSimCopterSessionOptions.h"
 #include "UI/SSimCopterMessageBox.h"
 #include "UI/SSimCopterSaveGamePicker.h"
 #include "UI/SSimCopterUserCityPicker.h"
@@ -207,17 +208,10 @@ TSharedRef<SWidget> ASimCopterMainMenuGameMode::BuildScreen(const ESimCopterFron
 	}
 
 	case ESimCopterFrontEndScreen::RemakeFeatures:
-		return SNew(SSimCopterMessageBox)
-			.Art(Art).Confirm(true).ExpandedText(true)
-			.Message(LOCTEXT("RemakeFeaturesPrompt", "Enable extra Remake features?\n\nYes adds tasers, cargo recovery, helper aircraft, planes, parachutes, expanded rescue, baseball and progression.\n\nNo keeps original-style gameplay with fixes and visual improvements.\n\nChange this in the Main Menu or Options > Gameplay. Later changes require a restart."))
-			.OnConfirmed(FSimpleDelegate::CreateLambda([this]()
-			{
-				HandleRemakeFeaturesChoice(true);
-			}))
-			.OnDismissed(FSimpleDelegate::CreateLambda([this]()
-			{
-				HandleRemakeFeaturesChoice(false);
-			}));
+		return SNew(SSimCopterSessionOptions)
+			.Settings(USimCopterSettings::Get(this))
+			.OnContinue(FSimpleDelegate::CreateUObject(this, &ASimCopterMainMenuGameMode::ContinueGameSelection))
+			.OnBack(FSimpleDelegate::CreateLambda([this]() { EnterScreen(ESimCopterFrontEndScreen::MainMenu); }));
 	case ESimCopterFrontEndScreen::Message:
 		return SNew(SSimCopterMessageBox)
 			.Art(Art)
@@ -238,10 +232,6 @@ TSharedRef<SWidget> ASimCopterMainMenuGameMode::BuildScreen(const ESimCopterFron
 
 void ASimCopterMainMenuGameMode::EnterScreen(const ESimCopterFrontEndScreen NewScreen)
 {
-	if (NewScreen == ESimCopterFrontEndScreen::MainMenu)
-		if (const auto* Settings = USimCopterSettings::Get(this); Settings && !Settings->HasChosenRemakeFeatures())
-		{ EnterScreen(ESimCopterFrontEndScreen::RemakeFeatures); return; }
-
 	if (GEngine == nullptr || GEngine->GameViewport == nullptr)
 	{
 		return;
@@ -325,26 +315,17 @@ void ASimCopterMainMenuGameMode::CloseScreen()
 	Screen = ESimCopterFrontEndScreen::None;
 }
 
-void ASimCopterMainMenuGameMode::HandleRemakeFeaturesChoice(bool bEnabled)
-{
-	if (auto* Settings = USimCopterSettings::Get(this))
-	{
-		if (!Settings->HasChosenRemakeFeatures()) Settings->ChooseInitialRemakeFeatures(bEnabled);
-		else
-		{
-			Settings->SetRemakeFeaturesPreference(bEnabled); Settings->SaveConfig();
-			if (Settings->NeedsRemakeFeaturesRestart())
-			{
-				PendingMessage = LOCTEXT("FeaturesRestart", "Choice saved. Restart the game to apply Extra Remake Features. Existing saves retain their gameplay mode.");
-				EnterScreen(ESimCopterFrontEndScreen::Message); return;
-			}
-		}
-	}
-	EnterScreen(ESimCopterFrontEndScreen::MainMenu);
-}
-
 void ASimCopterMainMenuGameMode::HandleMainMenuItem(const ESimCopterMainMenuItem Item)
 {
+	if (Item == ESimCopterMainMenuItem::Quit) { QuitGame(); return; }
+	PendingMenuItem = Item;
+	EnterScreen(ESimCopterFrontEndScreen::RemakeFeatures);
+}
+
+void ASimCopterMainMenuGameMode::ContinueGameSelection()
+{
+	if (auto* Settings = USimCopterSettings::Get(this)) Settings->ApplyRemakeFeaturesForSession();
+	const ESimCopterMainMenuItem Item = PendingMenuItem;
 	// FUN_0044c710's switch, item for item.
 	switch (Item)
 	{
@@ -376,9 +357,6 @@ void ASimCopterMainMenuGameMode::HandleMainMenuItem(const ESimCopterMainMenuItem
 		EnterScreen(ESimCopterFrontEndScreen::SavedGamePicker);
 		return;
 
-	case ESimCopterMainMenuItem::RemakeFeatures:
-		EnterScreen(ESimCopterFrontEndScreen::RemakeFeatures);
-		return;
 	case ESimCopterMainMenuItem::Quit:
 		// EnterState(1). No confirmation - the original does not ask here either.
 		QuitGame();
@@ -477,6 +455,7 @@ void ASimCopterMainMenuGameMode::QuitGame()
 
 void ASimCopterMainMenuGameMode::SimNewCareer(int32 CareerCityIndex)
 {
+	if (auto* Settings = USimCopterSettings::Get(this)) Settings->ApplyRemakeFeaturesForSession();
 	if (USimCopterSaveSubsystem* Saves = USimCopterSaveSubsystem::Get(this))
 	{
 		Saves->BeginNewGame();
@@ -496,6 +475,7 @@ void ASimCopterMainMenuGameMode::SimNewCareer(int32 CareerCityIndex)
 
 void ASimCopterMainMenuGameMode::SimNewUserGame(int32 CityIndex)
 {
+	if (auto* Settings = USimCopterSettings::Get(this)) Settings->ApplyRemakeFeaturesForSession();
 	if (USimCopterSaveSubsystem* Saves = USimCopterSaveSubsystem::Get(this))
 	{
 		Saves->BeginNewGame();
@@ -527,6 +507,7 @@ void ASimCopterMainMenuGameMode::SimNewUserGame(int32 CityIndex)
 
 void ASimCopterMainMenuGameMode::SimLoadGame(const FString& SlotName)
 {
+	if (auto* Settings = USimCopterSettings::Get(this)) Settings->ApplyRemakeFeaturesForSession();
 	USimCopterSaveSubsystem* Saves = USimCopterSaveSubsystem::Get(this);
 	if (Saves == nullptr)
 	{

@@ -30,6 +30,8 @@ struct FSimCopterCityIntroRoute
 	static constexpr float FrameSeconds = 0.06666f;
 	static constexpr float Duration = 451 * FrameSeconds;
 	int32 CityIndex = INDEX_NONE;
+	// World-space centers and radii, adapted from each CITY<n>_S preview.
+	TArray<FVector4> CloudBanks;
 	float TileSize = 400;
 	float ReferenceDistance = 0;
 	TArray<FSimCopterCityIntroFrame> Frames;
@@ -65,6 +67,7 @@ private:
 	friend class FSimCopterLoadingEffectsTest;
 	friend class FSimCopterCityIntroLightingTest;
 	friend class FSimCopterCityTourRenderTest;
+	friend class FSimCopterTourCaptureCommand;
 	friend class FSimCopterCityIntroAudioTest;
 	friend class FSimCopterCityIntroMixerCommand;
 	void StartMusic();
@@ -73,7 +76,13 @@ private:
 	void UpdateCamera();
 	void BeginTourLighting();
 	void RestoreLighting();
-	// Light cloud cover for every introductory flyover, including sandy user cities.
+	// Low cloud banks match the city preview; all presentation components are temporary.
+	void BeginPreviewCloudBanks();
+	void UpdatePreviewCloudBanks();
+	UPROPERTY(Transient) TArray<TObjectPtr<class ULocalFogVolumeComponent>> PreviewClouds;
+	UPROPERTY(Transient) TObjectPtr<AActor> PreviewCloudActor;
+	TArray<FVector> PreviewCloudOrigins;
+	int32 PreviousLocalCloudCVar = -1;
 	void BeginTourClouds();
 	void ApplyTourClouds();
 	void RestoreTourClouds();

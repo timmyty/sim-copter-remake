@@ -1,15 +1,8 @@
 # Optional Remake features and repeatable pilot retrieval
 
-The first visit to the main menu asks **Enable extra Remake features?** Choose
-Yes for the fork's additional gameplay or No for the original-style feature set.
-Both choices retain the fork's bug fixes, city graphics, performance work, music,
-Photo Mode, and general input/accessibility improvements.
+Select **New Career Game**, **Open Career Game**, **New User Game**, or **Open User Game** to see **Game Options** before the city/save picker. The **Extra Remake Features** toggle remembers its last position, including when you go Back. Continue applies that choice to the selected game flow without restarting the application. This screen appears on every visit, including existing installations.
 
-The answer is saved in the normal game settings. Change it through **Main Menu >
-Extra Remake Features** or **Game Menu > Options > Gameplay > Extra Remake
-Features**. The initial answer takes effect before starting a city. Later changes
-take effect after restarting the game; Cancel in Options restores the prior
-selection. This is a feature selection, not a promise of exact 1996 behavior.
+**Game Menu > Options > Gameplay > Extra Remake Features** edits the same saved preference. During a city, it applies to the next New/Open game; current missions and equipment retain their rules. Cancel in Options restores the previous preference. Emergency-building artwork is an independent option and remains available in either gameplay mode.
 
 ## Features controlled by the choice
 
@@ -36,7 +29,7 @@ fixes are independent of this setting.
 ## Save compatibility
 
 New saves record the active gameplay mode in save format 6. Loading a save with
-the opposite mode explains which choice to select and asks for a restart before
+the opposite mode explains which choice to select on the Open Game options screen before
 loading. It does not modify the save or partially restore its world. Older saves
 default to Yes because they predate the choice and may contain the fork's added
 people, equipment and aircraft. Keep the original save when trying another mode;
@@ -71,9 +64,9 @@ the earlier hospital, fire-station and police-station styles on the next city lo
 This existing option applies to those emergency buildings; it does not revert the
 entire city or the separately updated landmarks and power plants.
 
-![First-run choice](screenshots/remake-choice-v1.0.21.webp)
+![Saved New/Open Game toggle](screenshots/session-options-v1.0.22.webp)
 
-![Gameplay options with Previous remake selected](screenshots/building-option-v1.0.21.webp)
+![Gameplay options with Previous remake selected](screenshots/building-option-v1.0.22.webp)
 
 ![Updated landmarks, power plants and construction](images/selected-buildings-october18/preview.webp)
 

@@ -12,6 +12,8 @@
 #include "City/SimCity2000CityActor.h"
 #include "City/SimCopterDayNight.h"
 #include "Game/SimCopterCityIntro.h"
+#include "Components/LocalFogVolumeComponent.h"
+#include "HAL/IConsoleManager.h"
 #include "Game/SimCopterGameMode.h"
 #include "Game/SimCopterPlayerController.h"
 #include "Ground/SimCopterGroundAgent.h"
@@ -144,6 +146,15 @@ bool FSimCopterCityIntroTest::RunTest(const FString& Parameters)
 	Traffic->XbldTileIds.Init(0,128*128); Traffic->ActiveTileSize=400;
 	Traffic->AirportOriginTile=FIntPoint(10,10);
 	auto Route=USimCopterCityIntro::BuildRoute(*Traffic);
+	const FString CareerPath=City->CityFile.FilePath;
+	City->CityFile.FilePath=TEXT("CloudFixture.sc2");
+	const auto ImportedRoute=USimCopterCityIntro::BuildRoute(*Traffic);
+	TestEqual(TEXT("Imported maps get five banks"),ImportedRoute.CloudBanks.Num(),5);
+	TestTrue(TEXT("Same imported map repeats the same cloud layout"),ImportedRoute.CloudBanks==USimCopterCityIntro::BuildRoute(*Traffic).CloudBanks);
+	Traffic->TileCenterWorldZ[12*128+12]=4000;
+	TestFalse(TEXT("Different terrain gives a different cloud layout, even with the same name"),ImportedRoute.CloudBanks==USimCopterCityIntro::BuildRoute(*Traffic).CloudBanks);
+	Traffic->TileCenterWorldZ[12*128+12]=0;
+	City->CityFile.FilePath=CareerPath;
 	TestTrue(TEXT("Complete 128-tile map edges included"),Route.Bounds.GetSize().Equals(FVector(51200,51200,0),0.1));
 	TestTrue(TEXT("Original CD duration is retained"),FMath::IsNearlyEqual(Route.Duration,30.06366f,0.00001f));
 	TestEqual(TEXT("Continuous source-cadence route covers the complete movie"),Route.Frames.Num(),452);
@@ -242,6 +253,7 @@ public:
 	USceneCaptureComponent2D* Capture;
 	UTextureRenderTarget2D* Target;
 	ACameraActor* EffectsCamera;
+	USimCopterCityIntro* CloudTour = nullptr;
 	TArray<UPrimitiveComponent*> Aircraft;
 	FSimCopterCityIntroRoute Route;
 	FString Evidence;
@@ -259,6 +271,20 @@ public:
 		case 0: Read(0,0,TEXT("warmup")); break;
 		case 1:
 			Overview=Read(0,0,TEXT("start"));
+			if (CloudTour->PreviewCloudActor)
+			{
+				// Compare the same scene state immediately: no aircraft, water clock,
+				// turbine or camera advance can masquerade as cloud pixels.
+				CloudTour->PreviewCloudActor->SetActorHiddenInGame(true);
+				World->SendAllEndOfFrameUpdates(); Capture->CaptureScene(); FlushRenderingCommands();
+				TArray<FColor> Clear; Target->GameThread_GetRenderTargetResource()->ReadPixels(Clear);
+				int32 Changed=0;
+				for(int32 I=0;I<Clear.Num();++I)
+					if(FMath::Abs(int(Clear[I].R)-int(Overview[I].R))+FMath::Abs(int(Clear[I].G)-int(Overview[I].G))+FMath::Abs(int(Clear[I].B)-int(Overview[I].B))>45) ++Changed;
+				Test->TestTrue(TEXT("Cloud banks alone visibly change the tour scene"),Changed>1000);
+				Test->AddInfo(FString::Printf(TEXT("Isolated cloud pixels: %d"),Changed));
+				CloudTour->PreviewCloudActor->SetActorHiddenInGame(false);
+			}
 			// Isolate the two meshes and read their visible normals. Motion must not
 			// depend on water, emissive city lights or the aircraft paint's brightness.
 			Capture->PrimitiveRenderMode=ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
@@ -331,6 +357,18 @@ public:
 		}
 		case 14: Read(29.9f,29.9f,TEXT("turbine-close-before")); break;
 		case 15: City->AdvanceWindTurbines(.5f); Read(29.9f,29.9f,TEXT("turbine-close-after")); break;
+		case 16:
+		{
+			CloudTour->RestoreTourClouds();
+			CloseCamera.Reset();
+			Read(0,0,TEXT("clouds-cleared-warmup"));
+			break;
+		}
+		case 17:
+		{
+			Read(0,0,TEXT("clouds-cleared"));
+			break;
+		}
 		default:
 		{
 			Ambient->EndCityTour(); Capture->DestroyComponent();
@@ -374,7 +412,7 @@ void FSimCopterCityTourRenderTest::GetTests(TArray<FString>& Names,TArray<FStrin
 }
 bool FSimCopterCityTourRenderTest::RunTest(const FString& Parameters)
 {
-	const FString Evidence=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/original-city-intros");
+	const FString Evidence=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/session-toggle-clouds/tours");
 	IFileManager::Get().MakeDirectory(*Evidence,true);
 	for (const int32 CityIndex : {FCString::Atoi(*Parameters)})
 	{
@@ -440,6 +478,11 @@ bool FSimCopterCityTourRenderTest::RunTest(const FString& Parameters)
 			const auto Camera=Route.Evaluate(Route.AircraftPassSeconds/Route.Duration);
 			TestTrue(TEXT("Plane comes within ten tiles of the camera"),FVector::Distance(Camera.GetLocation(),Route.EvaluateAircraft(Route.AircraftPassSeconds,0).GetLocation())<Route.TileSize*10);
 		}
+		auto* CloudOwner=World->SpawnActor<AActor>(); CloudOwner->SetActorHiddenInGame(true);
+		auto* CloudTour=NewObject<USimCopterCityIntro>(CloudOwner); CloudTour->RegisterComponent();
+		CloudTour->Route=Route; CloudTour->BeginPreviewCloudBanks();
+		TestEqual(TEXT("Every preview bank is instantiated"),CloudTour->PreviewClouds.Num(),Route.CloudBanks.Num()*11);
+		TestEqual(TEXT("Metropolis retains its clear preview"),Route.CloudBanks.IsEmpty(),CityIndex==29);
 		auto* Ambient=World->SpawnActor<ASimCopterAmbientVehiclesActor>(); Ambient->BeginCityTour(Route.Bounds,&Route);
 		if (!TestEqual(TEXT("Original aircraft geometry loads"),Ambient->CityTourPlanes.Num(),CityIndex==23 ? 1 : 2)) return false;
 		auto* Capture=NewObject<USceneCaptureComponent2D>(City);
@@ -471,7 +514,7 @@ bool FSimCopterCityTourRenderTest::RunTest(const FString& Parameters)
 		auto Command=MakeShared<FSimCopterTourCaptureCommand>();
 		Command->Test=this; Command->Instance=Instance; Command->World=World; Command->City=City;
 		Command->Ambient=Ambient; Command->Capture=Capture; Command->Target=Target;
-		Command->EffectsCamera=EffectsCamera;
+		Command->EffectsCamera=EffectsCamera; Command->CloudTour=CloudTour;
 		for (const auto& Mesh:Ambient->CityTourPlanes) Command->Aircraft.Add(Mesh);
 		Command->Route=Route; Command->Evidence=Evidence; Command->CityIndex=CityIndex;
 		FAutomationTestFramework::Get().EnqueueLatentCommand(Command);

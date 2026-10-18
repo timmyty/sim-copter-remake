@@ -428,12 +428,6 @@ void SSimCopterMainMenu::Construct(const FArguments& InArgs)
 	}
 
 	// A separate button preserves the original five printed menu rows.
-	AddAt(Canvas, FRect{440, 384, 630, 426},
-		SNew(SButton).HAlign(HAlign_Center).VAlign(VAlign_Center)
-		.OnHovered_Lambda([this] { SetSelectedIndex(ItemCount); })
-		.OnClicked_Lambda([this] { SetSelectedIndex(ItemCount); ActivateSelected(); return FReply::Handled(); })
-		[SNew(STextBlock).Text(LOCTEXT("FeatureOptions", "Extra Remake Features"))
-		.Font(PageFont(12, true)).ColorAndOpacity_Lambda([this] { return FSlateColor(SelectedIndex == ItemCount ? ItemSelectedColor : FLinearColor::White); })]);
 
 	ChildSlot
 	[
@@ -459,7 +453,6 @@ void SSimCopterMainMenu::Construct(const FArguments& InArgs)
 
 const FText& SSimCopterMainMenu::GetItemLabel(const int32 Index)
 {
-	if (Index == ItemCount) { static const FText Features = LOCTEXT("FeaturesLabel", "Extra Remake Features"); return Features; }
 	// STRINGTABLE 55..59, English. Resources rather than .rdata, same as the rest of the shell.
 	static const FText Labels[ItemCount] = {
 		LOCTEXT("NewCareerGame", "New Career Game"),   // 55
@@ -475,7 +468,7 @@ const FText& SSimCopterMainMenu::GetItemLabel(const int32 Index)
 
 void SSimCopterMainMenu::SetSelectedIndex(const int32 Index)
 {
-	if (Index < 0 || Index > ItemCount || Index == SelectedIndex)
+	if (Index < 0 || Index >= ItemCount || Index == SelectedIndex)
 	{
 		return;
 	}
@@ -494,7 +487,7 @@ void SSimCopterMainMenu::ActivateSelected()
 
 void SSimCopterMainMenu::Navigate(const ENavigation Navigation)
 {
-	const int32 Target = GetNavigationTarget(Navigation, SelectedIndex, ItemCount + 1);
+	const int32 Target = GetNavigationTarget(Navigation, SelectedIndex, ItemCount);
 	if (Target != INDEX_NONE)
 	{
 		SetSelectedIndex(Target);
