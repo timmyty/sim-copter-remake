@@ -1,5 +1,13 @@
 # Timmyty SimCopter gameplay fork
 
+## October 18 release v1.0.22
+
+Replaces the first-start prompt with a saved Extra Remake Features toggle after every New Career, Open Career, New User and Open User selection. Continue applies the choice before the picker without restarting; in-game Options stages the same preference for the next session. Save-mode validation remains intact.
+
+Tours gain low, thick cloud banks visually adapted to each island preview, with repeatable terrain-based layouts for imported cities. Cloud motion pauses with presentation time, and all temporary cloud actors are removed on completion, skip or teardown.
+
+[Details and screenshots](Releases/v1.0.22.md) · [Behavior and reference evidence](SessionOptionsAndTourClouds.md).
+
 ## October 18 release v1.0.21
 
 Adds a persistent first-start Yes/No choice for extra Remake gameplay, with main-menu

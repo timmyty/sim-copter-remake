@@ -157,15 +157,14 @@ class SIMCOPTERREMAKE_API USimCopterSettings : public UGameInstanceSubsystem
 public:
 	static USimCopterSettings* Get(const UObject* WorldContextObject);
 
-	/** This session's rules. A menu edit is saved for the next process, never applied mid-city. */
+	/** This session's rules. A menu edit is saved for the next New/Open game, never applied mid-city. */
 	static bool RemakeFeaturesEnabled(const UObject* WorldContextObject);
 	bool AreRemakeFeaturesEnabled() const { return bActiveRemakeFeatures; }
 	bool WantsRemakeFeatures() const { return bRemakeFeatures; }
-	bool HasChosenRemakeFeatures() const { return bRemakeFeaturesChosen; }
 	void SetRemakeFeaturesPreference(bool bEnabled) { bRemakeFeatures = bEnabled; }
-	/** Only the first-launch dialog may apply immediately, before any city is loaded. */
-	void ChooseInitialRemakeFeatures(bool bEnabled);
-	bool NeedsRemakeFeaturesRestart() const { return bRemakeFeatures != bActiveRemakeFeatures; }
+	/** Called only at the front-end New/Open boundary, before choosing or loading a city. */
+	void ApplyRemakeFeaturesForSession();
+	bool HasPendingRemakeFeaturesChange() const { return bRemakeFeatures != bActiveRemakeFeatures; }
 
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -497,8 +496,6 @@ private:
 
 	UPROPERTY(Config)
 	bool bRemakeFeatures = true;
-	UPROPERTY(Config)
-	bool bRemakeFeaturesChosen = false;
 	UPROPERTY(Transient)
 	bool bActiveRemakeFeatures = true;
 

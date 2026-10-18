@@ -552,7 +552,7 @@ bool USimCopterSaveSubsystem::LoadGame(
 	const auto* Settings = GetGameInstance() ? GetGameInstance()->GetSubsystem<USimCopterSettings>() : nullptr;
 	if (Settings && Save->bRemakeFeatures != Settings->AreRemakeFeaturesEnabled())
 	{
-		OutError = FString::Printf(TEXT("This save uses Extra Remake Features: %s. Set that choice in Options > Gameplay and restart before loading. Your save has not been changed."), Save->bRemakeFeatures ? TEXT("Yes") : TEXT("No"));
+		OutError = FString::Printf(TEXT("This save uses Extra Remake Features: %s. Return to the Main Menu, select Open Game and set that choice before continuing. Your save has not been changed."), Save->bRemakeFeatures ? TEXT("Yes") : TEXT("No"));
 		return false;
 	}
 

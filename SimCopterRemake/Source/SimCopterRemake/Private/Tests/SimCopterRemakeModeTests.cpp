@@ -54,30 +54,26 @@ bool FSimCopterRemakeModeTest::RunTest(const FString& Case)
  auto* Instance=NewObject<UGameInstance>(GEngine); Instance->InitializeStandalone();
  auto* World=Instance->GetWorld(); World->InitializeActorsForPlay(FURL());
  auto* Settings=Instance->GetSubsystem<USimCopterSettings>();
- const bool OldChoice=Settings->bRemakeFeaturesChosen, OldPreference=Settings->bRemakeFeatures, OldActive=Settings->bActiveRemakeFeatures;
+ const bool OldPreference=Settings->bRemakeFeatures, OldActive=Settings->bActiveRemakeFeatures;
  auto* PreviousViewport=GEngine->GameViewport.Get();
  auto* Viewport=NewObject<UGameViewportClient>(GEngine);
  Viewport->Init(GEngine->GetWorldContextFromWorldChecked(World),Instance,false);
  Viewport->SetViewportOverlayWidget(nullptr,SNew(SOverlay));
  GEngine->GetWorldContextFromWorldChecked(World).GameViewport=Viewport; GEngine->GameViewport=Viewport;
  ON_SCOPE_EXIT {
-  Settings->bRemakeFeaturesChosen=OldChoice; Settings->bRemakeFeatures=OldPreference; Settings->bActiveRemakeFeatures=OldActive;
+  Settings->bRemakeFeatures=OldPreference; Settings->bActiveRemakeFeatures=OldActive;
   if(Case==TEXT("PreferenceLifecycle")) Settings->SaveConfig();
   GEngine->GameViewport=PreviousViewport;
   Instance->Shutdown(); GEngine->DestroyWorldContext(World); World->DestroyWorld(false);
  };
- Settings->bRemakeFeaturesChosen=false; Settings->bRemakeFeatures=Settings->bActiveRemakeFeatures=true;
+ Settings->bRemakeFeatures=Settings->bActiveRemakeFeatures=true;
  if(Case==TEXT("PreferenceLifecycle"))
  {
-  TestFalse(TEXT("Fresh settings need an explicit answer"),Settings->HasChosenRemakeFeatures());
-  Settings->ChooseInitialRemakeFeatures(false);
-  TestFalse(TEXT("Initial No applies before entering a city"),Settings->AreRemakeFeaturesEnabled());
-  TestTrue(TEXT("Initial answer is remembered"),Settings->HasChosenRemakeFeatures());
-  Settings->ChooseInitialRemakeFeatures(true);
-  TestFalse(TEXT("First-run initializer never overwrites an existing choice"),Settings->WantsRemakeFeatures());
+  Settings->SetRemakeFeaturesPreference(false); Settings->ApplyRemakeFeaturesForSession();
+  TestFalse(TEXT("Front-end choice applies before choosing a city"),Settings->AreRemakeFeaturesEnabled());
   auto Panel=SNew(SSimCopterGraphicsSettings);
   Settings->SetRemakeFeaturesPreference(true);
-  TestTrue(TEXT("A later change requires restart"),Settings->NeedsRemakeFeaturesRestart());
+  TestTrue(TEXT("In-city change waits for next session"),Settings->HasPendingRemakeFeaturesChange());
   TestFalse(TEXT("Running world keeps its active policy"),USimCopterSettings::RemakeFeaturesEnabled(World));
   Panel->Cancel();
   TestFalse(TEXT("Cancel restores the pending choice"),Settings->WantsRemakeFeatures());
@@ -86,8 +82,26 @@ bool FSimCopterRemakeModeTest::RunTest(const FString& Case)
   auto* RestartWorld=Restart->GetWorld();
   auto* Loaded=Restart->GetSubsystem<USimCopterSettings>();
   TestTrue(TEXT("Restart activates the saved choice"),Loaded->AreRemakeFeaturesEnabled());
-  TestTrue(TEXT("Restart does not ask again"),Loaded->HasChosenRemakeFeatures());
+  TestTrue(TEXT("Saved preference is shared by the next toggle screen"),Loaded->WantsRemakeFeatures());
   Restart->Shutdown(); GEngine->DestroyWorldContext(RestartWorld); RestartWorld->DestroyWorld(false);
+  auto* Menu=World->SpawnActor<ASimCopterMainMenuGameMode>();
+  const ESimCopterMainMenuItem Items[]={ESimCopterMainMenuItem::NewCareerGame,ESimCopterMainMenuItem::OpenCareerGame,ESimCopterMainMenuItem::NewUserGame,ESimCopterMainMenuItem::OpenUserGame};
+  const ESimCopterFrontEndScreen Targets[]={ESimCopterFrontEndScreen::CareerSelect,ESimCopterFrontEndScreen::SavedGamePicker,ESimCopterFrontEndScreen::UserCityPicker,ESimCopterFrontEndScreen::SavedGamePicker};
+  for (int32 Visit=0; Visit<8; ++Visit)
+  {
+   Menu->HandleMainMenuItem(Items[Visit%4]);
+   TestEqual(TEXT("Every New/Open visit shows toggle, including returning players"),Menu->Screen,ESimCopterFrontEndScreen::RemakeFeatures);
+   const bool Last=Settings->WantsRemakeFeatures();
+   Menu->EnterScreen(ESimCopterFrontEndScreen::MainMenu);
+   TestEqual(TEXT("Back preserves last toggle position"),Settings->WantsRemakeFeatures(),Last);
+   Menu->HandleMainMenuItem(Items[Visit%4]);
+   Settings->SetRemakeFeaturesPreference(Visit%2==0);
+   Menu->ContinueGameSelection();
+   TestEqual(TEXT("Continue reaches the selected game's picker"),Menu->Screen,Targets[Visit%4]);
+   TestEqual(TEXT("Continue activates latest preference without restarting"),Settings->AreRemakeFeaturesEnabled(),Visit%2==0);
+   if (Visit%4==1 || Visit%4==3) TestEqual(TEXT("Open keeps career/user save filter"),Menu->PendingSaveKind,Visit%4==1 ? ESimCopterSessionKind::Career : ESimCopterSessionKind::User);
+  }
+  Menu->CloseScreen();
   return true;
  }
  if(Case==TEXT("SaveModes"))
@@ -103,7 +117,7 @@ bool FSimCopterRemakeModeTest::RunTest(const FString& Case)
    Save->bRemakeFeatures=Enabled; TArray<uint8> Bytes; UGameplayStatics::SaveGameToMemory(Save,Bytes); FFileHelper::SaveArrayToFile(Bytes,*File);
    Settings->bActiveRemakeFeatures=!Enabled; FString Error;
    TestFalse(TEXT("Opposite mode is rejected before session changes"),Saves->LoadGame(File,ESimCopterSessionKind::Career,Error));
-   TestTrue(TEXT("Mismatch explains the choice and restart"),Error.Contains(TEXT("Extra Remake Features")) && Error.Contains(TEXT("restart")));
+   TestTrue(TEXT("Mismatch explains how to return to toggle"),Error.Contains(TEXT("Extra Remake Features")) && Error.Contains(TEXT("Main Menu")));
    TestFalse(TEXT("Rejected load leaves no pending world restore"),Saves->HasPendingLoad());
    Settings->bActiveRemakeFeatures=Enabled;
    TestTrue(TEXT("Matching mode loads"),Saves->LoadGame(File,ESimCopterSessionKind::Career,Error));
@@ -115,7 +129,7 @@ bool FSimCopterRemakeModeTest::RunTest(const FString& Case)
  Art->SetOriginalGameRoot(FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()/TEXT("../Reference/SimCopterOriginalGame")));
  if(Case==TEXT("MenusRendering"))
  {
-  const FString Folder=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/remake-features-v121/previews"); IFileManager::Get().MakeDirectory(*Folder,true);
+  const FString Folder=FPaths::ProjectDir()/TEXT("../Docs/scratchpad/session-toggle-clouds/previews"); IFileManager::Get().MakeDirectory(*Folder,true);
   auto Capture=[&](TSharedRef<SWidget> Widget,const TCHAR* Name)
   {
    FWidgetRenderer Renderer(true); UTextureRenderTarget2D* Target=nullptr;
@@ -125,8 +139,10 @@ bool FSimCopterRemakeModeTest::RunTest(const FString& Case)
    TestTrue(TEXT("Actual menu screenshot exports"),FImageUtils::SaveImageByExtension(*(Folder/Name),FImageView(Pixels.GetData(),1280,960)));
   };
   auto* Menu=World->SpawnActor<ASimCopterMainMenuGameMode>(); Menu->Art=Art;
-  Capture(Menu->BuildScreen(ESimCopterFrontEndScreen::RemakeFeatures),TEXT("first-run-choice.png"));
-  Capture(SNew(SSimCopterMainMenu).Art(Art),TEXT("main-menu-choice.png"));
+  Capture(Menu->BuildScreen(ESimCopterFrontEndScreen::RemakeFeatures),TEXT("session-options-on.png"));
+  Settings->SetRemakeFeaturesPreference(false);
+  Capture(Menu->BuildScreen(ESimCopterFrontEndScreen::RemakeFeatures),TEXT("session-options-off.png"));
+  Capture(SNew(SSimCopterMainMenu).Art(Art),TEXT("main-menu.png"));
   Capture(SNew(SSimCopterGraphicsSettings).Art(Art),TEXT("gameplay-options-updated.png"));
   Settings->SetUpdatedEmergencyArtwork(false);
   Capture(SNew(SSimCopterGraphicsSettings).Art(Art),TEXT("gameplay-options-previous.png"));

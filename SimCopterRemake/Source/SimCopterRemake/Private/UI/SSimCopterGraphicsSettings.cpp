@@ -981,7 +981,7 @@ void SSimCopterGraphicsSettings::PopulateRows(const TSharedRef<SVerticalBox>& Ro
 	RemakeFeatures.GetIndex = [this] { const auto* Settings = GetSettings(this); return !Settings || Settings->WantsRemakeFeatures() ? 1 : 0; };
 	RemakeFeatures.SetIndex = [this](int32 Index) { if (auto* Settings = GetSettings(this)) Settings->SetRemakeFeaturesPreference(Index != 0); };
 	AddRow(BuildDropdownRow(LOCTEXT("RemakeFeatures", "Extra Remake Features"), RemakeFeatures));
-	AddRow(BuildNote(LOCTEXT("RemakeFeaturesNote", "Restart after changing. No keeps fixes, scenery, music and Photo Mode, with original-style gameplay. Saves retain their gameplay mode.")));
+	AddRow(BuildNote(LOCTEXT("RemakeFeaturesNote", "Applies to the next New/Open game. No keeps fixes, scenery, music and Photo Mode, with original-style gameplay. Saves retain their gameplay mode.")));
 
 	FRowBinding EmergencyArtwork;
 	EmergencyArtwork.GetCount = [] { return 2; };

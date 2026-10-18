@@ -2,6 +2,7 @@
 #include "City/SimCity2000CityActor.h"
 #include "Ground/SimCopterTrafficSystemActor.h"
 #include "Misc/Paths.h"
+#include "Misc/Crc.h"
 
 namespace
 {
@@ -50,6 +51,45 @@ const FCityTourScript Scripts[] =
 	{{66,64},{76,76},{87,90},0,       6,36,  65,13,23}, // Metropolis: broad skyline, helicopter and plane
 };
 static_assert(UE_ARRAY_COUNT(Scripts)==30);
+
+// Visual adaptations of CITY0_S..CITY29_S at 2.5 seconds (see Docs/SessionOptionsAndTourClouds.md).
+// Each bank is preview-facing tile X/Y plus radius. The opening rail looks from
+// the south, so preview Y is inverted when projected to the city tile axes.
+// Metropolis has a clear preview.
+const TArray<FVector> PreviewCloudBanks[] =
+{
+	{FVector(28,26,8),FVector(72,25,13),FVector(64,49,8)}, // City 0
+	{FVector(20,36,12),FVector(44,19,7),FVector(100,91,8)}, // City 1
+	{FVector(75,20,10),FVector(106,44,13),FVector(92,87,7)}, // City 2
+	{FVector(26,94,11),FVector(55,80,13),FVector(116,90,13)}, // City 3
+	{FVector(82,40,9),FVector(88,75,12)}, // City 4
+	{FVector(58,62,13),FVector(95,55,9),FVector(48,96,8)}, // City 5
+	{FVector(28,74,11),FVector(62,66,13),FVector(83,39,7)}, // City 6
+	{FVector(60,25,13),FVector(18,57,8),FVector(24,96,7)}, // City 7
+	{FVector(18,24,9),FVector(70,76,12),FVector(50,48,7),FVector(79,37,7)}, // City 8
+	{FVector(10,28,9),FVector(100,39,13),FVector(115,70,8),FVector(25,88,7)}, // City 9
+	{FVector(70,10,10),FVector(15,42,8),FVector(12,87,8),FVector(118,100,9)}, // City 10
+	{FVector(13,42,10),FVector(61,44,13),FVector(93,17,8),FVector(42,91,7)}, // City 11
+	{FVector(31,30,9),FVector(94,32,13),FVector(60,89,10)}, // City 12
+	{FVector(100,38,13),FVector(62,88,13),FVector(120,104,9)}, // City 13
+	{FVector(10,30,9),FVector(105,34,13),FVector(76,12,7),FVector(27,91,7)}, // City 14
+	{FVector(12,29,9),FVector(69,12,8),FVector(106,52,12),FVector(92,103,8)}, // City 15
+	{FVector(17,22,10),FVector(64,10,7),FVector(102,31,9),FVector(54,103,8)}, // City 16
+	{FVector(12,87,10),FVector(66,67,15)}, // City 17
+	{FVector(9,45,7),FVector(62,13,8),FVector(105,46,13),FVector(85,107,9)}, // City 18
+	{FVector(38,57,9),FVector(68,64,13),FVector(37,105,10)}, // City 19
+	{FVector(9,54,8),FVector(105,22,14),FVector(77,111,9)}, // City 20
+	{FVector(15,16,10),FVector(58,81,14),FVector(106,96,10)}, // City 21
+	{FVector(20,27,11),FVector(24,62,10),FVector(87,110,11),FVector(104,54,8)}, // City 22
+	{FVector(22,35,9),FVector(83,42,14),FVector(79,111,10)}, // City 23
+	{FVector(12,53,8),FVector(115,12,13),FVector(66,103,10),FVector(98,80,8)}, // City 24
+	{FVector(15,42,13),FVector(86,11,9),FVector(71,105,10)}, // City 25
+	{FVector(13,28,9),FVector(53,21,12),FVector(94,34,10),FVector(75,112,9)}, // City 26
+	{FVector(10,40,12),FVector(85,94,16)}, // City 27
+	{FVector(33,48,14),FVector(61,14,8)}, // City 28
+	{}, // City 29
+};
+static_assert(UE_ARRAY_COUNT(PreviewCloudBanks)==30);
 
 FVector Smooth(const TArray<FVector>& Values, const TArray<float>& Times, float Time)
 {
@@ -132,9 +172,11 @@ FSimCopterCityIntroRoute USimCopterCityIntro::BuildRoute(const ASimCopterTraffic
 	X=(X-Origin).GetSafeNormal2D()*R.TileSize; Y=(Y-Origin).GetSafeNormal2D()*R.TileSize;
 	TArray<FBox> Buildings;
 	TSet<FIntPoint> Seen;
+	uint32 TerrainCloudSeed=0;
 	for (int32 TY=0;TY<128;++TY) for (int32 TX=0;TX<128;++TX)
 	{
 		FVector P; Traffic.TryGetTileCenterWorldLocation(TX,TY,P);
+		TerrainCloudSeed=HashCombineFast(TerrainCloudSeed,HashCombineFast(GetTypeHash(float(P.Z/R.TileSize)),GetTypeHash(Traffic.GetXbldTileId(TX,TY))));
 		R.Bounds+=P-FVector(R.TileSize*.5f,R.TileSize*.5f,0);
 		R.Bounds+=P+FVector(R.TileSize*.5f,R.TileSize*.5f,0);
 		FBox B;
@@ -156,6 +198,22 @@ FSimCopterCityIntroRoute USimCopterCityIntro::BuildRoute(const ASimCopterTraffic
 		FVector P; Traffic.TryGetTileCenterWorldLocation(FMath::Clamp(FMath::RoundToInt(Tile.X),0,127),FMath::Clamp(FMath::RoundToInt(Tile.Y),0,127),P);
 		const FVector XY=Origin+X*Tile.X+Y*Tile.Y; P.X=XY.X; P.Y=XY.Y; return P;
 	};
+	TArray<FVector> Banks;
+	if (R.CityIndex != INDEX_NONE) Banks = PreviewCloudBanks[R.CityIndex];
+	else
+	{
+		// Imported maps have no original movie. Their filename and terrain give a stable
+		// identity, independent of launch time, path location and gameplay RNG.
+		FRandomStream Weather(HashCombineFast(FCrc::StrCrc32(*Stem.ToLower()),TerrainCloudSeed));
+		for (int32 I=0; I<5; ++I)
+			Banks.Add(FVector(Weather.FRandRange(16,112), Weather.FRandRange(16,112), Weather.FRandRange(8,13)));
+	}
+	for (const FVector& Bank : Banks)
+	{
+		// Calebopolis follows the helicopter from below the usual overview layer.
+		const FVector Center = Ground(FVector2D(Bank.X,127-Bank.Y)) + FVector(0,0,R.TileSize*(Bank.Z+(R.CityIndex==23 ? 4 : 19)));
+		R.CloudBanks.Add(FVector4(Center,R.TileSize*Bank.Z));
+	}
 	auto Subject=[&](FVector2D Hint,int32 Feature)
 	{
 		FVector2D Selected=Hint;

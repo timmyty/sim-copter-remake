@@ -10,6 +10,7 @@
 #include "Camera/PlayerCameraManager.h"
 #include "Components/BoxComponent.h"
 #include "Components/VolumetricCloudComponent.h"
+#include "Components/LocalFogVolumeComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "HAL/IConsoleManager.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -181,6 +182,21 @@ bool FSimCopterCityIntroLightingTest::RunTest(const FString&)
 	TestTrue(TEXT("Tour finds a newly loaded sky before the normal rescan interval"),Day->GetDaySequenceActor()==Sky);
 	TestEqual(TEXT("Level transition cannot leak the lighting override into the next city"),Settings->GetTimeOfDayMode(),ESimCopterTimeOfDayMode::Dynamic);
 	TestTrue(TEXT("Queued save's original hour survives presentation cleanup"),FMath::IsNearlyEqual(Sky->GetTimeOfDay(),23.f,.01f));
+	Owner->SetActorHiddenInGame(true); // Production tour owner is a hidden GameMode.
+	Tour->Route.CloudBanks.Add(FVector4(0,0,16000,4000));
+	Tour->BeginPreviewCloudBanks(); Tour->BeginPreviewCloudBanks();
+	TestEqual(TEXT("Repeat initialization does not duplicate local clouds"),Tour->PreviewClouds.Num(),11);
+	TestTrue(TEXT("Hidden tour owner cannot hide the cloud presentation"),Tour->PreviewClouds[0]->ShouldRender());
+	const FVector CloudStart=Tour->PreviewClouds[0]->GetComponentLocation();
+	Tour->Elapsed=10; Tour->UpdatePreviewCloudBanks();
+	const FVector CloudMoved=Tour->PreviewClouds[0]->GetComponentLocation();
+	TestTrue(TEXT("Clouds drift during presentation"),FVector::Distance(CloudStart,CloudMoved)>100);
+	Tour->UpdatePreviewCloudBanks();
+	TestTrue(TEXT("Paused presentation keeps clouds still"),CloudMoved.Equals(Tour->PreviewClouds[0]->GetComponentLocation()));
+	TWeakObjectPtr<ULocalFogVolumeComponent> PreviousCloud=Tour->PreviewClouds[0];
+	Tour->RestoreTourClouds();
+	TestTrue(TEXT("Banks retire even without a CelestialVault cloud layer"),Tour->PreviewClouds.IsEmpty() && (!PreviousCloud.IsValid() || !PreviousCloud->IsRegistered()));
+	TestNull(TEXT("Temporary cloud owner retires with the banks"),Tour->PreviewCloudActor.Get());
 	// A fresh/low-power city can have clear skies and replace its animated material
 	// after the tour starts. The visible layer must retain preview-style cloud cover.
 	auto* Cloud=NewObject<UVolumetricCloudComponent>(Owner); Cloud->RegisterComponent();

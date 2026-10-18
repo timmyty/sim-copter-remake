@@ -24,6 +24,7 @@
 #include "SceneView.h"
 #include "SceneViewExtension.h"
 #include "Components/VolumetricCloudComponent.h"
+#include "Components/LocalFogVolumeComponent.h"
 #include "HAL/IConsoleManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/UObjectIterator.h"
@@ -146,6 +147,7 @@ bool USimCopterCityIntro::Start()
 	PC->PushPause();
 	BeginTourLighting();
 	bLoggedTourClouds = false;
+	BeginPreviewCloudBanks();
 	BeginTourClouds();
 
 	PC->SetIgnoreMoveInput(true); PC->SetIgnoreLookInput(true);
@@ -203,9 +205,61 @@ void USimCopterCityIntro::RestoreLighting()
 	}
 }
 
+void USimCopterCityIntro::BeginPreviewCloudBanks()
+{
+	if (!PreviewClouds.IsEmpty() || !GetOwner() || Route.CloudBanks.IsEmpty()) return;
+	// The component belongs to GameMode (AInfo), which is hidden in game. Give the
+	// presentation a visible, transient owner rather than inheriting that hidden flag.
+	PreviewCloudActor = GetWorld()->SpawnActor<AActor>();
+	if (!PreviewCloudActor) return;
+	PreviewCloudActor->SetFlags(RF_Transient);
+	PreviewCloudActor->SetActorEnableCollision(false);
+	PreviewCloudActor->SetActorTickEnabled(false);
+	if (auto* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.LocalFogVolume")))
+	{
+		PreviousLocalCloudCVar = CVar->GetInt();
+		CVar->Set(1, ECVF_SetByGameOverride);
+	}
+	// Overlapping soft volumes provide real depth/parallax on the low fly-through.
+	// They do not need the much higher, planet-scale CelestialVault cloud layer.
+	FRandomStream Shape(1647 + Route.CityIndex);
+	for (const FVector4& Bank : Route.CloudBanks)
+	{
+		for (int32 Lobe=0; Lobe<11; ++Lobe)
+		{
+			const float Angle = Lobe * UE_TWO_PI / 6;
+			const float Radius = Bank.W * (Lobe == 0 ? .75f : Lobe < 7 ? Shape.FRandRange(.45f,.65f) : Shape.FRandRange(.22f,.38f));
+			const FVector Offset = Lobe == 0 ? FVector::ZeroVector :
+				FVector(FMath::Cos(Angle)*Bank.W*.85f,FMath::Sin(Angle)*Bank.W*.6f,Shape.FRandRange(-.2f,.25f)*Bank.W);
+			auto* Cloud = NewObject<ULocalFogVolumeComponent>(PreviewCloudActor);
+			Cloud->SetWorldLocation(FVector(Bank)+Offset);
+			Cloud->SetWorldScale3D(FVector(Radius/ULocalFogVolumeComponent::GetBaseVolumeSize()));
+			Cloud->RadialFogExtinction = .08f * 2000.0f / Radius;
+			// UE combines radial and height coverage multiplicatively: zero height
+			// density makes even a dense radial cloud completely transparent.
+			Cloud->HeightFogExtinction = .8f;
+			Cloud->HeightFogFalloff = 1.0f;
+			Cloud->FogPhaseG = .1f;
+			Cloud->FogAlbedo = FLinearColor(.98f,.985f,1);
+			const float Light = Shape.FRandRange(.7f,1.0f);
+			Cloud->FogEmissive = FLinearColor(15000,15500,16000) * Light;
+			Cloud->RegisterComponent();
+			PreviewClouds.Add(Cloud); PreviewCloudOrigins.Add(Cloud->GetComponentLocation());
+		}
+	}
+}
+
+void USimCopterCityIntro::UpdatePreviewCloudBanks()
+{
+	// Presentation time pauses with the tour; never consume gameplay weather/RNG.
+	for (int32 I=0; I<PreviewClouds.Num(); ++I)
+		if (IsValid(PreviewClouds[I]))
+			PreviewClouds[I]->SetWorldLocation(PreviewCloudOrigins[I]+FVector(Elapsed*Route.TileSize*.12f,Elapsed*Route.TileSize*.04f,0));
+}
+
 void USimCopterCityIntro::BeginTourClouds()
 {
-	if (bCloudOverride || GTourCloudCoverage <= 0.0f) return;
+	if (bCloudOverride || GTourCloudCoverage <= 0.0f || Route.CityIndex == 29) return;
 	UWorld* World = GetWorld();
 	if (!World) return;
 	UVolumetricCloudComponent* Cloud = nullptr;
@@ -286,6 +340,14 @@ void USimCopterCityIntro::ApplyTourClouds()
 
 void USimCopterCityIntro::RestoreTourClouds()
 {
+	for (auto Cloud : PreviewClouds) if (IsValid(Cloud)) Cloud->DestroyComponent();
+	PreviewClouds.Reset(); PreviewCloudOrigins.Reset();
+	if (IsValid(PreviewCloudActor)) PreviewCloudActor->Destroy();
+	PreviewCloudActor = nullptr;
+	if (PreviousLocalCloudCVar >= 0)
+		if (auto* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.LocalFogVolume")))
+			CVar->Set(PreviousLocalCloudCVar, ECVF_SetByGameOverride);
+	PreviousLocalCloudCVar = -1;
 	if (!bCloudOverride) return;
 	bCloudOverride = false;
 	if (UVolumetricCloudComponent* Cloud = TourCloud.Get())
@@ -380,6 +442,7 @@ void USimCopterCityIntro::TickComponent(float DeltaTime,ELevelTick TickType,FAct
 	for (TActorIterator<ASimCity2000CityActor> It(GetWorld()); It; ++It) It->AdvanceWindTurbines(Step);
 	if (PresentationClock) { PresentationClock->Elapsed=Elapsed; PresentationClock->Delta=Step; }
 	ApplyTourClouds();
+	UpdatePreviewCloudBanks();
 	LastTickSeconds=Now;
 	if (bSkipRequested || Elapsed>=FSimCopterCityIntroRoute::Duration || !Controller.IsValid() || !IsValid(Camera)) Finish();
 	else UpdateCamera();

@@ -28,7 +28,7 @@ enum class ESimCopterFrontEndScreen : uint8
 	UserCityPicker, // stands in for FUN_00406400's GetOpenFileName
 	SavedGamePicker,// remake SaveGame slots, filtered to the original career/user split
 	Message,        // MBox.bmp
-	RemakeFeatures, // One-time gameplay preference, before entering a city.
+	RemakeFeatures, // Persistent toggle after each New/Open menu choice.
 };
 
 // Game mode for the front-end map (`/Game/MainMenu`): no pawn, no city, just the shell.
@@ -88,7 +88,8 @@ private:
 
 	// SCHOOK: MainMenuCommand 0x0044c710 - what each of the five items does.
 	void HandleMainMenuItem(ESimCopterMainMenuItem Item);
-	void HandleRemakeFeaturesChoice(bool bEnabled);
+	void ContinueGameSelection();
+	ESimCopterMainMenuItem PendingMenuItem = static_cast<ESimCopterMainMenuItem>(0);
 
 	void HandleCareerCityChosen(int32 CareerCityIndex);
 	void HandleUserCityChosen(const FString& CityFilePath);

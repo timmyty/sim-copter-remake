@@ -1,0 +1,82 @@
+{
+  "version": "v1.0.22",
+  "date": "2026-10-18",
+  "baseline_commit": "818ffd96635c1a6b7ff00ac0f3a878a90f2e606f",
+  "builds": {
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "3c632f00572bea3943b56cbbec3b1f6e4e51cbc73a5d0446149786f1b671cd22"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "efde896c820206622c9d937ceda440f30e7998101f20a8e7a415f655ed5ea1d8"
+    }
+  },
+  "editor": {
+    "result": "Succeeded",
+    "log_sha256": "74a68eb1dec81a7c2a4e9b5ab68e181844603f61ad8389ffa1cbae8cc829e962"
+  },
+  "cook": {
+    "result": "Succeeded",
+    "log_sha256": "b01ec5d7238b7b5579b00fe8c5dbbef91112f6f95133fc40edbab2fb0e509614"
+  },
+  "tests": {
+    "focused": {
+      "succeeded": 16,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0
+    },
+    "tests": {
+      "succeeded": 566,
+      "succeededWithWarnings": 45,
+      "failed": 0,
+      "notRun": 0
+    },
+    "render-final": {
+      "succeeded": 45,
+      "succeededWithWarnings": 21,
+      "failed": 0,
+      "notRun": 0
+    },
+    "final-focused": {
+      "succeeded": 20,
+      "succeededWithWarnings": 2,
+      "failed": 0,
+      "notRun": 0
+    }
+  },
+  "source_files_verified": 498,
+  "startup": [
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "mode": "shipping",
+      "launcher_pid": 13400,
+      "child_pids": [
+        21728
+      ],
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\session-toggle-clouds\\smoke-shipping",
+      "survived": true,
+      "seconds": 30.8669418
+    },
+    {
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "mode": "development",
+      "launcher_pid": 14612,
+      "child_pids": [
+        null
+      ],
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\session-toggle-clouds\\smoke-development",
+      "survived": true,
+      "seconds": 30.6225879
+    }
+  ],
+  "validation_sequence": "Full 611-case suite, then final focused regressions and 66 offscreen checks after the last cloud-framing and equipment-message adjustments; final binaries and cook use the same published source.",
+  "screenshots": "Actual offscreen Unreal game widgets and all 30 career tour scenes; selected WebP captures in Docs.",
+  "limitations": [
+    "No interactive flight, physical-controller or manual listening playtest.",
+    "Cloud placement is visually adapted from original previews, not recovered numerical positions.",
+    "Imported cities have no original movie; their cloud layouts are repeatable terrain adaptations.",
+    "Saves retain their gameplay mode; mismatches are rejected before restoration."
+  ]
+}
