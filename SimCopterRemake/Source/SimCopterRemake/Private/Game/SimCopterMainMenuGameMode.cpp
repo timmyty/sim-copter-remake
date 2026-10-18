@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Game/SimCopterMainMenuGameMode.h"
+#include "Game/SimCopterSettings.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Engine/Engine.h"
@@ -174,6 +175,7 @@ TSharedRef<SWidget> ASimCopterMainMenuGameMode::BuildScreen(const ESimCopterFron
 		USimCopterSessionSubsystem::GetUserCityFilePaths(CityPaths);
 
 		return SNew(SSimCopterUserCityPicker)
+			.AllowExtraControls(USimCopterSettings::RemakeFeaturesEnabled(this))
 			.Art(Art)
 			.CityFilePaths(CityPaths)
 			.OnAccepted(FOnSimCopterUserCityChosen::CreateUObject(
@@ -204,9 +206,22 @@ TSharedRef<SWidget> ASimCopterMainMenuGameMode::BuildScreen(const ESimCopterFron
 			}));
 	}
 
+	case ESimCopterFrontEndScreen::RemakeFeatures:
+		return SNew(SSimCopterMessageBox)
+			.Art(Art).Confirm(true).ExpandedText(true)
+			.Message(LOCTEXT("RemakeFeaturesPrompt", "Enable extra Remake features?\n\nYes adds tasers, cargo recovery, helper aircraft, planes, parachutes, expanded rescue, baseball and progression.\n\nNo keeps original-style gameplay with fixes and visual improvements.\n\nChange this in the Main Menu or Options > Gameplay. Later changes require a restart."))
+			.OnConfirmed(FSimpleDelegate::CreateLambda([this]()
+			{
+				HandleRemakeFeaturesChoice(true);
+			}))
+			.OnDismissed(FSimpleDelegate::CreateLambda([this]()
+			{
+				HandleRemakeFeaturesChoice(false);
+			}));
 	case ESimCopterFrontEndScreen::Message:
 		return SNew(SSimCopterMessageBox)
 			.Art(Art)
+			.ExpandedText(true)
 			.Message(PendingMessage)
 			.OnDismissed(FSimpleDelegate::CreateLambda([this]()
 			{
@@ -223,6 +238,10 @@ TSharedRef<SWidget> ASimCopterMainMenuGameMode::BuildScreen(const ESimCopterFron
 
 void ASimCopterMainMenuGameMode::EnterScreen(const ESimCopterFrontEndScreen NewScreen)
 {
+	if (NewScreen == ESimCopterFrontEndScreen::MainMenu)
+		if (const auto* Settings = USimCopterSettings::Get(this); Settings && !Settings->HasChosenRemakeFeatures())
+		{ EnterScreen(ESimCopterFrontEndScreen::RemakeFeatures); return; }
+
 	if (GEngine == nullptr || GEngine->GameViewport == nullptr)
 	{
 		return;
@@ -306,6 +325,24 @@ void ASimCopterMainMenuGameMode::CloseScreen()
 	Screen = ESimCopterFrontEndScreen::None;
 }
 
+void ASimCopterMainMenuGameMode::HandleRemakeFeaturesChoice(bool bEnabled)
+{
+	if (auto* Settings = USimCopterSettings::Get(this))
+	{
+		if (!Settings->HasChosenRemakeFeatures()) Settings->ChooseInitialRemakeFeatures(bEnabled);
+		else
+		{
+			Settings->SetRemakeFeaturesPreference(bEnabled); Settings->SaveConfig();
+			if (Settings->NeedsRemakeFeaturesRestart())
+			{
+				PendingMessage = LOCTEXT("FeaturesRestart", "Choice saved. Restart the game to apply Extra Remake Features. Existing saves retain their gameplay mode.");
+				EnterScreen(ESimCopterFrontEndScreen::Message); return;
+			}
+		}
+	}
+	EnterScreen(ESimCopterFrontEndScreen::MainMenu);
+}
+
 void ASimCopterMainMenuGameMode::HandleMainMenuItem(const ESimCopterMainMenuItem Item)
 {
 	// FUN_0044c710's switch, item for item.
@@ -339,6 +376,9 @@ void ASimCopterMainMenuGameMode::HandleMainMenuItem(const ESimCopterMainMenuItem
 		EnterScreen(ESimCopterFrontEndScreen::SavedGamePicker);
 		return;
 
+	case ESimCopterMainMenuItem::RemakeFeatures:
+		EnterScreen(ESimCopterFrontEndScreen::RemakeFeatures);
+		return;
 	case ESimCopterMainMenuItem::Quit:
 		// EnterState(1). No confirmation - the original does not ask here either.
 		QuitGame();

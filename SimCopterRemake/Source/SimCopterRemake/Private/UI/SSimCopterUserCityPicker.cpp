@@ -127,6 +127,7 @@ FString SSimCopterUserCityPicker::ReadEmbeddedCityName(const FString& FilePath)
 
 void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 {
+	bAllowExtraControls = InArgs._AllowExtraControls;
 	OnAccepted = InArgs._OnAccepted;
 	OnCancelled = InArgs._OnCancelled;
 	OnOpenWebsite = InArgs._OnOpenWebsite;
@@ -213,6 +214,8 @@ void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 			.ColorAndOpacity(FSlateColor(bHasPage ? ListText : PlateTextColor)));
 	}
 
+	if (bAllowExtraControls)
+	{
 	const bool bHasPage = HasPageBitmap(ArtObject, PickerPage);
 	const FLinearColor LinkColor = bHasPage ? FLinearColor(0.04f, 0.18f, 0.42f) : FLinearColor(0.50f, 0.76f, 1.0f);
 	AddAtPage(FRect{ 70, 275, 444, 293 }, SNew(STextBlock)
@@ -239,6 +242,8 @@ void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 		AddAtPage(FRect{ 70, 295.f + Index * 19, 444, 313.f + Index * 19 }, Link);
 	}
 
+	}
+
 	AddAtPage(FRect{ AcceptButtonX, ButtonY, AcceptButtonX + ButtonWidth, ButtonY + ButtonHeight },
 		MakeButton(
 			ArtObject,
@@ -259,7 +264,7 @@ void SSimCopterUserCityPicker::Construct(const FArguments& InArgs)
 			}),
 			ButtonStyles));
 
-	AddAtPage(FRect{ 70, ButtonY, 70 + ButtonWidth, ButtonY + ButtonHeight },
+	if (bAllowExtraControls) AddAtPage(FRect{ 70, ButtonY, 70 + ButtonWidth, ButtonY + ButtonHeight },
 		MakeButton(ArtObject, LOCTEXT("Browse", "Browse..."), ButtonFontHeight,
 			FOnClicked::CreateLambda([this]() { Browse(); return FReply::Handled(); }), ButtonStyles));
 	PickerScreen = MakeScaledScreen(Canvas);
@@ -307,7 +312,7 @@ TSharedRef<SWidget> SSimCopterUserCityPicker::BuildWebsiteConfirmation()
 
 void SSimCopterUserCityPicker::RequestWebsite(int32 Index)
 {
-	if (PendingWebsiteIndex != INDEX_NONE || GetCityWebsiteUrl(Index).IsEmpty()) return;
+	if (!bAllowExtraControls || PendingWebsiteIndex != INDEX_NONE || GetCityWebsiteUrl(Index).IsEmpty()) return;
 	PendingWebsiteIndex = Index;
 	ChildSlot[WebsiteConfirmationScreen.ToSharedRef()];
 	SetControllerSelection(WebsiteCancelButton);
@@ -351,7 +356,7 @@ TSharedRef<ITableRow> SSimCopterUserCityPicker::MakeRow(
 
 void SSimCopterUserCityPicker::Browse()
 {
-	if (PendingWebsiteIndex != INDEX_NONE) return;
+	if (!bAllowExtraControls || PendingWebsiteIndex != INDEX_NONE) return;
 	FString Path;
 	if (!SimCopterFileBrowser::Open(AsShared(), false, TEXT("Open a SimCity 2000 city"), Path)) return;
 	FSimCity2000City City;

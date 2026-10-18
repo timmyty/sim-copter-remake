@@ -1,5 +1,24 @@
 # Timmyty SimCopter gameplay fork
 
+## October 18 release v1.0.21
+
+Adds a persistent first-start Yes/No choice for extra Remake gameplay, with main-menu
+and in-game settings. No retains fixes and city graphics while disabling the thirteen
+extension groups in the [feature policy](RemakeFeatureChoice.md). Later changes apply
+after restart; saves record their mode and incompatible loads are rejected before
+world restoration.
+
+Fixes repeated pilot retrieval losing its assigned aircraft during deferred pilot
+startup. Regression coverage includes nearby parked aircraft, death/respawn,
+repeated boarding and the actual helicopter cheat. Publishes the completed selected
+building and causeway work, including swept boat collision and trapped-boat recovery.
+The independent Emergency Buildings option restores the previous hospital, police
+and fire station styles on the next city load.
+
+[Detailed fixes, screenshots and validation](Releases/v1.0.21.md),
+[complete building gallery](SelectedBuildingsOctober18.md), and
+[validation receipt](validation/WindowsRelease121Results.json).
+
 ## October 14 release v1.0.12
 
 Includes all completed changes since v1.0.11: persistent catalog controller

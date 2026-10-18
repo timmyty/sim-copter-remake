@@ -324,6 +324,7 @@ USimCopterSaveGame* USimCopterSaveSubsystem::CaptureCurrentGame(
 	}
 
 	USimCopterSaveGame* Save = NewObject<USimCopterSaveGame>(GetTransientPackage());
+	Save->bRemakeFeatures = USimCopterSettings::RemakeFeaturesEnabled(WorldContextObject);
 	Save->Kind = Session->GetSessionKind();
 	Save->DisplayName = NormalizeDisplayName(DisplayName);
 	Save->SavedAtUtc = FDateTime::UtcNow();
@@ -546,6 +547,12 @@ bool USimCopterSaveSubsystem::LoadGame(
 	}
 	if (!Save->IsStructurallyValid(ExpectedKind, OutError))
 	{
+		return false;
+	}
+	const auto* Settings = GetGameInstance() ? GetGameInstance()->GetSubsystem<USimCopterSettings>() : nullptr;
+	if (Settings && Save->bRemakeFeatures != Settings->AreRemakeFeaturesEnabled())
+	{
+		OutError = FString::Printf(TEXT("This save uses Extra Remake Features: %s. Set that choice in Options > Gameplay and restart before loading. Your save has not been changed."), Save->bRemakeFeatures ? TEXT("Yes") : TEXT("No"));
 		return false;
 	}
 

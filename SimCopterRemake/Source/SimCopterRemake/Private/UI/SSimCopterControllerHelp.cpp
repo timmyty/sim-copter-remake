@@ -1,4 +1,5 @@
 #include "SSimCopterControllerHelp.h"
+#include "Game/SimCopterSettings.h"
 #include "SSimCopterStatusPlate.h"
 #include "Brushes/SlateDynamicImageBrush.h"
 #include "Engine/Engine.h"
@@ -25,6 +26,7 @@ FState SSimCopterControllerHelp::ReadState(APawn* Pawn, bool bIncludeInstruction
 	FState State;
 	if (!Pawn) return State;
 	const auto* PC = Cast<ASimCopterPlayerController>(Pawn->GetController());
+	State.bRemakeFeatures = USimCopterSettings::RemakeFeaturesEnabled(Pawn);
 	State.bExpanded = PC && PC->IsControllerHelpExpanded();
 	State.bKeyboard = !PC || !PC->IsUsingGamepadInput();
 	State.bTurboEnabled = PC && PC->IsControllerTurboEnabled();
@@ -70,7 +72,7 @@ FState SSimCopterControllerHelp::ReadState(APawn* Pawn, bool bIncludeInstruction
 		State.bCanBoard = OnFoot->CanBoardNearbyHelicopter();
 	}
 	if (const auto* Missions = Cast<ASimCopterMissionSystemActor>(UGameplayStatics::GetActorOfClass(Pawn, ASimCopterMissionSystemActor::StaticClass()));
-		Missions && Missions->UsesCitywideMissionPlacement())
+		Missions && Missions->UsesCustomCityProgression())
 		State.Instructions += TEXT("\n") + Missions->GetCustomCityProgressionText();
 	return State;
 }

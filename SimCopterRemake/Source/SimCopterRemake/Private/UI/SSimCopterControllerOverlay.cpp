@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/SSimCopterControllerOverlay.h"
+#include "Game/SimCopterSettings.h"
 #include "UI/SSimCopterRadialWheel.h"
 #include "Widgets/Layout/SScaleBox.h"
 
@@ -180,8 +181,8 @@ void SSimCopterControllerOverlay::RefreshRadials()
 TSharedRef<SWidget> SSimCopterControllerOverlay::BuildDispatchWheel()
 {
 	TArray<FString> Labels;
-	for (int32 Slot = 0; Slot < SimCopterControllerInput::DispatchSlotCount; ++Slot)
-		Labels.Add(SimCopterControllerInput::GetDispatchSelection(Slot).Label);
+	for (int32 Slot = 0; Slot < SimCopterControllerInput::GetDispatchSlotCount(USimCopterSettings::RemakeFeaturesEnabled(Pawn.Get())); ++Slot)
+		Labels.Add(SimCopterControllerInput::GetDispatchSelection(Slot, USimCopterSettings::RemakeFeaturesEnabled(Pawn.Get())).Label);
 	return BuildRadialWheel(
 		Labels,
 		NSLOCTEXT("SimCopterController", "DispatchWheel", "DISPATCH"),

@@ -202,11 +202,26 @@ USimCopterSettings* USimCopterSettings::Get(const UObject* WorldContextObject)
 	return GameInstance != nullptr ? GameInstance->GetSubsystem<USimCopterSettings>() : nullptr;
 }
 
+bool USimCopterSettings::RemakeFeaturesEnabled(const UObject* Context)
+{
+	const auto* Settings = Get(Context);
+	return !Settings || Settings->AreRemakeFeaturesEnabled();
+}
+
+void USimCopterSettings::ChooseInitialRemakeFeatures(bool bEnabled)
+{
+	if (bRemakeFeaturesChosen) return;
+	bRemakeFeatures = bActiveRemakeFeatures = bEnabled;
+	bRemakeFeaturesChosen = true;
+	SaveConfig();
+}
+
 void USimCopterSettings::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
 	LoadConfig();
+	bActiveRemakeFeatures = bRemakeFeatures;
 
 	GameVolume = FMath::Clamp(GameVolume, VolumeMin, VolumeMax);
 	RadioVolume = FMath::Clamp(RadioVolume, 0, VolumeMax);

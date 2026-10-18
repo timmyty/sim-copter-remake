@@ -180,6 +180,9 @@ FMaxisMeshObject MakeModel(const FMaxisMeshObject& Original, bool bUpdated)
 		Face({{38.93,107.79,39.31},{-40.28,107.79,39.31},{-40.28,136.21,39.31},{38.93,136.21,39.31}},Brick,true);
 		Face({{-40.28,107.79,39.31},{-40.28,107.79,-39.9},{-40.28,136.21,-39.9},{-40.28,136.21,39.31}},Brick,true);
 		Face({{38.93,107.79,-39.9},{38.93,107.79,39.31},{38.93,136.21,39.31},{38.93,136.21,-39.9}},Brick,true);
+		// Reference detail pass: narrow copper downpipes and bay lintel trim, clear of the retained roofs.
+		for(double Z:{-78.,77.}) Beam({L-.8,3,Z},{L-.8,103,Z},.5,Metal);
+		for(double Z:{-54.,0.,54.}) Box({82.3,44,Z},{1.2,1.5,38},Stone);
 		// Two square chimney stacks off the landing square; hollow dark tops and stone caps.
 		for(double Z:{40.,66.})
 		{
@@ -225,6 +228,9 @@ FMaxisMeshObject MakeModel(const FMaxisMeshObject& Original, bool bUpdated)
 		for(double X:{-24.,-12.,0.,12.,24.}) Box({X,22,-50},{2.2,25,3},Stone);
 		Box({0,35,-48.3},{56,4,10},Stone);
 		Box({0,38,-48.3},{59,2,11},Cyan);
+		// Slim glazed entrance sidelights and metal door mullions at the existing recess.
+		for(double X:{-20.,20.}) Box({X,23,-45.5},{4,20,.4},Glass);
+		for(double X:{-8.,8.}) Beam({X,13,-45.7},{X,33,-45.7},.25,Metal);
 		// Gold shield medallions on the high front and side, below the unchanged roof.
 		for(bool Side:{false,true})
 		{

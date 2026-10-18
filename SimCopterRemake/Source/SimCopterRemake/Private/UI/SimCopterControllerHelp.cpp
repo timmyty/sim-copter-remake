@@ -29,8 +29,8 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			if (State.Context == EContext::OnFoot)
 			{
 				Add(TEXT(""), TEXT("WASD: move | Mouse: look | Space: jump"));
-				Add(TEXT(""), TEXT("F: board | Walk up: carry | G: put down | P: parachute"));
-				Add(TEXT(""), TEXT("RMB: aim taser | LMB: fire"));
+				Add(TEXT(""), State.bRemakeFeatures ? TEXT("F: board | Walk up: carry | G: put down | P: parachute") : TEXT("F: board | Walk up: carry | G: put down"));
+				if (State.bRemakeFeatures) Add(TEXT(""), TEXT("RMB: aim taser | LMB: fire"));
 			}
 			else
 			{
@@ -56,7 +56,7 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 			Add(TEXT("x"), TEXT("Release to return to flight"));
 			break;
 		case EContext::ToolWheel:
-			Add(TEXT("rs"), TEXT("Select tool / remote taser / passengers"));
+			Add(TEXT("rs"), State.bRemakeFeatures ? TEXT("Select tool / remote taser / passengers") : TEXT("Select tool / passengers"));
 			Add(TEXT("a"), TEXT("Equip highlighted option"));
 			Add(TEXT("r3"), TEXT("Switch to Dispatch"));
 			Add(TEXT("b"), TEXT("Cancel"));
@@ -80,10 +80,10 @@ TArray<FPrompt> BuildPrompts(const FState& State)
 		case EContext::OnFoot:
 			Add(TEXT("ls"), TEXT("Move / strafe; walk up to carry"));
 			Add(TEXT("rs"), TEXT("Look / aim"));
-			Add(TEXT("lt"), TEXT("Hold to aim taser"));
-			Add(TEXT("rt"), TEXT("Fire taser"));
+			if (State.bRemakeFeatures) Add(TEXT("lt"), TEXT("Hold to aim taser"));
+			if (State.bRemakeFeatures) Add(TEXT("rt"), TEXT("Fire taser"));
 			Add(TEXT("a"), TEXT("Jump"));
-			Add(TEXT("b"), TEXT("Toggle parachute while falling"));
+			if (State.bRemakeFeatures) Add(TEXT("b"), TEXT("Toggle parachute while falling"));
 			if (State.bCanBoard) Add(TEXT("y"), TEXT("Enter helicopter"));
 			if (State.bCarryingPerson) Add(TEXT("x"), TEXT("Put down passenger"));
 			break;

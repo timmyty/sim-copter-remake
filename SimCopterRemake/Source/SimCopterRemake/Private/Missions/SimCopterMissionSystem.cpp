@@ -389,7 +389,7 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 	
 	float Weights[7];
 	for (int32 Index = 0; Index < 7; ++Index) Weights[Index] = CareerCity.Weights[Index];
-	if (World && World->UsesCitywideMissionPlacement())
+	if (World && World->UsesCustomCityProgression())
 	{
 		const int32 Families[7][4] = {
 			{TYPE_BuildingFire, TYPE_CarFireEvent, TYPE_PlaneCrash, TYPE_TrainCrash},
@@ -439,7 +439,7 @@ void FSimCopterMissionSystem::RebuildCumulativeWeights()
 void FSimCopterMissionSystem::DispatchScheduledType(int32 Bucket)
 {
 	if (bTransportOnly) { CreateEventOfType(TYPE_Transport); return; }
-	if (World && World->UsesCitywideMissionPlacement())
+	if (World && World->UsesCustomCityProgression())
 	{
 		// Pick among unlocked variants, so a locked subtype cannot starve an enabled family.
 		const TArray<TArray<int32>> Families = {
@@ -1236,6 +1236,8 @@ const TCHAR* FSimCopterMissionSystem::GetTypeDisplayName(int32 TypeMask)
 int32 FSimCopterMissionSystem::CreateEventAt(int32 TX, int32 TY, int32 TypeMask)
 {
 	if (TypeMask != TYPE_BaseLocation && !HasUserCityEventCapacity()) return INDEX_NONE;
+	// Direct incident creators (including an emptied capsized boat) share the feature policy.
+	if (World && IsRecoveryMission(TypeMask) && !World->IsMissionTypeAvailable(TypeMask)) return INDEX_NONE;
 	// Refuse before reserving an ambient boat/train or allocating a record with no survivors.
 	if (World && (TypeMask == TYPE_Medevac || TypeMask == TYPE_Transport || (TypeMask & TYPE_RescuePeople) != 0) &&
 		World->GetMissionPassengerLimit(TypeMask == TYPE_Medevac) == 0) return INDEX_NONE;

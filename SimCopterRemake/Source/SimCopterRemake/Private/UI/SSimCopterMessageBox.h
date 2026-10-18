@@ -42,7 +42,7 @@ class SSimCopterMessageBox : public SSimCopterNavigableMenu
 {
 public:
 	SLATE_BEGIN_ARGS(SSimCopterMessageBox)
-		: _Confirm(false)
+		: _Confirm(false), _ExpandedText(false)
 	{}
 		SLATE_ARGUMENT(TObjectPtr<USimCopterHangarArt>, Art)
 		SLATE_ARGUMENT(FText, Message)
@@ -53,6 +53,7 @@ public:
 		 * for Yes, which is what OnConfirmed stands for.
 		 */
 		SLATE_ARGUMENT(bool, Confirm)
+		SLATE_ARGUMENT(bool, ExpandedText)
 		SLATE_EVENT(FSimpleDelegate, OnDismissed)
 		SLATE_EVENT(FSimpleDelegate, OnConfirmed)
 	SLATE_END_ARGS()
@@ -79,6 +80,7 @@ private:
 		const FMakeDialogButton& MakeDialogButton);
 
 	bool bConfirm = false;
+	bool bExpandedText = false;
 	FSimpleDelegate OnDismissed;
 	FSimpleDelegate OnConfirmed;
 	TArray<TSharedRef<FButtonStyle>> ButtonStyles;

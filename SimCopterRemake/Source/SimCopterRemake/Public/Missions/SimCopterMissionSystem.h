@@ -449,6 +449,7 @@ public:
 	virtual int32 GetMissionPassengerLimit(bool bMedical) const { return MAX_int32; }
 	virtual bool IsMissionTypeAvailable(int32 TypeMask) const { return true; }
 	virtual bool UsesCitywideMissionPlacement() const { return false; }
+	virtual bool UsesCustomCityProgression() const { return UsesCitywideMissionPlacement(); }
 	virtual bool TryPickCityMissionTile(int32 TypeMask, int32 Random, int32& X, int32& Y) { return false; }
 
 

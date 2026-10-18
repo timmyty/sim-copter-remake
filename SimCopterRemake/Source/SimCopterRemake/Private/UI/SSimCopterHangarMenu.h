@@ -50,6 +50,7 @@ public:
 
 private:
 	friend class FSimCopterEquipmentPageTest;
+	friend class FSimCopterRemakeModeTest;
 	friend class FSimCopterEquipmentInteractionTest;
 	friend class FSimCopterCatalogNavigationTest;
 	friend class FSimCopterPlaytestMenuTest;
@@ -123,6 +124,7 @@ private:
 	void BuildCatalogPage(SConstraintCanvas& Canvas);
 	void BuildCatalogHelicopterPage(SConstraintCanvas& Canvas);
 	void BuildCatalogUpgradesPage(SConstraintCanvas& Canvas);
+	void BuildLegacyUpgradesPage(SConstraintCanvas& Canvas);
 	void BuildMissionLogPage(SConstraintCanvas& Canvas);
 	void BuildInventoryPage(SConstraintCanvas& Canvas);
 

@@ -1,4 +1,5 @@
 #include "Ground/SimCopterTrafficSystemActor.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Flight/SimCopterHelicopterPawn.h"
@@ -66,6 +67,7 @@ void ASimCopterTrafficSystemActor::ClearServiceEntrancePosts()
 
 ASimCopterGroundAgent* ASimCopterTrafficSystemActor::EnsureBuildingEntranceCrew(int32 TileX, int32 TileY)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return nullptr;
 	FVector Entrance;
 	if (!TryGetBuildingEntrancePost(TileX, TileY, Entrance)) return nullptr;
 	const int32 State = uint8(GetXbldTileId(TileX, TileY)) == 0xD1 ? 5 : 7;
@@ -138,6 +140,7 @@ bool ASimCopterTrafficSystemActor::IsAtHospitalEntrance(const FVector& Feet) con
 
 void ASimCopterTrafficSystemActor::UpdateServiceEntrances(float DeltaSeconds)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	ServiceEntranceUpdateSeconds -= DeltaSeconds;
 	if (ServiceEntranceUpdateSeconds > 0) return;
 	ServiceEntranceUpdateSeconds = 1.0f;

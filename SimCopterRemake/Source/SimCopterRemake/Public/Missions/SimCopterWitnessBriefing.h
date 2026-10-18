@@ -15,6 +15,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API USimCopterWitnessBriefing : public UActorComponent
 {
 	GENERATED_BODY()
+	friend class FSimCopterRemakeModeTest;
 public:
 	USimCopterWitnessBriefing();
 	void Report(ASimCopterGroundAgent* Suspect);

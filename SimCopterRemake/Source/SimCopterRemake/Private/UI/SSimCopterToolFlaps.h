@@ -105,6 +105,7 @@ public:
 
 private:
 	friend class FSimCopterCaptureCageTest;
+	friend class FSimCopterRemakeModeTest;
 	friend class FSimCopterRemoteRecoveryTest;
 	friend class FSimCopterRemoteAutopilotTest;
 	// The dispatch strip's page width. Wider than a tool flap to carry full artwork and controls.

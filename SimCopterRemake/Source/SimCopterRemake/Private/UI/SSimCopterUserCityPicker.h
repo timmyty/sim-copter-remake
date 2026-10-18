@@ -52,7 +52,8 @@ struct FSimCopterUserCityEntry
 class SSimCopterUserCityPicker : public SSimCopterNavigableMenu
 {
 public:
-	SLATE_BEGIN_ARGS(SSimCopterUserCityPicker) {}
+	SLATE_BEGIN_ARGS(SSimCopterUserCityPicker) : _AllowExtraControls(true) {}
+		SLATE_ARGUMENT(bool, AllowExtraControls)
 		SLATE_ARGUMENT(TObjectPtr<USimCopterHangarArt>, Art)
 		SLATE_ARGUMENT(TArray<FString>, CityFilePaths)
 		SLATE_EVENT(FOnSimCopterUserCityChosen, OnAccepted)
@@ -71,6 +72,8 @@ public:
 
 private:
 	friend class FSimCopterUserCityWebsitesTest;
+	friend class FSimCopterRemakeModeTest;
+	bool bAllowExtraControls = true;
 	FOnSimCopterCityWebsiteOpened OnOpenWebsite;
 	TSharedPtr<SWidget> PickerScreen;
 	TSharedPtr<SWidget> WebsiteConfirmationScreen;

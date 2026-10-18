@@ -1,4 +1,5 @@
 #include "Flight/SimCopterAirOperations.h"
+#include "Game/SimCopterSettings.h"
 #include "Flight/SimCopterHelicopterPawn.h"
 #include "Ground/SimCopterOnFootPawn.h"
 #include "Ground/SimCopterGroundAgent.h"
@@ -22,6 +23,7 @@ bool IsLandingAtPilotLevel(const ASimCopterHelicopterPawn* Heli, const ASimCopte
 // User-requested remake autopilot. Never feed stale pilot controls into the fixed-point model.
 void USimCopterAirOperationsComponent::BeginPilotRecovery(ASimCopterOnFootPawn* Pilot)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	auto* Heli=Helicopter();
 	if (!bAutopilotEnabled || !Heli || !Pilot || Heli->IsFixedWingAircraft() || Heli->FlightModel.State==ESimCopterFlightState::Dying) return;
 	EndRemoteTaser();

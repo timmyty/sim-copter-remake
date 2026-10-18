@@ -97,6 +97,7 @@ UCLASS()
 class SIMCOPTERREMAKE_API ASimCopterMissionSystemActor : public AActor, public SimCopterMissions::ISimCopterMissionWorld
 {
 	GENERATED_BODY()
+	friend class FSimCopterRemakeModeTest;
 	friend class FSimCopterGameplayOptionsTest;
 	friend class FSimCopterPlaytestRegressionTest;
 	friend class FSimCopterPlaneControlsTest;
@@ -146,6 +147,7 @@ public:
 	virtual int32 GetMissionPassengerLimit(bool bMedical) const override;
 	virtual bool IsMissionTypeAvailable(int32 TypeMask) const override;
 	virtual bool UsesCitywideMissionPlacement() const override;
+	bool UsesCustomCityProgression() const override;
 	virtual bool TryPickCityMissionTile(int32 TypeMask, int32 Random, int32& X, int32& Y) override;
 	void ScanCustomCityMissionSites();
 	int32 GetCustomCityProgressionTier() const;

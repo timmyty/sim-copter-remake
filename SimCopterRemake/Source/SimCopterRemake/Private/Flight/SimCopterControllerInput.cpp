@@ -5,7 +5,7 @@
 
 namespace SimCopterControllerInput
 {
-FDispatchSelection GetDispatchSelection(const int32 Slot)
+FDispatchSelection GetDispatchSelection(const int32 Slot, bool bAllowAirSupport)
 {
 	using SimCopterDispatch::EService;
 	static const FDispatchSelection Entries[DispatchSlotCount] = {
@@ -16,7 +16,7 @@ FDispatchSelection GetDispatchSelection(const int32 Slot)
 		{100, false, TEXT("Air: Map Mission")},
 		{RecallAllServiceIndex, false, TEXT("Recall All")},
 	};
-	return Slot >= 0 && Slot < DispatchSlotCount ? Entries[Slot] : FDispatchSelection{INDEX_NONE, false, TEXT("")};
+	return Slot >= 0 && Slot < GetDispatchSlotCount(bAllowAirSupport) ? Entries[!bAllowAirSupport && Slot == 4 ? 5 : Slot] : FDispatchSelection{INDEX_NONE, false, TEXT("")};
 }
 
 bool UpdateAnalogActivity(const float Value, float& LastActiveValue)

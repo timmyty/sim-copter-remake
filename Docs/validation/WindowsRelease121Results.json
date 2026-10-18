@@ -1,0 +1,97 @@
+{
+  "version": "v1.0.21",
+  "date": "2026-10-18",
+  "baseline_commit": "19d386ceb5d2e8b9f84d9ef39e16576297d8e24e",
+  "builds": {
+    "shipping": {
+      "result": "Succeeded",
+      "log_sha256": "415620d21565155a3103eb4fb254b748e0ac14cccdd3c5e4f35d5992a8519d05"
+    },
+    "development": {
+      "result": "Succeeded",
+      "log_sha256": "152ac8846d90aa6a944d6ed4dea39df501f19edb46b6609edb3bbfef6b9802be"
+    }
+  },
+  "editor": {
+    "result": "Succeeded",
+    "log_sha256": "d4ea13b320c2f406ef4af4d245571ef75ffc011d497e66e31e01a7e11ec45bd8"
+  },
+  "cook": {
+    "result": "Succeeded",
+    "log_sha256": "59476b79f06dee225fd28fb94fb4ad76093c47b0958b83cc1553caeef8454b5f"
+  },
+  "tests": {
+    "focused-final": {
+      "succeeded": 31,
+      "succeededWithWarnings": 2,
+      "failed": 0,
+      "notRun": 0
+    },
+    "tests": {
+      "succeeded": 562,
+      "succeededWithWarnings": 49,
+      "failed": 0,
+      "notRun": 0
+    },
+    "mode-render": {
+      "succeeded": 4,
+      "succeededWithWarnings": 1,
+      "failed": 0,
+      "notRun": 0
+    },
+    "render-tests": {
+      "succeeded": 94,
+      "succeededWithWarnings": 5,
+      "failed": 0,
+      "notRun": 0
+    }
+  },
+  "warning_notes": [
+    "49 full-suite cases and 5 final offscreen cases passed with warnings. These include synthetic-world mobility attachments, missing optional flap art, unconfigured original-data roots in isolated fixtures, and engine connectivity-probe timeouts."
+  ],
+  "source_files_verified": 496,
+  "startup": [
+    {
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remake-features-v121\\smoke-shipping",
+      "mode": "shipping",
+      "survived": true,
+      "launcher_pid": 10112,
+      "child_pids": [
+        81424
+      ],
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "seconds": 31.5090339
+    },
+    {
+      "isolated_profile": "C:\\SimCopterRemake\\sim-copter-remake-main\\Docs\\scratchpad\\remake-features-v121\\smoke-development",
+      "mode": "development",
+      "survived": true,
+      "launcher_pid": 20588,
+      "child_pids": [
+        null
+      ],
+      "limitation": "Headless startup only; no visible gameplay or manual listening.",
+      "seconds": 30.8354496
+    }
+  ],
+  "retrieval_baseline": {
+    "reproduced": "RepeatNearOtherAircraft lost the assigned helicopter and stopped moving in all three attempts",
+    "passed": "Plain fatal respawn and repeated boarding",
+    "log_sha256": "dd0dc7ec247b1a9a6c0741ef8b26a622bf2a1a4f687fc8e6817b1312917cc72a"
+  },
+  "new_mode_fixture_corrections": [
+    "Initialized the test viewport and its overlay, and used the required Engine outer for LocalPlayer. No production behavior was changed to suppress fixture errors."
+  ],
+  "final_validation_scope": "Full 611-case sweep followed by an offscreen rerun of affected systems after the final feature-policy and legacy-catalog fixes. Both packaged builds use the final source.",
+  "catalog_regression": {
+    "reproduced": "Opening the legacy equipment page indexed expanded-layout controller widgets that do not exist in that layout.",
+    "fixed": "Use legacy focus handling and the original five equipment rows; the final offscreen MenusRendering case opens and selects the legacy page.",
+    "log_sha256": "ddcafafdf0103a815552407c29304075d636e03630b7bf4380bd146694603d1c"
+  },
+  "screenshots": "Actual offscreen Unreal game widgets and city meshes; originals in scratchpad and reviewed WebP copies in Docs.",
+  "limitations": [
+    "No interactive flight, physical-controller or manual listening playtest.",
+    "Old saves default to Extra Remake Features: Yes. Opposite-mode saves require matching the mode and restarting.",
+    "Emergency Buildings: Previous remake applies to hospital, fire and police stations only."
+  ]
+}

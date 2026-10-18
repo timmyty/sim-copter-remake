@@ -442,6 +442,9 @@ private:
 	void HidePlane(FSimCopterAmbientPlane& Plane);
 
 	// --- boats (FUN_004af770 / FUN_004b10a0 / FUN_004b0cf0 / FUN_004b2150) ---
+	bool IsBoatWaterTile(const FIntPoint& Tile) const;
+	bool CanMoveBoat(const FVector& From,const FVector& To,bool bCapsized) const;
+	friend class FSimCopterSelectedBoatTest;
 	void UpdateBoat(FSimCopterAmbientBoat& Boat, float DeltaSeconds);
 	bool PlaceBoatNearTile(FSimCopterAmbientBoat& Boat, const FIntPoint& Origin, int32 MaxRings);
 	bool RespawnBoatAtViewEdge(FSimCopterAmbientBoat& Boat);

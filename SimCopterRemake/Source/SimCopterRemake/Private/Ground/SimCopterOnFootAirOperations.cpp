@@ -1,4 +1,5 @@
 #include "Ground/SimCopterOnFootPawn.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Flight/SimCopterAirOperations.h"
 #include "Flight/SimCopterHelicopterPawn.h"
@@ -32,6 +33,7 @@ void ASimCopterOnFootPawn::SetAutoRescueAttached(bool bAttached)
 
 void ASimCopterOnFootPawn::SetParachuteDeployed(bool bDeployed)
 {
+	bDeployed &= USimCopterSettings::RemakeFeaturesEnabled(this);
 	bParachuteDeployed = bDeployed;
 	GetCharacterMovement()->GravityScale = bDeployed ? 0.1f : GravityScale;
 	if (bDeployed)
@@ -57,12 +59,14 @@ void ASimCopterOnFootPawn::SetParachuteDeployed(bool bDeployed)
 
 void ASimCopterOnFootPawn::ToggleParachute()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if (bAutoRescueAttached || PilotHealth <= 0 || !GetCharacterMovement()->IsFalling()) return;
 	SetParachuteDeployed(!bParachuteDeployed);
 }
 
 void ASimCopterOnFootPawn::StartTaserAim()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if (bAutoRescueAttached || PilotHealth <= 0 || IsCarryingMissionPerson() || bParachuteDeployed) return;
 	bTaserAiming=true;
 	if(!TaserMesh && CameraComponent)
@@ -91,6 +95,7 @@ void ASimCopterOnFootPawn::StopTaserAim()
 }
 void ASimCopterOnFootPawn::FireTaser()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if(!bTaserAiming || TaserCooldown>0 || !CameraComponent || !TaserCharge.CanFire() || PilotHealth<=0 || IsCarryingMissionPerson()) return;
 	// Re-evaluate on the click as well as the tick: turning off target cannot release a shot.
 	auto* Target=SimCopterEnergyTaser::FindTarget(GetWorld(),this,CameraComponent->GetComponentLocation(),CameraComponent->GetForwardVector());
@@ -111,6 +116,7 @@ void ASimCopterOnFootPawn::StopTaserHum()
 
 void ASimCopterOnFootPawn::UpdateEnergyTaser(float DeltaSeconds)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	const bool bCanSight=bTaserAiming && CameraComponent && PilotHealth>0 && !bParachuteDeployed && !bAutoRescueAttached && !IsCarryingMissionPerson();
 	const bool bSighted=bCanSight && SimCopterEnergyTaser::FindTarget(GetWorld(),this,
 		CameraComponent->GetComponentLocation(),CameraComponent->GetForwardVector());
@@ -146,6 +152,7 @@ void ASimCopterOnFootPawn::UpdateEnergyTaser(float DeltaSeconds)
 }
 bool ASimCopterOnFootPawn::TryCarryDownedPerson()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return false;
 	// Putting someone down is deliberate. Require walking away and returning before the
 	// proximity pickup can grab that same person, even after the short drop cooldown ends.
 	if (LastPutDownPerson.IsValid() && FVector::Dist2D(GetActorLocation(),LastPutDownPerson->GetActorLocation())>140)

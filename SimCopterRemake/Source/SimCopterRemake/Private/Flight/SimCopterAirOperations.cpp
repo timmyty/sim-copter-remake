@@ -637,7 +637,7 @@ void USimCopterAirOperationsComponent::Update(float DeltaSeconds)
 	if (!Helicopter() || !GetWorld()) return;
 	// Saves retain the on-foot pilot's parked aircraft and the aircraft's engine state.
 	// Reconnect that real pair after loading instead of persisting a transient camera or pointer.
-	if (bAutopilotEnabled && !IsAIPiloted() && !Cast<APlayerController>(Helicopter()->GetController()) && Helicopter()->IsEngineRunning() && !Helicopter()->bIsLanded && !Helicopter()->IsFixedWingAircraft())
+	if (USimCopterSettings::RemakeFeaturesEnabled(this) && bAutopilotEnabled && !IsAIPiloted() && !Cast<APlayerController>(Helicopter()->GetController()) && Helicopter()->IsEngineRunning() && !Helicopter()->bIsLanded && !Helicopter()->IsFixedWingAircraft())
 		for (TActorIterator<ASimCopterOnFootPawn> It(GetWorld());It;++It)
 			if (Cast<APlayerController>(It->GetController()) && It->GetParkedHelicopter()==Helicopter()) { BeginPilotRecovery(*It); break; }
 	ResolveSavedCargo();

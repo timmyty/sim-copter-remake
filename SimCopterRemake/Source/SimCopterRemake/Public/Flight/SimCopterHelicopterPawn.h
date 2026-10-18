@@ -108,6 +108,7 @@ USTRUCT(BlueprintType)
 struct SIMCOPTERREMAKE_API FSimCopterMissionPassengerSlot
 {
 	GENERATED_BODY()
+	friend class FSimCopterRemakeModeTest;
 	friend class FSimCopterPlaneControlsTest;
 	friend class FSimCopterWeaponDamageTest;
 	friend class FSimCopterCityWeaponTest;

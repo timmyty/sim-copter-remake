@@ -1,4 +1,5 @@
 #include "Missions/SimCopterCustomCityProgression.h"
+#include "Game/SimCopterSettings.h"
 #include "Missions/SimCopterMissionSystemActor.h"
 #include "Flight/SimCopterHelicopterParking.h"
 #include "Flight/SimCopterHelicopterPawn.h"
@@ -14,8 +15,14 @@ bool ASimCopterMissionSystemActor::UsesCitywideMissionPlacement() const
 	return SessionMode == ESimCopterMissionSessionMode::UserCityJobs;
 }
 
+bool ASimCopterMissionSystemActor::UsesCustomCityProgression() const
+{
+	return UsesCitywideMissionPlacement() && USimCopterSettings::RemakeFeaturesEnabled(this);
+}
+
 int32 ASimCopterMissionSystemActor::GetMissionPassengerLimit(bool bMedical) const
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return MAX_int32;
 	const auto* Aircraft = SimCopterHelicopterParking::ResolveCurrentAircraft(this);
 	// Until possession/airport setup is complete, use the starter cabin rather than an unlimited party.
 	return SimCopterCustomCityProgression::PassengerLimit(Aircraft ? Aircraft->GetPassengerSeatCount() : 2, bMedical);
@@ -28,7 +35,7 @@ int32 ASimCopterMissionSystemActor::GetCustomCityProgressionTier() const
 
 void ASimCopterMissionSystemActor::SetCustomCityOptions(int32 Difficulty, float Frequency)
 {
-	if (!UsesCitywideMissionPlacement()) return;
+	if (!UsesCustomCityProgression()) return;
 	CustomCityTierOverride = FMath::Clamp(Difficulty + 1, 1, 4);
 	CustomMissionFrequency = FMath::Clamp(Frequency, 0.25f, 4.0f);
 	MissionSystem.SetMissionFrequency(CustomMissionFrequency);
@@ -49,7 +56,8 @@ FString ASimCopterMissionSystemActor::GetCustomCityProgressionText() const
 
 bool ASimCopterMissionSystemActor::IsMissionTypeAvailable(int32 TypeMask) const
 {
-	if (!UsesCitywideMissionPlacement()) return true;
+	if (IsRecoveryMission(TypeMask)) return USimCopterSettings::RemakeFeaturesEnabled(this);
+	if (!UsesCustomCityProgression()) return true;
 	if (!bCustomCitySitesScanned) return false;
 	SimCopterCustomCityProgression::FCapabilities C;
 	C.Tier = GetCustomCityProgressionTier();

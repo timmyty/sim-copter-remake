@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "City/SimCopterHangar.h"
+#include "Game/SimCopterSettings.h"
 #include "SimCopterHangarInterior.h"
 
 #include "Audio/SimCopterAudioSubsystem.h"
@@ -179,13 +180,21 @@ void ASimCopterHangar::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ASimCopterHangar::BuildShellMesh()
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this))
+	{
+		InteriorMesh->ClearAllMeshSections(); GlazingMesh->ClearAllMeshSections();
+		InteriorLight->SetVisibility(false); WorkshopLight->SetVisibility(false);
+		BuildLegacyShellMesh();
+		return;
+	}
 	using namespace SimCopterHangarPlacement;
 	auto* StructureMaterial=UMaterialInstanceDynamic::Create(ShellMaterial,this);
 	auto* WindowMaterial=UMaterialInstanceDynamic::Create(ShellMaterial,this);
 	auto* InteriorMaterial=UMaterialInstanceDynamic::Create(ShellMaterial,this);
 	SimCopterHangarInterior::BuildStructure(*ShellMesh,*GlazingMesh,StructureMaterial,WindowMaterial,TileSizeCm);
 	SimCopterHangarInterior::Build(*InteriorMesh,InteriorMaterial,ResolveOriginalGameRoot(),TileSizeCm);
-	RefreshInteriorFill(InteriorMesh,ShellMesh,GlazingMesh,InteriorLight,WorkshopLight,GetWorld());
+	if (USimCopterSettings::RemakeFeaturesEnabled(this))
+		RefreshInteriorFill(InteriorMesh,ShellMesh,GlazingMesh,InteriorLight,WorkshopLight,GetWorld());
 
 	// Preserve the terminal plot and approach clearance. Only the reference's roof/door height
 	// and the interior's human-scale proportions change; the surrounding helipad ring stays clear.
@@ -321,7 +330,8 @@ bool ASimCopterHangar::IsAnyShellOpen(const UWorld* World)
 void ASimCopterHangar::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	RefreshInteriorFill(InteriorMesh,ShellMesh,GlazingMesh,InteriorLight,WorkshopLight,GetWorld());
+	if (USimCopterSettings::RemakeFeaturesEnabled(this))
+		RefreshInteriorFill(InteriorMesh,ShellMesh,GlazingMesh,InteriorLight,WorkshopLight,GetWorld());
 
 	if (bShellOpen)
 	{

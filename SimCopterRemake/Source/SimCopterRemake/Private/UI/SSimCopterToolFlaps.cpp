@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SSimCopterToolFlaps.h"
+#include "Game/SimCopterSettings.h"
 #include "SSimCopterToolGlow.h"
 
 #include "Brushes/SlateColorBrush.h"
@@ -1356,7 +1357,9 @@ EVisibility SSimCopterToolFlaps::GetFlapVisibility(const int32 EquipmentMask) co
 	}
 
 	// Exactly FUN_004127d0's test: the flap exists when any of its bits is aboard.
-	return (Helicopter->GetEquipmentState().GetEffectiveEquipmentMask() & EquipmentMask) != 0
+	const int32 ExtraMask = SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::CaptureCage) | SimCopterHelicopterRegistry::GetToolCareerBit(ESimCopterHelicopterTool::RemoteTaser);
+	const int32 AllowedMask = USimCopterSettings::RemakeFeaturesEnabled(Helicopter) ? EquipmentMask : EquipmentMask & ~ExtraMask;
+	return (Helicopter->GetEquipmentState().GetEffectiveEquipmentMask() & AllowedMask) != 0
 		? EVisibility::SelfHitTestInvisible
 		: EVisibility::Collapsed;
 }
@@ -1882,8 +1885,9 @@ FReply SSimCopterToolFlaps::HandleDispatchServiceStep(const int32 Delta)
 {
 	if (ASimCopterHelicopterPawn* Helicopter = GetPawn())
 	{
+		const int32 EntryCount = USimCopterSettings::RemakeFeaturesEnabled(Helicopter) ? DispatchEntryCount : DispatchEntryCount - 1;
 		SelectedDispatchEntry =
-			((SelectedDispatchEntry + Delta) % DispatchEntryCount + DispatchEntryCount) % DispatchEntryCount;
+			((SelectedDispatchEntry + Delta) % EntryCount + EntryCount) % EntryCount;
 
 		// Keep the pawn's real-service selection in sync for the controller wheel and debug panel.
 		// The chase pseudo-entry selects Police in those surfaces because they expose chase as a
@@ -1901,7 +1905,7 @@ FReply SSimCopterToolFlaps::HandleDispatchServiceStep(const int32 Delta)
 
 FReply SSimCopterToolFlaps::HandleDispatch()
 {
-	if (SelectedDispatchEntry == PoliceChaseDispatchEntry+1)
+	if (SelectedDispatchEntry == PoliceChaseDispatchEntry+1 && USimCopterSettings::RemakeFeaturesEnabled(Pawn.Get()))
 	{
 		if(auto* Heli=Pawn.Get()) Heli->RequestAirSupport();
 		return FReply::Handled();

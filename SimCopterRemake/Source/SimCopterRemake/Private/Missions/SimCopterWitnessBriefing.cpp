@@ -1,4 +1,5 @@
 #include "Missions/SimCopterWitnessBriefing.h"
+#include "Game/SimCopterSettings.h"
 #include "Ground/SimCopterGroundAgent.h"
 #include "Audio/SimCopterAudioSubsystem.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -22,6 +23,7 @@ USimCopterWitnessBriefing::USimCopterWitnessBriefing()
 
 void USimCopterWitnessBriefing::Report(ASimCopterGroundAgent* Suspect)
 {
+	if (!USimCopterSettings::RemakeFeaturesEnabled(this)) return;
 	if (Suspect != nullptr) Pending.AddUnique(Suspect);
 	CaptureDelay = 0.25f; // Let the figure's first animation/mesh update reach the renderer.
 }
